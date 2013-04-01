@@ -1,2 +1,2 @@
 version=3
-https://github.com/zfsonlinux/zfs/downloads/ .*zfs-([\d\.]+)\.tar\.gz$
+http://zfsonlinux.org/ .*zfs-([\d\.]+)\.tar\.gz$
