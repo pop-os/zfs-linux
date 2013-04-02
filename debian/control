@@ -1,7 +1,7 @@
 Source: zfs-linux
 Section: kernel
 Priority: extra
-Maintainer: Darik Horn <dajhorn@vanadac.com>
+Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@lists.alioth.debian.org>
 Build-Depends: autotools-dev,
  autoconf,
  autogen,
@@ -14,8 +14,9 @@ Build-Depends: autotools-dev,
  zlib1g-dev,
  lsb-release
 Standards-Version: 3.9.3.1
-Vcs-Git: git://github.com/dajhorn/pkg-zfs.git
-Vcs-Browser: http://github.com/dajhorn/pkg-zfs
+Homepage: http://www.zfsonlinux.org/
+Vcs-Git: git://anonscm.debian.org/pkg-zfsonlinux/zfs.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-zfsonlinux/spl.git
 
 Package: libnvpair1
 Section: libs
