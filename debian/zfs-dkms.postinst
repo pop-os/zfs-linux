@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+#DEBHELPER#
+
+
 case $1 in
 	(configure)
 		if [ -x /usr/share/update-notifier/notify-reboot-required ]; then
@@ -8,5 +11,3 @@ case $1 in
 		fi
 		;;
 esac
-
-#DEBHELPER#
