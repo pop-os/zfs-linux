@@ -5,9 +5,8 @@ NAME := $(shell awk '$$1 == "Name:" { print $$2; }' META)
 VERSION := $(shell dpkg-parsechangelog \
   | awk '$$1 == "Version:" { print $$2; }' | cut -d- -f1)
 
-DKMSFILES := module include config Makefile.in autogen.sh dkms.conf.in \
-		zfs.release.in META zfs_config.h AUTHORS COPYRIGHT DISCLAIMER \
-		OPENSOLARIS.LICENSE
+DKMSFILES := module include config zfs.release.in autogen.sh META AUTHORS \
+		DISCLAIMER COPYRIGHT OPENSOLARIS.LICENSE README.markdown
 
 %:
 	dh $@ --with dkms
@@ -44,15 +43,20 @@ override_dh_auto_install:
 	@# Install the DKMS source.
 	@# We only want the files needed to build the modules
 	mkdir -p '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)'
-	$(foreach file,$(DKMSFILES),mv '$(CURDIR)/$(NAME)-$(VERSION)/$(file)' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)';)
+	$(foreach file,$(DKMSFILES),mv '$(CURDIR)/$(NAME)-$(VERSION)/$(file)' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)' || exit 1;)
 	@# Hellish awk line:
 	@#  * Deletes from configure.ac the parts not needed for building the kernel module
 	@#     * It deletes from inside AC_CONFIG_FILES([]) everything except:
-	@#        (Makefile$|include/|module/|*.release$|dkms.conf$)
+	@#        (Makefile$|include/|module/|*.release$)
 	@#  * Takes care of spaces and tabs
-	awk '/^AC_CONFIG_FILES\(\[/,/^\]\)/ { if ($$0 !~ /^(AC_CONFIG_FILES\(\[([ \t]+)?$$|\]\)([ \t]+)?$$|([ \t]+)?(include\/|module\/|Makefile([ \t]+)?$$|zfs\.release([ \t]+)?$$|dkms\.conf([ \t]+)?$$))/){next} } {print}' \
+	awk '/^AC_CONFIG_FILES\(\[/,/^\]\)/ { if ($$0 !~ /^(AC_CONFIG_FILES\(\[([ \t]+)?$$|\]\)([ \t]+)?$$|([ \t]+)?(include\/|module\/|Makefile([ \t]+)?$$|zfs\.release([ \t]+)?$$))/){next} } {print}' \
 		'$(CURDIR)/$(NAME)-$(VERSION)/configure.ac' > '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/configure.ac'
-	cp '$(CURDIR)/autogen.sh' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)'
+	@# Set "SUBDIRS = module include" for CONFIG_KERNEL and remove SUBDIRS for all other configs.
+	sed '1,/CONFIG_KERNEL/s/SUBDIRS.*=.*//g;s/SUBDIRS.*=.*/SUBDIRS = module include/g;' \
+		'$(CURDIR)/$(NAME)-$(VERSION)/Makefile.am' > '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/Makefile.am'
+	@# Sanity test
+	grep -q 'SUBDIRS = module include' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/Makefile.am'
+	@# Run autogen on the stripped source tree
 	cd '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)'; ./autogen.sh
 	rm -fr '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/autom4te.cache'
 
