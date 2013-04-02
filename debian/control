@@ -7,7 +7,7 @@ Build-Depends: autotools-dev,
  autogen,
  automake,
  debhelper (>= 7.4),
- dkms (>> 2.1.1.2-5ubuntu1),
+ dkms (>> 2.1.1.2-5),
  libselinux1-dev,
  libtool,
  uuid-dev,
@@ -127,7 +127,7 @@ Package: zfs-dkms
 Section: kernel
 Architecture: linux-any
 Pre-Depends: spl-dkms (>= ${source:Upstream-Version})
-Depends: ${misc:Depends}, dkms (>> 2.1.1.2-5ubuntu1), lsb-release
+Depends: ${misc:Depends}, dkms (>> 2.1.1.2-5), lsb-release
 Replaces: lzfs, lzfs-dkms
 Provides: lustre-backend-fs, lzfs, lzfs-dkms
 Conflicts: lzfs, lzfs-dkms
