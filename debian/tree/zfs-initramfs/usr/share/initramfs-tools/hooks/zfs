@@ -68,6 +68,6 @@ else
 	hostname >"$DESTDIR/etc/hostname"
 fi
 
-# The spl package ensures that the /etc/hostid file exists.
-# NB: Commentary in the spl.postinst script.
+# The spl-dkms package ensures that the /etc/hostid file exists.
+# NB: Commentary in the spl-dkms.postinst script.
 cp -p "/etc/hostid" "$DESTDIR/etc/hostid"
