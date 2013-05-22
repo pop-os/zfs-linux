@@ -10,9 +10,13 @@ DKMSFILES := module include config zfs.release.in autogen.sh META AUTHORS \
 
 export SHLIB_MAJOR = 1
 
+ifndef DEB_HOST_ARCH
+DEB_HOST_ARCH = $(shell dpkg-architecture -qDEB_HOST_ARCH)
+endif
+
 non_epoch_version=$(shell echo $(KVERS) | perl -pe 's/^\d+://')
 PACKAGE=zfs
-pmodules = $(PACKAGE)-modules-$(non_epoch_version)
+pmodules = $(PACKAGE)-modules-$(non_epoch_version)-$(DEB_HOST_ARCH)
 
 %:
 	dh $@ --with dkms
@@ -144,10 +148,10 @@ override_dh_install:
 
 override_dh_prep-deb-files:
 	for templ in $(wildcard $(CURDIR)/debian/*_KVERS_*.in); do \
-		sed -e 's/##KVERS##/$(KVERS)/g ; s/#KVERS#/$(KVERS)/g ; s/_KVERS_/$(KVERS)/g ; s/##KDREV##/$(KDREV)/g ; s/#KDREV#/$(KDREV)/g ; s/_KDREV_/$(KDREV)/g  ' \
-		< $$templ > `echo $$templ | sed -e 's/_KVERS_/$(KVERS)/g' -e 's/\.in$$//'` ; \
+		sed -e 's/##KVERS##/$(KVERS)/g ; s/#KVERS#/$(KVERS)/g ; s/_KVERS_/$(KVERS)/g ; s/##KDREV##/$(KDREV)/g ; s/#KDREV#/$(KDREV)/g ; s/_KDREV_/$(KDREV)/g ; s/_ARCH_/$(DEB_HOST_ARCH)/' \
+		< $$templ > `echo $$templ | sed -e 's/_KVERS_/$(KVERS)/g ; s/_ARCH_/$(DEB_HOST_ARCH)/g ; s/\.in$$//'` ; \
 	done
-	sed -e 's/##KVERS##/$(KVERS)/g ; s/#KVERS#/$(KVERS)/g ; s/_KVERS_/$(KVERS)/g ; s/##KDREV##/$(KDREV)/g ; s/#KDREV#/$(KDREV)/g ; s/_KDREV_/$(KDREV)/g  ' \
+	sed -e 's/##KVERS##/$(KVERS)/g ; s/#KVERS#/$(KVERS)/g ; s/_KVERS_/$(KVERS)/g ; s/##KDREV##/$(KDREV)/g ; s/#KDREV#/$(KDREV)/g ; s/_KDREV_/$(KDREV)/g ; s/_ARCH_/$(DEB_HOST_ARCH)/g' \
 	< debian/control.modules.in > debian/control
 
 override_dh_configure_modules: override_dh_configure_modules_stamp
@@ -163,11 +167,11 @@ override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configur
 
 	$(MAKE) -C $(CURDIR)/module modules
 
-	dh_installdirs -p${pmodules}-amd64-di
-	dh_install -p${pmodules}-amd64-di
-	dh_gencontrol -p${pmodules}-amd64-di
+	dh_installdirs -p${pmodules}-di
+	dh_install -p${pmodules}-di
+	dh_gencontrol -p${pmodules}-di
 
-	dh_builddeb -p${pmodules}-amd64-di --destdir=$(DEB_DESTDIR)
+	dh_builddeb -p${pmodules}-di --destdir=$(DEB_DESTDIR)
 
 override_dh_binary-modules: override_dh_prep-deb-files override_dh_configure_modules
 	dh_testdir
