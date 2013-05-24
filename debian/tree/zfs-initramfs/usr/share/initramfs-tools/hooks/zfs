@@ -76,4 +76,4 @@ fi
 
 # Install the zpool.cache file.
 [ ! -d "$DESTDIR/boot/zfs" ] && mkdir -p "$DESTDIR/boot/zfs"
-cp -r /boot/zfs "$DESTDIR/boot"
+[ -d /boot/zfs ] && cp -r /boot/zfs "$DESTDIR/boot"
