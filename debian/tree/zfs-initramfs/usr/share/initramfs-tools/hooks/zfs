@@ -16,7 +16,7 @@ COPY_EXEC_LIST="$COPY_EXEC_LIST /bin/hostname /sbin/blkid"
 # Explicitly specify all kernel modules because automatic dependency resolution
 # is unreliable on many systems.
 BASE_MODULES="zlib_deflate spl zavl zcommon znvpair zunicode zfs"
-CRPT_MODULES="ghash-generic sun-ccm sun-gcm sun-ctr"
+CRPT_MODULES="sun-ccm sun-gcm sun-ctr"
 MANUAL_ADD_MODULES_LIST="$BASE_MODULES"
 
 # Generic result code.

@@ -175,7 +175,7 @@ mountroot()
 
 			# Just make sure that ALL crypto modules module is loaded.
 			# Simplest just to load all...
-			for mod in sun-ccm sun-gcm sun-ctr ghash-generic
+			for mod in sun-ccm sun-gcm sun-ctr
 			do
 				modprobe $mod
 			done
