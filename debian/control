@@ -1,6 +1,6 @@
 Source: zfs-linux
 Section: kernel
-Priority: extra
+Priority: optional
 Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@lists.alioth.debian.org>
 Uploaders: Aron Xu <aron@debian.org>, Carlos Alberto Lopez Perez <clopez@igalia.com>
 Build-Depends: autotools-dev,
@@ -95,7 +95,11 @@ Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Replaces: libzfs0
 Description: Native ZFS filesystem library for Linux
- The zfs management library.
+ The Z file system is a pooled filesystem designed for maximum data
+ integrity, supporting data snapshots, multiple copies, and data
+ checksums. 
+ .
+ The ZFS library provides support for managing ZFS filesystems.
 
 Package: libzfs1-dbg
 Section: debug
@@ -103,7 +107,9 @@ Architecture: linux-any
 Depends: ${misc:Depends}, libzfs1 (= ${binary:Version})
 Replaces: libzfs0-dbg
 Description: Debugging symbols for libzfs1
- The zfs management library.
+ The Z file system is a pooled filesystem designed for maximum data
+ integrity, supporting data snapshots, multiple copies, and data
+ checksums. 
  .
  This package contains the debugging symbols for libzfs1.
 
@@ -113,7 +119,11 @@ Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Replaces: libzpool0
 Description: Native ZFS pool library for Linux
- The zpool management library.
+ The Z file system is a pooled filesystem designed for maximum data
+ integrity, supporting data snapshots, multiple copies, and data
+ checksums. 
+ .
+ This zpool library provides support for managing zpools.
 
 Package: libzpool1-dbg
 Section: debug
@@ -121,7 +131,9 @@ Architecture: linux-any
 Depends: ${misc:Depends}, libzpool1 (= ${binary:Version})
 Replaces: libzpool0-dbg
 Description: Debugging symbols for libzpool1
- The zpool management library.
+ The Z file system is a pooled filesystem designed for maximum data
+ integrity, supporting data snapshots, multiple copies, and data
+ checksums. 
  .
  This package contains the debugging symbols for libzpool1.
 
@@ -134,11 +146,11 @@ Replaces: lzfs, lzfs-dkms
 Provides: lustre-backend-fs, lzfs, lzfs-dkms
 Conflicts: lzfs, lzfs-dkms
 Description: Native ZFS filesystem kernel modules for Linux
- An advanced integrated volume manager and filesystem that is designed for
- performance and data integrity. Snapshots, clones, checksums, deduplication,
- compression, and RAID redundancy are built-in features.
+ The Z file system is a pooled filesystem designed for maximum data
+ integrity, supporting data snapshots, multiple copies, and data
+ checksums. 
  .
- Includes the SPA, DMU, ZVOL, and ZPL components of ZFS.
+ This DKMS package includes the SPA, DMU, ZVOL, and ZPL components of ZFS.
 
 #Package: zfs-dracut
 #Section: kernel
@@ -148,13 +160,13 @@ Description: Native ZFS filesystem kernel modules for Linux
 # This package adds ZFS to the system initramfs with a hook
 # for the dracut infrastructure.
 
-Package: zfs-initramfs
-Section: kernel
-Architecture: linux-any
-Depends: ${misc:Depends}, zfsutils, zfs-grub
-Description: Native ZFS root filesystem capabilities for Linux
- This package adds ZFS to the system initramfs with a hook
- for the initramfs-tools infrastructure.
+#Package: zfs-initramfs
+#Section: kernel
+#Architecture: linux-any
+#Depends: ${misc:Depends}, zfsutils, zfs-grub
+#Description: Native ZFS root filesystem capabilities for Linux
+# This package adds ZFS to the system initramfs with a hook
+# for the initramfs-tools infrastructure.
 
 Package: zfsutils
 Section: admin
