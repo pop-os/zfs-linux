@@ -3,31 +3,28 @@ Type: boolean
 Default: true
 Description:  Stop the build since your running kernel is 32-bit?
  You are attempting to build ZFS on a 32-bit kernel.
- This is UNSUPPORTED and will likely cause crash and data corruption
- on your system.
  .
- You are adviced to stop building ZFS and try this with a 64-bit kernel.
+ At the moment ZFS will build in a 32-bit environment but it is
+ UNSUPPORTED and will likely cause instability and may lead to data
+ corruption. You are strongly encouraged to use ZFS on a 64-bit kernel.
  .
- Keep in mind that if you decide to continue using ZFS on a 32-bit kernel
- is at your own risk.
+ Keep in mind that if you decide to continue using ZFS on a 32-bit
+ kernel then it is at your own risk.
 
 
 Template: zfs-dkms/stop-build-for-unknown-kernel
 Type: boolean
 Default: true
 Description:  Stop the build since your running kernel is unknown?
- Couldn't determine if your running kernel is 64-bit or 32-bit
+ Couldn't determine if your running kernel is 64-bit or 32-bit.
  .
- ZFS is not supported on 32-bit kernel.
+ At the moment ZFS will build in a 32-bit environment but it is
+ UNSUPPORTED and will likely cause instability and may lead to data
+ corruption. You are strongly encouraged to use ZFS on a 64-bit kernel.
  .
  Please, only continue with the build if you are completely sure
- that your running kernel is a 64-bit one.
- .
- If is not the case, or you are unsure please stop the current build
- .
- Running ZFS on 32-bit kernels is UNSUPPORTED and will likely cause
- crashes and data corruption on your system.
- You are adviced to stop building ZFS and try this with a 64-bit kernel.
+ that your running kernel is a 64-bit one. If is not the case, or
+ you are unsure please stop the current build.
  .
  Keep in mind that if you decide to continue using ZFS on a 32-bit kernel
  is at your own risk.
