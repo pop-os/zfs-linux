@@ -11,6 +11,7 @@ Build-Depends: autotools-dev,
  dkms (>> 2.1.1.2-5),
  libselinux1-dev,
  libtool,
+ po-debconf,
  uuid-dev,
  zlib1g-dev,
  lsb-release
@@ -140,7 +141,7 @@ Description: Debugging symbols for libzpool1
 Package: zfs-dkms
 Architecture: linux-any
 Pre-Depends: spl-dkms (>= ${source:Upstream-Version})
-Depends: ${misc:Depends}, dkms (>> 2.1.1.2-5), lsb-release
+Depends: ${misc:Depends}, dkms (>> 2.1.1.2-5), lsb-release, debconf
 Replaces: lzfs, lzfs-dkms
 Provides: lustre-backend-fs, lzfs, lzfs-dkms
 Conflicts: lzfs, lzfs-dkms
