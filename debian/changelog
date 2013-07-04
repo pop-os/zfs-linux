@@ -1,7 +1,7 @@
 zfs-linux (0.6.1-1) UNRELEASED; urgency=low
 
   [ Carlos Alberto Lopez Perez ]
-  * Initial Release (Closes #686447)
+  * Initial Release (Closes: #686447)
 
   # (Before release)
   # TODO: Check that the version and target
