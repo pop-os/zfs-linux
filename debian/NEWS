@@ -1,4 +1,4 @@
-zfs-linux (0.6.1-1) unstable; urgency=high
+zfs-linux (0.6.1-1) experimental; urgency=low
 
   * Feature flags are enabled by default.
 
