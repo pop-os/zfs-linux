@@ -1,30 +1,25 @@
 Template: zfs-dkms/stop-build-for-32bit-kernel
 Type: boolean
 Default: true
-Description:  Stop the build since your running kernel is 32-bit?
- You are attempting to build ZFS on a 32-bit kernel.
+_Description: Abort building ZFS on a 32-bit kernel?
+ You are attempting to build ZFS against a 32-bit running kernel.
  .
- At the moment ZFS will build in a 32-bit environment but it is
- UNSUPPORTED and will likely cause instability and may lead to data
- corruption. You are strongly encouraged to use ZFS on a 64-bit kernel.
- .
- Keep in mind that if you decide to continue using ZFS on a 32-bit
- kernel then it is at your own risk.
-
+ Although possible, building in a 32-bit environment is unsupported and
+ likely to cause instability leading to possible data corruption. You
+ are strongly advised to use a 64-bit kernel; if you do decide to
+ proceed with using ZFS on this kernel then keep in mind that it is at
+ your own risk.
 
 Template: zfs-dkms/stop-build-for-unknown-kernel
 Type: boolean
 Default: true
-Description:  Stop the build since your running kernel is unknown?
- Couldn't determine if your running kernel is 64-bit or 32-bit.
+_Description: Abort building ZFS on an unknown kernel?
+ You are attempting to build ZFS against a running kernel that could not
+ be identified as 32-bit or 64-bit. If you are not completely sure that
+ the running kernel is a 64-bit one, you should probably stop the build.
  .
- At the moment ZFS will build in a 32-bit environment but it is
- UNSUPPORTED and will likely cause instability and may lead to data
- corruption. You are strongly encouraged to use ZFS on a 64-bit kernel.
- .
- Please, only continue with the build if you are completely sure
- that your running kernel is a 64-bit one. If is not the case, or
- you are unsure please stop the current build.
- .
- Keep in mind that if you decide to continue using ZFS on a 32-bit kernel
- is at your own risk.
+ Although possible, building in a 32-bit environment is unsupported and
+ likely to cause instability leading to possible data corruption. You
+ are strongly advised to use a 64-bit kernel; if you do decide to
+ proceed with using ZFS on this kernel then keep in mind that it is at
+ your own risk.
