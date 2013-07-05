@@ -16,7 +16,11 @@
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
 . /lib/lsb/init-functions
-. /lib/init/vars.sh
+# Do not source /lib/init/*.sh as they are not public APIs after getting rid
+# of /lib/init/rw. However, this line may help when doing back port to older
+# releases.
+#
+#. /lib/init/vars.sh
 
 [ -f /etc/default/zfs ] && . /etc/default/zfs
 
