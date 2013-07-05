@@ -141,7 +141,7 @@ Description: Debugging symbols for libzpool1
  This package contains the debugging symbols for libzpool1.
 
 Package: zfs-dkms
-Architecture: linux-any
+Architecture: all
 Pre-Depends: spl-dkms (>= ${source:Upstream-Version})
 Depends: ${misc:Depends}, dkms (>> 2.1.1.2-5), lsb-release
 Replaces: lzfs, lzfs-dkms
