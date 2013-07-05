@@ -32,6 +32,7 @@ Description: Solaris name-value library for Linux
 
 Package: libnvpair1-dbg
 Section: debug
+Priority: extra
 Architecture: linux-any
 Depends: ${misc:Depends}, libnvpair1 (= ${binary:Version})
 Replaces: libnvpair0-dbg
@@ -58,6 +59,7 @@ Description: Solaris userland utility library for Linux
 
 Package: libuutil1-dbg
 Section: debug
+Priority: extra
 Architecture: linux-any
 Depends: ${misc:Depends}, libuutil1 (= ${binary:Version})
 Replaces: libuutil0-dbg
@@ -104,6 +106,7 @@ Description: Native ZFS filesystem library for Linux
 
 Package: libzfs1-dbg
 Section: debug
+Priority: extra
 Architecture: linux-any
 Depends: ${misc:Depends}, libzfs1 (= ${binary:Version})
 Replaces: libzfs0-dbg
@@ -128,6 +131,7 @@ Description: Native ZFS pool library for Linux
 
 Package: libzpool1-dbg
 Section: debug
+Priority: extra
 Architecture: linux-any
 Depends: ${misc:Depends}, libzpool1 (= ${binary:Version})
 Replaces: libzpool0-dbg
@@ -182,6 +186,7 @@ Description: Native ZFS management utilities for Linux
 
 Package: zfsutils-dbg
 Section: debug
+Priority: extra
 Architecture: linux-any
 Depends: ${misc:Depends}, zfsutils (= ${binary:Version})
 Replaces: zfs-dbg
