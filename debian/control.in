@@ -25,6 +25,7 @@ Section: libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Replaces: libnvpair0
+Provides: libnvpair0
 Description: Solaris name-value library for Linux
  This library provides routines for packing and unpacking nv pairs for
  transporting data across process boundaries, transporting between
@@ -35,7 +36,8 @@ Section: debug
 Priority: extra
 Architecture: linux-any
 Depends: ${misc:Depends}, libnvpair1 (= ${binary:Version})
-Replaces: libnvpair0-dbg
+Replaces: libnvpair0-dbg, libnvpair0
+Provides: libnvpair0-dbg, libnvpair0
 Description: Debugging symbols for libnvpair1
  This library provides routines for packing and unpacking nv pairs for
  transporting data across process boundaries, transporting between
@@ -43,11 +45,23 @@ Description: Debugging symbols for libnvpair1
  .
  This package contains the debugging symbols for libnvpair1.
 
+Package: libnvpair1-udeb
+Package-Type: udeb
+Section: debian-installer
+Architecture: linux-any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: OpenSolaris name-value pair library (debian-installer version)
+ This package contains the OpenSolaris libnvpair library, for managing
+ name-value pairs.
+ .
+ This is a minimal package for use in debian-installer.
+
 Package: libuutil1
 Section: libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Replaces: libuutil0
+Provides: libuutil0
 Description: Solaris userland utility library for Linux
  This library provides a variety of glue functions for ZFS on Linux:
   * libspl: The Solaris Porting Layer userland library, which provides APIs
@@ -64,7 +78,8 @@ Section: debug
 Priority: extra
 Architecture: linux-any
 Depends: ${misc:Depends}, libuutil1 (= ${binary:Version})
-Replaces: libuutil0-dbg
+Replaces: libuutil0-dbg, libuutil0
+Provides: libuutil0-dbg, libuutil0
 Description: Debugging symbols for libuutil1
  This library provides a variety of glue functions for ZFS on Linux:
   * libspl: The Solaris Porting Layer userland library, which provides APIs
@@ -77,6 +92,16 @@ Description: Debugging symbols for libuutil1
   * libshare: NFS, SMB, and iSCSI service integration for ZFS.
  .
  This package contains the debugging symbols for libuutil1.
+
+Package: libuutil1-udeb
+Package-Type: udeb
+Section: debian-installer
+Architecture: linux-any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: OpenSolaris userland utility library (debian-installer version)
+ This package contains the OpenSolaris userland utility library.
+ .
+ This is a minimal package for use in debian-installer.
 
 Package: libzfs-dev
 Section: libdevel
@@ -95,6 +120,7 @@ Section: libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Replaces: libzfs0
+Provides: libzfs0
 Description: Native ZFS filesystem library for Linux
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
@@ -107,7 +133,8 @@ Section: debug
 Priority: extra
 Architecture: linux-any
 Depends: ${misc:Depends}, libzfs1 (= ${binary:Version})
-Replaces: libzfs0-dbg
+Replaces: libzfs0-dbg, libzfs0
+Provides: libzfs0-dbg, libzfs0
 Description: Debugging symbols for libzfs1
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
@@ -115,11 +142,25 @@ Description: Debugging symbols for libzfs1
  .
  This package contains the debugging symbols for libzfs1.
 
+Package: libzfs1-udeb
+Package-Type: udeb
+Section: debian-installer
+Architecture: linux-any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: OpenSolaris ZFS library (debian-installer version)
+ The Z file system is a pooled filesystem designed for maximum data integrity,
+ supporting data snapshots, multiple copies, and data checksums.
+ .
+ The ZFS library provides support for managing ZFS filesystems.
+ .
+ This is a minimal package for use in debian-installer.
+
 Package: libzpool1
 Section: libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Replaces: libzpool0
+Provides: libzpool0
 Description: Native ZFS pool library for Linux
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
@@ -132,13 +173,24 @@ Section: debug
 Priority: extra
 Architecture: linux-any
 Depends: ${misc:Depends}, libzpool1 (= ${binary:Version})
-Replaces: libzpool0-dbg
+Replaces: libzpool0-dbg, libzpool0
+Provides: libzpool0-dbg, libzpool0
 Description: Debugging symbols for libzpool1
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
  .
  This package contains the debugging symbols for libzpool1.
+
+Package: libzpool1-udeb
+Package-Type: udeb
+Section: debian-installer
+Architecture: linux-any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: OpenSolaris interface library to manage ZFS storage pools (debian-installer version)
+ This package contains the OpenSolaris libzpool library.
+ .
+ This is a minimal package for use in debian-installer.
 
 Package: zfs-dkms
 Architecture: all
@@ -190,9 +242,27 @@ Section: debug
 Priority: extra
 Architecture: linux-any
 Depends: ${misc:Depends}, zfsutils (= ${binary:Version})
-Replaces: zfs-dbg
+Replaces: zfs-dbg, zfs
+Provides: zfs-dbg, zfs
 Description: Debugging symbols for zfsutils
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data checksums.
  .
  This package contains the debugging symbols for zfsutils.
+
+Package: zfsutils-udeb
+Package-Type: udeb
+Section: debian-installer
+Architecture: linux-any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ libuutil1-udeb (= ${binary:Version}), libnvpair1-udeb (= ${binary:Version}),
+ libzfs1-udeb (= ${binary:Version}), libzpool1-udeb (= ${binary:Version}),
+ zfs-modules,
+Description: command-line tools to manage ZFS filesystems (debian-installer version)
+ The Z file system is a pooled filesystem designed for maximum data integrity,
+ supporting data snapshots, multiple copies, and data checksums.
+ .
+ This package provides the zfs and zpool commands to create and administer
+ ZFS filesystems.
+ .
+ This is a minimal package for use in debian-installer.

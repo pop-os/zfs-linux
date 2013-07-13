@@ -8,10 +8,18 @@ VERSION := $(shell dpkg-parsechangelog \
 DKMSFILES := module include config zfs.release.in autogen.sh META AUTHORS \
 		DISCLAIMER COPYRIGHT OPENSOLARIS.LICENSE README.markdown
 
+export SHLIB_MAJOR = 1
+
+non_epoch_version=$(shell echo $(KVERS) | perl -pe 's/^\d+://')
+PACKAGE=zfs
+pmodules = $(PACKAGE)-modules-$(non_epoch_version)
+
 %:
 	dh $@ --with dkms
 
 override_dh_auto_configure:
+	@cp debian/control.in debian/control
+
 	@# Embed the downstream version in the module.
 	@sed -e 's/^Version:.*/Version:      $(VERSION)/' -i.orig META
 
@@ -97,6 +105,14 @@ endif
 override_dh_dkms:
 	dh_dkms -V $(VERSION)
 
+override_dh_makeshlibs:
+	dh_makeshlibs -a
+	dh_makeshlibs -plibnvpair$(SHLIB_MAJOR) --add-udeb=libnvpair$(SHLIB_MAJOR)-udeb
+	dh_makeshlibs -plibuutil$(SHLIB_MAJOR) --add-udeb=libuutil$(SHLIB_MAJOR)-udeb
+	dh_makeshlibs -plibzfs$(SHLIB_MAJOR) --add-udeb=libzfs$(SHLIB_MAJOR)-udeb
+	dh_makeshlibs -plibzpool$(SHLIB_MAJOR) --add-udeb=libzpool$(SHLIB_MAJOR)-udeb
+	dh_makeshlibs -pzfsutils --add-udeb=zfsutils-udeb
+
 override_dh_shlibdeps:
 	@# Suppress libtool dependency_libs warnings that are caused by
 	@# inter-library dependencies.  (eg: zfs -> libzfs -> libuuid)
@@ -110,6 +126,12 @@ override_dh_strip:
 	dh_strip -plibzpool1 --dbg-package=libzpool1-dbg
 	dh_strip -pzfsutils --dbg-package=zfsutils-dbg
 
+	dh_strip -plibnvpair$(SHLIB_MAJOR)-udeb
+	dh_strip -plibuutil$(SHLIB_MAJOR)-udeb
+	dh_strip -plibzfs$(SHLIB_MAJOR)-udeb
+	dh_strip -plibzpool$(SHLIB_MAJOR)-udeb
+	dh_strip -pzfsutils-udeb
+
 override_dh_auto_clean:
 	dh_auto_clean
 	@if test -e META.orig; then mv META.orig META; fi
@@ -117,3 +139,51 @@ override_dh_auto_clean:
 override_dh_install:
 	find . -name lib*.la -delete
 	dh_install
+
+# ------------
+
+override_dh_prep-deb-files:
+	for templ in $(wildcard $(CURDIR)/debian/*_KVERS_*.in); do \
+		sed -e 's/##KVERS##/$(KVERS)/g ; s/#KVERS#/$(KVERS)/g ; s/_KVERS_/$(KVERS)/g ; s/##KDREV##/$(KDREV)/g ; s/#KDREV#/$(KDREV)/g ; s/_KDREV_/$(KDREV)/g  ' \
+		< $$templ > `echo $$templ | sed -e 's/_KVERS_/$(KVERS)/g' -e 's/\.in$$//'` ; \
+	done
+	sed -e 's/##KVERS##/$(KVERS)/g ; s/#KVERS#/$(KVERS)/g ; s/_KVERS_/$(KVERS)/g ; s/##KDREV##/$(KDREV)/g ; s/#KDREV#/$(KDREV)/g ; s/_KDREV_/$(KDREV)/g  ' \
+	< debian/control.modules.in > debian/control
+
+override_dh_configure_modules: override_dh_configure_modules_stamp
+override_dh_configure_modules_stamp:
+	./configure --with-config=kernel --with-linux=$(KSRC) \
+		--with-linux-obj=$(KOBJ)
+	touch override_dh_configure_modules_stamp
+
+override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configure_modules
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+
+	$(MAKE) -C $(CURDIR)/module modules
+
+	dh_installdirs -p${pmodules}-amd64-di
+	dh_install -p${pmodules}-amd64-di
+	dh_gencontrol -p${pmodules}-amd64-di
+
+	dh_builddeb -p${pmodules}-amd64-di --destdir=$(DEB_DESTDIR)
+
+override_dh_binary-modules: override_dh_prep-deb-files override_dh_configure_modules
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+
+	$(MAKE) -C $(CURDIR)/module modules
+
+	dh_install -p${pmodules}
+	dh_installdocs -p${pmodules}
+	dh_installchangelogs -p${pmodules}
+	dh_compress -p${pmodules}
+	dh_strip -p${pmodules}
+	dh_fixperms -p${pmodules}
+	dh_installdeb -p${pmodules}
+	dh_gencontrol -p${pmodules} -- -v$(VERSION)
+	dh_md5sums -p${pmodules}
+
+	dh_builddeb -p${pmodules} --destdir=$(DEB_DESTDIR)
