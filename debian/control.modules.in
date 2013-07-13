@@ -10,13 +10,13 @@ Build-Depends: autotools-dev,
  dkms (>> 2.1.1.2-5),
  libtool,
  linux-headers-_KVERS_-common,
- linux-headers-_KVERS_-_ARCH_
+ linux-headers-_KVERS_
 Standards-Version: 3.8.4
 Homepage: http://www.zfsonlinux.org/
 Vcs-Git: git://anonscm.debian.org/pkg-zfsonlinux/zfs.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-zfsonlinux/spl.git
 
-Package: zfs-modules-_KVERS_-_ARCH_
+Package: zfs-modules-_KVERS_
 Architecture: _ARCH_
 Provides: zfs-modules
 Description: Native ZFS filesystem kernel modules for Linux (kernel _KVERS_)
@@ -33,7 +33,7 @@ Description: Native ZFS filesystem kernel modules for Linux (kernel _KVERS_)
  provided for use with the Debian kernel-package utility to produce a 
  version of zfs-module for your kernel.
 
-Package: zfs-modules-_KVERS_-_ARCH_-di
+Package: zfs-modules-_KVERS_-di
 Package-Type: udeb
 Section: debian-installer
 Architecture: _ARCH_

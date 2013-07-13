@@ -16,7 +16,7 @@ endif
 
 non_epoch_version=$(shell echo $(KVERS) | perl -pe 's/^\d+://')
 PACKAGE=zfs
-pmodules = $(PACKAGE)-modules-$(non_epoch_version)-$(DEB_HOST_ARCH)
+pmodules = $(PACKAGE)-modules-$(non_epoch_version)
 
 %:
 	dh $@ --with dkms
