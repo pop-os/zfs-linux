@@ -192,7 +192,7 @@ override_dh_binary-modules: override_dh_prep-deb-files override_dh_configure_mod
 	dh_strip -p${pmodules}
 	dh_fixperms -p${pmodules}
 	dh_installdeb -p${pmodules}
-	dh_gencontrol -p${pmodules} -- -v$(VERSION)
+	dh_gencontrol -p${pmodules}
 	dh_md5sums -p${pmodules}
 
 	dh_builddeb -p${pmodules}
