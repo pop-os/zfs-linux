@@ -130,12 +130,6 @@ ifeq ($(BUILD_UDEB), true)
 	dh_makeshlibs -pzfsutils --add-udeb=zfsutils-udeb
    endif
 
-override_dh_shlibdeps:
-	@# Suppress libtool dependency_libs warnings that are caused by
-	@# inter-library dependencies.  (eg: zfs -> libzfs -> libuuid)
-	@# @TODO: Add pkgconfig support instead.
-	dh_shlibdeps -- --warnings=0
-
 override_dh_strip:
 	dh_strip -plibnvpair1 --dbg-package=libnvpair1-dbg
 	dh_strip -plibuutil1 --dbg-package=libuutil1-dbg
