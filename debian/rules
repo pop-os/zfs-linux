@@ -167,7 +167,7 @@ override_dh_configure_modules_stamp:
 override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configure_modules
 	dh_testdir
 	dh_testroot
-	dh_clean -k
+	dh_prep
 
 	$(MAKE) -C $(CURDIR)/module modules
 
@@ -180,7 +180,7 @@ override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configur
 override_dh_binary-modules: override_dh_prep-deb-files override_dh_configure_modules
 	dh_testdir
 	dh_testroot
-	dh_clean -k
+	dh_prep
 
 	$(MAKE) -C $(CURDIR)/module modules
 
