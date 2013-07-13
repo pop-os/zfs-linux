@@ -143,6 +143,7 @@ override_dh_strip:
 override_dh_auto_clean:
 	dh_auto_clean
 	@if test -e META.orig; then mv META.orig META; fi
+	cp debian/control.in debian/control
 
 override_dh_install:
 	find . -name lib*.la -delete
