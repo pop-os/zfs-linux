@@ -1,20 +1,6 @@
-zfs-linux (0.6.1-1.tf.1) UNRELEASED; urgency=low
-
-  * Build udebs.
-  * Optionally build modules package.
-  * Improve upon initramfs-tools scripts.
-
- -- Turbo Fredriksson <turbo@bayour.com>  Mon, 06 May 2013 23:48:43 +0200
-
 zfs-linux (0.6.1-1) UNRELEASED; urgency=low
 
-  [ Carlos Alberto Lopez Perez ]
   * Initial Release (Closes: #686447)
 
-  # (Before release)
-  # TODO: Check that the version and target
-  # (unstable/experimental) of debian/NEWS matchs
-  # the first released version and drop this comment
-
- -- Carlos Alberto Lopez Perez <clopez@igalia.com>  Tue, 02 Apr 2013 01:55:23 +0200
+ -- Aron Xu <aron@debian.org>  Tue, 02 Apr 2013 01:55:23 +0200
 
