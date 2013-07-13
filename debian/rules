@@ -175,7 +175,7 @@ override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configur
 	dh_install -p${pmodules}-di
 	dh_gencontrol -p${pmodules}-di
 
-	dh_builddeb -p${pmodules}-di --destdir=$(DEB_DESTDIR)
+	dh_builddeb -p${pmodules}-di
 
 override_dh_binary-modules: override_dh_prep-deb-files override_dh_configure_modules
 	dh_testdir
@@ -194,4 +194,4 @@ override_dh_binary-modules: override_dh_prep-deb-files override_dh_configure_mod
 	dh_gencontrol -p${pmodules} -- -v$(VERSION)
 	dh_md5sums -p${pmodules}
 
-	dh_builddeb -p${pmodules} --destdir=$(DEB_DESTDIR)
+	dh_builddeb -p${pmodules}
