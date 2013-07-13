@@ -196,8 +196,9 @@ Package: zfs-dkms
 Architecture: all
 Pre-Depends: spl-dkms (>= ${source:Upstream-Version})
 Depends: ${misc:Depends}, dkms (>> 2.1.1.2-5), lsb-release
+Recommends: zfsutils
 Replaces: lzfs, lzfs-dkms
-Provides: lustre-backend-fs, lzfs, lzfs-dkms
+Provides: zfs-modules, lustre-backend-fs, lzfs, lzfs-dkms
 Conflicts: lzfs, lzfs-dkms
 Description: Native ZFS filesystem kernel modules for Linux
  The Z file system is a pooled filesystem designed for maximum data
