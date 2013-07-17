@@ -166,13 +166,24 @@ override_dh_prep-deb-files:
 	sed -e 's/##KVERS##/$(KVERS)/g ; s/#KVERS#/$(KVERS)/g ; s/_KVERS_/$(KVERS)/g ; s/##KDREV##/$(KDREV)/g ; s/#KDREV#/$(KDREV)/g ; s/_KDREV_/$(KDREV)/g ; s/_ARCH_/$(DEB_HOST_ARCH)/g' \
 	< debian/control.modules.in > debian/control
 
+override_dh_configure_modules_udeb: override_dh_configure_modules_udeb_stamp
+override_dh_configure_modules_udeb_stamp:
+	./configure \
+		--without-selinux \
+		--with-config=kernel \
+		--with-linux=$(KSRC) \
+		--with-linux-obj=$(KOBJ)
+	touch override_dh_configure_modules_udeb_stamp
+
 override_dh_configure_modules: override_dh_configure_modules_stamp
 override_dh_configure_modules_stamp:
-	./configure --with-config=kernel --with-linux=$(KSRC) \
+	./configure \
+		--with-config=kernel \
+		--with-linux=$(KSRC) \
 		--with-linux-obj=$(KOBJ)
 	touch override_dh_configure_modules_stamp
 
-override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configure_modules
+override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configure_modules_udeb
 	dh_testdir
 	dh_testroot
 	dh_prep
