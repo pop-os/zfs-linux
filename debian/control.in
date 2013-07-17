@@ -171,13 +171,17 @@ Description: Native ZFS filesystem kernel modules for Linux
 # This package adds ZFS to the system initramfs with a hook
 # for the dracut infrastructure.
 
-#Package: zfs-initramfs
-#Section: kernel
-#Architecture: linux-any
-#Depends: ${misc:Depends}, zfsutils, zfs-grub
-#Description: Native ZFS root filesystem capabilities for Linux
-# This package adds ZFS to the system initramfs with a hook
-# for the initramfs-tools infrastructure.
+Package: zfs-initramfs
+Section: kernel
+Architecture: linux-any
+Depends: ${misc:Depends}, zfsutils, zfs-modules | zfs-dkms
+Description: Native ZFS root filesystem capabilities for Linux
+ The Z file system is a pooled filesystem designed for maximum data
+ integrity, supporting data snapshots, multiple copies, and data
+ checksums. 
+ .
+ This package adds ZFS to the system initramfs with a hook
+ for the initramfs-tools infrastructure.
 
 Package: zfsutils
 Section: admin
@@ -189,7 +193,8 @@ Conflicts: zfs, zfs-fuse
 Replaces: zfs
 Description: command-line tools to manage ZFS filesystems
  The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data checksums.
+ integrity, supporting data snapshots, multiple copies, and data
+ checksums. 
  .
  This package provides the zfs and zpool commands to create and administer
  ZFS filesystems.
@@ -203,6 +208,7 @@ Replaces: zfs-dbg, zfs
 Provides: zfs-dbg, zfs
 Description: Debugging symbols for zfsutils
  The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data checksums.
+ integrity, supporting data snapshots, multiple copies, and data
+ checksums. 
  .
  This package contains the debugging symbols for zfsutils.
