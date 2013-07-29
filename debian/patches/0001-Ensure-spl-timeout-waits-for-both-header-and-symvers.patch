@@ -1,20 +1,15 @@
-Subject: Ensure that --with-spl-timeout waits for both SPL spl_config.h
- and symvers files
- .
- The previous code was only waiting for the symver file. But the postinst
- target of the DKMS script for SPL will not only create the symvers file,
- but also the header spl_config.h.
- .
- If we are waiting in the configure script of ZFS for the SPL symvers file,
- then we also need to wait for spl_config.h. Otherwise the configure script
- will abort because the spl_config.h is not yet available.
- .
- On top of that, the function ZFS_AC_SPL_MODULE_SYMVERS is moved to the end
- of the function ZFS_AC_SPL to allow both checks share the with-spl-timeout
- parameter.
-Forwarded: https://github.com/zfsonlinux/zfs/pull/1431
-Author: Carlos Alberto Lopez Perez <clopez@igalia.com>
+From: Debian ZFS on Linux maintainers
+ <pkg-zfsonlinux-devel@lists.alioth.debian.org>
+Date: Mon, 29 Jul 2013 21:48:29 +0800
+Subject: Ensure spl-timeout waits for both header and symvers files
+
+The previous code was only waiting for the symver file. But the postinst target of the DKMS script for SPL will not only create the symvers file, but also the header spl_config.h. . If we are waiting in the configure script of ZFS for the SPL symvers file, then we also need to wait for spl_config.h. Otherwise the configure script will abort because the spl_config.h is not yet available. . On top of that, the function ZFS_AC_SPL_MODULE_SYMVERS is moved to the end of the function ZFS_AC_SPL to allow both checks share the with-spl-timeout parameter.
 ---
+ config/kernel.m4 |  122 +++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 66 insertions(+), 56 deletions(-)
+
+diff --git a/config/kernel.m4 b/config/kernel.m4
+index 88590be..d042cfd 100644
 --- a/config/kernel.m4
 +++ b/config/kernel.m4
 @@ -229,54 +229,6 @@ AC_DEFUN([ZFS_AC_KERNEL], [
