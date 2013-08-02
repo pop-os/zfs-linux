@@ -172,7 +172,6 @@ Description: Native ZFS filesystem kernel modules for Linux
 # for the dracut infrastructure.
 
 Package: zfs-initramfs
-Section: kernel
 Architecture: linux-any
 Depends: ${misc:Depends}, zfsutils, zfs-modules | zfs-dkms
 Description: Native ZFS root filesystem capabilities for Linux
