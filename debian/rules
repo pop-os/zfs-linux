@@ -11,7 +11,7 @@ DKMSFILES := module include config zfs.release.in autogen.sh META AUTHORS \
 export SHLIB_MAJOR = 1
 
 ifndef BUILD_UDEB
-BUILD_UDEB=false
+BUILD_UDEB=true
 endif
 
 ifndef DEB_HOST_ARCH
