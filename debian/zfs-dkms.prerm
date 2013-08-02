@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-if [ "$1" = "purge" ]; then
+#DEBHELPER#
+
+if [ "$1" = "remove" ]; then
         rm -f /etc/zfs/zpool.cache
 fi
-
-#DEBHELPER#
