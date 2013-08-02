@@ -27,7 +27,7 @@ PACKAGE=zfs
 pmodules = $(PACKAGE)-modules-$(non_epoch_version)
 
 %:
-	dh $@ --with dkms
+	dh $@ --with dkms --parallel
 
 override_dh_auto_configure:
 	@cp debian/control.in debian/control
