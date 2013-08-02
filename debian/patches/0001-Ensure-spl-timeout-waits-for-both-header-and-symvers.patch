@@ -1,15 +1,25 @@
-From: Debian ZFS on Linux maintainers
- <pkg-zfsonlinux-devel@lists.alioth.debian.org>
-Date: Mon, 29 Jul 2013 21:48:29 +0800
-Subject: Ensure spl-timeout waits for both header and symvers files
+From: Carlos Alberto Lopez Perez <clopez@igalia.com>
+Date: Sat, Apr 27 20:18:11 2013 +0200
+Subject: Ensure --with-spl-timeout waits for spl_config.h and symvers
 
-The previous code was only waiting for the symver file. But the postinst target of the DKMS script for SPL will not only create the symvers file, but also the header spl_config.h. . If we are waiting in the configure script of ZFS for the SPL symvers file, then we also need to wait for spl_config.h. Otherwise the configure script will abort because the spl_config.h is not yet available. . On top of that, the function ZFS_AC_SPL_MODULE_SYMVERS is moved to the end of the function ZFS_AC_SPL to allow both checks share the with-spl-timeout parameter.
----
- config/kernel.m4 |  122 +++++++++++++++++++++++++++++-------------------------
- 1 file changed, 66 insertions(+), 56 deletions(-)
+The previous code was only waiting for the symver file. But the
+postinst target of the DKMS script for SPL will not only create
+the symvers file, but also the header spl_config.h.
+
+If we are waiting in the configure script of ZFS for the SPL
+symvers file, then we also need to wait for spl_config.h.
+Otherwise the configure script will abort because the spl_config.h
+is not yet available.
+
+On top of that, the function ZFS_AC_SPL_MODULE_SYMVERS is moved
+to the end of the function ZFS_AC_SPL to allow both checks share
+the with-spl-timeout parameter.
+
+Signed-off-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Closes #1431
 
 diff --git a/config/kernel.m4 b/config/kernel.m4
-index 88590be..d042cfd 100644
+index d8a7b35..d068980 100644
 --- a/config/kernel.m4
 +++ b/config/kernel.m4
 @@ -229,54 +229,6 @@ AC_DEFUN([ZFS_AC_KERNEL], [
@@ -73,20 +83,22 @@ index 88590be..d042cfd 100644
  
 +	AC_ARG_WITH([spl-timeout],
 +		AS_HELP_STRING([--with-spl-timeout=SECS],
-+		[Wait SECS for SPL header and symver file to appear @<:@default=0@:>@]),
++		[Wait SECS for SPL header and symver file @<:@default=0@:>@]),
 +		[timeout="$withval"], [timeout=0])
 +
  	dnl #
  	dnl # The existence of spl.release.in is used to identify a valid
  	dnl # source directory.  In order of preference:
-@@ -338,16 +295,28 @@ AC_DEFUN([ZFS_AC_SPL], [
+@@ -338,16 +295,30 @@ AC_DEFUN([ZFS_AC_SPL], [
  	dnl # directory are the same, however the objects may also reside
  	dnl # is a subdirectory named after the kernel version.
  	dnl #
-+	dnl # This file is supposed to be available after DKMS finish building
-+	dnl # the SPL kernel module for the target kernel.
-+	dnl # The '--with-spl-timeout' option can be passed to pause here,
-+	dnl # waiting for the file to appear from a concurrently building SPL package.
++	dnl # This file is supposed to be available after DKMS finishes
++	dnl # building the SPL kernel module for the target kernel.  The
++	dnl # '--with-spl-timeout' option can be passed to pause here,
++	dnl # waiting for the file to appear from a concurrently building
++	dnl # SPL package.
++	dnl #
  	AC_MSG_CHECKING([spl build directory])
 -	AS_IF([test -z "$splbuild"], [
 -		AS_IF([ test -e "${splsrc}/${LINUX_VERSION}/spl_config.h" ], [
@@ -115,13 +127,13 @@ index 88590be..d042cfd 100644
  
  	AC_MSG_RESULT([$splbuild])
  	AS_IF([ ! test -e "$splbuild/spl_config.h"], [
-@@ -385,7 +354,48 @@ AC_DEFUN([ZFS_AC_SPL], [
+@@ -385,7 +356,47 @@ AC_DEFUN([ZFS_AC_SPL], [
  	AC_SUBST(SPL_OBJ)
  	AC_SUBST(SPL_VERSION)
  
 -	ZFS_AC_SPL_MODULE_SYMVERS
 +	dnl #
-+	dnl # Detect name used for the additional SPL Module.symvers file.  If one
++	dnl # Detect the name used for the SPL Module.symvers file.  If one
 +	dnl # does not exist this is likely because the SPL has been configured
 +	dnl # but not built.  The '--with-spl-timeout' option can be passed
 +	dnl # to pause here, waiting for the file to appear from a concurrently
@@ -133,7 +145,6 @@ index 88590be..d042cfd 100644
 +	dnl # reliable mechanism to detect symbols exported by the SPL at
 +	dnl # configure time.
 +	dnl #
-+
 +	AC_MSG_CHECKING([spl file name for module symbols])
 +	SPL_SYMBOLS=NONE
 +
