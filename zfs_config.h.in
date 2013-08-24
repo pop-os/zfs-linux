@@ -102,6 +102,9 @@
 /* blk_rq_sectors() is available */
 #undef HAVE_BLK_RQ_SECTORS
 
+/* struct block_device_operations.release returns void */
+#undef HAVE_BLOCK_DEVICE_OPERATIONS_RELEASE_VOID
+
 /* security_inode_init_security wants callback */
 #undef HAVE_CALLBACK_SECURITY_INODE_INIT_SECURITY
 
@@ -228,6 +231,9 @@
 /* iops->lookup() operation takes nameidata */
 #undef HAVE_LOOKUP_NAMEIDATA
 
+/* lseek_execute() is available */
+#undef HAVE_LSEEK_EXECUTE
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -282,11 +288,20 @@
 /* struct super_block has s_d_op */
 #undef HAVE_S_D_OP
 
+/* struct super_block has s_instances list_head */
+#undef HAVE_S_INSTANCES_LIST_HEAD
+
 /* truncate_setsize() is available */
 #undef HAVE_TRUNCATE_SETSIZE
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* fops->iterate() is available */
+#undef HAVE_VFS_ITERATE
+
+/* fops->readdir() is available */
+#undef HAVE_VFS_READDIR
 
 /* Define if you have zlib */
 #undef HAVE_ZLIB
