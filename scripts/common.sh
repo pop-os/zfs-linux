@@ -35,8 +35,8 @@ exec_prefix=${prefix}
 pkgdatadir=${prefix}/share/zfs
 bindir=${exec_prefix}/bin
 sbindir=${exec_prefix}/sbin
-udevdir=
-udevruledir=
+udevdir=${exec_prefix}/lib/udev
+udevruledir=${udevdir}/rules.d
 sysconfdir=${prefix}/etc
 
 ETCDIR=${ETCDIR:-/etc}

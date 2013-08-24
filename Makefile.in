@@ -87,6 +87,7 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-blk-rq-sectors.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get-by-path.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get.m4 \
+	$(top_srcdir)/config/kernel-block-device-operations-release-void.m4 \
 	$(top_srcdir)/config/kernel-check-disk-size-change.m4 \
 	$(top_srcdir)/config/kernel-clear-inode.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
@@ -109,6 +110,7 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-kobj-name-len.m4 \
 	$(top_srcdir)/config/kernel-lookup-bdev.m4 \
 	$(top_srcdir)/config/kernel-lookup-nameidata.m4 \
+	$(top_srcdir)/config/kernel-lseek-execute.m4 \
 	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
 	$(top_srcdir)/config/kernel-mount-nodev.m4 \
 	$(top_srcdir)/config/kernel-open-bdev-exclusive.m4 \
@@ -121,8 +123,13 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-shrink.m4 \
 	$(top_srcdir)/config/kernel-truncate-range.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
+	$(top_srcdir)/config/kernel-vfs-iterate.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
-	$(top_srcdir)/config/kernel.m4 \
+	$(top_srcdir)/config/kernel.m4 $(top_srcdir)/config/libtool.m4 \
+	$(top_srcdir)/config/ltoptions.m4 \
+	$(top_srcdir)/config/ltsugar.m4 \
+	$(top_srcdir)/config/ltversion.m4 \
+	$(top_srcdir)/config/lt~obsolete.m4 \
 	$(top_srcdir)/config/user-arch.m4 \
 	$(top_srcdir)/config/user-dracut.m4 \
 	$(top_srcdir)/config/user-frame-larger-than.m4 \
@@ -412,6 +419,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 udevdir = @udevdir@
 udevruledir = @udevruledir@
+ACLOCAL_AMFLAGS = -I config
 SUBDIRS = include rpm $(am__append_1) $(am__append_2)
 @CONFIG_KERNEL_TRUE@extradir = /usr/src/zfs-$(VERSION)
 @CONFIG_KERNEL_TRUE@extra_HEADERS = zfs.release.in zfs_config.h.in
@@ -1081,7 +1089,7 @@ deb-kmod: deb-local rpm-kmod
 @CONFIG_KERNEL_TRUE@	version=${VERSION}-${RELEASE}; \
 @CONFIG_KERNEL_TRUE@	arch=`$(RPM) -qp $${name}-kmod-$${version}.src.rpm --qf %{arch} | tail -1`; \
 @CONFIG_KERNEL_TRUE@	pkg1=kmod-$${name}*$${version}.$${arch}.rpm; \
-@CONFIG_KERNEL_TRUE@	fakeroot $(ALIEN) --scripts --to-deb $$pkg1; \
+@CONFIG_KERNEL_TRUE@	fakeroot $(ALIEN) --bump=0 --scripts --to-deb $$pkg1; \
 @CONFIG_KERNEL_TRUE@	$(RM) $$pkg1
 
 deb-utils: deb-local rpm-utils
@@ -1092,7 +1100,7 @@ deb-utils: deb-local rpm-utils
 @CONFIG_USER_TRUE@	pkg2=$${name}-devel-$${version}.$${arch}.rpm; \
 @CONFIG_USER_TRUE@	pkg3=$${name}-test-$${version}.$${arch}.rpm; \
 @CONFIG_USER_TRUE@	pkg4=$${name}-dracut-$${version}.$${arch}.rpm; \
-@CONFIG_USER_TRUE@	fakeroot $(ALIEN) --scripts --to-deb $$pkg1 $$pkg2 $$pkg3 $$pkg4; \
+@CONFIG_USER_TRUE@	fakeroot $(ALIEN) --bump=0 --scripts --to-deb $$pkg1 $$pkg2 $$pkg3 $$pkg4; \
 @CONFIG_USER_TRUE@	$(RM) $$pkg1 $$pkg2 $$pkg3 $$pkg4
 
 deb: deb-kmod deb-utils
