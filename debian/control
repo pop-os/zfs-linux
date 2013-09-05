@@ -24,33 +24,15 @@ Package: libnvpair1
 Section: libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Replaces: libnvpair0
-Provides: libnvpair0
 Description: Solaris name-value library for Linux
  This library provides routines for packing and unpacking nv pairs for
  transporting data across process boundaries, transporting between
  kernel and userland, and possibly saving onto disk files.
 
-Package: libnvpair1-dbg
-Section: debug
-Priority: extra
-Architecture: linux-any
-Depends: ${misc:Depends}, libnvpair1 (= ${binary:Version})
-Replaces: libnvpair0-dbg, libnvpair0
-Provides: libnvpair0-dbg, libnvpair0
-Description: Debugging symbols for libnvpair1
- This library provides routines for packing and unpacking nv pairs for
- transporting data across process boundaries, transporting between
- kernel and userland, and possibly saving onto disk files.
- .
- This package contains the debugging symbols for libnvpair1.
-
 Package: libuutil1
 Section: libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Replaces: libuutil0
-Provides: libuutil0
 Description: Solaris userland utility library for Linux
  This library provides a variety of glue functions for ZFS on Linux:
   * libspl: The Solaris Porting Layer userland library, which provides APIs
@@ -61,26 +43,6 @@ Description: Solaris userland utility library for Linux
   * libefi: The Extensible Firmware Interface library for GUID disk
     partitioning.
   * libshare: NFS, SMB, and iSCSI service integration for ZFS.
-
-Package: libuutil1-dbg
-Section: debug
-Priority: extra
-Architecture: linux-any
-Depends: ${misc:Depends}, libuutil1 (= ${binary:Version})
-Replaces: libuutil0-dbg, libuutil0
-Provides: libuutil0-dbg, libuutil0
-Description: Debugging symbols for libuutil1
- This library provides a variety of glue functions for ZFS on Linux:
-  * libspl: The Solaris Porting Layer userland library, which provides APIs
-    that make it possible to run Solaris user code in a Linux environment
-    with relatively minimal modification.
-  * libavl: The Adelson-Velskii Landis balanced binary tree manipulation
-    library.
-  * libefi: The Extensible Firmware Interface library for GUID disk
-    partitioning.
-  * libshare: NFS, SMB, and iSCSI service integration for ZFS.
- .
- This package contains the debugging symbols for libuutil1.
 
 Package: libzfs-dev
 Section: libdevel
@@ -98,8 +60,6 @@ Package: libzfs1
 Section: libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Replaces: libzfs0
-Provides: libzfs0
 Description: Native ZFS filesystem library for Linux
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
@@ -107,46 +67,16 @@ Description: Native ZFS filesystem library for Linux
  .
  The ZFS library provides support for managing ZFS filesystems.
 
-Package: libzfs1-dbg
-Section: debug
-Priority: extra
-Architecture: linux-any
-Depends: ${misc:Depends}, libzfs1 (= ${binary:Version})
-Replaces: libzfs0-dbg, libzfs0
-Provides: libzfs0-dbg, libzfs0
-Description: Debugging symbols for libzfs1
- The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data
- checksums.
- .
- This package contains the debugging symbols for libzfs1.
-
 Package: libzpool1
 Section: libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Replaces: libzpool0
-Provides: libzpool0
 Description: Native ZFS pool library for Linux
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
  .
  This zpool library provides support for managing zpools.
-
-Package: libzpool1-dbg
-Section: debug
-Priority: extra
-Architecture: linux-any
-Depends: ${misc:Depends}, libzpool1 (= ${binary:Version})
-Replaces: libzpool0-dbg, libzpool0
-Provides: libzpool0-dbg, libzpool0
-Description: Debugging symbols for libzpool1
- The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data
- checksums.
- .
- This package contains the debugging symbols for libzpool1.
 
 Package: zfs-dkms
 Architecture: all
@@ -198,16 +128,15 @@ Description: command-line tools to manage ZFS filesystems
  This package provides the zfs and zpool commands to create and administer
  ZFS filesystems.
 
-Package: zfsutils-dbg
+Package: zfs-dbg
 Section: debug
 Priority: extra
 Architecture: linux-any
-Depends: ${misc:Depends}, zfsutils (= ${binary:Version})
-Replaces: zfs-dbg, zfs
-Provides: zfs-dbg, zfs
-Description: Debugging symbols for zfsutils
+Depends: ${misc:Depends}, libzfs1 (= ${binary:Version})
+Description: Debugging symbols for ZFS userland libraries and tools
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
- checksums. 
+ checksums.
  .
- This package contains the debugging symbols for zfsutils.
+ This package contains the debugging symbols for libzpoo1, libzfs1,
+ libnvpair1, libuutil1, and zfsutils.
