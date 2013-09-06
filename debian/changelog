@@ -1,12 +1,6 @@
 zfs-linux (0.6.2-1) experimental; urgency=low
 
-  * New upstream release.
-
- -- Aron Xu <aron@debian.org>  Sat, 24 Aug 2013 17:30:14 +0800
-
-zfs-linux (0.6.1-1) experimental; urgency=low
-
   * Initial Release (Closes: #686447)
 
- -- Aron Xu <aron@debian.org>  Tue, 02 Apr 2013 01:55:23 +0200
+ -- Aron Xu <aron@debian.org>  Sat, 24 Aug 2013 17:30:14 +0800
 
