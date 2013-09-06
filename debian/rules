@@ -137,11 +137,7 @@ ifeq ($(BUILD_UDEB), true)
    endif
 
 override_dh_strip:
-	dh_strip -plibnvpair1 --dbg-package=libnvpair1-dbg
-	dh_strip -plibuutil1 --dbg-package=libuutil1-dbg
-	dh_strip -plibzfs1 --dbg-package=libzfs1-dbg
-	dh_strip -plibzpool1 --dbg-package=libzpool1-dbg
-	dh_strip -pzfsutils --dbg-package=zfsutils-dbg
+	dh_strip --dbg-package=zfs-dbg
 ifeq ($(BUILD_UDEB), true)
 	dh_strip -plibnvpair$(SHLIB_MAJOR)-udeb
 	dh_strip -plibuutil$(SHLIB_MAJOR)-udeb
