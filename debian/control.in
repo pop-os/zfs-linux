@@ -128,7 +128,7 @@ Architecture: linux-any
 Depends: libnvpair1 (= ${binary:Version}),
          libuutil1 (= ${binary:Version}),
          libzfs1 (= ${binary:Version}),
-         libzpoo1 (= ${binary:Version}),
+         libzpool1 (= ${binary:Version}),
          ${misc:Depends}
 Recommends: zfsutils (= ${binary:Version})
 Description: Debugging symbols for ZFS userland libraries and tools
