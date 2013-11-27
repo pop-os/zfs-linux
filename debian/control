@@ -109,7 +109,7 @@ Package: zfsutils
 Section: admin
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Recommends: zfs-modules | zfs-dkms
+Recommends: lsb-base, zfs-modules | zfs-dkms
 Suggests: nfs-kernel-server, samba-common-bin (>= 3.0.23), zfs-initramfs
 Conflicts: zfs, zfs-fuse
 Replaces: zfs
