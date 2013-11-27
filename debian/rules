@@ -26,6 +26,8 @@ non_epoch_version=$(shell echo $(KVERS) | perl -pe 's/^\d+://')
 PACKAGE=zfs
 pmodules = $(PACKAGE)-modules-$(non_epoch_version)
 
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
 %:
 	dh $@ --with dkms --parallel
 
