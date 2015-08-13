@@ -241,9 +241,9 @@ dsl_prop_register(dsl_dataset_t *ds, const char *propname,
 	if (err != 0)
 		return (err);
 
-	cbr = kmem_alloc(sizeof (dsl_prop_cb_record_t), KM_PUSHPAGE);
+	cbr = kmem_alloc(sizeof (dsl_prop_cb_record_t), KM_SLEEP);
 	cbr->cbr_ds = ds;
-	cbr->cbr_propname = kmem_alloc(strlen(propname)+1, KM_PUSHPAGE);
+	cbr->cbr_propname = kmem_alloc(strlen(propname)+1, KM_SLEEP);
 	(void) strcpy((char *)cbr->cbr_propname, propname);
 	cbr->cbr_func = callback;
 	cbr->cbr_arg = cbarg;
@@ -513,7 +513,7 @@ dsl_prop_changed_notify(dsl_pool_t *dp, uint64_t ddobj,
 	}
 	mutex_exit(&dd->dd_lock);
 
-	za = kmem_alloc(sizeof (zap_attribute_t), KM_PUSHPAGE);
+	za = kmem_alloc(sizeof (zap_attribute_t), KM_SLEEP);
 	for (zap_cursor_init(&zc, mos,
 	    dd->dd_phys->dd_child_dir_zapobj);
 	    zap_cursor_retrieve(&zc, za) == 0;
@@ -668,7 +668,7 @@ dsl_prop_set_sync_impl(dsl_dataset_t *ds, const char *propname,
 		if (source == ZPROP_SRC_LOCAL) {
 			valstr = value;
 		} else {
-			tbuf = kmem_alloc(ZAP_MAXVALUELEN, KM_PUSHPAGE);
+			tbuf = kmem_alloc(ZAP_MAXVALUELEN, KM_SLEEP);
 			if (dsl_prop_get_ds(ds, propname, 1,
 			    ZAP_MAXVALUELEN, tbuf, NULL) == 0)
 				valstr = tbuf;
@@ -925,7 +925,7 @@ dsl_prop_get_all_impl(objset_t *mos, uint64_t propobj,
 
 		/* Skip properties not valid for this type. */
 		if ((flags & DSL_PROP_GET_SNAPSHOT) && prop != ZPROP_INVAL &&
-		    !zfs_prop_valid_for_type(prop, ZFS_TYPE_SNAPSHOT))
+		    !zfs_prop_valid_for_type(prop, ZFS_TYPE_SNAPSHOT, B_FALSE))
 			continue;
 
 		/* Skip properties already defined. */

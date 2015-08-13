@@ -36,6 +36,8 @@
  * Virtual device vector for files.
  */
 
+static taskq_t *vdev_file_taskq;
+
 static void
 vdev_file_hold(vdev_t *vd)
 {
@@ -75,7 +77,7 @@ vdev_file_open(vdev_t *vd, uint64_t *psize, uint64_t *max_psize,
 		goto skip_open;
 	}
 
-	vf = vd->vdev_tsd = kmem_zalloc(sizeof (vdev_file_t), KM_PUSHPAGE);
+	vf = vd->vdev_tsd = kmem_zalloc(sizeof (vdev_file_t), KM_SLEEP);
 
 	/*
 	 * We always open the files from the root of the global zone, even if
@@ -159,6 +161,17 @@ vdev_file_io_strategy(void *arg)
 	zio_interrupt(zio);
 }
 
+static void
+vdev_file_io_fsync(void *arg)
+{
+	zio_t *zio = (zio_t *)arg;
+	vdev_file_t *vf = zio->io_vd->vdev_tsd;
+
+	zio->io_error = VOP_FSYNC(vf->vf_vnode, FSYNC | FDSYNC, kcred, NULL);
+
+	zio_interrupt(zio);
+}
+
 static int
 vdev_file_io_start(zio_t *zio)
 {
@@ -174,6 +187,23 @@ vdev_file_io_start(zio_t *zio)
 
 		switch (zio->io_cmd) {
 		case DKIOCFLUSHWRITECACHE:
+
+			if (zfs_nocacheflush)
+				break;
+
+			/*
+			 * We cannot safely call vfs_fsync() when PF_FSTRANS
+			 * is set in the current context.  Filesystems like
+			 * XFS include sanity checks to verify it is not
+			 * already set, see xfs_vm_writepage().  Therefore
+			 * the sync must be dispatched to a different context.
+			 */
+			if (spl_fstrans_check()) {
+				VERIFY3U(taskq_dispatch(vdev_file_taskq,
+				    vdev_file_io_fsync, zio, TQ_SLEEP), !=, 0);
+				return (ZIO_PIPELINE_STOP);
+			}
+
 			zio->io_error = VOP_FSYNC(vf->vf_vnode, FSYNC | FDSYNC,
 			    kcred, NULL);
 			break;
@@ -184,8 +214,8 @@ vdev_file_io_start(zio_t *zio)
 		return (ZIO_PIPELINE_CONTINUE);
 	}
 
-	VERIFY3U(taskq_dispatch(system_taskq, vdev_file_io_strategy, zio,
-	    TQ_PUSHPAGE), !=, 0);
+	VERIFY3U(taskq_dispatch(vdev_file_taskq, vdev_file_io_strategy, zio,
+	    TQ_SLEEP), !=, 0);
 
 	return (ZIO_PIPELINE_STOP);
 }
@@ -208,6 +238,21 @@ vdev_ops_t vdev_file_ops = {
 	VDEV_TYPE_FILE,		/* name of this vdev type */
 	B_TRUE			/* leaf vdev */
 };
+
+void
+vdev_file_init(void)
+{
+	vdev_file_taskq = taskq_create("vdev_file_taskq", 100, minclsyspri,
+	    max_ncpus, INT_MAX, TASKQ_PREPOPULATE | TASKQ_THREADS_CPU_PCT);
+
+	VERIFY(vdev_file_taskq);
+}
+
+void
+vdev_file_fini(void)
+{
+	taskq_destroy(vdev_file_taskq);
+}
 
 /*
  * From userland we access disks just like files.

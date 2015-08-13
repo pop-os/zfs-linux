@@ -38,6 +38,7 @@
 #include <sys/sa_impl.h>
 #include <sys/zfs_context.h>
 #include <sys/varargs.h>
+#include <sys/trace_dmu.h>
 
 typedef void (*dmu_tx_hold_func_t)(dmu_tx_t *tx, struct dnode *dn,
     uint64_t arg1, uint64_t arg2);
@@ -48,10 +49,8 @@ dmu_tx_stats_t dmu_tx_stats = {
 	{ "dmu_tx_error",		KSTAT_DATA_UINT64 },
 	{ "dmu_tx_suspended",		KSTAT_DATA_UINT64 },
 	{ "dmu_tx_group",		KSTAT_DATA_UINT64 },
-	{ "dmu_tx_how",			KSTAT_DATA_UINT64 },
 	{ "dmu_tx_memory_reserve",	KSTAT_DATA_UINT64 },
 	{ "dmu_tx_memory_reclaim",	KSTAT_DATA_UINT64 },
-	{ "dmu_tx_memory_inflight",	KSTAT_DATA_UINT64 },
 	{ "dmu_tx_dirty_throttle",	KSTAT_DATA_UINT64 },
 	{ "dmu_tx_dirty_delay",		KSTAT_DATA_UINT64 },
 	{ "dmu_tx_dirty_over_max",	KSTAT_DATA_UINT64 },
@@ -63,7 +62,7 @@ static kstat_t *dmu_tx_ksp;
 dmu_tx_t *
 dmu_tx_create_dd(dsl_dir_t *dd)
 {
-	dmu_tx_t *tx = kmem_zalloc(sizeof (dmu_tx_t), KM_PUSHPAGE);
+	dmu_tx_t *tx = kmem_zalloc(sizeof (dmu_tx_t), KM_SLEEP);
 	tx->tx_dir = dd;
 	if (dd != NULL)
 		tx->tx_pool = dd->dd_pool;
@@ -142,7 +141,7 @@ dmu_tx_hold_object_impl(dmu_tx_t *tx, objset_t *os, uint64_t object,
 		}
 	}
 
-	txh = kmem_zalloc(sizeof (dmu_tx_hold_t), KM_PUSHPAGE);
+	txh = kmem_zalloc(sizeof (dmu_tx_hold_t), KM_SLEEP);
 	txh->txh_tx = tx;
 	txh->txh_dnode = dn;
 #ifdef DEBUG_DMU_TX
@@ -421,7 +420,7 @@ dmu_tx_hold_write(dmu_tx_t *tx, uint64_t object, uint64_t off, int len)
 	dmu_tx_hold_t *txh;
 
 	ASSERT(tx->tx_txg == 0);
-	ASSERT(len < DMU_MAX_ACCESS);
+	ASSERT(len <= DMU_MAX_ACCESS);
 	ASSERT(len == 0 || UINT64_MAX - off >= len - 1);
 
 	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset,
@@ -926,7 +925,8 @@ dmu_tx_dirty_buf(dmu_tx_t *tx, dmu_buf_impl_t *db)
 				match_object = TRUE;
 				break;
 			default:
-				ASSERT(!"bad txh_type");
+				cmn_err(CE_PANIC, "bad txh_type %d",
+				    txh->txh_type);
 			}
 		}
 		if (match_object && match_offset) {
@@ -1253,15 +1253,12 @@ dmu_tx_unassign(dmu_tx_t *tx)
 int
 dmu_tx_assign(dmu_tx_t *tx, txg_how_t txg_how)
 {
-	hrtime_t before;
 	int err;
 
 	ASSERT(tx->tx_txg == 0);
 	ASSERT(txg_how == TXG_WAIT || txg_how == TXG_NOWAIT ||
 	    txg_how == TXG_WAITED);
 	ASSERT(!dsl_pool_sync_context(tx->tx_pool));
-
-	before = gethrtime();
 
 	if (txg_how == TXG_WAITED)
 		tx->tx_waited = B_TRUE;
@@ -1280,8 +1277,6 @@ dmu_tx_assign(dmu_tx_t *tx, txg_how_t txg_how)
 
 	txg_rele_to_quiesce(&tx->tx_txgh);
 
-	spa_tx_assign_add_nsecs(tx->tx_pool->dp_spa, gethrtime() - before);
-
 	return (0);
 }
 
@@ -1290,9 +1285,12 @@ dmu_tx_wait(dmu_tx_t *tx)
 {
 	spa_t *spa = tx->tx_pool->dp_spa;
 	dsl_pool_t *dp = tx->tx_pool;
+	hrtime_t before;
 
 	ASSERT(tx->tx_txg == 0);
 	ASSERT(!dsl_pool_config_held(tx->tx_pool));
+
+	before = gethrtime();
 
 	if (tx->tx_wait_dirty) {
 		uint64_t dirty;
@@ -1345,6 +1343,8 @@ dmu_tx_wait(dmu_tx_t *tx)
 		 */
 		txg_wait_open(tx->tx_pool, tx->tx_lasttried_txg + 1);
 	}
+
+	spa_tx_assign_add_nsecs(spa, gethrtime() - before);
 }
 
 void
@@ -1468,7 +1468,7 @@ dmu_tx_callback_register(dmu_tx_t *tx, dmu_tx_callback_func_t *func, void *data)
 {
 	dmu_tx_callback_t *dcb;
 
-	dcb = kmem_alloc(sizeof (dmu_tx_callback_t), KM_PUSHPAGE);
+	dcb = kmem_alloc(sizeof (dmu_tx_callback_t), KM_SLEEP);
 
 	dcb->dcb_func = func;
 	dcb->dcb_data = data;

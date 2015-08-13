@@ -21,7 +21,7 @@
 
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2014 by Delphix. All rights reserved.
  * Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
  * Copyright (c) 2012, Joyent, Inc. All rights reserved.
  */
@@ -46,10 +46,11 @@ extern "C" {
  * combined into masks that can be passed to various functions.
  */
 typedef enum {
-	ZFS_TYPE_FILESYSTEM	= 0x1,
-	ZFS_TYPE_SNAPSHOT	= 0x2,
-	ZFS_TYPE_VOLUME		= 0x4,
-	ZFS_TYPE_POOL		= 0x8
+	ZFS_TYPE_FILESYSTEM	= (1 << 0),
+	ZFS_TYPE_SNAPSHOT	= (1 << 1),
+	ZFS_TYPE_VOLUME		= (1 << 2),
+	ZFS_TYPE_POOL		= (1 << 3),
+	ZFS_TYPE_BOOKMARK	= (1 << 4)
 } zfs_type_t;
 
 typedef enum dmu_objset_type {
@@ -148,6 +149,8 @@ typedef enum {
 	ZFS_PROP_SELINUX_DEFCONTEXT,
 	ZFS_PROP_SELINUX_ROOTCONTEXT,
 	ZFS_PROP_RELATIME,
+	ZFS_PROP_REDUNDANT_METADATA,
+	ZFS_PROP_OVERLAY,
 	ZFS_NUM_PROPS
 } zfs_prop_t;
 
@@ -191,6 +194,9 @@ typedef enum {
 	ZPOOL_PROP_COMMENT,
 	ZPOOL_PROP_EXPANDSZ,
 	ZPOOL_PROP_FREEING,
+	ZPOOL_PROP_FRAGMENTATION,
+	ZPOOL_PROP_LEAKED,
+	ZPOOL_PROP_TNAME,
 	ZPOOL_NUM_PROPS
 } zpool_prop_t;
 
@@ -255,7 +261,7 @@ boolean_t zfs_prop_written(const char *);
 int zfs_prop_index_to_string(zfs_prop_t, uint64_t, const char **);
 int zfs_prop_string_to_index(zfs_prop_t, const char *, uint64_t *);
 uint64_t zfs_prop_random_value(zfs_prop_t, uint64_t seed);
-boolean_t zfs_prop_valid_for_type(int, zfs_type_t);
+boolean_t zfs_prop_valid_for_type(int, zfs_type_t, boolean_t);
 
 /*
  * Pool property functions shared between libzfs and kernel.
@@ -347,6 +353,11 @@ typedef enum {
 	ZFS_XATTR_DIR = 1,
 	ZFS_XATTR_SA = 2
 } zfs_xattr_type_t;
+
+typedef enum {
+	ZFS_REDUNDANT_METADATA_ALL,
+	ZFS_REDUNDANT_METADATA_MOST
+} zfs_redundant_metadata_type_t;
 
 /*
  * On-disk version number.
@@ -548,6 +559,7 @@ typedef struct zpool_rewind_policy {
 #define	ZPOOL_CONFIG_CAN_RDONLY		"can_rdonly"	/* not stored on disk */
 #define	ZPOOL_CONFIG_FEATURES_FOR_READ	"features_for_read"
 #define	ZPOOL_CONFIG_FEATURE_STATS	"feature_stats"	/* not stored on disk */
+#define	ZPOOL_CONFIG_ERRATA		"errata"	/* not stored on disk */
 /*
  * The persistent vdev state is stored as separate values rather than a single
  * 'vdev_state' entry.  This is because a device can be in multiple states, such
@@ -588,6 +600,13 @@ typedef struct zpool_rewind_policy {
  * This is needed in userland to report the minimum necessary device size.
  */
 #define	SPA_MINDEVSIZE		(64ULL << 20)
+
+/*
+ * Set if the fragmentation has not yet been calculated. This can happen
+ * because the space maps have not been upgraded or the histogram feature
+ * is not enabled.
+ */
+#define	ZFS_FRAG_INVALID	UINT64_MAX
 
 /*
  * The location of the pool configuration repository, shared between kernel and
@@ -704,6 +723,17 @@ typedef enum dsl_scan_state {
 	DSS_NUM_STATES
 } dsl_scan_state_t;
 
+/*
+ * Errata described by http://zfsonlinux.org/msg/ZFS-8000-ER.  The ordering
+ * of this enum must be maintained to ensure the errata identifiers map to
+ * the correct documentation.  New errata may only be appended to the list
+ * and must contain corresponding documentation at the above link.
+ */
+typedef enum zpool_errata {
+	ZPOOL_ERRATA_NONE,
+	ZPOOL_ERRATA_ZOL_2094_SCRUB,
+	ZPOOL_ERRATA_ZOL_2094_ASYNC_DESTROY,
+} zpool_errata_t;
 
 /*
  * Vdev statistics.  Note: all fields should be 64-bit because this
@@ -726,6 +756,7 @@ typedef struct vdev_stat {
 	uint64_t	vs_self_healed;		/* self-healed bytes	*/
 	uint64_t	vs_scan_removing;	/* removing?	*/
 	uint64_t	vs_scan_processed;	/* scan processed bytes	*/
+	uint64_t	vs_fragmentation;	/* device fragmentation */
 } vdev_stat_t;
 
 /*
@@ -774,7 +805,7 @@ typedef struct ddt_histogram {
  */
 typedef enum zfs_ioc {
 	/*
-	 * Illumos - 69/128 numbers reserved.
+	 * Illumos - 70/128 numbers reserved.
 	 */
 	ZFS_IOC_FIRST =	('Z' << 8),
 	ZFS_IOC = ZFS_IOC_FIRST,
@@ -845,6 +876,9 @@ typedef enum zfs_ioc {
 	ZFS_IOC_SEND_NEW,
 	ZFS_IOC_SEND_SPACE,
 	ZFS_IOC_CLONE,
+	ZFS_IOC_BOOKMARK,
+	ZFS_IOC_GET_BOOKMARKS,
+	ZFS_IOC_DESTROY_BOOKMARKS,
 
 	/*
 	 * Linux - 3/64 numbers reserved.
@@ -852,6 +886,7 @@ typedef enum zfs_ioc {
 	ZFS_IOC_LINUX = ('Z' << 8) + 0x80,
 	ZFS_IOC_EVENTS_NEXT,
 	ZFS_IOC_EVENTS_CLEAR,
+	ZFS_IOC_EVENTS_SEEK,
 
 	/*
 	 * FreeBSD - 1/64 numbers reserved.
@@ -924,6 +959,7 @@ typedef enum {
 #define	ZFS_IMPORT_ANY_HOST	0x2
 #define	ZFS_IMPORT_MISSING_LOG	0x4
 #define	ZFS_IMPORT_ONLY		0x8
+#define	ZFS_IMPORT_TEMP_NAME	0x10
 
 /*
  * Sysevent payload members.  ZFS will generate the following sysevents with the

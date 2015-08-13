@@ -1,6 +1,6 @@
 dnl #
-dnl # Check if posix_acl_release can be used from a CDDL module,
-dnl # The is_owner_or_cap macro was replaced by
+dnl # Check if posix_acl_release can be used from a ZFS_META_LICENSED
+dnl # module.  The is_owner_or_cap macro was replaced by
 dnl # inode_owner_or_capable
 dnl #
 AC_DEFUN([ZFS_AC_KERNEL_POSIX_ACL_RELEASE], [
@@ -26,7 +26,7 @@ AC_DEFUN([ZFS_AC_KERNEL_POSIX_ACL_RELEASE], [
 		#include <linux/fs.h>
 		#include <linux/posix_acl.h>
 
-		MODULE_LICENSE("CDDL");
+		MODULE_LICENSE("$ZFS_META_LICENSE");
 	],[
 		struct posix_acl* tmp = posix_acl_alloc(1, 0);
 		posix_acl_release(tmp);
@@ -44,6 +44,9 @@ dnl # 3.1 API change,
 dnl # posix_acl_chmod_masq() is not exported anymore and posix_acl_chmod()
 dnl # was introduced to replace it.
 dnl #
+dnl # 3.14 API change,
+dnl # posix_acl_chmod() is changed to __posix_acl_chmod()
+dnl #
 AC_DEFUN([ZFS_AC_KERNEL_POSIX_ACL_CHMOD], [
 	AC_MSG_CHECKING([whether posix_acl_chmod exists])
 	ZFS_LINUX_TRY_COMPILE([
@@ -54,6 +57,19 @@ AC_DEFUN([ZFS_AC_KERNEL_POSIX_ACL_CHMOD], [
 	],[
 		AC_MSG_RESULT(yes)
 		AC_DEFINE(HAVE_POSIX_ACL_CHMOD, 1, [posix_acl_chmod() exists])
+	],[
+		AC_MSG_RESULT(no)
+	])
+
+	AC_MSG_CHECKING([whether __posix_acl_chmod exists])
+	ZFS_LINUX_TRY_COMPILE([
+		#include <linux/fs.h>
+		#include <linux/posix_acl.h>
+	],[
+		__posix_acl_chmod(NULL, 0, 0)
+	],[
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE___POSIX_ACL_CHMOD, 1, [__posix_acl_chmod() exists])
 	],[
 		AC_MSG_RESULT(no)
 	])

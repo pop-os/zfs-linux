@@ -23,7 +23,7 @@
  * Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  * Rewritten for Linux by Brian Behlendorf <behlendorf1@llnl.gov>.
  * LLNL-CODE-403049.
- * Copyright (c) 2013 by Delphix. All rights reserved.
+ * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
  */
 
 #include <sys/zfs_context.h>
@@ -262,7 +262,7 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 		goto skip_open;
 	}
 
-	vd = kmem_zalloc(sizeof (vdev_disk_t), KM_PUSHPAGE);
+	vd = kmem_zalloc(sizeof (vdev_disk_t), KM_SLEEP);
 	if (vd == NULL)
 		return (ENOMEM);
 
@@ -308,7 +308,7 @@ skip_open:
 	*max_psize = *psize;
 
 	/* Based on the minimum sector size set the block size */
-	*ashift = highbit(MAX(block_size, SPA_MINBLOCKSIZE)) - 1;
+	*ashift = highbit64(MAX(block_size, SPA_MINBLOCKSIZE)) - 1;
 
 	/* Try to set the io scheduler elevator algorithm */
 	(void) vdev_elevator_switch(v, zfs_vdev_scheduler);
@@ -339,7 +339,7 @@ vdev_disk_dio_alloc(int bio_count)
 	int i;
 
 	dr = kmem_zalloc(sizeof (dio_request_t) +
-	    sizeof (struct bio *) * bio_count, KM_PUSHPAGE);
+	    sizeof (struct bio *) * bio_count, KM_SLEEP);
 	if (dr) {
 		init_completion(&dr->dr_comp);
 		atomic_set(&dr->dr_ref, 0);
@@ -432,11 +432,11 @@ BIO_END_IO_PROTO(vdev_disk_physio_completion, bio, size, error)
 		    "bi_next: %p, bi_flags: %lx, bi_rw: %lu, bi_vcnt: %d\n"
 		    "bi_idx: %d, bi_size: %d, bi_end_io: %p, bi_cnt: %d\n",
 		    bio->bi_next, bio->bi_flags, bio->bi_rw, bio->bi_vcnt,
-		    bio->bi_idx, bio->bi_size, bio->bi_end_io,
+		    BIO_BI_IDX(bio), BIO_BI_SIZE(bio), bio->bi_end_io,
 		    atomic_read(&bio->bi_cnt));
 
 #ifndef HAVE_2ARGS_BIO_END_IO_T
-	if (bio->bi_size)
+	if (BIO_BI_SIZE(bio))
 		return (1);
 #endif /* HAVE_2ARGS_BIO_END_IO_T */
 
@@ -479,10 +479,17 @@ bio_map(struct bio *bio, void *bio_ptr, unsigned int bio_size)
 		if (size > bio_size)
 			size = bio_size;
 
-		if (kmem_virt(bio_ptr))
+		if (is_vmalloc_addr(bio_ptr))
 			page = vmalloc_to_page(bio_ptr);
 		else
 			page = virt_to_page(bio_ptr);
+
+		/*
+		 * Some network related block device uses tcp_sendpage, which
+		 * doesn't behave well when using 0-count page, this is a
+		 * safety net to catch them.
+		 */
+		ASSERT3S(page_count(page), >, 0);
 
 		if (bio_add_page(bio, page, size, offset) != size)
 			break;
@@ -513,7 +520,7 @@ retry:
 		return (ENOMEM);
 
 	if (zio && !(zio->io_flags & (ZIO_FLAG_IO_RETRY | ZIO_FLAG_TRYHARD)))
-			bio_set_flags_failfast(bdev, &flags);
+		bio_set_flags_failfast(bdev, &flags);
 
 	dr->dr_zio = zio;
 	dr->dr_rw = flags;
@@ -547,7 +554,8 @@ retry:
 
 		dr->dr_bio[i] = bio_alloc(GFP_NOIO,
 		    bio_nr_pages(bio_ptr, bio_size));
-		if (dr->dr_bio[i] == NULL) {
+		/* bio_alloc() with __GFP_WAIT never returns NULL */
+		if (unlikely(dr->dr_bio[i] == NULL)) {
 			vdev_disk_dio_free(dr);
 			return (ENOMEM);
 		}
@@ -556,7 +564,7 @@ retry:
 		vdev_disk_dio_get(dr);
 
 		dr->dr_bio[i]->bi_bdev = bdev;
-		dr->dr_bio[i]->bi_sector = bio_offset >> 9;
+		BIO_BI_SECTOR(dr->dr_bio[i]) = bio_offset >> 9;
 		dr->dr_bio[i]->bi_rw = dr->dr_rw;
 		dr->dr_bio[i]->bi_end_io = vdev_disk_physio_completion;
 		dr->dr_bio[i]->bi_private = dr;
@@ -565,8 +573,8 @@ retry:
 		bio_size = bio_map(dr->dr_bio[i], bio_ptr, bio_size);
 
 		/* Advance in buffer and construct another bio if needed */
-		bio_ptr    += dr->dr_bio[i]->bi_size;
-		bio_offset += dr->dr_bio[i]->bi_size;
+		bio_ptr    += BIO_BI_SIZE(dr->dr_bio[i]);
+		bio_offset += BIO_BI_SIZE(dr->dr_bio[i]);
 	}
 
 	/* Extra reference to protect dio_request during submit_bio */
@@ -635,7 +643,8 @@ vdev_disk_io_flush(struct block_device *bdev, zio_t *zio)
 		return (ENXIO);
 
 	bio = bio_alloc(GFP_NOIO, 0);
-	if (!bio)
+	/* bio_alloc() with __GFP_WAIT never returns NULL */
+	if (unlikely(bio == NULL))
 		return (ENOMEM);
 
 	bio->bi_end_io = vdev_disk_io_flush_completion;
@@ -643,6 +652,7 @@ vdev_disk_io_flush(struct block_device *bdev, zio_t *zio)
 	bio->bi_bdev = bdev;
 	zio->io_delay = jiffies_64;
 	submit_bio(VDEV_WRITE_FLUSH_FUA, bio);
+	invalidate_bdev(bdev);
 
 	return (0);
 }
@@ -797,7 +807,7 @@ vdev_disk_read_rootlabel(char *devpath, char *devid, nvlist_t **config)
 	}
 
 	size = P2ALIGN_TYPED(s, sizeof (vdev_label_t), uint64_t);
-	label = vmem_alloc(sizeof (vdev_label_t), KM_PUSHPAGE);
+	label = vmem_alloc(sizeof (vdev_label_t), KM_SLEEP);
 
 	for (i = 0; i < VDEV_LABELS; i++) {
 		uint64_t offset, state, txg = 0;

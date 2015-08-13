@@ -62,7 +62,6 @@ AC_DEFUN([ZFS_AC_DEBUG_DMU_TX], [
 
 AC_DEFUN([ZFS_AC_CONFIG_ALWAYS], [
 	ZFS_AC_CONFIG_ALWAYS_NO_UNUSED_BUT_SET_VARIABLE
-	ZFS_AC_CONFIG_ALWAYS_NO_AGGRESSIVE_LOOP_OPTIMIZATIONS
 ])
 
 AC_DEFUN([ZFS_AC_CONFIG], [
@@ -140,8 +139,8 @@ AC_DEFUN([ZFS_AC_RPM], [
 	])
 
 	RPM_DEFINE_COMMON='--define "$(DEBUG_ZFS) 1" --define "$(DEBUG_DMU_TX) 1"'
-	RPM_DEFINE_UTIL=
-	RPM_DEFINE_KMOD='--define "kernels $(LINUX_VERSION)"'
+	RPM_DEFINE_UTIL='--define "_dracutdir $(dracutdir)" --define "_udevdir $(udevdir)" --define "_udevruledir $(udevruledir)"'
+	RPM_DEFINE_KMOD='--define "kernels $(LINUX_VERSION)" --define "require_spldir $(SPL)" --define "require_splobj $(SPL_OBJ)" --define "ksrc $(LINUX)" --define "kobj $(LINUX_OBJ)"'
 	RPM_DEFINE_DKMS=
 
 	SRPM_DEFINE_COMMON='--define "build_src_rpm 1"'
@@ -152,7 +151,7 @@ AC_DEFUN([ZFS_AC_RPM], [
 	RPM_SPEC_DIR="rpm/generic"
 	AC_ARG_WITH([spec],
 		AS_HELP_STRING([--with-spec=SPEC],
-		[Spec files 'generic|fedora']),
+		[Spec files 'generic|redhat']),
 		[RPM_SPEC_DIR="rpm/$withval"])
 
 	AC_MSG_CHECKING([whether spec files are available])

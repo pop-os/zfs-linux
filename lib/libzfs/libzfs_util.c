@@ -571,7 +571,7 @@ zfs_nicenum(uint64_t num, char *buf, size_t buflen)
 	int index = 0;
 	char u;
 
-	while (n >= 1024) {
+	while (n >= 1024 && index < 6) {
 		n /= 1024;
 		index++;
 	}
@@ -660,23 +660,84 @@ libzfs_run_process(const char *path, char *argv[], int flags)
 	return (-1);
 }
 
+/*
+ * Verify the required ZFS_DEV device is available and optionally attempt
+ * to load the ZFS modules.  Under normal circumstances the modules
+ * should already have been loaded by some external mechanism.
+ *
+ * Environment variables:
+ * - ZFS_MODULE_LOADING="YES|yes|ON|on" - Attempt to load modules.
+ * - ZFS_MODULE_TIMEOUT="<seconds>"     - Seconds to wait for ZFS_DEV
+ */
 int
 libzfs_load_module(const char *module)
 {
 	char *argv[4] = {"/sbin/modprobe", "-q", (char *)module, (char *)0};
+	char *load_str, *timeout_str;
+	long timeout = 10; /* seconds */
+	long busy_timeout = 10; /* milliseconds */
+	int load = 1, fd;
+	hrtime_t start;
 
-	if (libzfs_module_loaded(module))
-		return (0);
+	/* Optionally request module loading */
+	if (!libzfs_module_loaded(module)) {
+		load_str = getenv("ZFS_MODULE_LOADING");
+		if (load_str) {
+			if (!strncasecmp(load_str, "YES", strlen("YES")) ||
+			    !strncasecmp(load_str, "ON", strlen("ON")))
+				load = 1;
+			else
+				load = 0;
+		}
 
-	return (libzfs_run_process("/sbin/modprobe", argv, 0));
+		if (load && libzfs_run_process("/sbin/modprobe", argv, 0))
+			return (ENOEXEC);
+	}
+
+	/* Module loading is synchronous it must be available */
+	if (!libzfs_module_loaded(module))
+		return (ENXIO);
+
+	/*
+	 * Device creation by udev is asynchronous and waiting may be
+	 * required.  Busy wait for 10ms and then fall back to polling every
+	 * 10ms for the allowed timeout (default 10s, max 10m).  This is
+	 * done to optimize for the common case where the device is
+	 * immediately available and to avoid penalizing the possible
+	 * case where udev is slow or unable to create the device.
+	 */
+	timeout_str = getenv("ZFS_MODULE_TIMEOUT");
+	if (timeout_str) {
+		timeout = strtol(timeout_str, NULL, 0);
+		timeout = MAX(MIN(timeout, (10 * 60)), 0); /* 0 <= N <= 600 */
+	}
+
+	start = gethrtime();
+	do {
+		fd = open(ZFS_DEV, O_RDWR);
+		if (fd >= 0) {
+			(void) close(fd);
+			return (0);
+		} else if (errno != ENOENT) {
+			return (errno);
+		} else if (NSEC2MSEC(gethrtime() - start) < busy_timeout) {
+			sched_yield();
+		} else {
+			usleep(10 * MILLISEC);
+		}
+	} while (NSEC2MSEC(gethrtime() - start) < (timeout * MILLISEC));
+
+	return (ENOENT);
 }
 
 libzfs_handle_t *
 libzfs_init(void)
 {
 	libzfs_handle_t *hdl;
+	int error;
 
-	if (libzfs_load_module("zfs") != 0) {
+	error = libzfs_load_module(ZFS_DRIVER);
+	if (error) {
 		(void) fprintf(stderr, gettext("Failed to load ZFS module "
 		    "stack.\nLoad the module manually by running "
 		    "'insmod <location>/zfs.ko' as root.\n"));
@@ -793,7 +854,10 @@ zfs_path_to_zhandle(libzfs_handle_t *hdl, char *path, zfs_type_t argtype)
 		return (NULL);
 	}
 
-	rewind(hdl->libzfs_mnttab);
+	/* Reopen MNTTAB to prevent reading stale data from open file */
+	if (freopen(MNTTAB, "r", hdl->libzfs_mnttab) == NULL)
+		return (NULL);
+
 	while ((ret = getextmntent(hdl->libzfs_mnttab, &entry, 0)) == 0) {
 		if (makedevice(entry.mnt_major, entry.mnt_minor) ==
 		    statbuf.st_dev) {
@@ -959,7 +1023,7 @@ zfs_strcmp_pathname(char *name, char *cmp, int wholedisk)
 	if (name[0] != '/')
 		return (zfs_strcmp_shortname(name, cmp_name, wholedisk));
 
-	strncpy(path_name, name, MAXPATHLEN);
+	(void) strlcpy(path_name, name, MAXPATHLEN);
 	path_len = strlen(path_name);
 	cmp_len = strlen(cmp_name);
 
@@ -1528,7 +1592,7 @@ addlist(libzfs_handle_t *hdl, char *propname, zprop_list_t **listp,
 
 	prop = zprop_name_to_prop(propname, type);
 
-	if (prop != ZPROP_INVAL && !zprop_valid_for_type(prop, type))
+	if (prop != ZPROP_INVAL && !zprop_valid_for_type(prop, type, B_FALSE))
 		prop = ZPROP_INVAL;
 
 	/*

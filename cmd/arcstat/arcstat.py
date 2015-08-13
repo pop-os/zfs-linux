@@ -51,7 +51,7 @@ import re
 import copy
 
 from decimal import Decimal
-from signal import signal, SIGINT
+from signal import signal, SIGINT, SIGWINCH, SIG_DFL
 
 cols = {
     # HDR:        [Size, Scale, Description]
@@ -61,10 +61,10 @@ cols = {
     "read":       [4, 1000, "Total ARC accesses per second"],
     "hit%":       [4, 100, "ARC Hit percentage"],
     "miss%":      [5, 100, "ARC miss percentage"],
-    "dhit":       [4, 1000, "Demand Data hits per second"],
-    "dmis":       [4, 1000, "Demand Data misses per second"],
-    "dh%":        [3, 100, "Demand Data hit percentage"],
-    "dm%":        [3, 100, "Demand Data miss percentage"],
+    "dhit":       [4, 1000, "Demand hits per second"],
+    "dmis":       [4, 1000, "Demand misses per second"],
+    "dh%":        [3, 100, "Demand hit percentage"],
+    "dm%":        [3, 100, "Demand miss percentage"],
     "phit":       [4, 1000, "Prefetch hits per second"],
     "pmis":       [4, 1000, "Prefetch misses per second"],
     "ph%":        [3, 100, "Prefetch hits percentage"],
@@ -83,13 +83,14 @@ cols = {
     "eskip":      [5, 1000, "evict_skip per second"],
     "mtxmis":     [6, 1000, "mutex_miss per second"],
     "rmis":       [4, 1000, "recycle_miss per second"],
-    "dread":      [5, 1000, "Demand data accesses per second"],
+    "dread":      [5, 1000, "Demand accesses per second"],
     "pread":      [5, 1000, "Prefetch accesses per second"],
     "l2hits":     [6, 1000, "L2ARC hits per second"],
     "l2miss":     [6, 1000, "L2ARC misses per second"],
     "l2read":     [6, 1000, "Total L2ARC accesses per second"],
     "l2hit%":     [6, 100, "L2ARC access hit percentage"],
     "l2miss%":    [7, 100, "L2ARC access miss percentage"],
+    "l2asize":    [7, 1024, "Actual (compressed) size of the L2ARC"],
     "l2size":     [6, 1024, "Size of the L2ARC"],
     "l2bytes":    [7, 1024, "bytes read per second from the L2ARC"],
 }
@@ -229,6 +230,25 @@ def print_header():
         sys.stdout.write("%*s%s" % (cols[col][0], col, sep))
     sys.stdout.write("\n")
 
+def get_terminal_lines():
+    try:
+        import fcntl, termios, struct
+        data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, '1234')
+        sz = struct.unpack('hh', data)
+        return sz[0]
+    except:
+        pass
+
+def update_hdr_intr():
+    global hdr_intr
+
+    lines = get_terminal_lines()
+    if lines and lines > 3:
+        hdr_intr = lines - 3
+
+def resize_handler(signum, frame):
+    update_hdr_intr()
+
 
 def init():
     global sint
@@ -302,6 +322,8 @@ def init():
 
     if xflag:
         hdr = xhdr
+
+    update_hdr_intr()
 
     # check if L2ARC exists
     snap_stats()
@@ -394,12 +416,9 @@ def calculate():
         v["l2hit%"] = 100 * v["l2hits"] / v["l2read"] if v["l2read"] > 0 else 0
 
         v["l2miss%"] = 100 - v["l2hit%"] if v["l2read"] > 0 else 0
+        v["l2asize"] = cur["l2_asize"]
         v["l2size"] = cur["l2_size"]
         v["l2bytes"] = d["l2_read_bytes"] / sint
-
-
-def sighandler():
-    sys.exit(0)
 
 
 def main():
@@ -414,7 +433,8 @@ def main():
     if count > 0:
         count_flag = 1
 
-    signal(SIGINT, sighandler)
+    signal(SIGINT, SIG_DFL)
+    signal(SIGWINCH, resize_handler)
     while True:
         if i == 0:
             print_header()
@@ -428,7 +448,7 @@ def main():
                 break
             count -= 1
 
-        i = 0 if i == hdr_intr else i + 1
+        i = 0 if i >= hdr_intr else i + 1
         time.sleep(sint)
 
     if out:

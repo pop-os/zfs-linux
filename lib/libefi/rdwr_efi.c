@@ -194,8 +194,9 @@ efi_get_info(int fd, struct dk_cinfo *dki_info)
 	} else if ((strncmp(dev_path, "/dev/md", 7) == 0)) {
 		strcpy(dki_info->dki_cname, "pseudo");
 		dki_info->dki_ctype = DKC_MD;
-		rval = sscanf(dev_path, "/dev/%[a-zA-Z0-9]p%hu",
-		    dki_info->dki_dname,
+		strcpy(dki_info->dki_dname, "md");
+		rval = sscanf(dev_path, "/dev/md%[0-9]p%hu",
+		    dki_info->dki_dname + 2,
 		    &dki_info->dki_partition);
 	} else if ((strncmp(dev_path, "/dev/vd", 7) == 0)) {
 		strcpy(dki_info->dki_cname, "vd");
@@ -206,20 +207,23 @@ efi_get_info(int fd, struct dk_cinfo *dki_info)
 	} else if ((strncmp(dev_path, "/dev/dm-", 8) == 0)) {
 		strcpy(dki_info->dki_cname, "pseudo");
 		dki_info->dki_ctype = DKC_VBD;
-		rval = sscanf(dev_path, "/dev/%[a-zA-Z0-9-]p%hu",
-		    dki_info->dki_dname,
+		strcpy(dki_info->dki_dname, "dm-");
+		rval = sscanf(dev_path, "/dev/dm-%[0-9]p%hu",
+		    dki_info->dki_dname + 3,
 		    &dki_info->dki_partition);
 	} else if ((strncmp(dev_path, "/dev/ram", 8) == 0)) {
 		strcpy(dki_info->dki_cname, "pseudo");
 		dki_info->dki_ctype = DKC_PCMCIA_MEM;
-		rval = sscanf(dev_path, "/dev/%[a-zA-Z0-9]p%hu",
-		    dki_info->dki_dname,
+		strcpy(dki_info->dki_dname, "ram");
+		rval = sscanf(dev_path, "/dev/ram%[0-9]p%hu",
+		    dki_info->dki_dname + 3,
 		    &dki_info->dki_partition);
 	} else if ((strncmp(dev_path, "/dev/loop", 9) == 0)) {
 		strcpy(dki_info->dki_cname, "pseudo");
 		dki_info->dki_ctype = DKC_VBD;
-		rval = sscanf(dev_path, "/dev/%[a-zA-Z0-9]p%hu",
-		    dki_info->dki_dname,
+		strcpy(dki_info->dki_dname, "loop");
+		rval = sscanf(dev_path, "/dev/loop%[0-9]p%hu",
+		    dki_info->dki_dname + 4,
 		    &dki_info->dki_partition);
 	} else {
 		strcpy(dki_info->dki_dname, "unknown");
@@ -502,16 +506,17 @@ int
 efi_rescan(int fd)
 {
 #if defined(__linux__)
-	int retry = 5;
+	int retry = 10;
 	int error;
 
 	/* Notify the kernel a devices partition table has been updated */
 	while ((error = ioctl(fd, BLKRRPART)) != 0) {
-		if (--retry == 0) {
+		if ((--retry == 0) || (errno != EBUSY)) {
 			(void) fprintf(stderr, "the kernel failed to rescan "
 			    "the partition table: %d\n", errno);
 			return (-1);
 		}
+		usleep(50000);
 	}
 #endif
 
@@ -856,11 +861,11 @@ write_pmbr(int fd, struct dk_gpt *vtoc)
 	/* LINTED -- always longlong aligned */
 	dk_ioc.dki_data = (efi_gpt_t *)buf;
 	if (efi_ioctl(fd, DKIOCGETEFI, &dk_ioc) == -1) {
-		(void *) memcpy(&mb, buf, sizeof (mb));
+		(void) memcpy(&mb, buf, sizeof (mb));
 		bzero(&mb, sizeof (mb));
 		mb.signature = LE_16(MBB_MAGIC);
 	} else {
-		(void *) memcpy(&mb, buf, sizeof (mb));
+		(void) memcpy(&mb, buf, sizeof (mb));
 		if (mb.signature != LE_16(MBB_MAGIC)) {
 			bzero(&mb, sizeof (mb));
 			mb.signature = LE_16(MBB_MAGIC);
@@ -900,7 +905,7 @@ write_pmbr(int fd, struct dk_gpt *vtoc)
 		*cp++ = 0xff;
 	}
 
-	(void *) memcpy(buf, &mb, sizeof (mb));
+	(void) memcpy(buf, &mb, sizeof (mb));
 	/* LINTED -- always longlong aligned */
 	dk_ioc.dki_data = (efi_gpt_t *)buf;
 	dk_ioc.dki_lba = 0;

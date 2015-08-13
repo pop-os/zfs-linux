@@ -3,10 +3,9 @@
 # 4 File Raid-10 Configuration
 #
 
-FILES_M1="/tmp/zpool-vdev0  \
-          /tmp/zpool-vdev1"
-FILES_M2="/tmp/zpool-vdev2  \
-          /tmp/zpool-vdev3"
+FILEDIR=${FILEDIR:-/var/tmp}
+FILES_M1=${FILES_M1:-"$FILEDIR/file-vdev0 $FILEDIR/file-vdev1"}
+FILES_M2=${FILES_M2:-"$FILEDIR/file-vdev2 $FILEDIR/file-vdev3"}
 FILES="${FILES_M1} ${FILES_M2}"
 
 zpool_create() {
@@ -17,9 +16,9 @@ zpool_create() {
 			&>/dev/null || die "Error $? creating ${FILE}"
 	done
 
-	msg ${ZPOOL} create ${FORCE_FLAG} ${ZPOOL_NAME} \
+	msg ${ZPOOL} create ${ZPOOL_FLAGS} ${ZPOOL_NAME} \
 		mirror ${FILES_M1} mirror ${FILES_M2}
-	${ZPOOL} create ${FORCE_FLAG} ${ZPOOL_NAME} \
+	${ZPOOL} create ${ZPOOL_FLAGS} ${ZPOOL_NAME} \
 		mirror ${FILES_M1} mirror ${FILES_M2} || exit 1
 }
 

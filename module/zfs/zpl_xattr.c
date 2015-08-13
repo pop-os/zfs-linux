@@ -209,9 +209,11 @@ zpl_xattr_list(struct dentry *dentry, char *buffer, size_t buffer_size)
 	zfs_sb_t *zsb = ZTOZSB(zp);
 	xattr_filldir_t xf = { buffer_size, 0, buffer, dentry->d_inode };
 	cred_t *cr = CRED();
+	fstrans_cookie_t cookie;
 	int error = 0;
 
 	crhold(cr);
+	cookie = spl_fstrans_mark();
 	rw_enter(&zp->z_xattr_lock, RW_READER);
 
 	if (zsb->z_use_sa && zp->z_is_sa) {
@@ -228,6 +230,7 @@ zpl_xattr_list(struct dentry *dentry, char *buffer, size_t buffer_size)
 out:
 
 	rw_exit(&zp->z_xattr_lock);
+	spl_fstrans_unmark(cookie);
 	crfree(cr);
 
 	return (error);
@@ -239,6 +242,7 @@ zpl_xattr_get_dir(struct inode *ip, const char *name, void *value,
 {
 	struct inode *dxip = NULL;
 	struct inode *xip = NULL;
+	loff_t pos = 0;
 	int error;
 
 	/* Lookup the xattr directory */
@@ -261,7 +265,7 @@ zpl_xattr_get_dir(struct inode *ip, const char *name, void *value,
 		goto out;
 	}
 
-	error = zpl_read_common(xip, value, size, 0, UIO_SYSSPACE, 0, cr);
+	error = zpl_read_common(xip, value, size, &pos, UIO_SYSSPACE, 0, cr);
 out:
 	if (xip)
 		iput(xip);
@@ -336,12 +340,15 @@ zpl_xattr_get(struct inode *ip, const char *name, void *value, size_t size)
 {
 	znode_t *zp = ITOZ(ip);
 	cred_t *cr = CRED();
+	fstrans_cookie_t cookie;
 	int error;
 
 	crhold(cr);
+	cookie = spl_fstrans_mark();
 	rw_enter(&zp->z_xattr_lock, RW_READER);
 	error = __zpl_xattr_get(ip, name, value, size, cr);
 	rw_exit(&zp->z_xattr_lock);
+	spl_fstrans_unmark(cookie);
 	crfree(cr);
 
 	return (error);
@@ -357,6 +364,7 @@ zpl_xattr_set_dir(struct inode *ip, const char *name, const void *value,
 	ssize_t wrote;
 	int lookup_flags, error;
 	const int xattr_mode = S_IFREG | 0644;
+	loff_t pos = 0;
 
 	/*
 	 * Lookup the xattr directory.  When we're adding an entry pass
@@ -407,7 +415,7 @@ zpl_xattr_set_dir(struct inode *ip, const char *name, const void *value,
 	if (error)
 		goto out;
 
-	wrote = zpl_write_common(xip, value, size, 0, UIO_SYSSPACE, 0, cr);
+	wrote = zpl_write_common(xip, value, size, &pos, UIO_SYSSPACE, 0, cr);
 	if (wrote < 0)
 		error = wrote;
 
@@ -480,9 +488,11 @@ zpl_xattr_set(struct inode *ip, const char *name, const void *value,
 	znode_t *zp = ITOZ(ip);
 	zfs_sb_t *zsb = ZTOZSB(zp);
 	cred_t *cr = CRED();
+	fstrans_cookie_t cookie;
 	int error;
 
 	crhold(cr);
+	cookie = spl_fstrans_mark();
 	rw_enter(&ITOZ(ip)->z_xattr_lock, RW_WRITER);
 
 	/*
@@ -520,6 +530,7 @@ zpl_xattr_set(struct inode *ip, const char *name, const void *value,
 	error = zpl_xattr_set_dir(ip, name, value, size, flags, cr);
 out:
 	rw_exit(&ITOZ(ip)->z_xattr_lock);
+	spl_fstrans_unmark(cookie);
 	crfree(cr);
 	ASSERT3S(error, <=, 0);
 
@@ -751,7 +762,7 @@ zpl_set_acl(struct inode *ip, int type, struct posix_acl *acl)
 				if (ip->i_mode != mode) {
 					ip->i_mode = mode;
 					ip->i_ctime = current_fs_time(sb);
-					mark_inode_dirty(ip);
+					zfs_mark_inode_dirty(ip);
 				}
 
 				if (error == 0)
@@ -822,7 +833,7 @@ zpl_get_acl(struct inode *ip, int type)
 
 	size = zpl_xattr_get(ip, name, NULL, 0);
 	if (size > 0) {
-		value = kmem_alloc(size, KM_PUSHPAGE);
+		value = kmem_alloc(size, KM_SLEEP);
 		size = zpl_xattr_get(ip, name, value, size);
 	}
 
@@ -909,7 +920,7 @@ zpl_init_acl(struct inode *ip, struct inode *dir)
 		if (!acl) {
 			ip->i_mode &= ~current_umask();
 			ip->i_ctime = current_fs_time(ITOZSB(ip)->z_sb);
-			mark_inode_dirty(ip);
+			zfs_mark_inode_dirty(ip);
 			return (0);
 		}
 	}
@@ -924,10 +935,10 @@ zpl_init_acl(struct inode *ip, struct inode *dir)
 		}
 
 		mode = ip->i_mode;
-		error = posix_acl_create(&acl, GFP_KERNEL, &mode);
+		error = __posix_acl_create(&acl, GFP_KERNEL, &mode);
 		if (error >= 0) {
 			ip->i_mode = mode;
-			mark_inode_dirty(ip);
+			zfs_mark_inode_dirty(ip);
 			if (error > 0)
 				error = zpl_set_acl(ip, ACL_TYPE_ACCESS, acl);
 		}
@@ -954,7 +965,7 @@ zpl_chmod_acl(struct inode *ip)
 	if (IS_ERR(acl) || !acl)
 		return (PTR_ERR(acl));
 
-	error = posix_acl_chmod(&acl, GFP_KERNEL, ip->i_mode);
+	error = __posix_acl_chmod(&acl, GFP_KERNEL, ip->i_mode);
 	if (!error)
 		error = zpl_set_acl(ip, ACL_TYPE_ACCESS, acl);
 
