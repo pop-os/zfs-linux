@@ -1,6 +1,5 @@
-zfs-linux (0.6.2-1) experimental; urgency=low
+zfs-linux (0.6.4.2-1) experimental; urgency=medium
 
   * Initial Release (Closes: #686447)
 
- -- Aron Xu <aron@debian.org>  Sat, 24 Aug 2013 17:30:14 +0800
-
+ -- Aron Xu <aron@debian.org>  Thu, 13 Aug 2015 21:08:38 +0800
