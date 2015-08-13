@@ -30,7 +30,8 @@
  * CDDL HEADER END
  */
 
-AC_INIT
+AC_INIT(m4_esyscmd(grep Name META | cut -d ':' -f 2 | tr -d ' \n'),
+	m4_esyscmd(grep Version META | cut -d ':' -f 2 | tr -d ' \n'))
 AC_LANG(C)
 ZFS_AC_META
 AC_CONFIG_AUX_DIR([config])
@@ -38,7 +39,7 @@ AC_CONFIG_MACRO_DIR([config])
 AC_CANONICAL_SYSTEM
 AM_MAINTAINER_MODE
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
-AM_INIT_AUTOMAKE([$ZFS_META_NAME], [$ZFS_META_VERSION])
+AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([zfs_config.h], [
 	(mv zfs_config.h zfs_config.h.tmp &&
 	awk -f ${ac_srcdir}/config/config.awk zfs_config.h.tmp >zfs_config.h &&
@@ -64,6 +65,9 @@ AC_CONFIG_FILES([
 	etc/Makefile
 	etc/init.d/Makefile
 	etc/zfs/Makefile
+	etc/systemd/Makefile
+	etc/systemd/system/Makefile
+	etc/modules-load.d/Makefile
 	man/Makefile
 	man/man1/Makefile
 	man/man5/Makefile
@@ -87,7 +91,10 @@ AC_CONFIG_FILES([
 	lib/libunicode/Makefile
 	lib/libuutil/Makefile
 	lib/libzpool/Makefile
+	lib/libzfs/libzfs.pc
+	lib/libzfs/libzfs_core.pc
 	lib/libzfs/Makefile
+	lib/libzfs_core/Makefile
 	lib/libshare/Makefile
 	cmd/Makefile
 	cmd/zdb/Makefile
@@ -103,6 +110,11 @@ AC_CONFIG_FILES([
 	cmd/zvol_id/Makefile
 	cmd/vdev_id/Makefile
 	cmd/arcstat/Makefile
+	cmd/dbufstat/Makefile
+	cmd/arc_summary/Makefile
+	cmd/zed/Makefile
+	contrib/Makefile
+	contrib/bash_completion.d/Makefile
 	module/Makefile
 	module/avl/Makefile
 	module/nvpair/Makefile
@@ -122,10 +134,10 @@ AC_CONFIG_FILES([
 	scripts/zpool-config/Makefile
 	scripts/common.sh
 	rpm/Makefile
-	rpm/fedora/Makefile
-	rpm/fedora/zfs.spec
-	rpm/fedora/zfs-kmod.spec
-	rpm/fedora/zfs-dkms.spec
+	rpm/redhat/Makefile
+	rpm/redhat/zfs.spec
+	rpm/redhat/zfs-kmod.spec
+	rpm/redhat/zfs-dkms.spec
 	rpm/generic/Makefile
 	rpm/generic/zfs.spec
 	rpm/generic/zfs-kmod.spec

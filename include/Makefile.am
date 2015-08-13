@@ -18,6 +18,7 @@ USER_H = \
 	$(top_srcdir)/include/libuutil.h \
 	$(top_srcdir)/include/libuutil_impl.h \
 	$(top_srcdir)/include/libzfs.h \
+	$(top_srcdir)/include/libzfs_core.h \
 	$(top_srcdir)/include/libzfs_impl.h
 
 EXTRA_DIST = $(COMMON_H) $(KERNEL_H) $(USER_H)
@@ -28,6 +29,6 @@ libzfs_HEADERS = $(COMMON_H) $(USER_H)
 endif
 
 if CONFIG_KERNEL
-kerneldir = /usr/src/zfs-$(VERSION)/include
+kerneldir = @prefix@/src/zfs-$(VERSION)/include
 kernel_HEADERS = $(COMMON_H) $(KERNEL_H)
 endif

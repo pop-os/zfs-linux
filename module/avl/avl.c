@@ -1030,16 +1030,24 @@ done:
 }
 
 #if defined(_KERNEL) && defined(HAVE_SPL)
+static int __init
+avl_init(void)
+{
+	return (0);
+}
 
-static int avl_init(void) { return 0; }
-static int avl_fini(void) { return 0; }
+static void __exit
+avl_fini(void)
+{
+}
 
-spl_module_init(avl_init);
-spl_module_exit(avl_fini);
+module_init(avl_init);
+module_exit(avl_fini);
 
 MODULE_DESCRIPTION("Generic AVL tree implementation");
 MODULE_AUTHOR(ZFS_META_AUTHOR);
 MODULE_LICENSE(ZFS_META_LICENSE);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
 
 EXPORT_SYMBOL(avl_create);
 EXPORT_SYMBOL(avl_find);

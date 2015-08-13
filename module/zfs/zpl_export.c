@@ -39,21 +39,24 @@ zpl_encode_fh(struct dentry *dentry, __u32 *fh, int *max_len, int connectable)
 {
 	struct inode *ip = dentry->d_inode;
 #endif /* HAVE_ENCODE_FH_WITH_INODE */
+	fstrans_cookie_t cookie;
 	fid_t *fid = (fid_t *)fh;
 	int len_bytes, rc;
 
 	len_bytes = *max_len * sizeof (__u32);
 
 	if (len_bytes < offsetof(fid_t, fid_data))
-		return 255;
+		return (255);
 
 	fid->fid_len = len_bytes - offsetof(fid_t, fid_data);
+	cookie = spl_fstrans_mark();
 
 	if (zfsctl_is_node(ip))
 		rc = zfsctl_fid(ip, fid);
 	else
 		rc = zfs_fid(ip, fid);
 
+	spl_fstrans_unmark(cookie);
 	len_bytes = offsetof(fid_t, fid_data) + fid->fid_len;
 	*max_len = roundup(len_bytes, sizeof (__u32)) / sizeof (__u32);
 
@@ -76,7 +79,7 @@ zpl_dentry_obtain_alias(struct inode *ip)
 	}
 #endif /* HAVE_D_OBTAIN_ALIAS */
 
-	return result;
+	return (result);
 }
 
 static struct dentry *
@@ -84,6 +87,7 @@ zpl_fh_to_dentry(struct super_block *sb, struct fid *fh,
     int fh_len, int fh_type)
 {
 	fid_t *fid = (fid_t *)fh;
+	fstrans_cookie_t cookie;
 	struct inode *ip;
 	int len_bytes, rc;
 
@@ -92,34 +96,39 @@ zpl_fh_to_dentry(struct super_block *sb, struct fid *fh,
 	if (fh_type != FILEID_INO32_GEN ||
 	    len_bytes < offsetof(fid_t, fid_data) ||
 	    len_bytes < offsetof(fid_t, fid_data) + fid->fid_len)
-		return ERR_PTR(-EINVAL);
+		return (ERR_PTR(-EINVAL));
 
+	cookie = spl_fstrans_mark();
 	rc = zfs_vget(sb, &ip, fid);
+	spl_fstrans_unmark(cookie);
 
 	if (rc != 0)
-		return ERR_PTR(-rc);
+		return (ERR_PTR(-rc));
 
 	ASSERT((ip != NULL) && !IS_ERR(ip));
 
-	return zpl_dentry_obtain_alias(ip);
+	return (zpl_dentry_obtain_alias(ip));
 }
 
 static struct dentry *
 zpl_get_parent(struct dentry *child)
 {
 	cred_t *cr = CRED();
+	fstrans_cookie_t cookie;
 	struct inode *ip;
 	int error;
 
 	crhold(cr);
+	cookie = spl_fstrans_mark();
 	error = -zfs_lookup(child->d_inode, "..", &ip, 0, cr, NULL, NULL);
+	spl_fstrans_unmark(cookie);
 	crfree(cr);
 	ASSERT3S(error, <=, 0);
 
 	if (error)
-		return ERR_PTR(error);
+		return (ERR_PTR(error));
 
-	return zpl_dentry_obtain_alias(ip);
+	return (zpl_dentry_obtain_alias(ip));
 }
 
 #ifdef HAVE_COMMIT_METADATA
@@ -127,22 +136,25 @@ static int
 zpl_commit_metadata(struct inode *inode)
 {
 	cred_t *cr = CRED();
+	fstrans_cookie_t cookie;
 	int error;
 
 	crhold(cr);
+	cookie = spl_fstrans_mark();
 	error = -zfs_fsync(inode, 0, cr);
+	spl_fstrans_unmark(cookie);
 	crfree(cr);
 	ASSERT3S(error, <=, 0);
 
-	return error;
+	return (error);
 }
 #endif /* HAVE_COMMIT_METADATA */
 
 const struct export_operations zpl_export_operations = {
-	.encode_fh	= zpl_encode_fh,
-	.fh_to_dentry	= zpl_fh_to_dentry,
-	.get_parent	= zpl_get_parent,
+	.encode_fh		= zpl_encode_fh,
+	.fh_to_dentry		= zpl_fh_to_dentry,
+	.get_parent		= zpl_get_parent,
 #ifdef HAVE_COMMIT_METADATA
-	.commit_metadata= zpl_commit_metadata,
+	.commit_metadata	= zpl_commit_metadata,
 #endif /* HAVE_COMMIT_METADATA */
 };

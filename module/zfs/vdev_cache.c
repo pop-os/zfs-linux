@@ -22,6 +22,9 @@
  * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
  */
+/*
+ * Copyright (c) 2013 by Delphix. All rights reserved.
+ */
 
 #include <sys/zfs_context.h>
 #include <sys/spa.h>
@@ -120,9 +123,9 @@ vdev_cache_lastused_compare(const void *a1, const void *a2)
 	const vdev_cache_entry_t *ve1 = a1;
 	const vdev_cache_entry_t *ve2 = a2;
 
-	if (ve1->ve_lastused < ve2->ve_lastused)
+	if (ddi_time_before(ve1->ve_lastused, ve2->ve_lastused))
 		return (-1);
-	if (ve1->ve_lastused > ve2->ve_lastused)
+	if (ddi_time_after(ve1->ve_lastused, ve2->ve_lastused))
 		return (1);
 
 	/*
@@ -177,7 +180,7 @@ vdev_cache_allocate(zio_t *zio)
 		vdev_cache_evict(vc, ve);
 	}
 
-	ve = kmem_zalloc(sizeof (vdev_cache_entry_t), KM_PUSHPAGE);
+	ve = kmem_zalloc(sizeof (vdev_cache_entry_t), KM_SLEEP);
 	ve->ve_offset = offset;
 	ve->ve_lastused = ddi_get_lbolt();
 	ve->ve_data = zio_buf_alloc(VCBS);
@@ -245,44 +248,44 @@ vdev_cache_fill(zio_t *fio)
 }
 
 /*
- * Read data from the cache.  Returns 0 on cache hit, errno on a miss.
+ * Read data from the cache.  Returns B_TRUE cache hit, B_FALSE on miss.
  */
-int
+boolean_t
 vdev_cache_read(zio_t *zio)
 {
 	vdev_cache_t *vc = &zio->io_vd->vdev_cache;
 	vdev_cache_entry_t *ve, *ve_search;
 	uint64_t cache_offset = P2ALIGN(zio->io_offset, VCBS);
-	ASSERTV(uint64_t cache_phase = P2PHASE(zio->io_offset, VCBS);)
 	zio_t *fio;
+	ASSERTV(uint64_t cache_phase = P2PHASE(zio->io_offset, VCBS));
 
 	ASSERT(zio->io_type == ZIO_TYPE_READ);
 
 	if (zio->io_flags & ZIO_FLAG_DONT_CACHE)
-		return (EINVAL);
+		return (B_FALSE);
 
 	if (zio->io_size > zfs_vdev_cache_max)
-		return (EOVERFLOW);
+		return (B_FALSE);
 
 	/*
 	 * If the I/O straddles two or more cache blocks, don't cache it.
 	 */
 	if (P2BOUNDARY(zio->io_offset, zio->io_size, VCBS))
-		return (EXDEV);
+		return (B_FALSE);
 
 	ASSERT(cache_phase + zio->io_size <= VCBS);
 
 	mutex_enter(&vc->vc_lock);
 
-	ve_search = kmem_alloc(sizeof(vdev_cache_entry_t), KM_PUSHPAGE);
+	ve_search = kmem_alloc(sizeof (vdev_cache_entry_t), KM_SLEEP);
 	ve_search->ve_offset = cache_offset;
 	ve = avl_find(&vc->vc_offset_tree, ve_search, NULL);
-	kmem_free(ve_search, sizeof(vdev_cache_entry_t));
+	kmem_free(ve_search, sizeof (vdev_cache_entry_t));
 
 	if (ve != NULL) {
 		if (ve->ve_missed_update) {
 			mutex_exit(&vc->vc_lock);
-			return (ESTALE);
+			return (B_FALSE);
 		}
 
 		if ((fio = ve->ve_fill_io) != NULL) {
@@ -290,7 +293,7 @@ vdev_cache_read(zio_t *zio)
 			zio_add_child(zio, fio);
 			mutex_exit(&vc->vc_lock);
 			VDCSTAT_BUMP(vdc_stat_delegations);
-			return (0);
+			return (B_TRUE);
 		}
 
 		vdev_cache_hit(vc, ve, zio);
@@ -298,18 +301,18 @@ vdev_cache_read(zio_t *zio)
 
 		mutex_exit(&vc->vc_lock);
 		VDCSTAT_BUMP(vdc_stat_hits);
-		return (0);
+		return (B_TRUE);
 	}
 
 	ve = vdev_cache_allocate(zio);
 
 	if (ve == NULL) {
 		mutex_exit(&vc->vc_lock);
-		return (ENOMEM);
+		return (B_FALSE);
 	}
 
 	fio = zio_vdev_delegated_io(zio->io_vd, cache_offset,
-	    ve->ve_data, VCBS, ZIO_TYPE_READ, ZIO_PRIORITY_CACHE_FILL,
+	    ve->ve_data, VCBS, ZIO_TYPE_READ, ZIO_PRIORITY_NOW,
 	    ZIO_FLAG_DONT_CACHE, vdev_cache_fill, ve);
 
 	ve->ve_fill_io = fio;
@@ -320,7 +323,7 @@ vdev_cache_read(zio_t *zio)
 	zio_nowait(fio);
 	VDCSTAT_BUMP(vdc_stat_misses);
 
-	return (0);
+	return (B_TRUE);
 }
 
 /*

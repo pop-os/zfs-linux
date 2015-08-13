@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012 by Delphix. All rights reserved.
+ * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
  */
 
 /*
@@ -64,7 +64,7 @@ static int inject_next_id = 1;
  * Returns true if the given record matches the I/O in progress.
  */
 static boolean_t
-zio_match_handler(zbookmark_t *zb, uint64_t type,
+zio_match_handler(zbookmark_phys_t *zb, uint64_t type,
     zinject_record_t *record, int error)
 {
 	/*
@@ -276,7 +276,7 @@ zio_handle_device_injection(vdev_t *vd, zio_t *zio, int error)
 				break;
 			}
 			if (handler->zi_record.zi_error == ENXIO) {
-				ret = EIO;
+				ret = SET_ERROR(EIO);
 				break;
 			}
 		}
@@ -345,9 +345,10 @@ spa_handle_ignored_writes(spa_t *spa)
 
 		if (handler->zi_record.zi_duration > 0) {
 			VERIFY(handler->zi_record.zi_timer == 0 ||
-			    handler->zi_record.zi_timer +
-			    handler->zi_record.zi_duration * hz >
-			    ddi_get_lbolt64());
+			    ddi_time_after64(
+			    (int64_t)handler->zi_record.zi_timer +
+			    handler->zi_record.zi_duration * hz,
+			    ddi_get_lbolt64()));
 		} else {
 			/* duration is negative so the subtraction here adds */
 			VERIFY(handler->zi_record.zi_timer == 0 ||
@@ -416,7 +417,7 @@ zio_inject_fault(char *name, int flags, int *id, zinject_record_t *record)
 		 * still allowing it to be unloaded.
 		 */
 		if ((spa = spa_inject_addref(name)) == NULL)
-			return (ENOENT);
+			return (SET_ERROR(ENOENT));
 
 		handler = kmem_alloc(sizeof (inject_handler_t), KM_SLEEP);
 
@@ -468,7 +469,7 @@ zio_inject_list_next(int *id, char *name, size_t buflen,
 		(void) strncpy(name, spa_name(handler->zi_spa), buflen);
 		ret = 0;
 	} else {
-		ret = ENOENT;
+		ret = SET_ERROR(ENOENT);
 	}
 
 	rw_exit(&inject_lock);
@@ -495,7 +496,7 @@ zio_clear_fault(int id)
 
 	if (handler == NULL) {
 		rw_exit(&inject_lock);
-		return (ENOENT);
+		return (SET_ERROR(ENOENT));
 	}
 
 	list_remove(&inject_handlers, handler);
@@ -524,6 +525,11 @@ zio_inject_fini(void)
 }
 
 #if defined(_KERNEL) && defined(HAVE_SPL)
-module_param(zio_injection_enabled, int, 0644);
-MODULE_PARM_DESC(zio_injection_enabled, "Enable fault injection");
+EXPORT_SYMBOL(zio_injection_enabled);
+EXPORT_SYMBOL(zio_inject_fault);
+EXPORT_SYMBOL(zio_inject_list_next);
+EXPORT_SYMBOL(zio_clear_fault);
+EXPORT_SYMBOL(zio_handle_fault_injection);
+EXPORT_SYMBOL(zio_handle_device_injection);
+EXPORT_SYMBOL(zio_handle_label_injection);
 #endif

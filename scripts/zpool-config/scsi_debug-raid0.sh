@@ -9,9 +9,8 @@ SDHOSTS=${SDHOSTS:-1}
 SDTGTS=${SDTGTS:-1}
 SDLUNS=${SDLUNS:-1}
 LDMOD=/sbin/modprobe
-FILES="/tmp/zpool-vdev0  \
-       /tmp/zpool-vdev1  \
-       /tmp/zpool-vdev2"
+FILEDIR=${FILEDIR:-/var/tmp}
+FILES=${FILES:-"$FILEDIR/file-vdev0 $FILEDIR/file-vdev1 $FILEDIR/file-vdev2"}
 DEVICES=""
 
 zpool_create() {
@@ -57,8 +56,8 @@ zpool_create() {
 
 	DEVICES="${DEVICES} ${SDDEVICE}"
 
-	msg "${ZPOOL} create ${FORCE_FLAG} ${ZPOOL_NAME} ${DEVICES}"
-	${ZPOOL} create ${FORCE_FLAG} ${ZPOOL_NAME} ${DEVICES} ||            \
+	msg "${ZPOOL} create ${ZPOOL_FLAGS} ${ZPOOL_NAME} ${DEVICES}"
+	${ZPOOL} create ${ZPOOL_FLAGS} ${ZPOOL_NAME} ${DEVICES} ||            \
 		(${RMMOD} scsi_debug && exit 1)
 }
 

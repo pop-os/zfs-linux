@@ -205,13 +205,13 @@ zfs_sa_get_xattr(znode_t *zp)
 			return (error);
 	}
 
-	obj = sa_spill_alloc(KM_SLEEP);
+	obj = zio_buf_alloc(size);
 
 	error = sa_lookup(zp->z_sa_hdl, SA_ZPL_DXATTR(zsb), obj, size);
 	if (error == 0)
 		error = nvlist_unpack(obj, size, &zp->z_xattr_cached, KM_SLEEP);
 
-	sa_spill_free(obj);
+	zio_buf_free(obj, size);
 
 	return (error);
 }
@@ -233,7 +233,7 @@ zfs_sa_set_xattr(znode_t *zp)
 	if (error)
 		goto out;
 
-	obj = sa_spill_alloc(KM_SLEEP);
+	obj = zio_buf_alloc(size);
 
 	error = nvlist_pack(zp->z_xattr_cached, &obj, &size,
 	    NV_ENCODE_XDR, KM_SLEEP);
@@ -256,7 +256,7 @@ zfs_sa_set_xattr(znode_t *zp)
 			dmu_tx_commit(tx);
 	}
 out_free:
-	sa_spill_free(obj);
+	zio_buf_free(obj, size);
 out:
 	return (error);
 }
@@ -264,7 +264,7 @@ out:
 /*
  * I'm not convinced we should do any of this upgrade.
  * since the SA code can read both old/new znode formats
- * with probably little to know performance difference.
+ * with probably little to no performance difference.
  *
  * All new files will be created with the new format.
  */
@@ -310,7 +310,7 @@ zfs_sa_upgrade(sa_handle_t *hdl, dmu_tx_t *tx)
 	}
 
 	/* First do a bulk query of the attributes that aren't cached */
-	bulk = kmem_alloc(sizeof(sa_bulk_attr_t) * 20, KM_SLEEP);
+	bulk = kmem_alloc(sizeof (sa_bulk_attr_t) * 20, KM_SLEEP);
 	SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_MTIME(zsb), NULL, &mtime, 16);
 	SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_CTIME(zsb), NULL, &ctime, 16);
 	SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_CRTIME(zsb), NULL, &crtime, 16);
@@ -324,7 +324,7 @@ zfs_sa_upgrade(sa_handle_t *hdl, dmu_tx_t *tx)
 	    &znode_acl, 88);
 
 	if (sa_bulk_lookup_locked(hdl, bulk, count) != 0) {
-		kmem_free(bulk, sizeof(sa_bulk_attr_t) * 20);
+		kmem_free(bulk, sizeof (sa_bulk_attr_t) * 20);
 		goto done;
 	}
 
@@ -333,7 +333,7 @@ zfs_sa_upgrade(sa_handle_t *hdl, dmu_tx_t *tx)
 	 * it is such a way to pick up an already existing layout number
 	 */
 	count = 0;
-	sa_attrs = kmem_zalloc(sizeof(sa_bulk_attr_t) * 20, KM_SLEEP);
+	sa_attrs = kmem_zalloc(sizeof (sa_bulk_attr_t) * 20, KM_SLEEP);
 	SA_ADD_BULK_ATTR(sa_attrs, count, SA_ZPL_MODE(zsb), NULL, &mode, 8);
 	SA_ADD_BULK_ATTR(sa_attrs, count, SA_ZPL_SIZE(zsb), NULL,
 	    &zp->z_size, 8);
@@ -390,8 +390,8 @@ zfs_sa_upgrade(sa_handle_t *hdl, dmu_tx_t *tx)
 		    znode_acl.z_acl_extern_obj, tx));
 
 	zp->z_is_sa = B_TRUE;
-	kmem_free(sa_attrs, sizeof(sa_bulk_attr_t) * 20);
-	kmem_free(bulk, sizeof(sa_bulk_attr_t) * 20);
+	kmem_free(sa_attrs, sizeof (sa_bulk_attr_t) * 20);
+	kmem_free(bulk, sizeof (sa_bulk_attr_t) * 20);
 done:
 	if (drop_lock)
 		mutex_exit(&zp->z_lock);

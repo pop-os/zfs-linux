@@ -7,15 +7,15 @@ include $(top_srcdir)/config/tgz.am
 
 SUBDIRS = include rpm
 if CONFIG_USER
-SUBDIRS += dracut udev etc man scripts lib cmd
+SUBDIRS += dracut udev etc man scripts lib cmd contrib
 endif
 if CONFIG_KERNEL
 SUBDIRS += module
 
-extradir = /usr/src/zfs-$(VERSION)
+extradir = @prefix@/src/zfs-$(VERSION)
 extra_HEADERS = zfs.release.in zfs_config.h.in
 
-kerneldir = /usr/src/zfs-$(VERSION)/$(LINUX_VERSION)
+kerneldir = @prefix@/src/zfs-$(VERSION)/$(LINUX_VERSION)
 nodist_kernel_HEADERS = zfs.release zfs_config.h module/$(LINUX_SYMBOLS)
 endif
 
@@ -39,6 +39,10 @@ distclean-local::
 dist-hook:
 	sed -i 's/Release:[[:print:]]*/Release:      $(RELEASE)/' \
 		$(distdir)/META
+
+checkstyle:
+	@find ${top_srcdir} -name '*.[hc]' ! -name 'zfs_config.*' \
+		! -name '*.mod.c' -type f -exec scripts/cstyle.pl {} \+
 
 ctags:
 	$(RM) $(top_srcdir)/tags

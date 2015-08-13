@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012 by Delphix. All rights reserved.
+ * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
  */
 
 /*
@@ -84,7 +84,7 @@ fzap_upgrade(zap_t *zap, dmu_tx_t *tx, zap_flags_t flags)
 	    &zap->zap_f.zap_phys, zap_evict);
 
 	mutex_init(&zap->zap_f.zap_num_entries_mtx, 0, 0, 0);
-	zap->zap_f.zap_block_shift = highbit(zap->zap_dbuf->db_size) - 1;
+	zap->zap_f.zap_block_shift = highbit64(zap->zap_dbuf->db_size) - 1;
 
 	zp = zap->zap_f.zap_phys;
 	/*
@@ -115,7 +115,7 @@ fzap_upgrade(zap_t *zap, dmu_tx_t *tx, zap_flags_t flags)
 	    1<<FZAP_BLOCK_SHIFT(zap), FTAG, &db, DMU_READ_NO_PREFETCH));
 	dmu_buf_will_dirty(db, tx);
 
-	l = kmem_zalloc(sizeof (zap_leaf_t), KM_PUSHPAGE);
+	l = kmem_zalloc(sizeof (zap_leaf_t), KM_SLEEP);
 	l->l_dbuf = db;
 	l->l_phys = db->db_data;
 
@@ -209,7 +209,7 @@ zap_table_grow(zap_t *zap, zap_table_phys_t *tbl,
 		tbl->zt_nextblk = 0;
 		tbl->zt_blks_copied = 0;
 
-		dprintf("finished; numblocks now %llu (%lluk entries)\n",
+		dprintf("finished; numblocks now %llu (%uk entries)\n",
 		    tbl->zt_numblks, 1<<(tbl->zt_shift-10));
 	}
 
@@ -295,7 +295,8 @@ zap_table_load(zap_t *zap, zap_table_phys_t *tbl, uint64_t idx, uint64_t *valp)
 		err = dmu_buf_hold(zap->zap_objset, zap->zap_object,
 		    (tbl->zt_nextblk + blk) << bs, FTAG, &db,
 		    DMU_READ_NO_PREFETCH);
-		dmu_buf_rele(db, FTAG);
+		if (err == 0)
+			dmu_buf_rele(db, FTAG);
 	}
 	return (err);
 }
@@ -325,7 +326,7 @@ zap_grow_ptrtbl(zap_t *zap, dmu_tx_t *tx)
 	 * this is already an aberrant condition.
 	 */
 	if (zap->zap_f.zap_phys->zap_ptrtbl.zt_shift >= zap_hashbits(zap) - 2)
-		return (ENOSPC);
+		return (SET_ERROR(ENOSPC));
 
 	if (zap->zap_f.zap_phys->zap_ptrtbl.zt_numblks == 0) {
 		/*
@@ -391,7 +392,7 @@ static zap_leaf_t *
 zap_create_leaf(zap_t *zap, dmu_tx_t *tx)
 {
 	void *winner;
-	zap_leaf_t *l = kmem_alloc(sizeof (zap_leaf_t), KM_PUSHPAGE);
+	zap_leaf_t *l = kmem_alloc(sizeof (zap_leaf_t), KM_SLEEP);
 
 	ASSERT(RW_WRITE_HELD(&zap->zap_rwlock));
 
@@ -453,11 +454,11 @@ zap_open_leaf(uint64_t blkid, dmu_buf_t *db)
 
 	ASSERT(blkid != 0);
 
-	l = kmem_alloc(sizeof (zap_leaf_t), KM_PUSHPAGE);
+	l = kmem_alloc(sizeof (zap_leaf_t), KM_SLEEP);
 	rw_init(&l->l_rwlock, NULL, RW_DEFAULT, NULL);
 	rw_enter(&l->l_rwlock, RW_WRITER);
 	l->l_blkid = blkid;
-	l->l_bs = highbit(db->db_size)-1;
+	l->l_bs = highbit64(db->db_size) - 1;
 	l->l_dbuf = db;
 	l->l_phys = NULL;
 
@@ -714,7 +715,7 @@ static int
 fzap_checkname(zap_name_t *zn)
 {
 	if (zn->zn_key_orig_numints * zn->zn_key_intlen > ZAP_MAXNAMELEN)
-		return (ENAMETOOLONG);
+		return (SET_ERROR(ENAMETOOLONG));
 	return (0);
 }
 
@@ -729,7 +730,7 @@ fzap_checksize(uint64_t integer_size, uint64_t num_integers)
 	case 8:
 		break;
 	default:
-		return (EINVAL);
+		return (SET_ERROR(EINVAL));
 	}
 
 	if (integer_size * num_integers > ZAP_MAXVALUELEN)
@@ -805,7 +806,7 @@ fzap_add_cd(zap_name_t *zn,
 retry:
 	err = zap_leaf_lookup(l, zn, &zeh);
 	if (err == 0) {
-		err = EEXIST;
+		err = SET_ERROR(EEXIST);
 		goto out;
 	}
 	if (err != ENOENT)
@@ -971,7 +972,7 @@ zap_value_search(objset_t *os, uint64_t zapobj, uint64_t value, uint64_t mask,
 	if (mask == 0)
 		mask = -1ULL;
 
-	za = kmem_alloc(sizeof (zap_attribute_t), KM_PUSHPAGE);
+	za = kmem_alloc(sizeof (zap_attribute_t), KM_SLEEP);
 	for (zap_cursor_init(&zc, os, zapobj);
 	    (err = zap_cursor_retrieve(&zc, za)) == 0;
 	    zap_cursor_advance(&zc)) {
@@ -992,18 +993,21 @@ zap_join(objset_t *os, uint64_t fromobj, uint64_t intoobj, dmu_tx_t *tx)
 	zap_attribute_t za;
 	int err;
 
+	err = 0;
 	for (zap_cursor_init(&zc, os, fromobj);
 	    zap_cursor_retrieve(&zc, &za) == 0;
 	    (void) zap_cursor_advance(&zc)) {
-		if (za.za_integer_length != 8 || za.za_num_integers != 1)
-			return (EINVAL);
+		if (za.za_integer_length != 8 || za.za_num_integers != 1) {
+			err = SET_ERROR(EINVAL);
+			break;
+		}
 		err = zap_add(os, intoobj, za.za_name,
 		    8, 1, &za.za_first_integer, tx);
 		if (err)
-			return (err);
+			break;
 	}
 	zap_cursor_fini(&zc);
-	return (0);
+	return (err);
 }
 
 int
@@ -1014,18 +1018,21 @@ zap_join_key(objset_t *os, uint64_t fromobj, uint64_t intoobj,
 	zap_attribute_t za;
 	int err;
 
+	err = 0;
 	for (zap_cursor_init(&zc, os, fromobj);
 	    zap_cursor_retrieve(&zc, &za) == 0;
 	    (void) zap_cursor_advance(&zc)) {
-		if (za.za_integer_length != 8 || za.za_num_integers != 1)
-			return (EINVAL);
+		if (za.za_integer_length != 8 || za.za_num_integers != 1) {
+			err = SET_ERROR(EINVAL);
+			break;
+		}
 		err = zap_add(os, intoobj, za.za_name,
 		    8, 1, &value, tx);
 		if (err)
-			return (err);
+			break;
 	}
 	zap_cursor_fini(&zc);
-	return (0);
+	return (err);
 }
 
 int
@@ -1036,24 +1043,27 @@ zap_join_increment(objset_t *os, uint64_t fromobj, uint64_t intoobj,
 	zap_attribute_t za;
 	int err;
 
+	err = 0;
 	for (zap_cursor_init(&zc, os, fromobj);
 	    zap_cursor_retrieve(&zc, &za) == 0;
 	    (void) zap_cursor_advance(&zc)) {
 		uint64_t delta = 0;
 
-		if (za.za_integer_length != 8 || za.za_num_integers != 1)
-			return (EINVAL);
+		if (za.za_integer_length != 8 || za.za_num_integers != 1) {
+			err = SET_ERROR(EINVAL);
+			break;
+		}
 
 		err = zap_lookup(os, intoobj, za.za_name, 8, 1, &delta);
 		if (err != 0 && err != ENOENT)
-			return (err);
+			break;
 		delta += za.za_first_integer;
 		err = zap_update(os, intoobj, za.za_name, 8, 1, &delta, tx);
 		if (err)
-			return (err);
+			break;
 	}
 	zap_cursor_fini(&zc);
-	return (0);
+	return (err);
 }
 
 int
@@ -1250,7 +1260,7 @@ fzap_cursor_move_to_key(zap_cursor_t *zc, zap_name_t *zn)
 	zap_entry_handle_t zeh;
 
 	if (zn->zn_key_orig_numints * zn->zn_key_intlen > ZAP_MAXNAMELEN)
-		return (ENAMETOOLONG);
+		return (SET_ERROR(ENAMETOOLONG));
 
 	err = zap_deref_leaf(zc->zc_zap, zn->zn_hash, NULL, RW_READER, &l);
 	if (err != 0)

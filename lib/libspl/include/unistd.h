@@ -27,21 +27,13 @@
 #include_next <unistd.h>
 
 #ifndef _LIBSPL_UNISTD_H
-#define _LIBSPL_UNISTD_H
+#define	_LIBSPL_UNISTD_H
 
-#if !defined(HAVE_IOCTL_IN_UNISTD_H)
-# if defined(HAVE_IOCTL_IN_SYS_IOCTL_H)
-#  include <sys/ioctl.h>
-# elif defined(HAVE_IOCTL_IN_STROPTS_H)
-#  include <stropts.h>
-# else
-#  error "System call ioctl() unavailable"
-# endif
-#endif
+#include <sys/ioctl.h>
 
 #if !defined(HAVE_ISSETUGID)
-# include <sys/types.h>
-# define issetugid() (geteuid() == 0 || getegid() == 0)
+#include <sys/types.h>
+#define	issetugid() (geteuid() == 0 || getegid() == 0)
 #endif
 
 #endif /* _LIBSPL_UNISTD_H */

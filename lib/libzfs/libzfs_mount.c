@@ -231,7 +231,8 @@ zfs_is_mountable(zfs_handle_t *zhp, char *buf, size_t buflen,
 	char sourceloc[ZFS_MAXNAMELEN];
 	zprop_source_t sourcetype;
 
-	if (!zfs_prop_valid_for_type(ZFS_PROP_MOUNTPOINT, zhp->zfs_type))
+	if (!zfs_prop_valid_for_type(ZFS_PROP_MOUNTPOINT, zhp->zfs_type,
+	    B_FALSE))
 		return (B_FALSE);
 
 	verify(zfs_prop_get(zhp, ZFS_PROP_MOUNTPOINT, buf, buflen,
@@ -279,7 +280,7 @@ do_mount(const char *src, const char *mntpt, char *opts)
 	    "-t", MNTTYPE_ZFS,
 	    "-o", opts,
 	    (char *)src,
-            (char *)mntpt,
+	    (char *)mntpt,
 	    (char *)NULL };
 	int rc;
 
@@ -287,20 +288,22 @@ do_mount(const char *src, const char *mntpt, char *opts)
 	rc = libzfs_run_process(argv[0], argv, STDOUT_VERBOSE|STDERR_VERBOSE);
 	if (rc) {
 		if (rc & MOUNT_FILEIO)
-			return EIO;
+			return (EIO);
 		if (rc & MOUNT_USER)
-			return EINTR;
+			return (EINTR);
 		if (rc & MOUNT_SOFTWARE)
-			return EPIPE;
+			return (EPIPE);
+		if (rc & MOUNT_BUSY)
+			return (EBUSY);
 		if (rc & MOUNT_SYSERR)
-			return EAGAIN;
+			return (EAGAIN);
 		if (rc & MOUNT_USAGE)
-			return EINVAL;
+			return (EINVAL);
 
-		return ENXIO; /* Generic error */
+		return (ENXIO); /* Generic error */
 	}
 
-	return 0;
+	return (0);
 }
 
 static int
@@ -385,6 +388,7 @@ zfs_mount(zfs_handle_t *zhp, const char *options, int flags)
 	struct stat buf;
 	char mountpoint[ZFS_MAXPROPLEN];
 	char mntopts[MNT_LINE_MAX];
+	char overlay[ZFS_MAXPROPLEN];
 	libzfs_handle_t *hdl = zhp->zfs_hdl;
 	int remount = 0, rc;
 
@@ -402,6 +406,9 @@ zfs_mount(zfs_handle_t *zhp, const char *options, int flags)
 	 */
 	if (zpool_get_prop_int(zhp->zpool_hdl, ZPOOL_PROP_READONLY, NULL))
 		(void) strlcat(mntopts, "," MNTOPT_RO, sizeof (mntopts));
+
+	if (!zfs_is_mountable(zhp, mountpoint, sizeof (mountpoint), NULL))
+		return (0);
 
 	/*
 	 * Append default mount options which apply to the mount point.
@@ -424,9 +431,6 @@ zfs_mount(zfs_handle_t *zhp, const char *options, int flags)
 	 */
 	strlcat(mntopts, "," MNTOPT_ZFSUTIL, sizeof (mntopts));
 
-	if (!zfs_is_mountable(zhp, mountpoint, sizeof (mountpoint), NULL))
-		return (0);
-
 	/* Create the directory if it doesn't already exist */
 	if (lstat(mountpoint, &buf) != 0) {
 		if (mkdirp(mountpoint, 0755) != 0) {
@@ -435,6 +439,19 @@ zfs_mount(zfs_handle_t *zhp, const char *options, int flags)
 			return (zfs_error_fmt(hdl, EZFS_MOUNTFAILED,
 			    dgettext(TEXT_DOMAIN, "cannot mount '%s'"),
 			    mountpoint));
+		}
+	}
+
+	/*
+	 * Overlay mounts are disabled by default but may be enabled
+	 * via the 'overlay' property or the 'zfs mount -O' option.
+	 */
+	if (!(flags & MS_OVERLAY)) {
+		if (zfs_prop_get(zhp, ZFS_PROP_OVERLAY, overlay,
+			    sizeof (overlay), NULL, NULL, 0, B_FALSE) == 0) {
+			if (strcmp(overlay, "on") == 0) {
+				flags |= MS_OVERLAY;
+			}
 		}
 	}
 
@@ -888,7 +905,7 @@ zfs_unshare_proto(zfs_handle_t *zhp, const char *mountpoint,
 			mntpt = zfs_strdup(zhp->zfs_hdl, entry.mnt_mountp);
 
 		for (curr_proto = proto; *curr_proto != PROTO_END;
-		     curr_proto++) {
+		    curr_proto++) {
 
 			if (is_shared(hdl, mntpt, *curr_proto) &&
 			    unshare_one(hdl, zhp->zfs_name,
@@ -1163,7 +1180,10 @@ zpool_disable_datasets(zpool_handle_t *zhp, boolean_t force)
 
 	namelen = strlen(zhp->zpool_name);
 
-	rewind(hdl->libzfs_mnttab);
+	/* Reopen MNTTAB to prevent reading stale data from open file */
+	if (freopen(MNTTAB, "r", hdl->libzfs_mnttab) == NULL)
+		return (ENOENT);
+
 	used = alloc = 0;
 	while (getmntent(hdl->libzfs_mnttab, &entry) == 0) {
 		/*

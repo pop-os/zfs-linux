@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2014 by Delphix. All rights reserved.
  */
 
 /* Portions Copyright 2010 Robert Milkowski */
@@ -39,6 +39,7 @@
 #include <sys/dmu_tx.h>
 #include <sys/dsl_pool.h>
 #include <sys/metaslab.h>
+#include <sys/trace_zil.h>
 
 /*
  * The zfs intent log (ZIL) saves transaction records of system calls
@@ -70,27 +71,27 @@
  * See zil.h for more information about these fields.
  */
 zil_stats_t zil_stats = {
-	{ "zil_commit_count",              KSTAT_DATA_UINT64 },
-	{ "zil_commit_writer_count",       KSTAT_DATA_UINT64 },
-	{ "zil_itx_count",                 KSTAT_DATA_UINT64 },
-	{ "zil_itx_indirect_count",        KSTAT_DATA_UINT64 },
-	{ "zil_itx_indirect_bytes",        KSTAT_DATA_UINT64 },
-	{ "zil_itx_copied_count",          KSTAT_DATA_UINT64 },
-	{ "zil_itx_copied_bytes",          KSTAT_DATA_UINT64 },
-	{ "zil_itx_needcopy_count",        KSTAT_DATA_UINT64 },
-	{ "zil_itx_needcopy_bytes",        KSTAT_DATA_UINT64 },
-	{ "zil_itx_metaslab_normal_count", KSTAT_DATA_UINT64 },
-	{ "zil_itx_metaslab_normal_bytes", KSTAT_DATA_UINT64 },
-	{ "zil_itx_metaslab_slog_count",   KSTAT_DATA_UINT64 },
-	{ "zil_itx_metaslab_slog_bytes",   KSTAT_DATA_UINT64 },
+	{ "zil_commit_count",			KSTAT_DATA_UINT64 },
+	{ "zil_commit_writer_count",		KSTAT_DATA_UINT64 },
+	{ "zil_itx_count",			KSTAT_DATA_UINT64 },
+	{ "zil_itx_indirect_count",		KSTAT_DATA_UINT64 },
+	{ "zil_itx_indirect_bytes",		KSTAT_DATA_UINT64 },
+	{ "zil_itx_copied_count",		KSTAT_DATA_UINT64 },
+	{ "zil_itx_copied_bytes",		KSTAT_DATA_UINT64 },
+	{ "zil_itx_needcopy_count",		KSTAT_DATA_UINT64 },
+	{ "zil_itx_needcopy_bytes",		KSTAT_DATA_UINT64 },
+	{ "zil_itx_metaslab_normal_count",	KSTAT_DATA_UINT64 },
+	{ "zil_itx_metaslab_normal_bytes",	KSTAT_DATA_UINT64 },
+	{ "zil_itx_metaslab_slog_count",	KSTAT_DATA_UINT64 },
+	{ "zil_itx_metaslab_slog_bytes",	KSTAT_DATA_UINT64 },
 };
 
 static kstat_t *zil_ksp;
 
 /*
- * This global ZIL switch affects all pools
+ * Disable intent logging replay.  This global ZIL switch affects all pools.
  */
-int zil_replay_disable = 0;    /* disable intent logging replay */
+int zil_replay_disable = 0;
 
 /*
  * Tunable parameter for debugging or performance analysis.  Setting
@@ -159,14 +160,19 @@ int
 zil_bp_tree_add(zilog_t *zilog, const blkptr_t *bp)
 {
 	avl_tree_t *t = &zilog->zl_bp_tree;
-	const dva_t *dva = BP_IDENTITY(bp);
+	const dva_t *dva;
 	zil_bp_node_t *zn;
 	avl_index_t where;
 
-	if (avl_find(t, dva, &where) != NULL)
-		return (EEXIST);
+	if (BP_IS_EMBEDDED(bp))
+		return (0);
 
-	zn = kmem_alloc(sizeof (zil_bp_node_t), KM_PUSHPAGE);
+	dva = BP_IDENTITY(bp);
+
+	if (avl_find(t, dva, &where) != NULL)
+		return (SET_ERROR(EEXIST));
+
+	zn = kmem_alloc(sizeof (zil_bp_node_t), KM_SLEEP);
 	zn->zn_dva = *dva;
 	avl_insert(t, zn, where);
 
@@ -200,7 +206,7 @@ zil_read_log_block(zilog_t *zilog, const blkptr_t *bp, blkptr_t *nbp, void *dst,
 	enum zio_flag zio_flags = ZIO_FLAG_CANFAIL;
 	uint32_t aflags = ARC_WAIT;
 	arc_buf_t *abuf = NULL;
-	zbookmark_t zb;
+	zbookmark_phys_t zb;
 	int error;
 
 	if (zilog->zl_header->zh_claim_txg == 0)
@@ -235,7 +241,7 @@ zil_read_log_block(zilog_t *zilog, const blkptr_t *bp, blkptr_t *nbp, void *dst,
 
 			if (bcmp(&cksum, &zilc->zc_next_blk.blk_cksum,
 			    sizeof (cksum)) || BP_IS_HOLE(&zilc->zc_next_blk)) {
-				error = ECKSUM;
+				error = SET_ERROR(ECKSUM);
 			} else {
 				bcopy(lr, dst, len);
 				*end = (char *)dst + len;
@@ -249,7 +255,7 @@ zil_read_log_block(zilog_t *zilog, const blkptr_t *bp, blkptr_t *nbp, void *dst,
 			if (bcmp(&cksum, &zilc->zc_next_blk.blk_cksum,
 			    sizeof (cksum)) || BP_IS_HOLE(&zilc->zc_next_blk) ||
 			    (zilc->zc_nused > (size - sizeof (*zilc)))) {
-				error = ECKSUM;
+				error = SET_ERROR(ECKSUM);
 			} else {
 				bcopy(lr, dst, zilc->zc_nused);
 				*end = (char *)dst + zilc->zc_nused;
@@ -257,7 +263,7 @@ zil_read_log_block(zilog_t *zilog, const blkptr_t *bp, blkptr_t *nbp, void *dst,
 			}
 		}
 
-		VERIFY(arc_buf_remove_ref(abuf, &abuf) == 1);
+		VERIFY(arc_buf_remove_ref(abuf, &abuf));
 	}
 
 	return (error);
@@ -273,7 +279,7 @@ zil_read_log_data(zilog_t *zilog, const lr_write_t *lr, void *wbuf)
 	const blkptr_t *bp = &lr->lr_blkptr;
 	uint32_t aflags = ARC_WAIT;
 	arc_buf_t *abuf = NULL;
-	zbookmark_t zb;
+	zbookmark_phys_t zb;
 	int error;
 
 	if (BP_IS_HOLE(bp)) {
@@ -319,7 +325,7 @@ zil_parse(zilog_t *zilog, zil_parse_blk_func_t *parse_blk_func,
 	char *lrbuf, *lrp;
 	int error = 0;
 
-	bzero(&next_blk, sizeof(blkptr_t));
+	bzero(&next_blk, sizeof (blkptr_t));
 
 	/*
 	 * Old logs didn't record the maximum zh_claim_lr_seq.
@@ -356,7 +362,7 @@ zil_parse(zilog_t *zilog, zil_parse_blk_func_t *parse_blk_func,
 			break;
 
 		error = zil_read_log_block(zilog, &blk, &next_blk, lrbuf, &end);
-		if (error)
+		if (error != 0)
 			break;
 
 		for (lrp = lrbuf; lrp < end; lrp += reclen) {
@@ -395,7 +401,8 @@ zil_claim_log_block(zilog_t *zilog, blkptr_t *bp, void *tx, uint64_t first_txg)
 	 * Claim log block if not already committed and not already claimed.
 	 * If tx == NULL, just verify that the block is claimable.
 	 */
-	if (bp->blk_birth < first_txg || zil_bp_tree_add(zilog, bp) != 0)
+	if (BP_IS_HOLE(bp) || bp->blk_birth < first_txg ||
+	    zil_bp_tree_add(zilog, bp) != 0)
 		return (0);
 
 	return (zio_wait(zio_claim(NULL, zilog->zl_spa,
@@ -445,7 +452,8 @@ zil_free_log_record(zilog_t *zilog, lr_t *lrc, void *tx, uint64_t claim_txg)
 	 * If we previously claimed it, we need to free it.
 	 */
 	if (claim_txg != 0 && lrc->lrc_txtype == TX_WRITE &&
-	    bp->blk_birth >= claim_txg && zil_bp_tree_add(zilog, bp) == 0)
+	    bp->blk_birth >= claim_txg && zil_bp_tree_add(zilog, bp) == 0 &&
+	    !BP_IS_HOLE(bp))
 		zio_free(zilog->zl_spa, dmu_tx_get_txg(tx), bp);
 
 	return (0);
@@ -456,7 +464,7 @@ zil_alloc_lwb(zilog_t *zilog, blkptr_t *bp, uint64_t txg, boolean_t fastwrite)
 {
 	lwb_t *lwb;
 
-	lwb = kmem_cache_alloc(zil_lwb_cache, KM_PUSHPAGE);
+	lwb = kmem_cache_alloc(zil_lwb_cache, KM_SLEEP);
 	lwb->lwb_zilog = zilog;
 	lwb->lwb_blk = *bp;
 	lwb->lwb_fastwrite = fastwrite;
@@ -492,7 +500,7 @@ zilog_dirty(zilog_t *zilog, uint64_t txg)
 	if (dsl_dataset_is_snapshot(ds))
 		panic("dirtying snapshot!");
 
-	if (txg_list_add(&dp->dp_dirty_zilogs, zilog, txg) == 0) {
+	if (txg_list_add(&dp->dp_dirty_zilogs, zilog, txg)) {
 		/* up the hold count until we can be written out */
 		dmu_buf_add_ref(ds->ds_dbuf, zilog);
 	}
@@ -658,9 +666,17 @@ zil_claim(const char *osname, void *txarg)
 	objset_t *os;
 	int error;
 
-	error = dmu_objset_hold(osname, FTAG, &os);
-	if (error) {
-		cmn_err(CE_WARN, "can't open objset for %s", osname);
+	error = dmu_objset_own(osname, DMU_OST_ANY, B_FALSE, FTAG, &os);
+	if (error != 0) {
+		/*
+		 * EBUSY indicates that the objset is inconsistent, in which
+		 * case it can not have a ZIL.
+		 */
+		if (error != EBUSY) {
+			cmn_err(CE_WARN, "can't open objset for %s, error %u",
+				osname, error);
+		}
+
 		return (0);
 	}
 
@@ -672,7 +688,7 @@ zil_claim(const char *osname, void *txarg)
 			zio_free_zil(zilog->zl_spa, first_txg, &zh->zh_log);
 		BP_ZERO(&zh->zh_log);
 		dsl_dataset_dirty(dmu_objset_ds(os), tx);
-		dmu_objset_rele(os, FTAG);
+		dmu_objset_disown(os, FTAG);
 		return (0);
 	}
 
@@ -697,7 +713,7 @@ zil_claim(const char *osname, void *txarg)
 	}
 
 	ASSERT3U(first_txg, ==, (spa_last_synced_txg(zilog->zl_spa) + 1));
-	dmu_objset_rele(os, FTAG);
+	dmu_objset_disown(os, FTAG);
 	return (0);
 }
 
@@ -717,7 +733,7 @@ zil_check_log_chain(const char *osname, void *tx)
 	ASSERT(tx == NULL);
 
 	error = dmu_objset_hold(osname, FTAG, &os);
-	if (error) {
+	if (error != 0) {
 		cmn_err(CE_WARN, "can't open objset for %s", osname);
 		return (0);
 	}
@@ -799,7 +815,7 @@ zil_add_block(zilog_t *zilog, const blkptr_t *bp)
 	for (i = 0; i < ndvas; i++) {
 		zvsearch.zv_vdev = DVA_GET_VDEV(&bp->blk_dva[i]);
 		if (avl_find(t, &zvsearch, &where) == NULL) {
-			zv = kmem_alloc(sizeof (*zv), KM_PUSHPAGE);
+			zv = kmem_alloc(sizeof (*zv), KM_SLEEP);
 			zv->zv_vdev = zvsearch.zv_vdev;
 			avl_insert(t, zv, where);
 		}
@@ -861,7 +877,7 @@ zil_lwb_write_done(zio_t *zio)
 	ASSERT(BP_GET_BYTEORDER(zio->io_bp) == ZFS_HOST_BYTEORDER);
 	ASSERT(!BP_IS_GANG(zio->io_bp));
 	ASSERT(!BP_IS_HOLE(zio->io_bp));
-	ASSERT(zio->io_bp->blk_fill == 0);
+	ASSERT(BP_GET_FILL(zio->io_bp) == 0);
 
 	/*
 	 * Ensure the lwb buffer pointer is cleared before releasing
@@ -893,7 +909,7 @@ zil_lwb_write_done(zio_t *zio)
 static void
 zil_lwb_write_init(zilog_t *zilog, lwb_t *lwb)
 {
-	zbookmark_t zb;
+	zbookmark_phys_t zb;
 
 	SET_BOOKMARK(&zb, lwb->lwb_blk.blk_cksum.zc_word[ZIL_ZC_OBJSET],
 	    ZB_ZIL_OBJECT, ZB_ZIL_LEVEL,
@@ -913,7 +929,7 @@ zil_lwb_write_init(zilog_t *zilog, lwb_t *lwb)
 		}
 		lwb->lwb_zio = zio_rewrite(zilog->zl_root_zio, zilog->zl_spa,
 		    0, &lwb->lwb_blk, lwb->lwb_buf, BP_GET_LSIZE(&lwb->lwb_blk),
-		    zil_lwb_write_done, lwb, ZIO_PRIORITY_LOG_WRITE,
+		    zil_lwb_write_done, lwb, ZIO_PRIORITY_SYNC_WRITE,
 		    ZIO_FLAG_CANFAIL | ZIO_FLAG_DONT_PROPAGATE |
 		    ZIO_FLAG_FASTWRITE, &zb);
 	}
@@ -922,6 +938,7 @@ zil_lwb_write_init(zilog_t *zilog, lwb_t *lwb)
 
 /*
  * Define a limited set of intent log block sizes.
+ *
  * These must be a multiple of 4KB. Note only the amount used (again
  * aligned to 4KB) actually gets written. However, we can't always just
  * allocate SPA_MAXBLOCKSIZE as the slog space could be exhausted.
@@ -1014,18 +1031,16 @@ zil_lwb_write_start(zilog_t *zilog, lwb_t *lwb)
 
 	BP_ZERO(bp);
 	use_slog = USE_SLOG(zilog);
-	error = zio_alloc_zil(spa, txg, bp, zil_blksz, USE_SLOG(zilog));
-	if (use_slog)
-	{
+	error = zio_alloc_zil(spa, txg, bp, zil_blksz,
+	    USE_SLOG(zilog));
+	if (use_slog) {
 		ZIL_STAT_BUMP(zil_itx_metaslab_slog_count);
 		ZIL_STAT_INCR(zil_itx_metaslab_slog_bytes, lwb->lwb_nused);
-	}
-	else
-	{
+	} else {
 		ZIL_STAT_BUMP(zil_itx_metaslab_normal_count);
 		ZIL_STAT_INCR(zil_itx_metaslab_normal_bytes, lwb->lwb_nused);
 	}
-	if (!error) {
+	if (error == 0) {
 		ASSERT3U(bp->blk_birth, ==, txg);
 		bp->blk_cksum = lwb->lwb_blk.blk_cksum;
 		bp->blk_cksum.zc_word[ZIL_ZC_SEQ]++;
@@ -1132,12 +1147,14 @@ zil_lwb_commit(zilog_t *zilog, itx_t *itx, lwb_t *lwb)
 				dbuf = lr_buf + reclen;
 				lrw->lr_common.lrc_reclen += dlen;
 				ZIL_STAT_BUMP(zil_itx_needcopy_count);
-				ZIL_STAT_INCR(zil_itx_needcopy_bytes, lrw->lr_length);
+				ZIL_STAT_INCR(zil_itx_needcopy_bytes,
+				    lrw->lr_length);
 			} else {
 				ASSERT(itx->itx_wr_state == WR_INDIRECT);
 				dbuf = NULL;
 				ZIL_STAT_BUMP(zil_itx_indirect_count);
-				ZIL_STAT_INCR(zil_itx_indirect_bytes, lrw->lr_length);
+				ZIL_STAT_INCR(zil_itx_indirect_bytes,
+				    lrw->lr_length);
 			}
 			error = zilog->zl_get_data(
 			    itx->itx_private, lrw, dbuf, lwb->lwb_zio);
@@ -1145,7 +1162,7 @@ zil_lwb_commit(zilog_t *zilog, itx_t *itx, lwb_t *lwb)
 				txg_wait_synced(zilog->zl_dmu_pool, txg);
 				return (lwb);
 			}
-			if (error) {
+			if (error != 0) {
 				ASSERT(error == ENOENT || error == EEXIST ||
 				    error == EALREADY);
 				return (lwb);
@@ -1175,13 +1192,14 @@ zil_itx_create(uint64_t txtype, size_t lrsize)
 
 	lrsize = P2ROUNDUP_TYPED(lrsize, sizeof (uint64_t), size_t);
 
-	itx = kmem_alloc(offsetof(itx_t, itx_lr) + lrsize,
-	    KM_PUSHPAGE | KM_NODEBUG);
+	itx = zio_data_buf_alloc(offsetof(itx_t, itx_lr) + lrsize);
 	itx->itx_lr.lrc_txtype = txtype;
 	itx->itx_lr.lrc_reclen = lrsize;
 	itx->itx_sod = lrsize; /* if write & WR_NEED_COPY will be increased */
 	itx->itx_lr.lrc_seq = 0;	/* defensive */
 	itx->itx_sync = B_TRUE;		/* default is synchronous */
+	itx->itx_callback = NULL;
+	itx->itx_callback_data = NULL;
 
 	return (itx);
 }
@@ -1189,7 +1207,7 @@ zil_itx_create(uint64_t txtype, size_t lrsize)
 void
 zil_itx_destroy(itx_t *itx)
 {
-	kmem_free(itx, offsetof(itx_t, itx_lr) + itx->itx_lr.lrc_reclen);
+	zio_data_buf_free(itx, offsetof(itx_t, itx_lr)+itx->itx_lr.lrc_reclen);
 }
 
 /*
@@ -1207,9 +1225,10 @@ zil_itxg_clean(itxs_t *itxs)
 
 	list = &itxs->i_sync_list;
 	while ((itx = list_head(list)) != NULL) {
+		if (itx->itx_callback != NULL)
+			itx->itx_callback(itx->itx_callback_data);
 		list_remove(list, itx);
-		kmem_free(itx, offsetof(itx_t, itx_lr) +
-		    itx->itx_lr.lrc_reclen);
+		zil_itx_destroy(itx);
 	}
 
 	cookie = NULL;
@@ -1217,9 +1236,10 @@ zil_itxg_clean(itxs_t *itxs)
 	while ((ian = avl_destroy_nodes(t, &cookie)) != NULL) {
 		list = &ian->ia_list;
 		while ((itx = list_head(list)) != NULL) {
+			if (itx->itx_callback != NULL)
+				itx->itx_callback(itx->itx_callback_data);
 			list_remove(list, itx);
-			kmem_free(itx, offsetof(itx_t, itx_lr) +
-			    itx->itx_lr.lrc_reclen);
+			zil_itx_destroy(itx);
 		}
 		list_destroy(list);
 		kmem_free(ian, sizeof (itx_async_node_t));
@@ -1283,9 +1303,10 @@ zil_remove_async(zilog_t *zilog, uint64_t oid)
 		mutex_exit(&itxg->itxg_lock);
 	}
 	while ((itx = list_head(&clean_list)) != NULL) {
+		if (itx->itx_callback != NULL)
+			itx->itx_callback(itx->itx_callback_data);
 		list_remove(&clean_list, itx);
-		kmem_free(itx, offsetof(itx_t, itx_lr) +
-		    itx->itx_lr.lrc_reclen);
+		zil_itx_destroy(itx);
 	}
 	list_destroy(&clean_list);
 }
@@ -1334,7 +1355,8 @@ zil_itx_assign(zilog_t *zilog, itx_t *itx, dmu_tx_t *tx)
 		}
 		ASSERT(itxg->itxg_sod == 0);
 		itxg->itxg_txg = txg;
-		itxs = itxg->itxg_itxs = kmem_zalloc(sizeof (itxs_t), KM_PUSHPAGE);
+		itxs = itxg->itxg_itxs = kmem_zalloc(sizeof (itxs_t),
+		    KM_SLEEP);
 
 		list_create(&itxs->i_sync_list, sizeof (itx_t),
 		    offsetof(itx_t, itx_node));
@@ -1354,7 +1376,8 @@ zil_itx_assign(zilog_t *zilog, itx_t *itx, dmu_tx_t *tx)
 
 		ian = avl_find(t, &foid, &where);
 		if (ian == NULL) {
-			ian = kmem_alloc(sizeof (itx_async_node_t), KM_PUSHPAGE);
+			ian = kmem_alloc(sizeof (itx_async_node_t),
+			    KM_SLEEP);
 			list_create(&ian->ia_list, sizeof (itx_t),
 			    offsetof(itx_t, itx_node));
 			ian->ia_foid = foid;
@@ -1528,15 +1551,13 @@ zil_commit_writer(zilog_t *zilog)
 	}
 
 	DTRACE_PROBE1(zil__cw1, zilog_t *, zilog);
-	while ((itx = list_head(&zilog->zl_itx_commit_list))) {
+	for (itx = list_head(&zilog->zl_itx_commit_list); itx != NULL;
+	    itx = list_next(&zilog->zl_itx_commit_list, itx)) {
 		txg = itx->itx_lr.lrc_txg;
 		ASSERT(txg);
 
 		if (txg > spa_last_synced_txg(spa) || txg > spa_freeze_txg(spa))
 			lwb = zil_lwb_commit(zilog, itx, lwb);
-		list_remove(&zilog->zl_itx_commit_list, itx);
-		kmem_free(itx, offsetof(itx_t, itx_lr)
-		    + itx->itx_lr.lrc_reclen);
 	}
 	DTRACE_PROBE1(zil__cw2, zilog_t *, zilog);
 
@@ -1557,6 +1578,16 @@ zil_commit_writer(zilog_t *zilog)
 
 	if (error || lwb == NULL)
 		txg_wait_synced(zilog->zl_dmu_pool, 0);
+
+	while ((itx = list_head(&zilog->zl_itx_commit_list))) {
+		txg = itx->itx_lr.lrc_txg;
+		ASSERT(txg);
+
+		if (itx->itx_callback != NULL)
+			itx->itx_callback(itx->itx_callback_data);
+		list_remove(&zilog->zl_itx_commit_list, itx);
+		zil_itx_destroy(itx);
+	}
 
 	mutex_enter(&zilog->zl_lock);
 
@@ -1725,7 +1756,7 @@ zil_init(void)
 	    sizeof (struct lwb), 0, NULL, NULL, NULL, NULL, NULL, 0);
 
 	zil_ksp = kstat_create("zfs", 0, "zil", "misc",
-	    KSTAT_TYPE_NAMED, sizeof(zil_stats) / sizeof(kstat_named_t),
+	    KSTAT_TYPE_NAMED, sizeof (zil_stats) / sizeof (kstat_named_t),
 	    KSTAT_FLAG_VIRTUAL);
 
 	if (zil_ksp != NULL) {
@@ -1763,7 +1794,7 @@ zil_alloc(objset_t *os, zil_header_t *zh_phys)
 	zilog_t *zilog;
 	int i;
 
-	zilog = kmem_zalloc(sizeof (zilog_t), KM_PUSHPAGE);
+	zilog = kmem_zalloc(sizeof (zilog_t), KM_SLEEP);
 
 	zilog->zl_header = zh_phys;
 	zilog->zl_os = os;
@@ -1806,6 +1837,9 @@ zil_free(zilog_t *zilog)
 	int i;
 
 	zilog->zl_stop_sync = 1;
+
+	ASSERT0(zilog->zl_suspend);
+	ASSERT0(zilog->zl_suspending);
 
 	ASSERT(list_is_empty(&zilog->zl_lwb_list));
 	list_destroy(&zilog->zl_lwb_list);
@@ -1905,32 +1939,100 @@ zil_close(zilog_t *zilog)
 	mutex_exit(&zilog->zl_lock);
 }
 
+static char *suspend_tag = "zil suspending";
+
 /*
  * Suspend an intent log.  While in suspended mode, we still honor
  * synchronous semantics, but we rely on txg_wait_synced() to do it.
- * We suspend the log briefly when taking a snapshot so that the snapshot
- * contains all the data it's supposed to, and has an empty intent log.
+ * On old version pools, we suspend the log briefly when taking a
+ * snapshot so that it will have an empty intent log.
+ *
+ * Long holds are not really intended to be used the way we do here --
+ * held for such a short time.  A concurrent caller of dsl_dataset_long_held()
+ * could fail.  Therefore we take pains to only put a long hold if it is
+ * actually necessary.  Fortunately, it will only be necessary if the
+ * objset is currently mounted (or the ZVOL equivalent).  In that case it
+ * will already have a long hold, so we are not really making things any worse.
+ *
+ * Ideally, we would locate the existing long-holder (i.e. the zfsvfs_t or
+ * zvol_state_t), and use their mechanism to prevent their hold from being
+ * dropped (e.g. VFS_HOLD()).  However, that would be even more pain for
+ * very little gain.
+ *
+ * if cookiep == NULL, this does both the suspend & resume.
+ * Otherwise, it returns with the dataset "long held", and the cookie
+ * should be passed into zil_resume().
  */
 int
-zil_suspend(zilog_t *zilog)
+zil_suspend(const char *osname, void **cookiep)
 {
-	const zil_header_t *zh = zilog->zl_header;
+	objset_t *os;
+	zilog_t *zilog;
+	const zil_header_t *zh;
+	int error;
+
+	error = dmu_objset_hold(osname, suspend_tag, &os);
+	if (error != 0)
+		return (error);
+	zilog = dmu_objset_zil(os);
 
 	mutex_enter(&zilog->zl_lock);
+	zh = zilog->zl_header;
+
 	if (zh->zh_flags & ZIL_REPLAY_NEEDED) {		/* unplayed log */
 		mutex_exit(&zilog->zl_lock);
-		return (EBUSY);
+		dmu_objset_rele(os, suspend_tag);
+		return (SET_ERROR(EBUSY));
 	}
-	if (zilog->zl_suspend++ != 0) {
+
+	/*
+	 * Don't put a long hold in the cases where we can avoid it.  This
+	 * is when there is no cookie so we are doing a suspend & resume
+	 * (i.e. called from zil_vdev_offline()), and there's nothing to do
+	 * for the suspend because it's already suspended, or there's no ZIL.
+	 */
+	if (cookiep == NULL && !zilog->zl_suspending &&
+	    (zilog->zl_suspend > 0 || BP_IS_HOLE(&zh->zh_log))) {
+		mutex_exit(&zilog->zl_lock);
+		dmu_objset_rele(os, suspend_tag);
+		return (0);
+	}
+
+	dsl_dataset_long_hold(dmu_objset_ds(os), suspend_tag);
+	dsl_pool_rele(dmu_objset_pool(os), suspend_tag);
+
+	zilog->zl_suspend++;
+
+	if (zilog->zl_suspend > 1) {
 		/*
-		 * Someone else already began a suspend.
+		 * Someone else is already suspending it.
 		 * Just wait for them to finish.
 		 */
+
 		while (zilog->zl_suspending)
 			cv_wait(&zilog->zl_cv_suspend, &zilog->zl_lock);
 		mutex_exit(&zilog->zl_lock);
+
+		if (cookiep == NULL)
+			zil_resume(os);
+		else
+			*cookiep = os;
 		return (0);
 	}
+
+	/*
+	 * If there is no pointer to an on-disk block, this ZIL must not
+	 * be active (e.g. filesystem not mounted), so there's nothing
+	 * to clean up.
+	 */
+	if (BP_IS_HOLE(&zh->zh_log)) {
+		ASSERT(cookiep != NULL); /* fast path already handled */
+
+		*cookiep = os;
+		mutex_exit(&zilog->zl_lock);
+		return (0);
+	}
+
 	zilog->zl_suspending = B_TRUE;
 	mutex_exit(&zilog->zl_lock);
 
@@ -1943,16 +2045,25 @@ zil_suspend(zilog_t *zilog)
 	cv_broadcast(&zilog->zl_cv_suspend);
 	mutex_exit(&zilog->zl_lock);
 
+	if (cookiep == NULL)
+		zil_resume(os);
+	else
+		*cookiep = os;
 	return (0);
 }
 
 void
-zil_resume(zilog_t *zilog)
+zil_resume(void *cookie)
 {
+	objset_t *os = cookie;
+	zilog_t *zilog = dmu_objset_zil(os);
+
 	mutex_enter(&zilog->zl_lock);
 	ASSERT(zilog->zl_suspend != 0);
 	zilog->zl_suspend--;
 	mutex_exit(&zilog->zl_lock);
+	dsl_dataset_long_rele(dmu_objset_ds(os), suspend_tag);
+	dsl_dataset_rele(dmu_objset_ds(os), suspend_tag);
 }
 
 typedef struct zil_replay_arg {
@@ -2025,7 +2136,7 @@ zil_replay_log_record(zilog_t *zilog, lr_t *lr, void *zra, uint64_t claim_txg)
 	if (txtype == TX_WRITE && reclen == sizeof (lr_write_t)) {
 		error = zil_read_log_data(zilog, (lr_write_t *)lr,
 		    zr->zr_lr + reclen);
-		if (error)
+		if (error != 0)
 			return (zil_replay_error(zilog, lr, error));
 	}
 
@@ -2046,7 +2157,7 @@ zil_replay_log_record(zilog_t *zilog, lr_t *lr, void *zra, uint64_t claim_txg)
 	 * is updated if we are in replay mode.
 	 */
 	error = zr->zr_replay[txtype](zr->zr_arg, zr->zr_lr, zr->zr_byteswap);
-	if (error) {
+	if (error != 0) {
 		/*
 		 * The DMU's dnode layer doesn't see removes until the txg
 		 * commits, so a subsequent claim can spuriously fail with
@@ -2056,7 +2167,7 @@ zil_replay_log_record(zilog_t *zilog, lr_t *lr, void *zra, uint64_t claim_txg)
 		 */
 		txg_wait_synced(spa_get_dsl(zilog->zl_spa), 0);
 		error = zr->zr_replay[txtype](zr->zr_arg, zr->zr_lr, B_FALSE);
-		if (error)
+		if (error != 0)
 			return (zil_replay_error(zilog, lr, error));
 	}
 	return (0);
@@ -2089,7 +2200,7 @@ zil_replay(objset_t *os, void *arg, zil_replay_func_t replay_func[TX_MAX_TYPE])
 	zr.zr_replay = replay_func;
 	zr.zr_arg = arg;
 	zr.zr_byteswap = BP_SHOULD_BYTESWAP(&zh->zh_log);
-	zr.zr_lr = vmem_alloc(2 * SPA_MAXBLOCKSIZE, KM_PUSHPAGE);
+	zr.zr_lr = vmem_alloc(2 * SPA_MAXBLOCKSIZE, KM_SLEEP);
 
 	/*
 	 * Wait for in-progress removes to sync before starting replay.
@@ -2128,24 +2239,39 @@ zil_replaying(zilog_t *zilog, dmu_tx_t *tx)
 int
 zil_vdev_offline(const char *osname, void *arg)
 {
-	objset_t *os;
-	zilog_t *zilog;
 	int error;
 
-	error = dmu_objset_hold(osname, FTAG, &os);
-	if (error)
-		return (error);
-
-	zilog = dmu_objset_zil(os);
-	if (zil_suspend(zilog) != 0)
-		error = EEXIST;
-	else
-		zil_resume(zilog);
-	dmu_objset_rele(os, FTAG);
-	return (error);
+	error = zil_suspend(osname, NULL);
+	if (error != 0)
+		return (SET_ERROR(EEXIST));
+	return (0);
 }
 
 #if defined(_KERNEL) && defined(HAVE_SPL)
+EXPORT_SYMBOL(zil_alloc);
+EXPORT_SYMBOL(zil_free);
+EXPORT_SYMBOL(zil_open);
+EXPORT_SYMBOL(zil_close);
+EXPORT_SYMBOL(zil_replay);
+EXPORT_SYMBOL(zil_replaying);
+EXPORT_SYMBOL(zil_destroy);
+EXPORT_SYMBOL(zil_destroy_sync);
+EXPORT_SYMBOL(zil_itx_create);
+EXPORT_SYMBOL(zil_itx_destroy);
+EXPORT_SYMBOL(zil_itx_assign);
+EXPORT_SYMBOL(zil_commit);
+EXPORT_SYMBOL(zil_vdev_offline);
+EXPORT_SYMBOL(zil_claim);
+EXPORT_SYMBOL(zil_check_log_chain);
+EXPORT_SYMBOL(zil_sync);
+EXPORT_SYMBOL(zil_clean);
+EXPORT_SYMBOL(zil_suspend);
+EXPORT_SYMBOL(zil_resume);
+EXPORT_SYMBOL(zil_add_block);
+EXPORT_SYMBOL(zil_bp_tree_add);
+EXPORT_SYMBOL(zil_set_sync);
+EXPORT_SYMBOL(zil_set_logbias);
+
 module_param(zil_replay_disable, int, 0644);
 MODULE_PARM_DESC(zil_replay_disable, "Disable intent logging replay");
 

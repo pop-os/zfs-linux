@@ -27,6 +27,10 @@
  * Copyright (c) 2013 by Saso Kiselkov. All rights reserved.
  */
 
+/*
+ * Copyright (c) 2013 by Delphix. All rights reserved.
+ */
+
 #include <sys/zfs_context.h>
 #include <sys/compress.h>
 #include <sys/spa.h>
@@ -53,7 +57,7 @@ zio_compress_info_t zio_compress_table[ZIO_COMPRESS_FUNCTIONS] = {
 	{gzip_compress,		gzip_decompress,	8,	"gzip-8"},
 	{gzip_compress,		gzip_decompress,	9,	"gzip-9"},
 	{zle_compress,		zle_decompress,		64,	"zle"},
-	{lz4_compress,		lz4_decompress,		0,	"lz4"},
+	{lz4_compress_zfs,	lz4_decompress_zfs,	0,	"lz4"},
 };
 
 enum zio_compress
@@ -76,7 +80,7 @@ size_t
 zio_compress_data(enum zio_compress c, void *src, void *dst, size_t s_len)
 {
 	uint64_t *word, *word_end;
-	size_t c_len, d_len, r_len;
+	size_t c_len, d_len;
 	zio_compress_info_t *ci = &zio_compress_table[c];
 
 	ASSERT((uint_t)c < ZIO_COMPRESS_FUNCTIONS);
@@ -98,28 +102,13 @@ zio_compress_data(enum zio_compress c, void *src, void *dst, size_t s_len)
 		return (s_len);
 
 	/* Compress at least 12.5% */
-	d_len = P2ALIGN(s_len - (s_len >> 3), (size_t)SPA_MINBLOCKSIZE);
-	if (d_len == 0)
-		return (s_len);
-
+	d_len = s_len - (s_len >> 3);
 	c_len = ci->ci_compress(src, dst, s_len, d_len, ci->ci_level);
 
 	if (c_len > d_len)
 		return (s_len);
 
-	/*
-	 * Cool.  We compressed at least as much as we were hoping to.
-	 * For both security and repeatability, pad out the last sector.
-	 */
-	r_len = P2ROUNDUP(c_len, (size_t)SPA_MINBLOCKSIZE);
-	if (r_len > c_len) {
-		bzero((char *)dst + c_len, r_len - c_len);
-		c_len = r_len;
-	}
-
 	ASSERT3U(c_len, <=, d_len);
-	ASSERT(P2PHASE(c_len, (size_t)SPA_MINBLOCKSIZE) == 0);
-
 	return (c_len);
 }
 
@@ -130,7 +119,7 @@ zio_decompress_data(enum zio_compress c, void *src, void *dst,
 	zio_compress_info_t *ci = &zio_compress_table[c];
 
 	if ((uint_t)c >= ZIO_COMPRESS_FUNCTIONS || ci->ci_decompress == NULL)
-		return (EINVAL);
+		return (SET_ERROR(EINVAL));
 
 	return (ci->ci_decompress(src, dst, s_len, d_len, ci->ci_level));
 }

@@ -51,7 +51,7 @@ import re
 import copy
 
 from decimal import Decimal
-from signal import signal, SIGINT
+from signal import signal, SIGINT, SIGWINCH, SIG_DFL
 
 cols = {
     # HDR:        [Size, Scale, Description]
@@ -61,10 +61,10 @@ cols = {
     "read":       [4, 1000, "Total ARC accesses per second"],
     "hit%":       [4, 100, "ARC Hit percentage"],
     "miss%":      [5, 100, "ARC miss percentage"],
-    "dhit":       [4, 1000, "Demand Data hits per second"],
-    "dmis":       [4, 1000, "Demand Data misses per second"],
-    "dh%":        [3, 100, "Demand Data hit percentage"],
-    "dm%":        [3, 100, "Demand Data miss percentage"],
+    "dhit":       [4, 1000, "Demand hits per second"],
+    "dmis":       [4, 1000, "Demand misses per second"],
+    "dh%":        [3, 100, "Demand hit percentage"],
+    "dm%":        [3, 100, "Demand miss percentage"],
     "phit":       [4, 1000, "Prefetch hits per second"],
     "pmis":       [4, 1000, "Prefetch misses per second"],
     "ph%":        [3, 100, "Prefetch hits percentage"],
@@ -83,22 +83,23 @@ cols = {
     "eskip":      [5, 1000, "evict_skip per second"],
     "mtxmis":     [6, 1000, "mutex_miss per second"],
     "rmis":       [4, 1000, "recycle_miss per second"],
-    "dread":      [5, 1000, "Demand data accesses per second"],
+    "dread":      [5, 1000, "Demand accesses per second"],
     "pread":      [5, 1000, "Prefetch accesses per second"],
     "l2hits":     [6, 1000, "L2ARC hits per second"],
     "l2miss":     [6, 1000, "L2ARC misses per second"],
     "l2read":     [6, 1000, "Total L2ARC accesses per second"],
     "l2hit%":     [6, 100, "L2ARC access hit percentage"],
     "l2miss%":    [7, 100, "L2ARC access miss percentage"],
+    "l2asize":    [7, 1024, "Actual (compressed) size of the L2ARC"],
     "l2size":     [6, 1024, "Size of the L2ARC"],
     "l2bytes":    [7, 1024, "bytes read per second from the L2ARC"],
 }
 
 v = {}
 hdr = ["time", "read", "miss", "miss%", "dmis", "dm%", "pmis", "pm%", "mmis",
-    "mm%", "arcsz", "c"]
+       "mm%", "arcsz", "c"]
 xhdr = ["time", "mfu", "mru", "mfug", "mrug", "eskip", "mtxmis", "rmis",
-    "dread", "pread", "read"]
+        "dread", "pread", "read"]
 sint = 1               # Default interval is 1 second
 count = 1              # Default count is 1
 hdr_intr = 20          # Print header every 20 lines of output
@@ -106,8 +107,8 @@ opfile = None
 sep = "  "              # Default separator is 2 spaces
 version = "0.4"
 l2exist = False
-cmd = ("Usage: arcstat [-hvx] [-f fields] [-o file] [-s string] [interval "
-    "[count]]\n")
+cmd = ("Usage: arcstat.py [-hvx] [-f fields] [-o file] [-s string] [interval "
+       "[count]]\n")
 cur = {}
 d = {}
 out = None
@@ -129,17 +130,17 @@ def usage():
     sys.stderr.write("%s\n" % cmd)
     sys.stderr.write("\t -h : Print this help message\n")
     sys.stderr.write("\t -v : List all possible field headers and definitions"
-        "\n")
+                     "\n")
     sys.stderr.write("\t -x : Print extended stats\n")
     sys.stderr.write("\t -f : Specify specific fields to print (see -v)\n")
     sys.stderr.write("\t -o : Redirect output to the specified file\n")
     sys.stderr.write("\t -s : Override default field separator with custom "
-        "character or string\n")
+                     "character or string\n")
     sys.stderr.write("\nExamples:\n")
-    sys.stderr.write("\tarcstat -o /tmp/a.log 2 10\n")
-    sys.stderr.write("\tarcstat -s \",\" -o /tmp/a.log 2 10\n")
-    sys.stderr.write("\tarcstat -v\n")
-    sys.stderr.write("\tarcstat -f time,hit%,dh%,ph%,mh% 1\n")
+    sys.stderr.write("\tarcstat.py -o /tmp/a.log 2 10\n")
+    sys.stderr.write("\tarcstat.py -s \",\" -o /tmp/a.log 2 10\n")
+    sys.stderr.write("\tarcstat.py -v\n")
+    sys.stderr.write("\tarcstat.py -f time,hit%,dh%,ph%,mh% 1\n")
     sys.stderr.write("\n")
 
     sys.exit(1)
@@ -191,7 +192,7 @@ def prettynum(sz, scale, num=0):
         return "%s" % num
 
     # Rounding error, return 0
-    elif num > 0 and num < 1:
+    elif 0 < num < 1:
         num = 0
 
     while num > scale and index < 5:
@@ -217,7 +218,7 @@ def print_values():
         sys.stdout.write("%s%s" % (
             prettynum(cols[col][0], cols[col][1], v[col]),
             sep
-            ))
+        ))
     sys.stdout.write("\n")
 
 
@@ -228,6 +229,25 @@ def print_header():
     for col in hdr:
         sys.stdout.write("%*s%s" % (cols[col][0], col, sep))
     sys.stdout.write("\n")
+
+def get_terminal_lines():
+    try:
+        import fcntl, termios, struct
+        data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, '1234')
+        sz = struct.unpack('hh', data)
+        return sz[0]
+    except:
+        pass
+
+def update_hdr_intr():
+    global hdr_intr
+
+    lines = get_terminal_lines()
+    if lines and lines > 3:
+        hdr_intr = lines - 3
+
+def resize_handler(signum, frame):
+    update_hdr_intr()
 
 
 def init():
@@ -259,10 +279,10 @@ def init():
                 "columns"
             ]
         )
-
-    except getopt.error, msg:
+    except getopt.error as msg:
         sys.stderr.write(msg)
         usage()
+        opts = None
 
     for opt, arg in opts:
         if opt in ('-x', '--extended'):
@@ -303,6 +323,8 @@ def init():
     if xflag:
         hdr = xhdr
 
+    update_hdr_intr()
+
     # check if L2ARC exists
     snap_stats()
     l2_size = cur.get("l2_size")
@@ -326,9 +348,8 @@ def init():
             usage()
 
         if len(incompat) > 0:
-            sys.stderr.write("Incompatible field specified! -- %s\n" % (
-                incompat,
-                ))
+            sys.stderr.write("Incompatible field specified! -- %s\n" %
+                             incompat)
             usage()
 
     if opfile:
@@ -336,7 +357,7 @@ def init():
             out = open(opfile, "w")
             sys.stdout = out
 
-        except:
+        except IOError:
             sys.stderr.write("Cannot open %s for writing\n" % opfile)
             sys.exit(1)
 
@@ -346,7 +367,7 @@ def calculate():
     global v
     global l2exist
 
-    v = {}
+    v = dict()
     v["time"] = time.strftime("%H:%M:%S", time.localtime())
     v["hits"] = d["hits"] / sint
     v["miss"] = d["misses"] / sint
@@ -363,16 +384,16 @@ def calculate():
 
     v["phit"] = (d["prefetch_data_hits"] + d["prefetch_metadata_hits"]) / sint
     v["pmis"] = (d["prefetch_data_misses"] +
-        d["prefetch_metadata_misses"]) / sint
+                 d["prefetch_metadata_misses"]) / sint
 
     v["pread"] = v["phit"] + v["pmis"]
     v["ph%"] = 100 * v["phit"] / v["pread"] if v["pread"] > 0 else 0
     v["pm%"] = 100 - v["ph%"] if v["pread"] > 0 else 0
 
     v["mhit"] = (d["prefetch_metadata_hits"] +
-        d["demand_metadata_hits"]) / sint
+                 d["demand_metadata_hits"]) / sint
     v["mmis"] = (d["prefetch_metadata_misses"] +
-        d["demand_metadata_misses"]) / sint
+                 d["demand_metadata_misses"]) / sint
 
     v["mread"] = v["mhit"] + v["mmis"]
     v["mh%"] = 100 * v["mhit"] / v["mread"] if v["mread"] > 0 else 0
@@ -395,12 +416,9 @@ def calculate():
         v["l2hit%"] = 100 * v["l2hits"] / v["l2read"] if v["l2read"] > 0 else 0
 
         v["l2miss%"] = 100 - v["l2hit%"] if v["l2read"] > 0 else 0
+        v["l2asize"] = cur["l2_asize"]
         v["l2size"] = cur["l2_size"]
         v["l2bytes"] = d["l2_read_bytes"] / sint
-
-
-def sighandler(*args):
-    sys.exit(0)
 
 
 def main():
@@ -415,7 +433,8 @@ def main():
     if count > 0:
         count_flag = 1
 
-    signal(SIGINT, sighandler)
+    signal(SIGINT, SIG_DFL)
+    signal(SIGWINCH, resize_handler)
     while True:
         if i == 0:
             print_header()
@@ -429,7 +448,7 @@ def main():
                 break
             count -= 1
 
-        i = 0 if i == hdr_intr else i + 1
+        i = 0 if i >= hdr_intr else i + 1
         time.sleep(sint)
 
     if out:
