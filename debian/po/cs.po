@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux 0.6.1-1\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2013-07-04 22:09+0800\n"
+"POT-Creation-Date: 2015-11-01 14:11+0800\n"
 "PO-Revision-Date: 2013-07-21 09:57+0200\n"
 "Last-Translator: Michal Simunek <michal.simunek@gmail.com>\n"
 "Language-Team: Czech <debian-l10n-czech@lists.debian.org>\n"
@@ -39,10 +39,11 @@ msgid ""
 "strongly advised to use a 64-bit kernel; if you do decide to proceed with "
 "using ZFS on this kernel then keep in mind that it is at your own risk."
 msgstr ""
-"Přestože je to možné, sestavování ve 32 bitovém prostředí není podporováno "
-"a může způsobit nestabilitu vedoucí k možnému poškození dat. Důrazně vám "
-"doporučujeme používat 64 bitový kernel; rozhodnete-li se pokračovat s používáním "
-"ZFS na tomto kernelu, pak mějte na paměti, že je to na vaše vlastní nebezpečí."
+"Přestože je to možné, sestavování ve 32 bitovém prostředí není podporováno a "
+"může způsobit nestabilitu vedoucí k možnému poškození dat. Důrazně vám "
+"doporučujeme používat 64 bitový kernel; rozhodnete-li se pokračovat s "
+"používáním ZFS na tomto kernelu, pak mějte na paměti, že je to na vaše "
+"vlastní nebezpečí."
 
 #. Type: boolean
 #. Description
@@ -61,3 +62,31 @@ msgstr ""
 "Pokoušíte se sestavit ZFS oproti běžícímu kernelu, u kterého se nepodařilo "
 "rozpoznat, zda-li je 32 bitový nebo 64 bitový. Pokud si nejste zcela jisti, "
 "že je běžící kernel 64 bitový, měli byste nejspíš sestavování ukončit."
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid "Licenses of ZFS and Linux are incompatible"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid ""
+"ZFS is licensed under the Common Development and Distribution License "
+"(CDDL), and the Linux kernel is licensed under the GNU General Public "
+"License Version 2 (GPL-2). While both are free open source licenses they are "
+"restrictive licenses. The combination of them causes problems because it "
+"prevents using pieces of code exclusively available under one license with "
+"pieces of code exclusively available under the other in the same binary."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid ""
+"You are going to build ZFS using DKMS in which way they are not going to be "
+"built into one monolithic binary. Please be aware that distributing both of "
+"the binaries in the same media (disk images, virtual appliances, etc) may "
+"lead to infringing."
+msgstr ""

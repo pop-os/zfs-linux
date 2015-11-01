@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2013-07-04 22:09+0800\n"
+"POT-Creation-Date: 2015-11-01 14:11+0800\n"
 "PO-Revision-Date: 2013-07-13 19:48+0200\n"
 "Last-Translator: Michał Kułach <michal.kulach@gmail.com>\n"
 "Language-Team: Polish <debian-l10n-polish@lists.debian.org>\n"
@@ -44,8 +44,8 @@ msgid ""
 msgstr ""
 "Choć jest to możliwe, to jednak budowanie w 32-bitowym środowisku jest "
 "nieobsługiwane i może powodować niestabilność prowadzącą w konsekwencji do "
-"utraty danych. Zaleca się użyć jądra 64-bitowego. Kontynuując używanie ZFS na "
-"tym jądrze robi się to na własną odpowiedzialność."
+"utraty danych. Zaleca się użyć jądra 64-bitowego. Kontynuując używanie ZFS "
+"na tym jądrze robi się to na własną odpowiedzialność."
 
 #. Type: boolean
 #. Description
@@ -65,4 +65,30 @@ msgstr ""
 "zidentyfikować jako 32-bitowe lub 64-bitowe. Jeśli nie jest się całkowicie "
 "pewnym że jest to jądro 64-bitowe powinno się przerwać tę instalację."
 
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid "Licenses of ZFS and Linux are incompatible"
+msgstr ""
 
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid ""
+"ZFS is licensed under the Common Development and Distribution License "
+"(CDDL), and the Linux kernel is licensed under the GNU General Public "
+"License Version 2 (GPL-2). While both are free open source licenses they are "
+"restrictive licenses. The combination of them causes problems because it "
+"prevents using pieces of code exclusively available under one license with "
+"pieces of code exclusively available under the other in the same binary."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid ""
+"You are going to build ZFS using DKMS in which way they are not going to be "
+"built into one monolithic binary. Please be aware that distributing both of "
+"the binaries in the same media (disk images, virtual appliances, etc) may "
+"lead to infringing."
+msgstr ""

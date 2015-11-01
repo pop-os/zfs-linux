@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2013-07-04 22:09+0800\n"
+"POT-Creation-Date: 2015-11-01 14:11+0800\n"
 "PO-Revision-Date: 2013-07-07 13:57+0100\n"
 "Last-Translator: Miguel Figueiredo <elmig@debianpt.org>\n"
 "Language-Team: Portuguese <traduz@debianpt.org>\n"
@@ -60,6 +60,33 @@ msgid ""
 msgstr ""
 "Está a tentar compilar ZFS contra um kernel em execução que não pode ser "
 "identificado como sendo de 32-bit ou de 64-bit. Se não tiver a certeza de "
-"que o kernel em execução seja de 64-bit, provavelmente deverá parar "
-"a compilação."
+"que o kernel em execução seja de 64-bit, provavelmente deverá parar a "
+"compilação."
 
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid "Licenses of ZFS and Linux are incompatible"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid ""
+"ZFS is licensed under the Common Development and Distribution License "
+"(CDDL), and the Linux kernel is licensed under the GNU General Public "
+"License Version 2 (GPL-2). While both are free open source licenses they are "
+"restrictive licenses. The combination of them causes problems because it "
+"prevents using pieces of code exclusively available under one license with "
+"pieces of code exclusively available under the other in the same binary."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid ""
+"You are going to build ZFS using DKMS in which way they are not going to be "
+"built into one monolithic binary. Please be aware that distributing both of "
+"the binaries in the same media (disk images, virtual appliances, etc) may "
+"lead to infringing."
+msgstr ""

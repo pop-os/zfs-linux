@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2013-07-04 22:09+0800\n"
+"POT-Creation-Date: 2015-11-01 14:11+0800\n"
 "PO-Revision-Date: 2013-07-04 22:45+0800\n"
 "Last-Translator: Aron <aron@debian.org>\n"
 "Language-Team: Chinese (Simplified) <debian-l10n-chinese@lists.debian.org>\n"
@@ -40,9 +40,9 @@ msgid ""
 "strongly advised to use a 64-bit kernel; if you do decide to proceed with "
 "using ZFS on this kernel then keep in mind that it is at your own risk."
 msgstr ""
-"尽管在32位系统上可能编译成功，这样做是不受支持的，并可能造成导致数据损坏"
-"的不稳定情况。我们强烈建议您使用64位内核，如果您决定继续，请牢记您将自己"
-"承担风险。"
+"尽管在32位系统上可能编译成功，这样做是不受支持的，并可能造成导致数据损坏的不"
+"稳定情况。我们强烈建议您使用64位内核，如果您决定继续，请牢记您将自己承担风"
+"险。"
 
 #. Type: boolean
 #. Description
@@ -58,5 +58,33 @@ msgid ""
 "identified as 32-bit or 64-bit. If you are not completely sure that the "
 "running kernel is a 64-bit one, you should probably stop the build."
 msgstr ""
-"无法确定您即将编译ZFS支持的内核是32位或64位。如果您不能确定当前运行的内核"
-"是64位的，那么建议您停止编译。"
+"无法确定您即将编译ZFS支持的内核是32位或64位。如果您不能确定当前运行的内核是64"
+"位的，那么建议您停止编译。"
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid "Licenses of ZFS and Linux are incompatible"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid ""
+"ZFS is licensed under the Common Development and Distribution License "
+"(CDDL), and the Linux kernel is licensed under the GNU General Public "
+"License Version 2 (GPL-2). While both are free open source licenses they are "
+"restrictive licenses. The combination of them causes problems because it "
+"prevents using pieces of code exclusively available under one license with "
+"pieces of code exclusively available under the other in the same binary."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid ""
+"You are going to build ZFS using DKMS in which way they are not going to be "
+"built into one monolithic binary. Please be aware that distributing both of "
+"the binaries in the same media (disk images, virtual appliances, etc) may "
+"lead to infringing."
+msgstr ""

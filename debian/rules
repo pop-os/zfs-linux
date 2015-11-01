@@ -155,6 +155,7 @@ endif
 
 override_dh_auto_clean:
 	dh_auto_clean
+	debconf-updatepo
 	@if test -e META.orig; then mv META.orig META; fi
 	cp debian/control.in debian/control
 ifeq ($(BUILD_UDEB), true)
