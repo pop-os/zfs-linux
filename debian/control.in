@@ -135,6 +135,18 @@ Description: command-line tools to manage ZFS filesystems
  This package provides the zfs and zpool commands to create and administer
  ZFS filesystems.
 
+Package: zfs-zed
+Section: contrib/admin
+Architecture: linux-any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Recommends: zfsutils-linux, zfs-modules | zfs-dkms
+Description: OpenZFS Event Daemon
+ The Z file system is a pooled filesystem designed for maximum data
+ integrity, supporting data snapshots, multiple copies, and data
+ checksums.
+ .
+ This package provides the Z Event Daemon (zed).
+
 Package: zfs-dbg
 Section: contrib/debug
 Priority: extra
