@@ -99,7 +99,7 @@ Description: Native ZFS filesystem kernel modules for Linux
 Package: zfs-initramfs
 Architecture: linux-any
 Depends: initramfs-tools, zfs-modules | zfs-dkms, zfsutils-linux, ${misc:Depends}
-Description: Native ZFS root filesystem capabilities for Linux
+Description: Native ZFS root filesystem capabilities for Linux - initramfs
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
@@ -107,12 +107,23 @@ Description: Native ZFS root filesystem capabilities for Linux
  This package adds ZFS to the system initramfs with a hook
  for the initramfs-tools infrastructure.
 
+Package: zfs-dracut
+Architecture: linux-any
+Depends: dracut, zfs-modules | zfs-dkms, zfsutils-linux, ${misc:Depends}
+Description: Native ZFS root filesystem capabilities for Linux - dracut
+ The Z file system is a pooled filesystem designed for maximum data
+ integrity, supporting data snapshots, multiple copies, and data
+ checksums.
+ .
+ This package adds ZFS to the system initramfs with a hook
+ for the dracut infrastructure.
+
 Package: zfsutils-linux
 Section: contrib/admin
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Recommends: lsb-base, zfs-modules | zfs-dkms
-Suggests: nfs-kernel-server, samba-common-bin (>= 3.0.23), zfs-initramfs
+Suggests: nfs-kernel-server, samba-common-bin (>= 3.0.23), zfs-initramfs | zfs-dracut
 Conflicts: zfs, zfs-fuse
 Replaces: zfs
 Provides: zfsutils
