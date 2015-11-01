@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2014 by Delphix. All rights reserved.
  */
 
 #include <sys/zfs_context.h>
@@ -57,12 +57,15 @@ vdev_file_open(vdev_t *vd, uint64_t *psize, uint64_t *max_psize,
 	vattr_t vattr;
 	int error;
 
+	/* Rotational optimizations only make sense on block devices */
+	vd->vdev_nonrot = B_TRUE;
+
 	/*
 	 * We must have a pathname, and it must be absolute.
 	 */
 	if (vd->vdev_path == NULL || vd->vdev_path[0] != '/') {
 		vd->vdev_stat.vs_aux = VDEV_AUX_BAD_LABEL;
-		return (EINVAL);
+		return (SET_ERROR(EINVAL));
 	}
 
 	/*
@@ -75,7 +78,7 @@ vdev_file_open(vdev_t *vd, uint64_t *psize, uint64_t *max_psize,
 		goto skip_open;
 	}
 
-	vf = vd->vdev_tsd = kmem_zalloc(sizeof (vdev_file_t), KM_PUSHPAGE);
+	vf = vd->vdev_tsd = kmem_zalloc(sizeof (vdev_file_t), KM_SLEEP);
 
 	/*
 	 * We always open the files from the root of the global zone, even if
@@ -100,7 +103,7 @@ vdev_file_open(vdev_t *vd, uint64_t *psize, uint64_t *max_psize,
 	 */
 	if (vp->v_type != VREG) {
 		vd->vdev_stat.vs_aux = VDEV_AUX_OPEN_FAILED;
-		return (ENODEV);
+		return (SET_ERROR(ENODEV));
 	}
 #endif
 
@@ -154,41 +157,68 @@ vdev_file_io_strategy(void *arg)
 	    0, RLIM64_INFINITY, kcred, &resid);
 
 	if (resid != 0 && zio->io_error == 0)
-		zio->io_error = ENOSPC;
+		zio->io_error = SET_ERROR(ENOSPC);
 
 	zio_interrupt(zio);
 }
 
-static int
+static void
+vdev_file_io_fsync(void *arg)
+{
+	zio_t *zio = (zio_t *)arg;
+	vdev_file_t *vf = zio->io_vd->vdev_tsd;
+
+	zio->io_error = VOP_FSYNC(vf->vf_vnode, FSYNC | FDSYNC, kcred, NULL);
+
+	zio_interrupt(zio);
+}
+
+static void
 vdev_file_io_start(zio_t *zio)
 {
-	spa_t *spa = zio->io_spa;
 	vdev_t *vd = zio->io_vd;
 	vdev_file_t *vf = vd->vdev_tsd;
 
 	if (zio->io_type == ZIO_TYPE_IOCTL) {
 		/* XXPOLICY */
 		if (!vdev_readable(vd)) {
-			zio->io_error = ENXIO;
-			return (ZIO_PIPELINE_CONTINUE);
+			zio->io_error = SET_ERROR(ENXIO);
+			zio_interrupt(zio);
+			return;
 		}
 
 		switch (zio->io_cmd) {
 		case DKIOCFLUSHWRITECACHE:
+
+			if (zfs_nocacheflush)
+				break;
+
+			/*
+			 * We cannot safely call vfs_fsync() when PF_FSTRANS
+			 * is set in the current context.  Filesystems like
+			 * XFS include sanity checks to verify it is not
+			 * already set, see xfs_vm_writepage().  Therefore
+			 * the sync must be dispatched to a different context.
+			 */
+			if (spl_fstrans_check()) {
+				VERIFY3U(taskq_dispatch(system_taskq,
+				    vdev_file_io_fsync, zio, TQ_SLEEP), !=, 0);
+				return;
+			}
+
 			zio->io_error = VOP_FSYNC(vf->vf_vnode, FSYNC | FDSYNC,
 			    kcred, NULL);
 			break;
 		default:
-			zio->io_error = ENOTSUP;
+			zio->io_error = SET_ERROR(ENOTSUP);
 		}
 
-		return (ZIO_PIPELINE_CONTINUE);
+		zio_execute(zio);
+		return;
 	}
 
-	spa_taskq_dispatch_ent(spa, ZIO_TYPE_FREE, ZIO_TASKQ_ISSUE,
-	    vdev_file_io_strategy, zio, 0, &zio->io_tqent);
-
-	return (ZIO_PIPELINE_STOP);
+	VERIFY3U(taskq_dispatch(system_taskq, vdev_file_io_strategy, zio,
+	    TQ_SLEEP), !=, 0);
 }
 
 /* ARGSUSED */

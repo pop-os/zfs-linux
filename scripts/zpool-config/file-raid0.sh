@@ -3,10 +3,9 @@
 # 4 File Raid-0 Configuration
 #
 
-FILES="/tmp/zpool-vdev0  \
-       /tmp/zpool-vdev1  \
-       /tmp/zpool-vdev2  \
-       /tmp/zpool-vdev3"
+FILEDIR=${FILEDIR:-/var/tmp}
+FILES=${FILES:-"$FILEDIR/file-vdev0 $FILEDIR/file-vdev1 \
+    $FILEDIR/file-vdev2 $FILEDIR/file-vdev3"}
 
 zpool_create() {
 	for FILE in ${FILES}; do
@@ -16,8 +15,8 @@ zpool_create() {
 			&>/dev/null || die "Error $? creating ${FILE}"
 	done
 
-	msg ${ZPOOL} create ${FORCE_FLAG} ${ZPOOL_NAME} ${FILES}
-	${ZPOOL} create ${FORCE_FLAG} ${ZPOOL_NAME} ${FILES} || exit 1
+	msg ${ZPOOL} create ${ZPOOL_FLAGS} ${ZPOOL_NAME} ${FILES}
+	${ZPOOL} create ${ZPOOL_FLAGS} ${ZPOOL_NAME} ${FILES} || exit 1
 }
 
 zpool_destroy() {

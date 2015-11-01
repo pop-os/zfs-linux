@@ -20,8 +20,9 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2015 by Delphix. All rights reserved.
  * Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+ * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
  */
 
 #ifndef _SYS_SPA_IMPL_H
@@ -38,15 +39,17 @@
 #include <sys/refcount.h>
 #include <sys/bplist.h>
 #include <sys/bpobj.h>
+#include <sys/zfeature.h>
+#include <zfeature_common.h>
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
 typedef struct spa_error_entry {
-	zbookmark_t	se_bookmark;
-	char		*se_name;
-	avl_node_t	se_avl;
+	zbookmark_phys_t	se_bookmark;
+	char			*se_name;
+	avl_node_t		se_avl;
 } spa_error_entry_t;
 
 typedef struct spa_history_phys {
@@ -142,8 +145,13 @@ struct spa {
 	uint64_t	spa_claim_max_txg;	/* highest claimed birth txg */
 	timespec_t	spa_loaded_ts;		/* 1st successful open time */
 	objset_t	*spa_meta_objset;	/* copy of dp->dp_meta_objset */
+	kmutex_t	spa_evicting_os_lock;	/* Evicting objset list lock */
+	list_t		spa_evicting_os_list;	/* Objsets being evicted. */
+	kcondvar_t	spa_evicting_os_cv;	/* Objset Eviction Completion */
 	txg_list_t	spa_vdev_txg_list;	/* per-txg dirty vdev list */
 	vdev_t		*spa_root_vdev;		/* top-level vdev container */
+	int		spa_min_ashift;		/* of vdevs in normal class */
+	int		spa_max_ashift;		/* of vdevs in normal class */
 	uint64_t	spa_config_guid;	/* config pool guid */
 	uint64_t	spa_load_guid;		/* spa_load initialized guid */
 	uint64_t	spa_last_synced_guid;	/* last synced guid */
@@ -202,7 +210,8 @@ struct spa {
 	uint64_t	spa_failmode;		/* failure mode for the pool */
 	uint64_t	spa_delegation;		/* delegation on/off */
 	list_t		spa_config_list;	/* previous cache file(s) */
-	zio_t		*spa_async_zio_root;	/* root of all async I/O */
+	/* per-CPU array of root of async I/O: */
+	zio_t		**spa_async_zio_root;
 	zio_t		*spa_suspend_zio_root;	/* root of all suspended I/O */
 	kmutex_t	spa_suspend_lock;	/* protects suspend_zio_root */
 	kcondvar_t	spa_suspend_cv;		/* notification of resume */
@@ -232,12 +241,20 @@ struct spa {
 	uint64_t	spa_feat_for_write_obj;	/* required to write to pool */
 	uint64_t	spa_feat_for_read_obj;	/* required to read from pool */
 	uint64_t	spa_feat_desc_obj;	/* Feature descriptions */
+	uint64_t	spa_feat_enabled_txg_obj; /* Feature enabled txg */
+	kmutex_t	spa_feat_stats_lock;	/* protects spa_feat_stats */
+	nvlist_t	*spa_feat_stats;	/* Cache of enabled features */
+	/* cache feature refcounts */
+	uint64_t	spa_feat_refcount_cache[SPA_FEATURES];
 	taskqid_t	spa_deadman_tqid;	/* Task id */
 	uint64_t	spa_deadman_calls;	/* number of deadman calls */
-	uint64_t	spa_sync_starttime;	/* starting time fo spa_sync */
+	hrtime_t	spa_sync_starttime;	/* starting time of spa_sync */
 	uint64_t	spa_deadman_synctime;	/* deadman expiration timer */
+	uint64_t	spa_errata;		/* errata issues detected */
+	spa_stats_t	spa_stats;		/* assorted spa statistics */
+
 	/*
-	 * spa_refcnt & spa_config_lock must be the last elements
+	 * spa_refcount & spa_config_lock must be the last elements
 	 * because refcount_t changes size based on compilation options.
 	 * In order for the MDB module to function correctly, the other
 	 * fields must remain in the same location.

@@ -20,6 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013 by Delphix. All rights reserved.
  */
 
 
@@ -45,6 +46,7 @@
 #include <sys/policy.h>
 #include <sys/zfs_dir.h>
 #include <sys/zfs_acl.h>
+#include <sys/zfs_vnops.h>
 #include <sys/fs/zfs.h>
 #include "fs/fs_subr.h"
 #include <sys/zap.h>
@@ -171,7 +173,7 @@ zfs_dirent_lock(zfs_dirlock_t **dlpp, znode_t *dzp, char *name, znode_t **zpp,
 	if ((name[0] == '.' &&
 	    (name[1] == '\0' || (name[1] == '.' && name[2] == '\0'))) ||
 	    (zfs_has_ctldir(dzp) && strcmp(name, ZFS_CTLDIR_NAME) == 0))
-		return (EEXIST);
+		return (SET_ERROR(EEXIST));
 
 	/*
 	 * Case sensitivity and normalization preferences are set when
@@ -242,7 +244,7 @@ zfs_dirent_lock(zfs_dirlock_t **dlpp, znode_t *dzp, char *name, znode_t **zpp,
 			mutex_exit(&dzp->z_lock);
 			if (!(flag & ZHAVELOCK))
 				rw_exit(&dzp->z_name_lock);
-			return (ENOENT);
+			return (SET_ERROR(ENOENT));
 		}
 		for (dl = dzp->z_dirlocks; dl != NULL; dl = dl->dl_next) {
 			if ((u8_strcmp(name, dl->dl_name, 0, cmpflags,
@@ -253,7 +255,7 @@ zfs_dirent_lock(zfs_dirlock_t **dlpp, znode_t *dzp, char *name, znode_t **zpp,
 			mutex_exit(&dzp->z_lock);
 			if (!(flag & ZHAVELOCK))
 				rw_exit(&dzp->z_name_lock);
-			return (ENOENT);
+			return (SET_ERROR(ENOENT));
 		}
 		if (dl == NULL)	{
 			/*
@@ -307,19 +309,19 @@ zfs_dirent_lock(zfs_dirlock_t **dlpp, znode_t *dzp, char *name, znode_t **zpp,
 		error = sa_lookup(dzp->z_sa_hdl, SA_ZPL_XATTR(zsb), &zoid,
 		    sizeof (zoid));
 		if (error == 0)
-			error = (zoid == 0 ? ENOENT : 0);
+			error = (zoid == 0 ? SET_ERROR(ENOENT) : 0);
 	} else {
 #ifdef HAVE_DNLC
 		if (update)
 			vp = dnlc_lookup(ZTOI(dzp), name);
 		if (vp == DNLC_NO_VNODE) {
 			iput(vp);
-			error = ENOENT;
+			error = SET_ERROR(ENOENT);
 		} else if (vp) {
 			if (flag & ZNEW) {
 				zfs_dirent_unlock(dl);
 				iput(vp);
-				return (EEXIST);
+				return (SET_ERROR(EEXIST));
 			}
 			*dlpp = dl;
 			*zpp = VTOZ(vp);
@@ -341,7 +343,7 @@ zfs_dirent_lock(zfs_dirlock_t **dlpp, znode_t *dzp, char *name, znode_t **zpp,
 	} else {
 		if (flag & ZNEW) {
 			zfs_dirent_unlock(dl);
-			return (EEXIST);
+			return (SET_ERROR(EEXIST));
 		}
 		error = zfs_zget(zsb, zoid, zpp);
 		if (error) {
@@ -483,72 +485,6 @@ zfs_unlinked_add(znode_t *zp, dmu_tx_t *tx)
 }
 
 /*
- * Delete the entire contents of a directory.  Return a count
- * of the number of entries that could not be deleted. If we encounter
- * an error, return a count of at least one so that the directory stays
- * in the unlinked set.
- *
- * NOTE: this function assumes that the directory is inactive,
- *	so there is no need to lock its entries before deletion.
- *	Also, it assumes the directory contents is *only* regular
- *	files.
- */
-static int
-zfs_purgedir(znode_t *dzp)
-{
-	zap_cursor_t	zc;
-	zap_attribute_t	zap;
-	znode_t		*xzp;
-	dmu_tx_t	*tx;
-	zfs_sb_t	*zsb = ZTOZSB(dzp);
-	zfs_dirlock_t	dl;
-	int skipped = 0;
-	int error;
-
-	for (zap_cursor_init(&zc, zsb->z_os, dzp->z_id);
-	    (error = zap_cursor_retrieve(&zc, &zap)) == 0;
-	    zap_cursor_advance(&zc)) {
-		error = zfs_zget(zsb,
-		    ZFS_DIRENT_OBJ(zap.za_first_integer), &xzp);
-		if (error) {
-			skipped += 1;
-			continue;
-		}
-
-		ASSERT(S_ISREG(ZTOI(xzp)->i_mode)||S_ISLNK(ZTOI(xzp)->i_mode));
-
-		tx = dmu_tx_create(zsb->z_os);
-		dmu_tx_hold_sa(tx, dzp->z_sa_hdl, B_FALSE);
-		dmu_tx_hold_zap(tx, dzp->z_id, FALSE, zap.za_name);
-		dmu_tx_hold_sa(tx, xzp->z_sa_hdl, B_FALSE);
-		dmu_tx_hold_zap(tx, zsb->z_unlinkedobj, FALSE, NULL);
-		/* Is this really needed ? */
-		zfs_sa_upgrade_txholds(tx, xzp);
-		error = dmu_tx_assign(tx, TXG_WAIT);
-		if (error) {
-			dmu_tx_abort(tx);
-			iput(ZTOI(xzp));
-			skipped += 1;
-			continue;
-		}
-		bzero(&dl, sizeof (dl));
-		dl.dl_dzp = dzp;
-		dl.dl_name = zap.za_name;
-
-		error = zfs_link_destroy(&dl, xzp, tx, 0, NULL);
-		if (error)
-			skipped += 1;
-		dmu_tx_commit(tx);
-
-		iput(ZTOI(xzp));
-	}
-	zap_cursor_fini(&zc);
-	if (error != ENOENT)
-		skipped += 1;
-	return (skipped);
-}
-
-/*
  * Clean up any znodes that had no links when we either crashed or
  * (force) umounted the file system.
  */
@@ -594,23 +530,76 @@ zfs_unlinked_drain(zfs_sb_t *zsb)
 			continue;
 
 		zp->z_unlinked = B_TRUE;
-
-		/*
-		 * If this is an attribute directory, purge its contents.
-		 */
-		if (S_ISDIR(ZTOI(zp)->i_mode) && (zp->z_pflags & ZFS_XATTR)) {
-			/*
-			 * We don't need to check the return value of
-			 * zfs_purgedir here, because zfs_rmnode will just
-			 * return this xattr directory to the unlinked set
-			 * until all of its xattrs are gone.
-			 */
-			(void) zfs_purgedir(zp);
-		}
-
 		iput(ZTOI(zp));
 	}
 	zap_cursor_fini(&zc);
+}
+
+/*
+ * Delete the entire contents of a directory.  Return a count
+ * of the number of entries that could not be deleted. If we encounter
+ * an error, return a count of at least one so that the directory stays
+ * in the unlinked set.
+ *
+ * NOTE: this function assumes that the directory is inactive,
+ *	so there is no need to lock its entries before deletion.
+ *	Also, it assumes the directory contents is *only* regular
+ *	files.
+ */
+static int
+zfs_purgedir(znode_t *dzp)
+{
+	zap_cursor_t	zc;
+	zap_attribute_t	zap;
+	znode_t		*xzp;
+	dmu_tx_t	*tx;
+	zfs_sb_t	*zsb = ZTOZSB(dzp);
+	zfs_dirlock_t	dl;
+	int skipped = 0;
+	int error;
+
+	for (zap_cursor_init(&zc, zsb->z_os, dzp->z_id);
+	    (error = zap_cursor_retrieve(&zc, &zap)) == 0;
+	    zap_cursor_advance(&zc)) {
+		error = zfs_zget(zsb,
+		    ZFS_DIRENT_OBJ(zap.za_first_integer), &xzp);
+		if (error) {
+			skipped += 1;
+			continue;
+		}
+
+		ASSERT(S_ISREG(ZTOI(xzp)->i_mode) ||
+		    S_ISLNK(ZTOI(xzp)->i_mode));
+
+		tx = dmu_tx_create(zsb->z_os);
+		dmu_tx_hold_sa(tx, dzp->z_sa_hdl, B_FALSE);
+		dmu_tx_hold_zap(tx, dzp->z_id, FALSE, zap.za_name);
+		dmu_tx_hold_sa(tx, xzp->z_sa_hdl, B_FALSE);
+		dmu_tx_hold_zap(tx, zsb->z_unlinkedobj, FALSE, NULL);
+		/* Is this really needed ? */
+		zfs_sa_upgrade_txholds(tx, xzp);
+		error = dmu_tx_assign(tx, TXG_WAIT);
+		if (error) {
+			dmu_tx_abort(tx);
+			zfs_iput_async(ZTOI(xzp));
+			skipped += 1;
+			continue;
+		}
+		bzero(&dl, sizeof (dl));
+		dl.dl_dzp = dzp;
+		dl.dl_name = zap.za_name;
+
+		error = zfs_link_destroy(&dl, xzp, tx, 0, NULL);
+		if (error)
+			skipped += 1;
+		dmu_tx_commit(tx);
+
+		zfs_iput_async(ZTOI(xzp));
+	}
+	zap_cursor_fini(&zc);
+	if (error != ENOENT)
+		skipped += 1;
+	return (skipped);
 }
 
 void
@@ -622,7 +611,6 @@ zfs_rmnode(znode_t *zp)
 	dmu_tx_t	*tx;
 	uint64_t	acl_obj;
 	uint64_t	xattr_obj;
-	uint64_t	count;
 	int		error;
 
 	ASSERT(zp->z_links == 0);
@@ -632,27 +620,13 @@ zfs_rmnode(znode_t *zp)
 	 * If this is an attribute directory, purge its contents.
 	 */
 	if (S_ISDIR(ZTOI(zp)->i_mode) && (zp->z_pflags & ZFS_XATTR)) {
-		error = zap_count(os, zp->z_id, &count);
-		if (error) {
-			zfs_znode_dmu_fini(zp);
-			return;
-		}
-
-		if (count > 0) {
-			taskq_t *taskq;
-
+		if (zfs_purgedir(zp) != 0) {
 			/*
-			 * There are still directory entries in this xattr
-			 * directory.  Let zfs_unlinked_drain() deal with
-			 * them to avoid deadlocking this process in the
-			 * zfs_purgedir()->zfs_zget()->ilookup() callpath
-			 * on the xattr inode's I_FREEING bit.
+			 * Not enough space to delete some xattrs.
+			 * Leave it in the unlinked set.
 			 */
-			taskq = dsl_pool_iput_taskq(dmu_objset_pool(os));
-			taskq_dispatch(taskq, (task_func_t *)
-			    zfs_unlinked_drain, zsb, TQ_SLEEP);
-
 			zfs_znode_dmu_fini(zp);
+
 			return;
 		}
 	}
@@ -728,7 +702,7 @@ zfs_rmnode(znode_t *zp)
 	dmu_tx_commit(tx);
 out:
 	if (xzp)
-		iput(ZTOI(xzp));
+		zfs_iput_async(ZTOI(xzp));
 }
 
 static uint64_t
@@ -762,7 +736,7 @@ zfs_link_create(zfs_dirlock_t *dl, znode_t *zp, dmu_tx_t *tx, int flag)
 		if (zp->z_unlinked) {	/* no new links to unlinked zp */
 			ASSERT(!(flag & (ZNEW | ZEXISTS)));
 			mutex_exit(&zp->z_lock);
-			return (ENOENT);
+			return (SET_ERROR(ENOENT));
 		}
 		zp->z_links++;
 		SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_LINKS(zsb), NULL,
@@ -865,7 +839,7 @@ zfs_link_destroy(zfs_dirlock_t *dl, znode_t *zp, dmu_tx_t *tx, int flag,
 
 		if (zp_is_dir && !zfs_dirempty(zp)) {
 			mutex_exit(&zp->z_lock);
-			return (ENOTEMPTY);
+			return (SET_ERROR(ENOTEMPTY));
 		}
 
 		/*
@@ -969,10 +943,9 @@ zfs_make_xattrdir(znode_t *zp, vattr_t *vap, struct inode **xipp, cred_t *cr)
 		return (error);
 	if (zfs_acl_ids_overquota(zsb, &acl_ids)) {
 		zfs_acl_ids_free(&acl_ids);
-		return (EDQUOT);
+		return (SET_ERROR(EDQUOT));
 	}
 
-top:
 	tx = dmu_tx_create(zsb->z_os);
 	dmu_tx_hold_sa_create(tx, acl_ids.z_aclp->z_acl_bytes +
 	    ZFS_SA_BASE_ATTR_SIZE);
@@ -981,13 +954,8 @@ top:
 	fuid_dirtied = zsb->z_fuid_dirty;
 	if (fuid_dirtied)
 		zfs_fuid_txhold(zsb, tx);
-	error = dmu_tx_assign(tx, TXG_NOWAIT);
+	error = dmu_tx_assign(tx, TXG_WAIT);
 	if (error) {
-		if (error == ERESTART) {
-			dmu_tx_wait(tx);
-			dmu_tx_abort(tx);
-			goto top;
-		}
 		zfs_acl_ids_free(&acl_ids);
 		dmu_tx_abort(tx);
 		return (error);
@@ -1051,12 +1019,12 @@ top:
 
 	if (!(flags & CREATE_XATTR_DIR)) {
 		zfs_dirent_unlock(dl);
-		return (ENOENT);
+		return (SET_ERROR(ENOENT));
 	}
 
 	if (zfs_is_readonly(zsb)) {
 		zfs_dirent_unlock(dl);
-		return (EROFS);
+		return (SET_ERROR(EROFS));
 	}
 
 	/*

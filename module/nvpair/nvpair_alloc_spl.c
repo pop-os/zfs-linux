@@ -26,17 +26,18 @@
 
 #include <sys/nvpair.h>
 #include <sys/kmem.h>
+#include <sys/vmem.h>
 
 static void *
 nv_alloc_sleep_spl(nv_alloc_t *nva, size_t size)
 {
-	return (kmem_alloc(size, KM_SLEEP | KM_NODEBUG));
+	return (vmem_alloc(size, KM_SLEEP));
 }
 
 static void *
 nv_alloc_pushpage_spl(nv_alloc_t *nva, size_t size)
 {
-	return (kmem_alloc(size, KM_PUSHPAGE | KM_NODEBUG));
+	return (vmem_alloc(size, KM_PUSHPAGE));
 }
 
 static void *
@@ -52,27 +53,27 @@ nv_free_spl(nv_alloc_t *nva, void *buf, size_t size)
 }
 
 const nv_alloc_ops_t spl_sleep_ops_def = {
-	NULL,                   /* nv_ao_init() */
-	NULL,                   /* nv_ao_fini() */
-	nv_alloc_sleep_spl,     /* nv_ao_alloc() */
-	nv_free_spl,            /* nv_ao_free() */
-	NULL                    /* nv_ao_reset() */
+	NULL,			/* nv_ao_init() */
+	NULL,			/* nv_ao_fini() */
+	nv_alloc_sleep_spl,	/* nv_ao_alloc() */
+	nv_free_spl,		/* nv_ao_free() */
+	NULL			/* nv_ao_reset() */
 };
 
 const nv_alloc_ops_t spl_pushpage_ops_def = {
-	NULL,                   /* nv_ao_init() */
-	NULL,                   /* nv_ao_fini() */
-	nv_alloc_pushpage_spl,  /* nv_ao_alloc() */
-	nv_free_spl,            /* nv_ao_free() */
-	NULL                    /* nv_ao_reset() */
+	NULL,			/* nv_ao_init() */
+	NULL,			/* nv_ao_fini() */
+	nv_alloc_pushpage_spl,	/* nv_ao_alloc() */
+	nv_free_spl,		/* nv_ao_free() */
+	NULL			/* nv_ao_reset() */
 };
 
 const nv_alloc_ops_t spl_nosleep_ops_def = {
-	NULL,                   /* nv_ao_init() */
-	NULL,                   /* nv_ao_fini() */
-	nv_alloc_nosleep_spl,   /* nv_ao_alloc() */
-	nv_free_spl,            /* nv_ao_free() */
-	NULL                    /* nv_ao_reset() */
+	NULL,			/* nv_ao_init() */
+	NULL,			/* nv_ao_fini() */
+	nv_alloc_nosleep_spl,	/* nv_ao_alloc() */
+	nv_free_spl,		/* nv_ao_free() */
+	NULL			/* nv_ao_reset() */
 };
 
 nv_alloc_t nv_alloc_sleep_def = {

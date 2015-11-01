@@ -7,14 +7,13 @@ DEFAULT_INCLUDES += \
 sbin_PROGRAMS = zinject
 
 zinject_SOURCES = \
-	$(top_srcdir)/cmd/zinject/translate.c \
-	$(top_srcdir)/cmd/zinject/zinject.c \
-	$(top_srcdir)/cmd/zinject/zinject.h
+	translate.c \
+	zinject.c \
+	zinject.h
 
 zinject_LDADD = \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libuutil/libuutil.la \
 	$(top_builddir)/lib/libzpool/libzpool.la \
-	$(top_builddir)/lib/libzfs/libzfs.la
-
-zinject_LDFLAGS = -pthread -lm $(ZLIB) -lrt -ldl $(LIBUUID) $(LIBBLKID)
+	$(top_builddir)/lib/libzfs/libzfs.la \
+	$(top_builddir)/lib/libzfs_core/libzfs_core.la

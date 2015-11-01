@@ -26,14 +26,13 @@ libspl_HEADERS = \
 	$(top_srcdir)/lib/libspl/include/sys/list_impl.h \
 	$(top_srcdir)/lib/libspl/include/sys/mhd.h \
 	$(top_srcdir)/lib/libspl/include/sys/mkdev.h \
-	$(top_srcdir)/lib/libspl/include/sys/mntent.h \
 	$(top_srcdir)/lib/libspl/include/sys/mnttab.h \
 	$(top_srcdir)/lib/libspl/include/sys/mount.h \
 	$(top_srcdir)/lib/libspl/include/sys/note.h \
 	$(top_srcdir)/lib/libspl/include/sys/param.h \
+	$(top_srcdir)/lib/libspl/include/sys/policy.h \
 	$(top_srcdir)/lib/libspl/include/sys/priv.h \
 	$(top_srcdir)/lib/libspl/include/sys/processor.h \
-	$(top_srcdir)/lib/libspl/include/sys/sdt.h \
 	$(top_srcdir)/lib/libspl/include/sys/stack.h \
 	$(top_srcdir)/lib/libspl/include/sys/stat.h \
 	$(top_srcdir)/lib/libspl/include/sys/stropts.h \
@@ -47,7 +46,6 @@ libspl_HEADERS = \
 	$(top_srcdir)/lib/libspl/include/sys/types.h \
 	$(top_srcdir)/lib/libspl/include/sys/tzfile.h \
 	$(top_srcdir)/lib/libspl/include/sys/uio.h \
-	$(top_srcdir)/lib/libspl/include/sys/utsname.h \
 	$(top_srcdir)/lib/libspl/include/sys/va_list.h \
 	$(top_srcdir)/lib/libspl/include/sys/varargs.h \
 	$(top_srcdir)/lib/libspl/include/sys/vnode.h \

@@ -20,8 +20,8 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2011 Nexenta Systems, Inc. All rights reserved.
  * Copyright (c) 2012 by Delphix. All rights reserved.
+ * Copyright 2014 Nexenta Systems, Inc. All rights reserved.
  */
 
 /*
@@ -88,6 +88,7 @@ typedef struct name_entry {
 	char			*ne_name;
 	uint64_t		ne_guid;
 	uint64_t		ne_order;
+	uint64_t		ne_num_labels;
 	struct name_entry	*ne_next;
 } name_entry_t;
 
@@ -168,13 +169,28 @@ fix_paths(nvlist_t *nv, name_entry_t *names)
 			}
 
 			if ((strlen(path) == strlen(ne->ne_name)) &&
-			    !strncmp(path, ne->ne_name, strlen(path))) {
+			    strncmp(path, ne->ne_name, strlen(path)) == 0) {
 				best = ne;
 				break;
 			}
 
-			if (best == NULL || ne->ne_order < best->ne_order)
+			if (best == NULL) {
 				best = ne;
+				continue;
+			}
+
+			/* Prefer paths with move vdev labels. */
+			if (ne->ne_num_labels > best->ne_num_labels) {
+				best = ne;
+				continue;
+			}
+
+			/* Prefer paths earlier in the search order. */
+			if (best->ne_num_labels == best->ne_num_labels &&
+			    ne->ne_order < best->ne_order) {
+				best = ne;
+				continue;
+			}
 		}
 	}
 
@@ -200,7 +216,7 @@ fix_paths(nvlist_t *nv, name_entry_t *names)
  */
 static int
 add_config(libzfs_handle_t *hdl, pool_list_t *pl, const char *path,
-    int order, nvlist_t *config)
+    int order, int num_labels, nvlist_t *config)
 {
 	uint64_t pool_guid, vdev_guid, top_guid, txg, state;
 	pool_entry_t *pe;
@@ -226,6 +242,7 @@ add_config(libzfs_handle_t *hdl, pool_list_t *pl, const char *path,
 		}
 		ne->ne_guid = vdev_guid;
 		ne->ne_order = order;
+		ne->ne_num_labels = num_labels;
 		ne->ne_next = pl->names;
 		pl->names = ne;
 		return (0);
@@ -328,6 +345,7 @@ add_config(libzfs_handle_t *hdl, pool_list_t *pl, const char *path,
 
 	ne->ne_guid = vdev_guid;
 	ne->ne_order = order;
+	ne->ne_num_labels = num_labels;
 	ne->ne_next = pl->names;
 	pl->names = ne;
 
@@ -365,7 +383,7 @@ static nvlist_t *
 refresh_config(libzfs_handle_t *hdl, nvlist_t *config)
 {
 	nvlist_t *nvl;
-	zfs_cmd_t zc = { "\0", "\0", "\0", "\0", 0 };
+	zfs_cmd_t zc = {"\0"};
 	int err;
 
 	if (zcmd_write_conf_nvlist(hdl, &zc, config) != 0)
@@ -444,7 +462,6 @@ get_configs(libzfs_handle_t *hdl, pool_list_t *pl, boolean_t active_ok)
 	boolean_t isactive;
 	uint64_t hostid;
 	nvlist_t *nvl;
-	boolean_t found_one = B_FALSE;
 	boolean_t valid_top_config = B_FALSE;
 
 	if (nvlist_alloc(&ret, 0, 0) != 0)
@@ -813,14 +830,8 @@ add_pool:
 		if (nvlist_add_nvlist(ret, name, config) != 0)
 			goto nomem;
 
-		found_one = B_TRUE;
 		nvlist_free(config);
 		config = NULL;
-	}
-
-	if (!found_one) {
-		nvlist_free(ret);
-		ret = NULL;
 	}
 
 	return (ret);
@@ -850,15 +861,17 @@ label_offset(uint64_t size, int l)
 
 /*
  * Given a file descriptor, read the label information and return an nvlist
- * describing the configuration, if there is one.
+ * describing the configuration, if there is one.  The number of valid
+ * labels found will be returned in num_labels when non-NULL.
  */
 int
-zpool_read_label(int fd, nvlist_t **config)
+zpool_read_label(int fd, nvlist_t **config, int *num_labels)
 {
 	struct stat64 statbuf;
-	int l;
+	int l, count = 0;
 	vdev_label_t *label;
-	uint64_t state, txg, size;
+	nvlist_t *expected_config = NULL;
+	uint64_t expected_guid = 0, size;
 
 	*config = NULL;
 
@@ -870,6 +883,8 @@ zpool_read_label(int fd, nvlist_t **config)
 		return (-1);
 
 	for (l = 0; l < VDEV_LABELS; l++) {
+		uint64_t state, guid, txg;
+
 		if (pread64(fd, label, sizeof (vdev_label_t),
 		    label_offset(size, l)) != sizeof (vdev_label_t))
 			continue;
@@ -877,6 +892,12 @@ zpool_read_label(int fd, nvlist_t **config)
 		if (nvlist_unpack(label->vl_vdev_phys.vp_nvlist,
 		    sizeof (label->vl_vdev_phys.vp_nvlist), config, 0) != 0)
 			continue;
+
+		if (nvlist_lookup_uint64(*config, ZPOOL_CONFIG_GUID,
+		    &guid) != 0 || guid == 0) {
+			nvlist_free(*config);
+			continue;
+		}
 
 		if (nvlist_lookup_uint64(*config, ZPOOL_CONFIG_POOL_STATE,
 		    &state) != 0 || state > POOL_STATE_L2CACHE) {
@@ -891,12 +912,24 @@ zpool_read_label(int fd, nvlist_t **config)
 			continue;
 		}
 
-		free(label);
-		return (0);
+		if (expected_guid) {
+			if (expected_guid == guid)
+				count++;
+
+			nvlist_free(*config);
+		} else {
+			expected_config = *config;
+			expected_guid = guid;
+			count++;
+		}
 	}
 
+	if (num_labels != NULL)
+		*num_labels = count;
+
 	free(label);
-	*config = NULL;
+	*config = expected_config;
+
 	return (0);
 }
 
@@ -922,8 +955,10 @@ zpool_clear_label(int fd)
 
 	for (l = 0; l < VDEV_LABELS; l++) {
 		if (pwrite64(fd, label, sizeof (vdev_label_t),
-		    label_offset(size, l)) != sizeof (vdev_label_t))
+		    label_offset(size, l)) != sizeof (vdev_label_t)) {
+			free(label);
 			return (-1);
+		}
 	}
 
 	free(label);
@@ -942,7 +977,7 @@ zpool_find_import_blkid(libzfs_handle_t *hdl, pool_list_t *pools)
 	blkid_dev dev;
 	const char *devname;
 	nvlist_t *config;
-	int fd, err;
+	int fd, err, num_labels;
 
 	err = blkid_get_cache(&cache, NULL);
 	if (err != 0) {
@@ -965,7 +1000,7 @@ zpool_find_import_blkid(libzfs_handle_t *hdl, pool_list_t *pools)
 		goto err_blkid2;
 	}
 
-	err = blkid_dev_set_search(iter, "TYPE", "zfs");
+	err = blkid_dev_set_search(iter, "TYPE", "zfs_member");
 	if (err != 0) {
 		(void) zfs_error_fmt(hdl, EZFS_BADCACHE,
 		    dgettext(TEXT_DOMAIN, "blkid_dev_set_search() %d"), err);
@@ -977,7 +1012,7 @@ zpool_find_import_blkid(libzfs_handle_t *hdl, pool_list_t *pools)
 		if ((fd = open64(devname, O_RDONLY)) < 0)
 			continue;
 
-		err = zpool_read_label(fd, &config);
+		err = zpool_read_label(fd, &config, &num_labels);
 		(void) close(fd);
 
 		if (err != 0) {
@@ -986,7 +1021,8 @@ zpool_find_import_blkid(libzfs_handle_t *hdl, pool_list_t *pools)
 		}
 
 		if (config != NULL) {
-			err = add_config(hdl, pools, devname, 0, config);
+			err = add_config(hdl, pools, devname, 0,
+			    num_labels, config);
 			if (err != 0)
 				goto err_blkid3;
 		}
@@ -997,7 +1033,7 @@ err_blkid3:
 err_blkid2:
 	blkid_put_cache(cache);
 err_blkid1:
-	return err;
+	return (err);
 }
 #endif /* HAVE_LIBBLKID */
 
@@ -1022,7 +1058,7 @@ zpool_default_import_path[DEFAULT_IMPORT_PATH_SIZE] = {
 static nvlist_t *
 zpool_find_import_impl(libzfs_handle_t *hdl, importargs_t *iarg)
 {
-	int i, dirs = iarg->paths;
+	int i, num_labels, dirs = iarg->paths;
 	DIR *dirp = NULL;
 	struct dirent64 *dp;
 	char path[MAXPATHLEN];
@@ -1125,14 +1161,14 @@ zpool_find_import_impl(libzfs_handle_t *hdl, importargs_t *iarg)
 			 *            when access from Xen dom0.
 			 */
 			if ((strncmp(name, "watchdog", 8) == 0) ||
-			    (strncmp(name, "fuse", 4) == 0)     ||
-			    (strncmp(name, "ppp", 3) == 0)      ||
-			    (strncmp(name, "tty", 3) == 0)      ||
-			    (strncmp(name, "vcs", 3) == 0)      ||
-			    (strncmp(name, "parport", 7) == 0)  ||
-			    (strncmp(name, "lp", 2) == 0)       ||
-			    (strncmp(name, "fd", 2) == 0)       ||
-			    (strncmp(name, "hpet", 4) == 0)     ||
+			    (strncmp(name, "fuse", 4) == 0) ||
+			    (strncmp(name, "ppp", 3) == 0) ||
+			    (strncmp(name, "tty", 3) == 0) ||
+			    (strncmp(name, "vcs", 3) == 0) ||
+			    (strncmp(name, "parport", 7) == 0) ||
+			    (strncmp(name, "lp", 2) == 0) ||
+			    (strncmp(name, "fd", 2) == 0) ||
+			    (strncmp(name, "hpet", 4) == 0) ||
 			    (strncmp(name, "core", 4) == 0))
 				continue;
 
@@ -1148,7 +1184,7 @@ zpool_find_import_impl(libzfs_handle_t *hdl, importargs_t *iarg)
 			if ((fd = openat64(dfd, name, O_RDONLY)) < 0)
 				continue;
 
-			if ((zpool_read_label(fd, &config)) != 0) {
+			if ((zpool_read_label(fd, &config, &num_labels))) {
 				(void) close(fd);
 				(void) no_memory(hdl);
 				goto error;
@@ -1165,7 +1201,7 @@ zpool_find_import_impl(libzfs_handle_t *hdl, importargs_t *iarg)
 				    ZPOOL_CONFIG_POOL_NAME, &pname) == 0)) {
 
 					if (strcmp(iarg->poolname, pname))
-					       matched = B_FALSE;
+						matched = B_FALSE;
 
 				} else if (iarg->guid != 0) {
 					uint64_t this_guid;
@@ -1182,7 +1218,8 @@ zpool_find_import_impl(libzfs_handle_t *hdl, importargs_t *iarg)
 				}
 				/* use the non-raw path for the config */
 				(void) strlcpy(end, name, pathleft);
-				if (add_config(hdl, &pools, path, i+1, config))
+				if (add_config(hdl, &pools, path, i+1,
+				    num_labels, config))
 					goto error;
 			}
 		}
@@ -1310,21 +1347,15 @@ zpool_find_import_cached(libzfs_handle_t *hdl, const char *cachefile,
 
 	elem = NULL;
 	while ((elem = nvlist_next_nvpair(raw, elem)) != NULL) {
-		verify(nvpair_value_nvlist(elem, &src) == 0);
+		src = fnvpair_value_nvlist(elem);
 
-		verify(nvlist_lookup_string(src, ZPOOL_CONFIG_POOL_NAME,
-		    &name) == 0);
+		name = fnvlist_lookup_string(src, ZPOOL_CONFIG_POOL_NAME);
 		if (poolname != NULL && strcmp(poolname, name) != 0)
 			continue;
 
-		verify(nvlist_lookup_uint64(src, ZPOOL_CONFIG_POOL_GUID,
-		    &this_guid) == 0);
-		if (guid != 0) {
-			verify(nvlist_lookup_uint64(src, ZPOOL_CONFIG_POOL_GUID,
-			    &this_guid) == 0);
-			if (guid != this_guid)
-				continue;
-		}
+		this_guid = fnvlist_lookup_uint64(src, ZPOOL_CONFIG_POOL_GUID);
+		if (guid != 0 && guid != this_guid)
+			continue;
 
 		if (pool_active(hdl, name, this_guid, &active) != 0) {
 			nvlist_free(raw);
@@ -1472,7 +1503,7 @@ zpool_in_use(libzfs_handle_t *hdl, int fd, pool_state_t *state, char **namestr,
 
 	*inuse = B_FALSE;
 
-	if (zpool_read_label(fd, &config) != 0) {
+	if (zpool_read_label(fd, &config, NULL) != 0) {
 		(void) no_memory(hdl);
 		return (-1);
 	}
@@ -1501,9 +1532,16 @@ zpool_in_use(libzfs_handle_t *hdl, int fd, pool_state_t *state, char **namestr,
 		 * its state to active.
 		 */
 		if (pool_active(hdl, name, guid, &isactive) == 0 && isactive &&
-		    (zhp = zpool_open_canfail(hdl, name)) != NULL &&
-		    zpool_get_prop_int(zhp, ZPOOL_PROP_READONLY, NULL))
-			stateval = POOL_STATE_ACTIVE;
+		    (zhp = zpool_open_canfail(hdl, name)) != NULL) {
+			if (zpool_get_prop_int(zhp, ZPOOL_PROP_READONLY, NULL))
+				stateval = POOL_STATE_ACTIVE;
+
+			/*
+			 * All we needed the zpool handle for is the
+			 * readonly prop check.
+			 */
+			zpool_close(zhp);
+		}
 
 		ret = B_TRUE;
 		break;

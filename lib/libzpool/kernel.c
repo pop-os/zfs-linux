@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <sys/processor.h>
 #include <sys/zfs_context.h>
+#include <sys/rrwlock.h>
 #include <sys/utsname.h>
 #include <sys/time.h>
 #include <sys/systeminfo.h>
@@ -46,10 +47,8 @@ int aok;
 uint64_t physmem;
 vnode_t *rootdir = (vnode_t *)0xabcd1234;
 char hw_serial[HW_HOSTID_LEN];
-
-struct utsname utsname = {
-	"userland", "libzpool", "1", "1", "na"
-};
+struct utsname hw_utsname;
+vmem_t *zio_arena = NULL;
 
 /* this only exists to have its address taken */
 struct proc p0;
@@ -73,7 +72,7 @@ thread_init(void)
 	VERIFY3S(pthread_key_create(&kthread_key, NULL), ==, 0);
 
 	/* Create entry for primary kthread */
-	kt = umem_zalloc(sizeof(kthread_t), UMEM_NOFAIL);
+	kt = umem_zalloc(sizeof (kthread_t), UMEM_NOFAIL);
 	kt->t_tid = pthread_self();
 	kt->t_func = NULL;
 
@@ -92,7 +91,7 @@ thread_fini(void)
 	ASSERT(pthread_equal(kt->t_tid, pthread_self()));
 	ASSERT3P(kt->t_func, ==, NULL);
 
-	umem_free(kt, sizeof(kthread_t));
+	umem_free(kt, sizeof (kthread_t));
 
 	/* Wait for all threads to exit via thread_exit() */
 	VERIFY3S(pthread_mutex_lock(&kthread_lock), ==, 0);
@@ -116,7 +115,7 @@ zk_thread_current(void)
 
 	ASSERT3P(kt, !=, NULL);
 
-	return kt;
+	return (kt);
 }
 
 void *
@@ -129,6 +128,7 @@ zk_thread_helper(void *arg)
 	VERIFY3S(pthread_mutex_lock(&kthread_lock), ==, 0);
 	kthread_nr++;
 	VERIFY3S(pthread_mutex_unlock(&kthread_lock), ==, 0);
+	(void) setpriority(PRIO_PROCESS, 0, kt->t_pri);
 
 	kt->t_tid = pthread_self();
 	((thread_func_arg_t) kt->t_func)(kt->t_arg);
@@ -136,58 +136,53 @@ zk_thread_helper(void *arg)
 	/* Unreachable, thread must exit with thread_exit() */
 	abort();
 
-	return NULL;
+	return (NULL);
 }
 
 kthread_t *
 zk_thread_create(caddr_t stk, size_t stksize, thread_func_t func, void *arg,
-	      size_t len, proc_t *pp, int state, pri_t pri, int detachstate)
+    size_t len, proc_t *pp, int state, pri_t pri, int detachstate)
 {
 	kthread_t *kt;
 	pthread_attr_t attr;
-	size_t stack;
+	char *stkstr;
 
-	ASSERT3S(state & ~TS_RUN, ==, 0);
+	ASSERT0(state & ~TS_RUN);
 
-	kt = umem_zalloc(sizeof(kthread_t), UMEM_NOFAIL);
+	kt = umem_zalloc(sizeof (kthread_t), UMEM_NOFAIL);
 	kt->t_func = func;
 	kt->t_arg = arg;
+	kt->t_pri = pri;
+
+	VERIFY0(pthread_attr_init(&attr));
+	VERIFY0(pthread_attr_setdetachstate(&attr, detachstate));
 
 	/*
-	 * The Solaris kernel stack size is 24k for x86/x86_64.
-	 * The Linux kernel stack size is 8k for x86/x86_64.
-	 *
-	 * We reduce the default stack size in userspace, to ensure
-	 * we observe stack overruns in user space as well as in
-	 * kernel space. In practice we can't set the userspace stack
-	 * size to 8k because differences in stack usage between kernel
-	 * space and userspace could lead to spurious stack overflows
-	 * (especially when debugging is enabled). Nevertheless, we try
-	 * to set it to the lowest value that works (currently 8k*4).
-	 * PTHREAD_STACK_MIN is the minimum stack required for a NULL
-	 * procedure in user space and is added in to the stack
-	 * requirements.
-	 *
-	 * Some buggy NPTL threading implementations include the
-	 * guard area within the stack size allocations.  In
-	 * this case we allocate an extra page to account for the
-	 * guard area since we only have two pages of usable stack
-	 * on Linux.
+	 * We allow the default stack size in user space to be specified by
+	 * setting the ZFS_STACK_SIZE environment variable.  This allows us
+	 * the convenience of observing and debugging stack overruns in
+	 * user space.  Explicitly specified stack sizes will be honored.
+	 * The usage of ZFS_STACK_SIZE is discussed further in the
+	 * ENVIRONMENT VARIABLES sections of the ztest(1) man page.
 	 */
+	if (stksize == 0) {
+		stkstr = getenv("ZFS_STACK_SIZE");
 
-	stack = PTHREAD_STACK_MIN + MAX(stksize, STACK_SIZE) * 4;
+		if (stkstr == NULL)
+			stksize = TS_STACK_MAX;
+		else
+			stksize = MAX(atoi(stkstr), TS_STACK_MIN);
+	}
 
-	VERIFY3S(pthread_attr_init(&attr), ==, 0);
-	VERIFY3S(pthread_attr_setstacksize(&attr, stack), ==, 0);
-	VERIFY3S(pthread_attr_setguardsize(&attr, PAGESIZE), ==, 0);
-	VERIFY3S(pthread_attr_setdetachstate(&attr, detachstate), ==, 0);
+	VERIFY3S(stksize, >, 0);
+	stksize = P2ROUNDUP(MAX(stksize, TS_STACK_MIN), PAGESIZE);
+	VERIFY0(pthread_attr_setstacksize(&attr, stksize));
+	VERIFY0(pthread_attr_setguardsize(&attr, PAGESIZE));
 
-	VERIFY3S(pthread_create(&kt->t_tid, &attr, &zk_thread_helper, kt),
-	    ==, 0);
+	VERIFY0(pthread_create(&kt->t_tid, &attr, &zk_thread_helper, kt));
+	VERIFY0(pthread_attr_destroy(&attr));
 
-	VERIFY3S(pthread_attr_destroy(&attr), ==, 0);
-
-	return kt;
+	return (kt);
 }
 
 void
@@ -197,7 +192,7 @@ zk_thread_exit(void)
 
 	ASSERT(pthread_equal(kt->t_tid, pthread_self()));
 
-	umem_free(kt, sizeof(kthread_t));
+	umem_free(kt, sizeof (kthread_t));
 
 	pthread_mutex_lock(&kthread_lock);
 	kthread_nr--;
@@ -223,8 +218,8 @@ zk_thread_join(kt_did_t tid)
  */
 /*ARGSUSED*/
 kstat_t *
-kstat_create(char *module, int instance, char *name, char *class,
-    uchar_t type, ulong_t ndata, uchar_t ks_flag)
+kstat_create(const char *module, int instance, const char *name,
+    const char *class, uchar_t type, ulong_t ndata, uchar_t ks_flag)
 {
 	return (NULL);
 }
@@ -237,6 +232,43 @@ kstat_install(kstat_t *ksp)
 /*ARGSUSED*/
 void
 kstat_delete(kstat_t *ksp)
+{}
+
+/*ARGSUSED*/
+void
+kstat_waitq_enter(kstat_io_t *kiop)
+{}
+
+/*ARGSUSED*/
+void
+kstat_waitq_exit(kstat_io_t *kiop)
+{}
+
+/*ARGSUSED*/
+void
+kstat_runq_enter(kstat_io_t *kiop)
+{}
+
+/*ARGSUSED*/
+void
+kstat_runq_exit(kstat_io_t *kiop)
+{}
+
+/*ARGSUSED*/
+void
+kstat_waitq_to_runq(kstat_io_t *kiop)
+{}
+
+/*ARGSUSED*/
+void
+kstat_runq_back_to_waitq(kstat_io_t *kiop)
+{}
+
+void
+kstat_set_raw_ops(kstat_t *ksp,
+    int (*headers)(char *buf, size_t size),
+    int (*data)(char *buf, size_t size, void *data),
+    void *(*addr)(kstat_t *ksp, loff_t index))
 {}
 
 /*
@@ -260,7 +292,7 @@ mutex_destroy(kmutex_t *mp)
 {
 	ASSERT3U(mp->m_magic, ==, MTX_MAGIC);
 	ASSERT3P(mp->m_owner, ==, MTX_INIT);
-	VERIFY3S(pthread_mutex_destroy(&(mp)->m_lock), ==, 0);
+	ASSERT0(pthread_mutex_destroy(&(mp)->m_lock));
 	mp->m_owner = MTX_DEST;
 	mp->m_magic = 0;
 }
@@ -334,7 +366,7 @@ void
 rw_destroy(krwlock_t *rwlp)
 {
 	ASSERT3U(rwlp->rw_magic, ==, RW_MAGIC);
-
+	ASSERT(rwlp->rw_readers == 0 && rwlp->rw_wr_owner == RW_INIT);
 	VERIFY3S(pthread_rwlock_destroy(&rwlp->rw_lock), ==, 0);
 	rwlp->rw_magic = 0;
 }
@@ -486,6 +518,41 @@ top:
 		goto top;
 
 	VERIFY3S(error, ==, 0);
+
+	return (1);
+}
+
+/*ARGSUSED*/
+clock_t
+cv_timedwait_hires(kcondvar_t *cv, kmutex_t *mp, hrtime_t tim, hrtime_t res,
+    int flag)
+{
+	int error;
+	timestruc_t ts;
+	hrtime_t delta;
+
+	ASSERT(flag == 0);
+
+top:
+	delta = tim - gethrtime();
+	if (delta <= 0)
+		return (-1);
+
+	ts.tv_sec = delta / NANOSEC;
+	ts.tv_nsec = delta % NANOSEC;
+
+	ASSERT(mutex_owner(mp) == curthread);
+	mp->m_owner = NULL;
+	error = pthread_cond_timedwait(&cv->cv, &mp->m_lock, &ts);
+	mp->m_owner = curthread;
+
+	if (error == ETIME)
+		return (-1);
+
+	if (error == EINTR)
+		goto top;
+
+	ASSERT(error == 0);
 
 	return (1);
 }
@@ -664,7 +731,7 @@ vn_rdwr(int uio, vnode_t *vp, void *addr, ssize_t len, offset_t offset,
 		 * (memory or disk) due to O_DIRECT, so we abort() in order to
 		 * catch the offender.
 		 */
-		 abort();
+		abort();
 	}
 #endif
 	if (rc == -1)
@@ -773,6 +840,9 @@ dprintf_setup(int *argc, char **argv)
 	 */
 	if (dprintf_find_string("on"))
 		dprintf_print_all = 1;
+
+	if (dprintf_string != NULL)
+		zfs_flags |= ZFS_DEBUG_DPRINTF;
 }
 
 /*
@@ -941,17 +1011,15 @@ delay(clock_t ticks)
  * High order bit is 31 (or 63 in _LP64 kernel).
  */
 int
-highbit(ulong_t i)
+highbit64(uint64_t i)
 {
 	register int h = 1;
 
 	if (i == 0)
 		return (0);
-#ifdef _LP64
-	if (i & 0xffffffff00000000ul) {
+	if (i & 0xffffffff00000000ULL) {
 		h += 32; i >>= 32;
 	}
-#endif
 	if (i & 0xffff0000) {
 		h += 16; i >>= 16;
 	}
@@ -1024,6 +1092,12 @@ ddi_strtoull(const char *str, char **nptr, int base, u_longlong_t *result)
 	return (0);
 }
 
+utsname_t *
+utsname(void)
+{
+	return (&hw_utsname);
+}
+
 /*
  * =========================================================================
  * kernel emulation setup & teardown
@@ -1039,9 +1113,35 @@ umem_out_of_memory(void)
 	return (0);
 }
 
+static unsigned long
+get_spl_hostid(void)
+{
+	FILE *f;
+	unsigned long hostid;
+
+	f = fopen("/sys/module/spl/parameters/spl_hostid", "r");
+	if (!f)
+		return (0);
+	if (fscanf(f, "%lu", &hostid) != 1)
+		hostid = 0;
+	fclose(f);
+	return (hostid & 0xffffffff);
+}
+
+unsigned long
+get_system_hostid(void)
+{
+	unsigned long system_hostid = get_spl_hostid();
+	if (system_hostid == 0)
+		system_hostid = gethostid() & 0xffffffff;
+	return (system_hostid);
+}
+
 void
 kernel_init(int mode)
 {
+	extern uint_t rrw_tsd_key;
+
 	umem_nofail_callback(umem_out_of_memory);
 
 	physmem = sysconf(_SC_PHYS_PAGES);
@@ -1050,15 +1150,18 @@ kernel_init(int mode)
 	    (double)physmem * sysconf(_SC_PAGE_SIZE) / (1ULL << 30));
 
 	(void) snprintf(hw_serial, sizeof (hw_serial), "%ld",
-	    (mode & FWRITE) ? gethostid() : 0);
+	    (mode & FWRITE) ? get_system_hostid() : 0);
 
 	VERIFY((random_fd = open("/dev/random", O_RDONLY)) != -1);
 	VERIFY((urandom_fd = open("/dev/urandom", O_RDONLY)) != -1);
+	VERIFY0(uname(&hw_utsname));
 
 	thread_init();
 	system_taskq_init();
 
 	spa_init(mode);
+
+	tsd_create(&rrw_tsd_key, rrw_tsd_destroy);
 }
 
 void
@@ -1078,6 +1181,12 @@ kernel_fini(void)
 
 uid_t
 crgetuid(cred_t *cr)
+{
+	return (0);
+}
+
+uid_t
+crgetruid(cred_t *cr)
 {
 	return (0);
 }
@@ -1193,6 +1302,23 @@ zfs_onexit_del_cb(minor_t minor, uint64_t action_handle, boolean_t fire)
 /* ARGSUSED */
 int
 zfs_onexit_cb_data(minor_t minor, uint64_t action_handle, void **data)
+{
+	return (0);
+}
+
+fstrans_cookie_t
+spl_fstrans_mark(void)
+{
+	return ((fstrans_cookie_t) 0);
+}
+
+void
+spl_fstrans_unmark(fstrans_cookie_t cookie)
+{
+}
+
+int
+spl_fstrans_check(void)
 {
 	return (0);
 }

@@ -132,7 +132,7 @@ typedef struct nv_alloc {
 } nv_alloc_t;
 
 struct nv_alloc_ops {
-	int (*nv_ao_init)(nv_alloc_t *, __va_list);
+	int (*nv_ao_init)(nv_alloc_t *, va_list);
 	void (*nv_ao_fini)(nv_alloc_t *);
 	void *(*nv_ao_alloc)(nv_alloc_t *, size_t);
 	void (*nv_ao_free)(nv_alloc_t *, void *, size_t);
@@ -285,6 +285,7 @@ void fnvlist_pack_free(char *, size_t);
 nvlist_t *fnvlist_unpack(char *, size_t);
 nvlist_t *fnvlist_dup(nvlist_t *);
 void fnvlist_merge(nvlist_t *, nvlist_t *);
+size_t fnvlist_num_pairs(nvlist_t *);
 
 void fnvlist_add_boolean(nvlist_t *, const char *);
 void fnvlist_add_boolean_value(nvlist_t *, const char *, boolean_t);

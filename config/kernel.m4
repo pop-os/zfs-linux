@@ -6,6 +6,8 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_SPL
 	ZFS_AC_TEST_MODULE
 	ZFS_AC_KERNEL_CONFIG
+	ZFS_AC_KERNEL_DECLARE_EVENT_CLASS
+	ZFS_AC_KERNEL_CURRENT_BIO_TAIL
 	ZFS_AC_KERNEL_BDEV_BLOCK_DEVICE_OPERATIONS
 	ZFS_AC_KERNEL_BLOCK_DEVICE_OPERATIONS_RELEASE_VOID
 	ZFS_AC_KERNEL_TYPE_FMODE_T
@@ -17,35 +19,36 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL_INVALIDATE_BDEV_ARGS
 	ZFS_AC_KERNEL_BDEV_LOGICAL_BLOCK_SIZE
 	ZFS_AC_KERNEL_BDEV_PHYSICAL_BLOCK_SIZE
-	ZFS_AC_KERNEL_BIO_FAILFAST
+	ZFS_AC_KERNEL_BIO_BVEC_ITER
 	ZFS_AC_KERNEL_BIO_FAILFAST_DTD
 	ZFS_AC_KERNEL_REQ_FAILFAST_MASK
 	ZFS_AC_KERNEL_BIO_END_IO_T_ARGS
-	ZFS_AC_KERNEL_BIO_RW_SYNC
-	ZFS_AC_KERNEL_BIO_RW_SYNCIO
-	ZFS_AC_KERNEL_REQ_SYNC
-	ZFS_AC_KERNEL_BLK_END_REQUEST
+	ZFS_AC_KERNEL_BIO_RW_BARRIER
+	ZFS_AC_KERNEL_BIO_RW_DISCARD
 	ZFS_AC_KERNEL_BLK_QUEUE_FLUSH
 	ZFS_AC_KERNEL_BLK_QUEUE_MAX_HW_SECTORS
 	ZFS_AC_KERNEL_BLK_QUEUE_MAX_SEGMENTS
-	ZFS_AC_KERNEL_BLK_QUEUE_PHYSICAL_BLOCK_SIZE
-	ZFS_AC_KERNEL_BLK_QUEUE_IO_OPT
-	ZFS_AC_KERNEL_BLK_QUEUE_NONROT
-	ZFS_AC_KERNEL_BLK_QUEUE_DISCARD
-	ZFS_AC_KERNEL_BLK_FETCH_REQUEST
-	ZFS_AC_KERNEL_BLK_REQUEUE_REQUEST
-	ZFS_AC_KERNEL_BLK_RQ_BYTES
-	ZFS_AC_KERNEL_BLK_RQ_POS
-	ZFS_AC_KERNEL_BLK_RQ_SECTORS
 	ZFS_AC_KERNEL_GET_DISK_RO
 	ZFS_AC_KERNEL_GET_GENDISK
-	ZFS_AC_KERNEL_RQ_IS_SYNC
-	ZFS_AC_KERNEL_RQ_FOR_EACH_SEGMENT
 	ZFS_AC_KERNEL_DISCARD_GRANULARITY
 	ZFS_AC_KERNEL_CONST_XATTR_HANDLER
 	ZFS_AC_KERNEL_XATTR_HANDLER_GET
 	ZFS_AC_KERNEL_XATTR_HANDLER_SET
+	ZFS_AC_KERNEL_XATTR_HANDLER_LIST
+	ZFS_AC_KERNEL_INODE_OWNER_OR_CAPABLE
+	ZFS_AC_KERNEL_POSIX_ACL_FROM_XATTR_USERNS
+	ZFS_AC_KERNEL_POSIX_ACL_RELEASE
+	ZFS_AC_KERNEL_POSIX_ACL_CHMOD
+	ZFS_AC_KERNEL_POSIX_ACL_CACHING
+	ZFS_AC_KERNEL_POSIX_ACL_EQUIV_MODE_WANTS_UMODE_T
+	ZFS_AC_KERNEL_INODE_OPERATIONS_PERMISSION
+	ZFS_AC_KERNEL_INODE_OPERATIONS_PERMISSION_WITH_NAMEIDATA
+	ZFS_AC_KERNEL_INODE_OPERATIONS_CHECK_ACL
+	ZFS_AC_KERNEL_INODE_OPERATIONS_CHECK_ACL_WITH_FLAGS
+	ZFS_AC_KERNEL_INODE_OPERATIONS_GET_ACL
+	ZFS_AC_KERNEL_CURRENT_UMASK
 	ZFS_AC_KERNEL_SHOW_OPTIONS
+	ZFS_AC_KERNEL_FILE_INODE
 	ZFS_AC_KERNEL_FSYNC
 	ZFS_AC_KERNEL_EVICT_INODE
 	ZFS_AC_KERNEL_DIRTY_INODE_WITH_FLAGS
@@ -55,6 +58,8 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL_MKDIR_UMODE_T
 	ZFS_AC_KERNEL_LOOKUP_NAMEIDATA
 	ZFS_AC_KERNEL_CREATE_NAMEIDATA
+	ZFS_AC_KERNEL_FOLLOW_LINK
+	ZFS_AC_KERNEL_PUT_LINK
 	ZFS_AC_KERNEL_TRUNCATE_RANGE
 	ZFS_AC_KERNEL_AUTOMOUNT
 	ZFS_AC_KERNEL_ENCODE_FH_WITH_INODE
@@ -63,6 +68,7 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL_INSERT_INODE_LOCKED
 	ZFS_AC_KERNEL_D_MAKE_ROOT
 	ZFS_AC_KERNEL_D_OBTAIN_ALIAS
+	ZFS_AC_KERNEL_D_PRUNE_ALIASES
 	ZFS_AC_KERNEL_D_SET_D_OP
 	ZFS_AC_KERNEL_D_REVALIDATE_NAMEIDATA
 	ZFS_AC_KERNEL_CONST_DENTRY_OPERATIONS
@@ -72,15 +78,20 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL_CALLBACK_SECURITY_INODE_INIT_SECURITY
 	ZFS_AC_KERNEL_MOUNT_NODEV
 	ZFS_AC_KERNEL_SHRINK
+	ZFS_AC_KERNEL_SHRINK_CONTROL_HAS_NID
 	ZFS_AC_KERNEL_S_INSTANCES_LIST_HEAD
 	ZFS_AC_KERNEL_S_D_OP
-	ZFS_AC_KERNEL_BDI
 	ZFS_AC_KERNEL_BDI_SETUP_AND_REGISTER
 	ZFS_AC_KERNEL_SET_NLINK
 	ZFS_AC_KERNEL_ELEVATOR_CHANGE
 	ZFS_AC_KERNEL_5ARG_SGET
 	ZFS_AC_KERNEL_LSEEK_EXECUTE
 	ZFS_AC_KERNEL_VFS_ITERATE
+	ZFS_AC_KERNEL_VFS_RW_ITERATE
+	ZFS_AC_KERNEL_KMAP_ATOMIC_ARGS
+	ZFS_AC_KERNEL_FOLLOW_DOWN_ONE
+	ZFS_AC_KERNEL_MAKE_REQUEST_FN
+	ZFS_AC_KERNEL_GENERIC_IO_ACCT
 
 	AS_IF([test "$LINUX_OBJ" != "$LINUX"], [
 		KERNELMAKE_PARAMS="$KERNELMAKE_PARAMS O=$LINUX_OBJ"
@@ -91,6 +102,7 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	dnl # -Wall -fno-strict-aliasing -Wstrict-prototypes and other
 	dnl # compiler options are added by the kernel build system.
 	KERNELCPPFLAGS="$KERNELCPPFLAGS $NO_UNUSED_BUT_SET_VARIABLE"
+	KERNELCPPFLAGS="$KERNELCPPFLAGS $NO_BOOL_COMPARE"
 	KERNELCPPFLAGS="$KERNELCPPFLAGS -DHAVE_SPL -D_KERNEL"
 	KERNELCPPFLAGS="$KERNELCPPFLAGS -DTEXT_DOMAIN=\\\"zfs-linux-kernel\\\""
 
@@ -258,10 +270,12 @@ AC_DEFUN([ZFS_AC_SPL], [
 	dnl # source directory.  In order of preference:
 	dnl #
 	splsrc0="/var/lib/dkms/spl/${VERSION}/build"
-	splsrc1="/usr/src/spl-${VERSION}/${LINUX_VERSION}"
-	splsrc2="/usr/src/spl-${VERSION}"
-	splsrc3="../spl/"
-	splsrc4="$LINUX"
+	splsrc1="/usr/local/src/spl-${VERSION}/${LINUX_VERSION}"
+	splsrc2="/usr/local/src/spl-${VERSION}"
+	splsrc3="/usr/src/spl-${VERSION}/${LINUX_VERSION}"
+	splsrc4="/usr/src/spl-${VERSION}"
+	splsrc5="../spl/"
+	splsrc6="$LINUX"
 
 	AC_MSG_CHECKING([spl source directory])
 	AS_IF([test -z "${splsrc}"], [
@@ -275,6 +289,10 @@ AC_DEFUN([ZFS_AC_SPL], [
 			splsrc=$(readlink -f "${splsrc3}")
 		], [ test -e "${splsrc4}/spl.release.in" ], [
 			splsrc=${splsrc4}
+		], [ test -e "${splsrc5}/spl.release.in"], [
+			splsrc=$(readlink -f "${splsrc5}")
+		], [ test -e "${splsrc6}/spl.release.in" ], [
+			splsrc=${splsrc6}
 		], [
 			splsrc="[Not found]"
 		])
@@ -312,6 +330,8 @@ AC_DEFUN([ZFS_AC_SPL], [
 				splbuild="${splsrc}/${LINUX_VERSION}"
 			], [ test -e "${splsrc}/spl_config.h" ], [
 				splbuild="${splsrc}"
+			], [ find -L "${splsrc}" -name spl_config.h 2> /dev/null | grep -wq spl_config.h ], [
+				splbuild=$(find -L "${splsrc}" -name spl_config.h | sed 's,/spl_config.h,,')
 			], [
 				splbuild="[Not found]"
 			])
@@ -406,8 +426,8 @@ AC_DEFUN([ZFS_AC_SPL], [
 dnl #
 dnl # Basic toolchain sanity check.
 dnl #
-AC_DEFUN([ZFS_AC_TEST_MODULE],
-	[AC_MSG_CHECKING([whether modules can be built])
+AC_DEFUN([ZFS_AC_TEST_MODULE], [
+	AC_MSG_CHECKING([whether modules can be built])
 	ZFS_LINUX_TRY_COMPILE([],[],[
 		AC_MSG_RESULT([yes])
 	],[
@@ -428,10 +448,16 @@ dnl # detected at configure time and cause a build failure.  Otherwise
 dnl # modules may be successfully built that behave incorrectly.
 dnl #
 AC_DEFUN([ZFS_AC_KERNEL_CONFIG], [
-
-	AS_IF([test "$ZFS_META_LICENSE" = GPL], [
-		AC_DEFINE([HAVE_GPL_ONLY_SYMBOLS], [1],
-			[Define to 1 if licensed under the GPL])
+	AC_RUN_IFELSE([
+		AC_LANG_PROGRAM([
+			#include "$LINUX/include/linux/license.h"
+		], [
+			return !license_is_gpl_compatible("$ZFS_META_LICENSE");
+		])
+	], [
+		AC_DEFINE([ZFS_IS_GPL_COMPATIBLE], [1],
+		    [Define to 1 if GPL-only symbols can be used])
+	], [
 	])
 
 	ZFS_AC_KERNEL_CONFIG_DEBUG_LOCK_ALLOC
@@ -480,9 +506,18 @@ AC_DEFUN([ZFS_AC_KERNEL_CONFIG_DEBUG_LOCK_ALLOC], [
 ])
 
 dnl #
-dnl # ZFS_LINUX_CONFTEST
+dnl # ZFS_LINUX_CONFTEST_H
 dnl #
-AC_DEFUN([ZFS_LINUX_CONFTEST], [
+AC_DEFUN([ZFS_LINUX_CONFTEST_H], [
+cat - <<_ACEOF >conftest.h
+$1
+_ACEOF
+])
+
+dnl #
+dnl # ZFS_LINUX_CONFTEST_C
+dnl #
+AC_DEFUN([ZFS_LINUX_CONFTEST_C], [
 cat confdefs.h - <<_ACEOF >conftest.c
 $1
 _ACEOF
@@ -508,13 +543,14 @@ dnl #
 dnl # ZFS_LINUX_COMPILE_IFELSE / like AC_COMPILE_IFELSE
 dnl #
 AC_DEFUN([ZFS_LINUX_COMPILE_IFELSE], [
-	m4_ifvaln([$1], [ZFS_LINUX_CONFTEST([$1])])
+	m4_ifvaln([$1], [ZFS_LINUX_CONFTEST_C([$1])])
+	m4_ifvaln([$6], [ZFS_LINUX_CONFTEST_H([$6])], [ZFS_LINUX_CONFTEST_H([])])
 	rm -Rf build && mkdir -p build && touch build/conftest.mod.c
 	echo "obj-m := conftest.o" >build/Makefile
 	modpost_flag=''
 	test "x$enable_linux_builtin" = xyes && modpost_flag='modpost=true' # fake modpost stage
 	AS_IF(
-		[AC_TRY_COMMAND(cp conftest.c build && make [$2] -C $LINUX_OBJ EXTRA_CFLAGS="-Werror $EXTRA_KCFLAGS" $ARCH_UM M=$PWD/build $modpost_flag) >/dev/null && AC_TRY_COMMAND([$3])],
+		[AC_TRY_COMMAND(cp conftest.c conftest.h build && make [$2] -C $LINUX_OBJ EXTRA_CFLAGS="-Werror $EXTRA_KCFLAGS" $ARCH_UM M=$PWD/build $modpost_flag) >/dev/null && AC_TRY_COMMAND([$3])],
 		[$4],
 		[_AC_MSG_LOG_CONFTEST m4_ifvaln([$5],[$5])]
 	)
@@ -600,4 +636,17 @@ AC_DEFUN([ZFS_LINUX_TRY_COMPILE_SYMBOL], [
 			$5
 		fi
 	fi
+])
+
+dnl #
+dnl # ZFS_LINUX_TRY_COMPILE_HEADER
+dnl # like ZFS_LINUX_TRY_COMPILE, except the contents conftest.h are
+dnl # provided via the fifth parameter
+dnl #
+AC_DEFUN([ZFS_LINUX_TRY_COMPILE_HEADER],
+	[ZFS_LINUX_COMPILE_IFELSE(
+	[AC_LANG_SOURCE([ZFS_LANG_PROGRAM([[$1]], [[$2]])])],
+	[modules],
+	[test -s build/conftest.o],
+	[$3], [$4], [$5])
 ])

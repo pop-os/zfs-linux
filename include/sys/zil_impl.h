@@ -41,7 +41,7 @@ extern "C" {
 typedef struct lwb {
 	zilog_t		*lwb_zilog;	/* back pointer to log struct */
 	blkptr_t	lwb_blk;	/* on disk address of this log blk */
-	boolean_t       lwb_fastwrite;  /* is blk marked for fastwrite? */
+	boolean_t	lwb_fastwrite;	/* is blk marked for fastwrite? */
 	int		lwb_nused;	/* # used bytes in buffer */
 	int		lwb_sz;		/* size of block and buffer */
 	char		*lwb_buf;	/* log write buffer */
@@ -140,7 +140,7 @@ typedef struct zil_bp_node {
 	avl_node_t	zn_node;
 } zil_bp_node_t;
 
-#define	ZIL_MAX_LOG_DATA (SPA_MAXBLOCKSIZE - sizeof (zil_chain_t) - \
+#define	ZIL_MAX_LOG_DATA (SPA_OLD_MAXBLOCKSIZE - sizeof (zil_chain_t) - \
     sizeof (lr_write_t))
 
 #ifdef	__cplusplus

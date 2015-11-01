@@ -9,10 +9,10 @@
 #     <--------------------- raid10 zpool --------------------->
 #
 
-FILES="/tmp/zpool-vdev0  \
-       /tmp/zpool-vdev1  \
-       /tmp/zpool-vdev2  \
-       /tmp/zpool-vdev3"
+FILEDIR=${FILEDIR:-/var/tmp}
+FILES_M1=${FILES_M1:-"$FILEDIR/file-vdev0 $FILEDIR/file-vdev1"}
+FILES_M2=${FILES_M2:-"$FILEDIR/file-vdev2 $FILEDIR/file-vdev3"}
+FILES="${FILES_M1} ${FILES_M2}"
 LODEVICES=""
 MDDEVICES=""
 MDDEVICES_M1=""
@@ -63,9 +63,9 @@ zpool_create() {
 		fi 
 	done
 
-	msg ${ZPOOL} create ${FORCE_FLAG} ${ZPOOL_NAME}                      \
+	msg ${ZPOOL} create ${ZPOOL_FLAGS} ${ZPOOL_NAME}                      \
 		mirror ${MDDEVICES_M1} mirror ${MDDEVICES_M2}
-	${ZPOOL} create ${FORCE_FLAG} ${ZPOOL_NAME}                          \
+	${ZPOOL} create ${ZPOOL_FLAGS} ${ZPOOL_NAME}                          \
 		mirror ${MDDEVICES_M1} mirror ${MDDEVICES_M2} ||             \
 		(destroy_md_devices "${MDDEVICES}" &&                        \
 		destroy_loop_devices "${LODEVICES}" && exit 1)

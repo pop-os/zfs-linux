@@ -23,6 +23,8 @@
  * Use is subject to license terms.
  */
 
+#include <ctype.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -33,7 +35,8 @@
 #include <sys/zfs_znode.h>
 #include <sys/fs/zfs.h>
 
-int ioctl_get_msg(char *var, int fd)
+static int
+ioctl_get_msg(char *var, int fd)
 {
 	int error = 0;
 	char msg[ZFS_MAXNAMELEN];
@@ -47,13 +50,15 @@ int ioctl_get_msg(char *var, int fd)
 	return (error);
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	int fd, error = 0;
 	char zvol_name[ZFS_MAXNAMELEN], zvol_name_part[ZFS_MAXNAMELEN];
 	char *dev_name;
 	struct stat64 statbuf;
 	int dev_minor, dev_part;
+	int i;
 
 	if (argc < 2) {
 		printf("Usage: %s /dev/zvol_device_node\n", argv[0]);
@@ -86,6 +91,11 @@ int main(int argc, char **argv)
 		    dev_part);
 	else
 		snprintf(zvol_name_part, ZFS_MAXNAMELEN, "%s", zvol_name);
+
+	for (i = 0; i < strlen(zvol_name_part); i++) {
+		if (isblank(zvol_name_part[i]))
+			zvol_name_part[i] = '+';
+	}
 
 	printf("%s\n", zvol_name_part);
 	close(fd);

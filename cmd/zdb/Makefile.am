@@ -7,13 +7,14 @@ DEFAULT_INCLUDES += \
 sbin_PROGRAMS = zdb
 
 zdb_SOURCES = \
-	$(top_srcdir)/cmd/zdb/zdb.c \
-	$(top_srcdir)/cmd/zdb/zdb_il.c
+	zdb.c \
+	zdb_il.c
 
 zdb_LDADD = \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libuutil/libuutil.la \
 	$(top_builddir)/lib/libzpool/libzpool.la \
-	$(top_builddir)/lib/libzfs/libzfs.la
+	$(top_builddir)/lib/libzfs/libzfs.la \
+	$(top_builddir)/lib/libzfs_core/libzfs_core.la
 
-zdb_LDFLAGS = -pthread -lm $(ZLIB) -lrt -ldl $(LIBUUID) $(LIBBLKID)
+zdb_LDADD += $(ZLIB)

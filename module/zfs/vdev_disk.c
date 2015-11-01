@@ -23,6 +23,7 @@
  * Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  * Rewritten for Linux by Brian Behlendorf <behlendorf1@llnl.gov>.
  * LLNL-CODE-403049.
+ * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
  */
 
 #include <sys/zfs_context.h>
@@ -41,12 +42,12 @@ static void *zfs_vdev_holder = VDEV_HOLDER;
  */
 typedef struct dio_request {
 	struct completion	dr_comp;	/* Completion for sync IO */
-	atomic_t		dr_ref;		/* References */
 	zio_t			*dr_zio;	/* Parent ZIO */
-	int			dr_rw;		/* Read/Write */
+	atomic_t		dr_ref;		/* References */
+	int			dr_wait;	/* Wait for IO */
 	int			dr_error;	/* Bio error */
 	int			dr_bio_count;	/* Count of bio's */
-        struct bio		*dr_bio[0];	/* Attached bio's */
+	struct bio		*dr_bio[0];	/* Attached bio's */
 } dio_request_t;
 
 
@@ -64,7 +65,7 @@ vdev_bdev_mode(int smode)
 	if (smode & FWRITE)
 		mode |= FMODE_WRITE;
 
-	return mode;
+	return (mode);
 }
 #else
 static int
@@ -77,7 +78,7 @@ vdev_bdev_mode(int smode)
 	if ((smode & FREAD) && !(smode & FWRITE))
 		mode = MS_RDONLY;
 
-	return mode;
+	return (mode);
 }
 #endif /* HAVE_OPEN_BDEV_EXCLUSIVE */
 
@@ -138,18 +139,19 @@ vdev_elevator_switch(vdev_t *v, char *elevator)
 		return (0);
 
 	/* Leave existing scheduler when set to "none" */
-	if (!strncmp(elevator, "none", 4) && (strlen(elevator) == 4))
+	if (strncmp(elevator, "none", 4) && (strlen(elevator) == 4) == 0)
 		return (0);
 
 #ifdef HAVE_ELEVATOR_CHANGE
 	error = elevator_change(q, elevator);
 #else
-	/* For pre-2.6.36 kernels elevator_change() is not available.
+	/*
+	 * For pre-2.6.36 kernels elevator_change() is not available.
 	 * Therefore we fall back to using a usermodehelper to echo the
 	 * elevator into sysfs;  This requires /bin/echo and sysfs to be
 	 * mounted which may not be true early in the boot process.
 	 */
-# define SET_SCHEDULER_CMD \
+#define	SET_SCHEDULER_CMD \
 	"exec 0</dev/null " \
 	"     1>/sys/block/%s/queue/scheduler " \
 	"     2>/dev/null; " \
@@ -166,7 +168,7 @@ vdev_elevator_switch(vdev_t *v, char *elevator)
 #endif /* HAVE_ELEVATOR_CHANGE */
 	if (error)
 		printk("ZFS: Unable to set \"%s\" scheduler for %s (%s): %d\n",
-		       elevator, v->vdev_path, device, error);
+		    elevator, v->vdev_path, device, error);
 
 	return (error);
 }
@@ -206,7 +208,7 @@ vdev_disk_rrpart(const char *path, int mode, vdev_disk_t *vd)
 
 	bdev = vdev_bdev_open(path, vdev_bdev_mode(mode), zfs_vdev_holder);
 	if (IS_ERR(bdev))
-		return bdev;
+		return (bdev);
 
 	disk = get_gendisk(bdev->bd_dev, &partno);
 	vdev_bdev_close(bdev, vdev_bdev_mode(mode));
@@ -230,9 +232,9 @@ vdev_disk_rrpart(const char *path, int mode, vdev_disk_t *vd)
 		put_disk(disk);
 	}
 
-	return result;
+	return (result);
 #else
-	return ERR_PTR(-EOPNOTSUPP);
+	return (ERR_PTR(-EOPNOTSUPP));
 #endif /* defined(HAVE_3ARG_BLKDEV_GET) && defined(HAVE_GET_GENDISK) */
 }
 
@@ -247,7 +249,7 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 	/* Must have a pathname and it must be absolute. */
 	if (v->vdev_path == NULL || v->vdev_path[0] != '/') {
 		v->vdev_stat.vs_aux = VDEV_AUX_BAD_LABEL;
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	/*
@@ -260,9 +262,9 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 		goto skip_open;
 	}
 
-	vd = kmem_zalloc(sizeof(vdev_disk_t), KM_PUSHPAGE);
+	vd = kmem_zalloc(sizeof (vdev_disk_t), KM_SLEEP);
 	if (vd == NULL)
-		return ENOMEM;
+		return (ENOMEM);
 
 	/*
 	 * Devices are always opened by the path provided at configuration
@@ -285,8 +287,8 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 		bdev = vdev_bdev_open(v->vdev_path,
 		    vdev_bdev_mode(mode), zfs_vdev_holder);
 	if (IS_ERR(bdev)) {
-		kmem_free(vd, sizeof(vdev_disk_t));
-		return -PTR_ERR(bdev);
+		kmem_free(vd, sizeof (vdev_disk_t));
+		return (-PTR_ERR(bdev));
 	}
 
 	v->vdev_tsd = vd;
@@ -299,6 +301,9 @@ skip_open:
 	/* Clear the nowritecache bit, causes vdev_reopen() to try again. */
 	v->vdev_nowritecache = B_FALSE;
 
+	/* Inform the ZIO pipeline that we are non-rotational */
+	v->vdev_nonrot = blk_queue_nonrot(bdev_get_queue(vd->vd_bdev));
+
 	/* Physical volume size in bytes */
 	*psize = bdev_capacity(vd->vd_bdev);
 
@@ -306,12 +311,12 @@ skip_open:
 	*max_psize = *psize;
 
 	/* Based on the minimum sector size set the block size */
-	*ashift = highbit(MAX(block_size, SPA_MINBLOCKSIZE)) - 1;
+	*ashift = highbit64(MAX(block_size, SPA_MINBLOCKSIZE)) - 1;
 
 	/* Try to set the io scheduler elevator algorithm */
 	(void) vdev_elevator_switch(v, zfs_vdev_scheduler);
 
-	return 0;
+	return (0);
 }
 
 static void
@@ -324,9 +329,9 @@ vdev_disk_close(vdev_t *v)
 
 	if (vd->vd_bdev != NULL)
 		vdev_bdev_close(vd->vd_bdev,
-		                vdev_bdev_mode(spa_mode(v->vdev_spa)));
+		    vdev_bdev_mode(spa_mode(v->vdev_spa)));
 
-	kmem_free(vd, sizeof(vdev_disk_t));
+	kmem_free(vd, sizeof (vdev_disk_t));
 	v->vdev_tsd = NULL;
 }
 
@@ -336,8 +341,8 @@ vdev_disk_dio_alloc(int bio_count)
 	dio_request_t *dr;
 	int i;
 
-	dr = kmem_zalloc(sizeof(dio_request_t) +
-	                 sizeof(struct bio *) * bio_count, KM_PUSHPAGE);
+	dr = kmem_zalloc(sizeof (dio_request_t) +
+	    sizeof (struct bio *) * bio_count, KM_SLEEP);
 	if (dr) {
 		init_completion(&dr->dr_comp);
 		atomic_set(&dr->dr_ref, 0);
@@ -348,7 +353,7 @@ vdev_disk_dio_alloc(int bio_count)
 			dr->dr_bio[i] = NULL;
 	}
 
-	return dr;
+	return (dr);
 }
 
 static void
@@ -360,29 +365,8 @@ vdev_disk_dio_free(dio_request_t *dr)
 		if (dr->dr_bio[i])
 			bio_put(dr->dr_bio[i]);
 
-	kmem_free(dr, sizeof(dio_request_t) +
-	          sizeof(struct bio *) * dr->dr_bio_count);
-}
-
-static int
-vdev_disk_dio_is_sync(dio_request_t *dr)
-{
-#ifdef HAVE_BIO_RW_SYNC
-	/* BIO_RW_SYNC preferred interface from 2.6.12-2.6.29 */
-        return (dr->dr_rw & (1 << BIO_RW_SYNC));
-#else
-# ifdef HAVE_BIO_RW_SYNCIO
-	/* BIO_RW_SYNCIO preferred interface from 2.6.30-2.6.35 */
-        return (dr->dr_rw & (1 << BIO_RW_SYNCIO));
-# else
-#  ifdef HAVE_REQ_SYNC
-	/* REQ_SYNC preferred interface from 2.6.36-2.6.xx */
-        return (dr->dr_rw & REQ_SYNC);
-#  else
-#   error "Unable to determine bio sync flag"
-#  endif /* HAVE_REQ_SYNC */
-# endif /* HAVE_BIO_RW_SYNC */
-#endif /* HAVE_BIO_RW_SYNCIO */
+	kmem_free(dr, sizeof (dio_request_t) +
+	    sizeof (struct bio *) * dr->dr_bio_count);
 }
 
 static void
@@ -416,49 +400,40 @@ vdev_disk_dio_put(dio_request_t *dr)
 		}
 	}
 
-	return rc;
+	return (rc);
 }
 
-BIO_END_IO_PROTO(vdev_disk_physio_completion, bio, size, error)
+BIO_END_IO_PROTO(vdev_disk_physio_completion, bio, error)
 {
 	dio_request_t *dr = bio->bi_private;
 	int rc;
+	int wait;
 
-	/* Fatal error but print some useful debugging before asserting */
-	if (dr == NULL)
-		PANIC("dr == NULL, bio->bi_private == NULL\n"
-		    "bi_next: %p, bi_flags: %lx, bi_rw: %lu, bi_vcnt: %d\n"
-		    "bi_idx: %d, bi_size: %d, bi_end_io: %p, bi_cnt: %d\n",
-		    bio->bi_next, bio->bi_flags, bio->bi_rw, bio->bi_vcnt,
-		    bio->bi_idx, bio->bi_size, bio->bi_end_io,
-		    atomic_read(&bio->bi_cnt));
+	if (dr->dr_error == 0) {
+#ifdef HAVE_1ARG_BIO_END_IO_T
+		dr->dr_error = -(bio->bi_error);
+#else
+		if (error)
+			dr->dr_error = -(error);
+		else if (!test_bit(BIO_UPTODATE, &bio->bi_flags))
+			dr->dr_error = EIO;
+#endif
+	}
 
-#ifndef HAVE_2ARGS_BIO_END_IO_T
-	if (bio->bi_size)
-		return 1;
-#endif /* HAVE_2ARGS_BIO_END_IO_T */
-
-	if (error == 0 && !test_bit(BIO_UPTODATE, &bio->bi_flags))
-		error = -EIO;
-
-	if (dr->dr_error == 0)
-		dr->dr_error = -error;
-
+	wait = dr->dr_wait;
 	/* Drop reference aquired by __vdev_disk_physio */
 	rc = vdev_disk_dio_put(dr);
 
 	/* Wake up synchronous waiter this is the last outstanding bio */
-	if ((rc == 1) && vdev_disk_dio_is_sync(dr))
+	if (wait && rc == 1)
 		complete(&dr->dr_comp);
-
-	BIO_END_IO_RETURN(0);
 }
 
 static inline unsigned long
 bio_nr_pages(void *bio_ptr, unsigned int bio_size)
 {
 	return ((((unsigned long)bio_ptr + bio_size + PAGE_SIZE - 1) >>
-	        PAGE_SHIFT) - ((unsigned long)bio_ptr >> PAGE_SHIFT));
+	    PAGE_SHIFT) - ((unsigned long)bio_ptr >> PAGE_SHIFT));
 }
 
 static unsigned int
@@ -477,10 +452,17 @@ bio_map(struct bio *bio, void *bio_ptr, unsigned int bio_size)
 		if (size > bio_size)
 			size = bio_size;
 
-		if (kmem_virt(bio_ptr))
+		if (is_vmalloc_addr(bio_ptr))
 			page = vmalloc_to_page(bio_ptr);
 		else
 			page = virt_to_page(bio_ptr);
+
+		/*
+		 * Some network related block device uses tcp_sendpage, which
+		 * doesn't behave well when using 0-count page, this is a
+		 * safety net to catch them.
+		 */
+		ASSERT3S(page_count(page), >, 0);
 
 		if (bio_add_page(bio, page, size, offset) != size)
 			break;
@@ -490,17 +472,33 @@ bio_map(struct bio *bio, void *bio_ptr, unsigned int bio_size)
 		offset = 0;
 	}
 
-        return bio_size;
+	return (bio_size);
+}
+
+static inline void
+vdev_submit_bio(int rw, struct bio *bio)
+{
+#ifdef HAVE_CURRENT_BIO_TAIL
+	struct bio **bio_tail = current->bio_tail;
+	current->bio_tail = NULL;
+	submit_bio(rw, bio);
+	current->bio_tail = bio_tail;
+#else
+	struct bio_list *bio_list = current->bio_list;
+	current->bio_list = NULL;
+	submit_bio(rw, bio);
+	current->bio_list = bio_list;
+#endif
 }
 
 static int
 __vdev_disk_physio(struct block_device *bdev, zio_t *zio, caddr_t kbuf_ptr,
-                   size_t kbuf_size, uint64_t kbuf_offset, int flags)
+    size_t kbuf_size, uint64_t kbuf_offset, int flags, int wait)
 {
-        dio_request_t *dr;
+	dio_request_t *dr;
 	caddr_t bio_ptr;
 	uint64_t bio_offset;
-	int bio_size, bio_count = 16;
+	int rw, bio_size, bio_count = 16;
 	int i = 0, error = 0;
 
 	ASSERT3U(kbuf_offset + kbuf_size, <=, bdev->bd_inode->i_size);
@@ -508,13 +506,14 @@ __vdev_disk_physio(struct block_device *bdev, zio_t *zio, caddr_t kbuf_ptr,
 retry:
 	dr = vdev_disk_dio_alloc(bio_count);
 	if (dr == NULL)
-		return ENOMEM;
+		return (ENOMEM);
 
 	if (zio && !(zio->io_flags & (ZIO_FLAG_IO_RETRY | ZIO_FLAG_TRYHARD)))
-			bio_set_flags_failfast(bdev, &flags);
+		bio_set_flags_failfast(bdev, &flags);
 
+	rw = flags;
 	dr->dr_zio = zio;
-	dr->dr_rw = flags;
+	dr->dr_wait = wait;
 
 	/*
 	 * When the IO size exceeds the maximum bio size for the request
@@ -543,19 +542,20 @@ retry:
 			goto retry;
 		}
 
+		/* bio_alloc() with __GFP_WAIT never returns NULL */
 		dr->dr_bio[i] = bio_alloc(GFP_NOIO,
-		                          bio_nr_pages(bio_ptr, bio_size));
-		if (dr->dr_bio[i] == NULL) {
+		    MIN(bio_nr_pages(bio_ptr, bio_size), BIO_MAX_PAGES));
+		if (unlikely(dr->dr_bio[i] == NULL)) {
 			vdev_disk_dio_free(dr);
-			return ENOMEM;
+			return (ENOMEM);
 		}
 
 		/* Matching put called by vdev_disk_physio_completion */
 		vdev_disk_dio_get(dr);
 
 		dr->dr_bio[i]->bi_bdev = bdev;
-		dr->dr_bio[i]->bi_sector = bio_offset >> 9;
-		dr->dr_bio[i]->bi_rw = dr->dr_rw;
+		BIO_BI_SECTOR(dr->dr_bio[i]) = bio_offset >> 9;
+		dr->dr_bio[i]->bi_rw = rw;
 		dr->dr_bio[i]->bi_end_io = vdev_disk_physio_completion;
 		dr->dr_bio[i]->bi_private = dr;
 
@@ -563,11 +563,11 @@ retry:
 		bio_size = bio_map(dr->dr_bio[i], bio_ptr, bio_size);
 
 		/* Advance in buffer and construct another bio if needed */
-		bio_ptr    += dr->dr_bio[i]->bi_size;
-		bio_offset += dr->dr_bio[i]->bi_size;
+		bio_ptr    += BIO_BI_SIZE(dr->dr_bio[i]);
+		bio_offset += BIO_BI_SIZE(dr->dr_bio[i]);
 	}
 
-	/* Extra reference to protect dio_request during submit_bio */
+	/* Extra reference to protect dio_request during vdev_submit_bio */
 	vdev_disk_dio_get(dr);
 	if (zio)
 		zio->io_delay = jiffies_64;
@@ -575,7 +575,7 @@ retry:
 	/* Submit all bio's associated with this dio */
 	for (i = 0; i < dr->dr_bio_count; i++)
 		if (dr->dr_bio[i])
-			submit_bio(dr->dr_rw, dr->dr_bio[i]);
+			vdev_submit_bio(rw, dr->dr_bio[i]);
 
 	/*
 	 * On synchronous blocking requests we wait for all bio the completion
@@ -585,28 +585,31 @@ retry:
 	 * only synchronous consumer is vdev_disk_read_rootlabel() all other
 	 * IO originating from vdev_disk_io_start() is asynchronous.
 	 */
-	if (vdev_disk_dio_is_sync(dr)) {
+	if (wait) {
 		wait_for_completion(&dr->dr_comp);
 		error = dr->dr_error;
 		ASSERT3S(atomic_read(&dr->dr_ref), ==, 1);
 	}
 
-	(void)vdev_disk_dio_put(dr);
+	(void) vdev_disk_dio_put(dr);
 
-	return error;
+	return (error);
 }
 
 int
 vdev_disk_physio(struct block_device *bdev, caddr_t kbuf,
-		 size_t size, uint64_t offset, int flags)
+    size_t size, uint64_t offset, int flags)
 {
 	bio_set_flags_failfast(bdev, &flags);
-	return __vdev_disk_physio(bdev, NULL, kbuf, size, offset, flags);
+	return (__vdev_disk_physio(bdev, NULL, kbuf, size, offset, flags, 1));
 }
 
-BIO_END_IO_PROTO(vdev_disk_io_flush_completion, bio, size, rc)
+BIO_END_IO_PROTO(vdev_disk_io_flush_completion, bio, rc)
 {
 	zio_t *zio = bio->bi_private;
+#ifdef HAVE_1ARG_BIO_END_IO_T
+	int rc = bio->bi_error;
+#endif
 
 	zio->io_delay = jiffies_64 - zio->io_delay;
 	zio->io_error = -rc;
@@ -618,8 +621,6 @@ BIO_END_IO_PROTO(vdev_disk_io_flush_completion, bio, size, rc)
 	if (zio->io_error)
 		vdev_disk_error(zio);
 	zio_interrupt(zio);
-
-	BIO_END_IO_RETURN(0);
 }
 
 static int
@@ -630,34 +631,38 @@ vdev_disk_io_flush(struct block_device *bdev, zio_t *zio)
 
 	q = bdev_get_queue(bdev);
 	if (!q)
-		return ENXIO;
+		return (ENXIO);
 
 	bio = bio_alloc(GFP_NOIO, 0);
-	if (!bio)
-		return ENOMEM;
+	/* bio_alloc() with __GFP_WAIT never returns NULL */
+	if (unlikely(bio == NULL))
+		return (ENOMEM);
 
 	bio->bi_end_io = vdev_disk_io_flush_completion;
 	bio->bi_private = zio;
 	bio->bi_bdev = bdev;
 	zio->io_delay = jiffies_64;
-	submit_bio(VDEV_WRITE_FLUSH_FUA, bio);
+	vdev_submit_bio(VDEV_WRITE_FLUSH_FUA, bio);
+	invalidate_bdev(bdev);
 
-	return 0;
+	return (0);
 }
 
-static int
+static void
 vdev_disk_io_start(zio_t *zio)
 {
 	vdev_t *v = zio->io_vd;
 	vdev_disk_t *vd = v->vdev_tsd;
+	zio_priority_t pri = zio->io_priority;
 	int flags, error;
 
 	switch (zio->io_type) {
 	case ZIO_TYPE_IOCTL:
 
 		if (!vdev_readable(v)) {
-			zio->io_error = ENXIO;
-			return ZIO_PIPELINE_CONTINUE;
+			zio->io_error = SET_ERROR(ENXIO);
+			zio_interrupt(zio);
+			return;
 		}
 
 		switch (zio->io_cmd) {
@@ -667,13 +672,13 @@ vdev_disk_io_start(zio_t *zio)
 				break;
 
 			if (v->vdev_nowritecache) {
-				zio->io_error = ENOTSUP;
+				zio->io_error = SET_ERROR(ENOTSUP);
 				break;
 			}
 
 			error = vdev_disk_io_flush(vd->vd_bdev, zio);
 			if (error == 0)
-				return ZIO_PIPELINE_STOP;
+				return;
 
 			zio->io_error = error;
 			if (error == ENOTSUP)
@@ -682,32 +687,38 @@ vdev_disk_io_start(zio_t *zio)
 			break;
 
 		default:
-			zio->io_error = ENOTSUP;
+			zio->io_error = SET_ERROR(ENOTSUP);
 		}
 
-		return ZIO_PIPELINE_CONTINUE;
-
+		zio_execute(zio);
+		return;
 	case ZIO_TYPE_WRITE:
-		flags = WRITE;
+		if ((pri == ZIO_PRIORITY_SYNC_WRITE) && (v->vdev_nonrot))
+			flags = WRITE_SYNC;
+		else
+			flags = WRITE;
 		break;
 
 	case ZIO_TYPE_READ:
-		flags = READ;
+		if ((pri == ZIO_PRIORITY_SYNC_READ) && (v->vdev_nonrot))
+			flags = READ_SYNC;
+		else
+			flags = READ;
 		break;
 
 	default:
-		zio->io_error = ENOTSUP;
-		return ZIO_PIPELINE_CONTINUE;
+		zio->io_error = SET_ERROR(ENOTSUP);
+		zio_interrupt(zio);
+		return;
 	}
 
 	error = __vdev_disk_physio(vd->vd_bdev, zio, zio->io_data,
-		                   zio->io_size, zio->io_offset, flags);
+	    zio->io_size, zio->io_offset, flags, 0);
 	if (error) {
 		zio->io_error = error;
-		return ZIO_PIPELINE_CONTINUE;
+		zio_interrupt(zio);
+		return;
 	}
-
-	return ZIO_PIPELINE_STOP;
 }
 
 static void
@@ -719,7 +730,7 @@ vdev_disk_io_done(zio_t *zio)
 	 * removal of the device from the configuration.
 	 */
 	if (zio->io_error == EIO) {
-	        vdev_t *v = zio->io_vd;
+		vdev_t *v = zio->io_vd;
 		vdev_disk_t *vd = v->vdev_tsd;
 
 		if (check_disk_change(vd->vd_bdev)) {
@@ -786,19 +797,19 @@ vdev_disk_read_rootlabel(char *devpath, char *devid, nvlist_t **config)
 
 	bdev = vdev_bdev_open(devpath, vdev_bdev_mode(FREAD), zfs_vdev_holder);
 	if (IS_ERR(bdev))
-		return -PTR_ERR(bdev);
+		return (-PTR_ERR(bdev));
 
 	s = bdev_capacity(bdev);
 	if (s == 0) {
 		vdev_bdev_close(bdev, vdev_bdev_mode(FREAD));
-		return EIO;
+		return (EIO);
 	}
 
-	size = P2ALIGN_TYPED(s, sizeof(vdev_label_t), uint64_t);
-	label = vmem_alloc(sizeof(vdev_label_t), KM_PUSHPAGE);
+	size = P2ALIGN_TYPED(s, sizeof (vdev_label_t), uint64_t);
+	label = vmem_alloc(sizeof (vdev_label_t), KM_SLEEP);
 
 	for (i = 0; i < VDEV_LABELS; i++) {
-	        uint64_t offset, state, txg = 0;
+		uint64_t offset, state, txg = 0;
 
 		/* read vdev label */
 		offset = vdev_label_offset(size, i, 0);
@@ -829,10 +840,10 @@ vdev_disk_read_rootlabel(char *devpath, char *devid, nvlist_t **config)
 		break;
 	}
 
-	vmem_free(label, sizeof(vdev_label_t));
+	vmem_free(label, sizeof (vdev_label_t));
 	vdev_bdev_close(bdev, vdev_bdev_mode(FREAD));
 
-	return 0;
+	return (0);
 }
 
 module_param(zfs_vdev_scheduler, charp, 0644);

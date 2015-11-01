@@ -22,7 +22,7 @@
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2011 Nexenta Systems, Inc. All rights reserved.
- * Copyright (c) 2012 by Delphix. All rights reserved.
+ * Copyright (c) 2013 by Delphix. All rights reserved.
  */
 
 #include <sys/spa.h>
@@ -32,7 +32,6 @@
 #include <sys/fs/zfs.h>
 #include <sys/vdev_impl.h>
 #include <sys/zfs_ioctl.h>
-#include <sys/utsname.h>
 #include <sys/systeminfo.h>
 #include <sys/sunddi.h>
 #include <sys/zfeature.h>
@@ -65,7 +64,7 @@ static uint64_t spa_config_generation = 1;
  * userland pools when doing testing.
  */
 char *spa_config_path = ZPOOL_CACHE;
-int zfs_autoimport_disable = 0;
+int zfs_autoimport_disable = 1;
 
 /*
  * Called when the module is first loaded, this routine loads the configuration
@@ -82,13 +81,15 @@ spa_config_load(void)
 	struct _buf *file;
 	uint64_t fsize;
 
+#ifdef _KERNEL
 	if (zfs_autoimport_disable)
 		return;
+#endif
 
 	/*
 	 * Open the configuration file.
 	 */
-	pathname = kmem_alloc(MAXPATHLEN, KM_PUSHPAGE);
+	pathname = kmem_alloc(MAXPATHLEN, KM_SLEEP);
 
 	(void) snprintf(pathname, MAXPATHLEN, "%s%s",
 	    (rootdir != NULL) ? "./" : "", spa_config_path);
@@ -103,7 +104,7 @@ spa_config_load(void)
 	if (kobj_get_filesize(file, &fsize) != 0)
 		goto out;
 
-	buf = kmem_alloc(fsize, KM_PUSHPAGE | KM_NODEBUG);
+	buf = kmem_alloc(fsize, KM_SLEEP);
 
 	/*
 	 * Read the nvlist from the file.
@@ -114,7 +115,7 @@ spa_config_load(void)
 	/*
 	 * Unpack the nvlist.
 	 */
-	if (nvlist_unpack(buf, fsize, &nvlist, KM_PUSHPAGE) != 0)
+	if (nvlist_unpack(buf, fsize, &nvlist, KM_SLEEP) != 0)
 		goto out;
 
 	/*
@@ -151,6 +152,7 @@ spa_config_write(spa_config_dirent_t *dp, nvlist_t *nvl)
 	char *buf;
 	vnode_t *vp;
 	int oflags = FWRITE | FTRUNC | FCREAT | FOFFMAX;
+	int error;
 	char *temp;
 
 	/*
@@ -166,12 +168,32 @@ spa_config_write(spa_config_dirent_t *dp, nvlist_t *nvl)
 	 */
 	VERIFY(nvlist_size(nvl, &buflen, NV_ENCODE_XDR) == 0);
 
-	buf = kmem_alloc(buflen, KM_PUSHPAGE | KM_NODEBUG);
-	temp = kmem_zalloc(MAXPATHLEN, KM_PUSHPAGE);
+	buf = vmem_alloc(buflen, KM_SLEEP);
+	temp = kmem_zalloc(MAXPATHLEN, KM_SLEEP);
 
 	VERIFY(nvlist_pack(nvl, &buf, &buflen, NV_ENCODE_XDR,
-	    KM_PUSHPAGE) == 0);
+	    KM_SLEEP) == 0);
 
+#ifdef __linux__
+	/*
+	 * Write the configuration to disk.  Due to the complexity involved
+	 * in performing a rename from within the kernel the file is truncated
+	 * and overwritten in place.  In the event of an error the file is
+	 * unlinked to make sure we always have a consistent view of the data.
+	 */
+	error = vn_open(dp->scd_path, UIO_SYSSPACE, oflags, 0644, &vp, 0, 0);
+	if (error == 0) {
+		error = vn_rdwr(UIO_WRITE, vp, buf, buflen, 0,
+		    UIO_SYSSPACE, 0, RLIM64_INFINITY, kcred, NULL);
+		if (error == 0)
+			error = VOP_FSYNC(vp, FSYNC, kcred, NULL);
+
+		(void) VOP_CLOSE(vp, oflags, 1, 0, kcred, NULL);
+
+		if (error)
+			(void) vn_remove(dp->scd_path, UIO_SYSSPACE, RMFILE);
+	}
+#else
 	/*
 	 * Write the configuration to disk.  We need to do the traditional
 	 * 'write to temporary file, sync, move over original' to make sure we
@@ -189,20 +211,27 @@ spa_config_write(spa_config_dirent_t *dp, nvlist_t *nvl)
 	}
 
 	(void) vn_remove(temp, UIO_SYSSPACE, RMFILE);
+#endif
 
-	kmem_free(buf, buflen);
+	vmem_free(buf, buflen);
 	kmem_free(temp, MAXPATHLEN);
 }
 
 /*
  * Synchronize pool configuration to disk.  This must be called with the
- * namespace lock held.
+ * namespace lock held. Synchronizing the pool cache is typically done after
+ * the configuration has been synced to the MOS. This exposes a window where
+ * the MOS config will have been updated but the cache file has not. If
+ * the system were to crash at that instant then the cached config may not
+ * contain the correct information to open the pool and an explicity import
+ * would be required.
  */
 void
 spa_config_sync(spa_t *target, boolean_t removing, boolean_t postsysevent)
 {
 	spa_config_dirent_t *dp, *tdp;
 	nvlist_t *nvl;
+	char *pool_name;
 
 	ASSERT(MUTEX_HELD(&spa_namespace_lock));
 
@@ -247,9 +276,15 @@ spa_config_sync(spa_t *target, boolean_t removing, boolean_t postsysevent)
 
 			if (nvl == NULL)
 				VERIFY(nvlist_alloc(&nvl, NV_UNIQUE_NAME,
-				    KM_PUSHPAGE) == 0);
+				    KM_SLEEP) == 0);
 
-			VERIFY(nvlist_add_nvlist(nvl, spa->spa_name,
+			if (spa->spa_import_flags & ZFS_IMPORT_TEMP_NAME) {
+				VERIFY0(nvlist_lookup_string(spa->spa_config,
+					ZPOOL_CONFIG_POOL_NAME, &pool_name));
+			} else
+				pool_name = spa_name(spa);
+
+			VERIFY(nvlist_add_nvlist(nvl, pool_name,
 			    spa->spa_config) == 0);
 			mutex_exit(&spa->spa_props_lock);
 		}
@@ -290,7 +325,7 @@ spa_all_configs(uint64_t *generation)
 	if (*generation == spa_config_generation)
 		return (NULL);
 
-	VERIFY(nvlist_alloc(&pools, NV_UNIQUE_NAME, KM_PUSHPAGE) == 0);
+	VERIFY(nvlist_alloc(&pools, NV_UNIQUE_NAME, KM_SLEEP) == 0);
 
 	mutex_enter(&spa_namespace_lock);
 	while ((spa = spa_next(spa)) != NULL) {
@@ -320,6 +355,7 @@ spa_config_set(spa_t *spa, nvlist_t *config)
 
 /*
  * Generate the pool's configuration based on the current in-core state.
+ *
  * We infer whether to generate a complete config or just one top-level config
  * based on whether vd is the root vdev.
  */
@@ -331,6 +367,7 @@ spa_config_generate(spa_t *spa, vdev_t *vd, uint64_t txg, int getstats)
 	unsigned long hostid = 0;
 	boolean_t locked = B_FALSE;
 	uint64_t split_guid;
+	char *pool_name;
 
 	if (vd == NULL) {
 		vd = rvd;
@@ -347,18 +384,36 @@ spa_config_generate(spa_t *spa, vdev_t *vd, uint64_t txg, int getstats)
 	if (txg == -1ULL)
 		txg = spa->spa_config_txg;
 
-	VERIFY(nvlist_alloc(&config, NV_UNIQUE_NAME, KM_PUSHPAGE) == 0);
+	/*
+	 * Originally, users had to handle spa namespace collisions by either
+	 * exporting the already imported pool or by specifying a new name for
+	 * the pool with a conflicting name. In the case of root pools from
+	 * virtual guests, neither approach to collision resolution is
+	 * reasonable. This is addressed by extending the new name syntax with
+	 * an option to specify that the new name is temporary. When specified,
+	 * ZFS_IMPORT_TEMP_NAME will be set in spa->spa_import_flags to tell us
+	 * to use the previous name, which we do below.
+	 */
+	if (spa->spa_import_flags & ZFS_IMPORT_TEMP_NAME) {
+		VERIFY0(nvlist_lookup_string(spa->spa_config,
+			ZPOOL_CONFIG_POOL_NAME, &pool_name));
+	} else
+		pool_name = spa_name(spa);
+
+	VERIFY(nvlist_alloc(&config, NV_UNIQUE_NAME, KM_SLEEP) == 0);
 
 	VERIFY(nvlist_add_uint64(config, ZPOOL_CONFIG_VERSION,
 	    spa_version(spa)) == 0);
 	VERIFY(nvlist_add_string(config, ZPOOL_CONFIG_POOL_NAME,
-	    spa_name(spa)) == 0);
+	    pool_name) == 0);
 	VERIFY(nvlist_add_uint64(config, ZPOOL_CONFIG_POOL_STATE,
 	    spa_state(spa)) == 0);
 	VERIFY(nvlist_add_uint64(config, ZPOOL_CONFIG_POOL_TXG,
 	    txg) == 0);
 	VERIFY(nvlist_add_uint64(config, ZPOOL_CONFIG_POOL_GUID,
 	    spa_guid(spa)) == 0);
+	VERIFY(nvlist_add_uint64(config, ZPOOL_CONFIG_ERRATA,
+	    spa->spa_errata) == 0);
 	VERIFY(spa->spa_comment == NULL || nvlist_add_string(config,
 	    ZPOOL_CONFIG_COMMENT, spa->spa_comment) == 0);
 
@@ -376,8 +431,8 @@ spa_config_generate(spa_t *spa, vdev_t *vd, uint64_t txg, int getstats)
 		VERIFY(nvlist_add_uint64(config, ZPOOL_CONFIG_HOSTID,
 		    hostid) == 0);
 	}
-	VERIFY(nvlist_add_string(config, ZPOOL_CONFIG_HOSTNAME,
-	    utsname.nodename) == 0);
+	VERIFY0(nvlist_add_string(config, ZPOOL_CONFIG_HOSTNAME,
+	    utsname()->nodename));
 
 	if (vd != rvd) {
 		VERIFY(nvlist_add_uint64(config, ZPOOL_CONFIG_TOP_GUID,
@@ -432,21 +487,21 @@ spa_config_generate(spa_t *spa, vdev_t *vd, uint64_t txg, int getstats)
 		ddt_stat_t *dds;
 		ddt_object_t *ddo;
 
-		ddh = kmem_zalloc(sizeof (ddt_histogram_t), KM_PUSHPAGE);
+		ddh = kmem_zalloc(sizeof (ddt_histogram_t), KM_SLEEP);
 		ddt_get_dedup_histogram(spa, ddh);
 		VERIFY(nvlist_add_uint64_array(config,
 		    ZPOOL_CONFIG_DDT_HISTOGRAM,
 		    (uint64_t *)ddh, sizeof (*ddh) / sizeof (uint64_t)) == 0);
 		kmem_free(ddh, sizeof (ddt_histogram_t));
 
-		ddo = kmem_zalloc(sizeof (ddt_object_t), KM_PUSHPAGE);
+		ddo = kmem_zalloc(sizeof (ddt_object_t), KM_SLEEP);
 		ddt_get_dedup_object_stats(spa, ddo);
 		VERIFY(nvlist_add_uint64_array(config,
 		    ZPOOL_CONFIG_DDT_OBJ_STATS,
 		    (uint64_t *)ddo, sizeof (*ddo) / sizeof (uint64_t)) == 0);
 		kmem_free(ddo, sizeof (ddt_object_t));
 
-		dds = kmem_zalloc(sizeof (ddt_stat_t), KM_PUSHPAGE);
+		dds = kmem_zalloc(sizeof (ddt_stat_t), KM_SLEEP);
 		ddt_get_dedup_stats(spa, dds);
 		VERIFY(nvlist_add_uint64_array(config,
 		    ZPOOL_CONFIG_DDT_STATS,
