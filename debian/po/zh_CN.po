@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
 "POT-Creation-Date: 2015-11-01 14:11+0800\n"
-"PO-Revision-Date: 2013-07-04 22:45+0800\n"
+"PO-Revision-Date: 2015-11-01 14:25+0800\n"
 "Last-Translator: Aron <aron@debian.org>\n"
 "Language-Team: Chinese (Simplified) <debian-l10n-chinese@lists.debian.org>\n"
 "Language: zh_CN\n"
@@ -65,7 +65,7 @@ msgstr ""
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid "Licenses of ZFS and Linux are incompatible"
-msgstr ""
+msgstr "ZFS和Linux的许可证不相容"
 
 #. Type: note
 #. Description
@@ -78,6 +78,8 @@ msgid ""
 "prevents using pieces of code exclusively available under one license with "
 "pieces of code exclusively available under the other in the same binary."
 msgstr ""
+"ZFS的许可证是CDDL，Linux内核的许可证是GPL-2。两者皆为自由/开源软件许可证，"
+"然而它们的限制性也都较强，将两部分各自独立许可的代码合并使用将导致问题。"
 
 #. Type: note
 #. Description
@@ -88,3 +90,6 @@ msgid ""
 "the binaries in the same media (disk images, virtual appliances, etc) may "
 "lead to infringing."
 msgstr ""
+"您将以DKMS方式编译ZFS，以使其不与Linux内核被编译成为一个单独的二进制文件。"
+"在单一介质(如磁盘镜像、虚拟机模板等)上同时发ZFS和Linux内核的二进制文件将造"
+"成侵权。"
