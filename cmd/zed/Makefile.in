@@ -43,7 +43,7 @@ DIST_COMMON = $(dist_zedconf_DATA) $(dist_zedexec_SCRIPTS) \
 sbin_PROGRAMS = zed$(EXEEXT)
 subdir = cmd/zed
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps =  \
+am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/always-no-unused-but-set-variable.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
@@ -54,20 +54,11 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-bio-bvec-iter.m4 \
 	$(top_srcdir)/config/kernel-bio-end-io-t-args.m4 \
 	$(top_srcdir)/config/kernel-bio-failfast.m4 \
-	$(top_srcdir)/config/kernel-bio-rw-syncio.m4 \
-	$(top_srcdir)/config/kernel-blk-end-request.m4 \
-	$(top_srcdir)/config/kernel-blk-fetch-request.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-discard.m4 \
+	$(top_srcdir)/config/kernel-bio-rw-barrier.m4 \
+	$(top_srcdir)/config/kernel-bio-rw-discard.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-flush.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-io-opt.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-hw-sectors.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-segments.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-nonrot.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-physical-block-size.m4 \
-	$(top_srcdir)/config/kernel-blk-requeue-request.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-bytes.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-pos.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-sectors.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get-by-path.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations-release-void.m4 \
@@ -75,6 +66,7 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-clear-inode.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-create-nameidata.m4 \
+	$(top_srcdir)/config/kernel-current_bio_tail.m4 \
 	$(top_srcdir)/config/kernel-d-make-root.m4 \
 	$(top_srcdir)/config/kernel-d-obtain-alias.m4 \
 	$(top_srcdir)/config/kernel-d-prune-aliases.m4 \
@@ -88,21 +80,25 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-fallocate.m4 \
 	$(top_srcdir)/config/kernel-file-inode.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
+	$(top_srcdir)/config/kernel-follow-down-one.m4 \
+	$(top_srcdir)/config/kernel-follow-link-nameidata.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
+	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
 	$(top_srcdir)/config/kernel-get-disk-ro.m4 \
 	$(top_srcdir)/config/kernel-get-gendisk.m4 \
 	$(top_srcdir)/config/kernel-insert-inode-locked.m4 \
 	$(top_srcdir)/config/kernel-invalidate-bdev-args.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
+	$(top_srcdir)/config/kernel-kmap-atomic-args.m4 \
 	$(top_srcdir)/config/kernel-kobj-name-len.m4 \
 	$(top_srcdir)/config/kernel-lookup-bdev.m4 \
 	$(top_srcdir)/config/kernel-lookup-nameidata.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
+	$(top_srcdir)/config/kernel-mk-request-fn.m4 \
 	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
 	$(top_srcdir)/config/kernel-mount-nodev.m4 \
 	$(top_srcdir)/config/kernel-open-bdev-exclusive.m4 \
-	$(top_srcdir)/config/kernel-rq-for-each_segment.m4 \
-	$(top_srcdir)/config/kernel-rq-is_sync.m4 \
+	$(top_srcdir)/config/kernel-put-link-nameidata.m4 \
 	$(top_srcdir)/config/kernel-security-inode-init.m4 \
 	$(top_srcdir)/config/kernel-set-nlink.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
@@ -235,9 +231,11 @@ DEBUG_CFLAGS = @DEBUG_CFLAGS@
 DEBUG_DMU_TX = @DEBUG_DMU_TX@
 DEBUG_STACKFLAGS = @DEBUG_STACKFLAGS@
 DEBUG_ZFS = @DEBUG_ZFS@
+DEFAULT_INITCONF_DIR = @DEFAULT_INITCONF_DIR@
 DEFAULT_INIT_DIR = @DEFAULT_INIT_DIR@
 DEFAULT_INIT_SCRIPT = @DEFAULT_INIT_SCRIPT@
 DEFAULT_PACKAGE = @DEFAULT_PACKAGE@
+DEFINE_INITRAMFS = @DEFINE_INITRAMFS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
@@ -287,6 +285,7 @@ MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
+NO_BOOL_COMPARE = @NO_BOOL_COMPARE@
 NO_UNUSED_BUT_SET_VARIABLE = @NO_UNUSED_BUT_SET_VARIABLE@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
@@ -409,28 +408,30 @@ DEFAULT_INCLUDES = -include ${top_builddir}/zfs_config.h \
 	-I$(top_srcdir)/include -I$(top_srcdir)/lib/libspl/include
 AM_LIBTOOLFLAGS = --silent
 AM_CFLAGS = ${DEBUG_CFLAGS} -Wall -Wstrict-prototypes \
-	${NO_UNUSED_BUT_SET_VARIABLE} -fno-strict-aliasing
+	${NO_UNUSED_BUT_SET_VARIABLE} ${NO_BOOL_COMPARE} \
+	-fno-strict-aliasing
 AM_CPPFLAGS = -D_GNU_SOURCE -D__EXTENSIONS__ -D_REENTRANT \
 	-D_POSIX_PTHREAD_SEMANTICS -D_FILE_OFFSET_BITS=64 \
 	-D_LARGEFILE64_SOURCE -DTEXT_DOMAIN=\"zfs-linux-user\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-DRUNSTATEDIR=\"$(runstatedir)\" -DSBINDIR=\"$(sbindir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
+EXTRA_DIST = zed.d/README
 zed_SOURCES = \
-	$(top_srcdir)/cmd/zed/zed.c \
-	$(top_srcdir)/cmd/zed/zed.h \
-	$(top_srcdir)/cmd/zed/zed_conf.c \
-	$(top_srcdir)/cmd/zed/zed_conf.h \
-	$(top_srcdir)/cmd/zed/zed_event.c \
-	$(top_srcdir)/cmd/zed/zed_event.h \
-	$(top_srcdir)/cmd/zed/zed_exec.c \
-	$(top_srcdir)/cmd/zed/zed_exec.h \
-	$(top_srcdir)/cmd/zed/zed_file.c \
-	$(top_srcdir)/cmd/zed/zed_file.h \
-	$(top_srcdir)/cmd/zed/zed_log.c \
-	$(top_srcdir)/cmd/zed/zed_log.h \
-	$(top_srcdir)/cmd/zed/zed_strings.c \
-	$(top_srcdir)/cmd/zed/zed_strings.h
+	zed.c \
+	zed.h \
+	zed_conf.c \
+	zed_conf.h \
+	zed_event.c \
+	zed_event.h \
+	zed_exec.c \
+	zed_exec.h \
+	zed_file.c \
+	zed_file.h \
+	zed_log.c \
+	zed_log.h \
+	zed_strings.c \
+	zed_strings.h
 
 zed_LDADD = \
 	$(top_builddir)/lib/libavl/libavl.la \
@@ -442,30 +443,31 @@ zed_LDADD = \
 
 zedconfdir = $(sysconfdir)/zfs/zed.d
 dist_zedconf_DATA = \
-	$(top_srcdir)/cmd/zed/zed.d/zed.rc
+	zed.d/zed-functions.sh \
+	zed.d/zed.rc
 
 zedexecdir = $(libexecdir)/zfs/zed.d
 dist_zedexec_SCRIPTS = \
-	$(top_srcdir)/cmd/zed/zed.d/all-debug.sh \
-	$(top_srcdir)/cmd/zed/zed.d/all-syslog.sh \
-	$(top_srcdir)/cmd/zed/zed.d/checksum-email.sh \
-	$(top_srcdir)/cmd/zed/zed.d/checksum-spare.sh \
-	$(top_srcdir)/cmd/zed/zed.d/data-email.sh \
-	$(top_srcdir)/cmd/zed/zed.d/generic-email.sh \
-	$(top_srcdir)/cmd/zed/zed.d/io-email.sh \
-	$(top_srcdir)/cmd/zed/zed.d/io-spare.sh \
-	$(top_srcdir)/cmd/zed/zed.d/resilver.finish-email.sh \
-	$(top_srcdir)/cmd/zed/zed.d/scrub.finish-email.sh
+	zed.d/all-debug.sh \
+	zed.d/all-syslog.sh \
+	zed.d/checksum-notify.sh \
+	zed.d/checksum-spare.sh \
+	zed.d/data-notify.sh \
+	zed.d/generic-notify.sh \
+	zed.d/io-notify.sh \
+	zed.d/io-spare.sh \
+	zed.d/resilver.finish-notify.sh \
+	zed.d/scrub.finish-notify.sh
 
 zedconfdefaults = \
 	all-syslog.sh \
-	checksum-email.sh \
+	checksum-notify.sh \
 	checksum-spare.sh \
-	data-email.sh \
-	io-email.sh \
+	data-notify.sh \
+	io-notify.sh \
 	io-spare.sh \
-	resilver.finish-email.sh \
-	scrub.finish-email.sh
+	resilver.finish-notify.sh \
+	scrub.finish-notify.sh
 
 all: all-am
 
@@ -615,104 +617,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
-
-zed.o: $(top_srcdir)/cmd/zed/zed.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed.o -MD -MP -MF $(DEPDIR)/zed.Tpo -c -o zed.o `test -f '$(top_srcdir)/cmd/zed/zed.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed.Tpo $(DEPDIR)/zed.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed.c' object='zed.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed.o `test -f '$(top_srcdir)/cmd/zed/zed.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed.c
-
-zed.obj: $(top_srcdir)/cmd/zed/zed.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed.obj -MD -MP -MF $(DEPDIR)/zed.Tpo -c -o zed.obj `if test -f '$(top_srcdir)/cmd/zed/zed.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed.Tpo $(DEPDIR)/zed.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed.c' object='zed.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed.obj `if test -f '$(top_srcdir)/cmd/zed/zed.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed.c'; fi`
-
-zed_conf.o: $(top_srcdir)/cmd/zed/zed_conf.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_conf.o -MD -MP -MF $(DEPDIR)/zed_conf.Tpo -c -o zed_conf.o `test -f '$(top_srcdir)/cmd/zed/zed_conf.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_conf.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_conf.Tpo $(DEPDIR)/zed_conf.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_conf.c' object='zed_conf.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_conf.o `test -f '$(top_srcdir)/cmd/zed/zed_conf.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_conf.c
-
-zed_conf.obj: $(top_srcdir)/cmd/zed/zed_conf.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_conf.obj -MD -MP -MF $(DEPDIR)/zed_conf.Tpo -c -o zed_conf.obj `if test -f '$(top_srcdir)/cmd/zed/zed_conf.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_conf.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_conf.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_conf.Tpo $(DEPDIR)/zed_conf.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_conf.c' object='zed_conf.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_conf.obj `if test -f '$(top_srcdir)/cmd/zed/zed_conf.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_conf.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_conf.c'; fi`
-
-zed_event.o: $(top_srcdir)/cmd/zed/zed_event.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_event.o -MD -MP -MF $(DEPDIR)/zed_event.Tpo -c -o zed_event.o `test -f '$(top_srcdir)/cmd/zed/zed_event.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_event.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_event.Tpo $(DEPDIR)/zed_event.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_event.c' object='zed_event.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_event.o `test -f '$(top_srcdir)/cmd/zed/zed_event.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_event.c
-
-zed_event.obj: $(top_srcdir)/cmd/zed/zed_event.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_event.obj -MD -MP -MF $(DEPDIR)/zed_event.Tpo -c -o zed_event.obj `if test -f '$(top_srcdir)/cmd/zed/zed_event.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_event.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_event.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_event.Tpo $(DEPDIR)/zed_event.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_event.c' object='zed_event.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_event.obj `if test -f '$(top_srcdir)/cmd/zed/zed_event.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_event.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_event.c'; fi`
-
-zed_exec.o: $(top_srcdir)/cmd/zed/zed_exec.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_exec.o -MD -MP -MF $(DEPDIR)/zed_exec.Tpo -c -o zed_exec.o `test -f '$(top_srcdir)/cmd/zed/zed_exec.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_exec.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_exec.Tpo $(DEPDIR)/zed_exec.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_exec.c' object='zed_exec.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_exec.o `test -f '$(top_srcdir)/cmd/zed/zed_exec.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_exec.c
-
-zed_exec.obj: $(top_srcdir)/cmd/zed/zed_exec.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_exec.obj -MD -MP -MF $(DEPDIR)/zed_exec.Tpo -c -o zed_exec.obj `if test -f '$(top_srcdir)/cmd/zed/zed_exec.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_exec.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_exec.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_exec.Tpo $(DEPDIR)/zed_exec.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_exec.c' object='zed_exec.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_exec.obj `if test -f '$(top_srcdir)/cmd/zed/zed_exec.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_exec.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_exec.c'; fi`
-
-zed_file.o: $(top_srcdir)/cmd/zed/zed_file.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_file.o -MD -MP -MF $(DEPDIR)/zed_file.Tpo -c -o zed_file.o `test -f '$(top_srcdir)/cmd/zed/zed_file.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_file.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_file.Tpo $(DEPDIR)/zed_file.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_file.c' object='zed_file.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_file.o `test -f '$(top_srcdir)/cmd/zed/zed_file.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_file.c
-
-zed_file.obj: $(top_srcdir)/cmd/zed/zed_file.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_file.obj -MD -MP -MF $(DEPDIR)/zed_file.Tpo -c -o zed_file.obj `if test -f '$(top_srcdir)/cmd/zed/zed_file.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_file.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_file.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_file.Tpo $(DEPDIR)/zed_file.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_file.c' object='zed_file.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_file.obj `if test -f '$(top_srcdir)/cmd/zed/zed_file.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_file.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_file.c'; fi`
-
-zed_log.o: $(top_srcdir)/cmd/zed/zed_log.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_log.o -MD -MP -MF $(DEPDIR)/zed_log.Tpo -c -o zed_log.o `test -f '$(top_srcdir)/cmd/zed/zed_log.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_log.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_log.Tpo $(DEPDIR)/zed_log.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_log.c' object='zed_log.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_log.o `test -f '$(top_srcdir)/cmd/zed/zed_log.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_log.c
-
-zed_log.obj: $(top_srcdir)/cmd/zed/zed_log.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_log.obj -MD -MP -MF $(DEPDIR)/zed_log.Tpo -c -o zed_log.obj `if test -f '$(top_srcdir)/cmd/zed/zed_log.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_log.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_log.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_log.Tpo $(DEPDIR)/zed_log.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_log.c' object='zed_log.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_log.obj `if test -f '$(top_srcdir)/cmd/zed/zed_log.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_log.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_log.c'; fi`
-
-zed_strings.o: $(top_srcdir)/cmd/zed/zed_strings.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_strings.o -MD -MP -MF $(DEPDIR)/zed_strings.Tpo -c -o zed_strings.o `test -f '$(top_srcdir)/cmd/zed/zed_strings.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_strings.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_strings.Tpo $(DEPDIR)/zed_strings.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_strings.c' object='zed_strings.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_strings.o `test -f '$(top_srcdir)/cmd/zed/zed_strings.c' || echo '$(srcdir)/'`$(top_srcdir)/cmd/zed/zed_strings.c
-
-zed_strings.obj: $(top_srcdir)/cmd/zed/zed_strings.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zed_strings.obj -MD -MP -MF $(DEPDIR)/zed_strings.Tpo -c -o zed_strings.obj `if test -f '$(top_srcdir)/cmd/zed/zed_strings.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_strings.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_strings.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zed_strings.Tpo $(DEPDIR)/zed_strings.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/cmd/zed/zed_strings.c' object='zed_strings.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zed_strings.obj `if test -f '$(top_srcdir)/cmd/zed/zed_strings.c'; then $(CYGPATH_W) '$(top_srcdir)/cmd/zed/zed_strings.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/cmd/zed/zed_strings.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -880,8 +784,9 @@ info: info-am
 
 info-am:
 
-install-data-am: install-data-local install-dist_zedconfDATA
-
+install-data-am: install-dist_zedconfDATA
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 install-dvi: install-dvi-am
 
 install-dvi-am:
@@ -929,14 +834,14 @@ ps-am:
 uninstall-am: uninstall-dist_zedconfDATA uninstall-dist_zedexecSCRIPTS \
 	uninstall-sbinPROGRAMS
 
-.MAKE: install-am install-strip
+.MAKE: install-am install-data-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
 	clean-libtool clean-sbinPROGRAMS ctags distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am \
-	install-data-local install-dist_zedconfDATA \
+	install-data-hook install-dist_zedconfDATA \
 	install-dist_zedexecSCRIPTS install-dvi install-dvi-am \
 	install-exec install-exec-am install-html install-html-am \
 	install-info install-info-am install-man install-pdf \
@@ -949,13 +854,14 @@ uninstall-am: uninstall-dist_zedconfDATA uninstall-dist_zedexecSCRIPTS \
 	uninstall-sbinPROGRAMS
 
 
-install-data-local:
+install-data-hook:
 	$(MKDIR_P) "$(DESTDIR)$(zedconfdir)"
 	for f in $(zedconfdefaults); do \
 	  test -f "$(DESTDIR)$(zedconfdir)/$${f}" -o \
 	       -L "$(DESTDIR)$(zedconfdir)/$${f}" || \
 	    ln -s "$(zedexecdir)/$${f}" "$(DESTDIR)$(zedconfdir)"; \
 	done
+	chmod 0600 "$(DESTDIR)$(zedconfdir)/zed.rc"
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

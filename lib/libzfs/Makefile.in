@@ -41,7 +41,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/config/Rules.am
 subdir = lib/libzfs
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps =  \
+am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/always-no-unused-but-set-variable.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
@@ -52,20 +52,11 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-bio-bvec-iter.m4 \
 	$(top_srcdir)/config/kernel-bio-end-io-t-args.m4 \
 	$(top_srcdir)/config/kernel-bio-failfast.m4 \
-	$(top_srcdir)/config/kernel-bio-rw-syncio.m4 \
-	$(top_srcdir)/config/kernel-blk-end-request.m4 \
-	$(top_srcdir)/config/kernel-blk-fetch-request.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-discard.m4 \
+	$(top_srcdir)/config/kernel-bio-rw-barrier.m4 \
+	$(top_srcdir)/config/kernel-bio-rw-discard.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-flush.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-io-opt.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-hw-sectors.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-segments.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-nonrot.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-physical-block-size.m4 \
-	$(top_srcdir)/config/kernel-blk-requeue-request.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-bytes.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-pos.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-sectors.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get-by-path.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations-release-void.m4 \
@@ -73,6 +64,7 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-clear-inode.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-create-nameidata.m4 \
+	$(top_srcdir)/config/kernel-current_bio_tail.m4 \
 	$(top_srcdir)/config/kernel-d-make-root.m4 \
 	$(top_srcdir)/config/kernel-d-obtain-alias.m4 \
 	$(top_srcdir)/config/kernel-d-prune-aliases.m4 \
@@ -86,21 +78,25 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-fallocate.m4 \
 	$(top_srcdir)/config/kernel-file-inode.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
+	$(top_srcdir)/config/kernel-follow-down-one.m4 \
+	$(top_srcdir)/config/kernel-follow-link-nameidata.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
+	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
 	$(top_srcdir)/config/kernel-get-disk-ro.m4 \
 	$(top_srcdir)/config/kernel-get-gendisk.m4 \
 	$(top_srcdir)/config/kernel-insert-inode-locked.m4 \
 	$(top_srcdir)/config/kernel-invalidate-bdev-args.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
+	$(top_srcdir)/config/kernel-kmap-atomic-args.m4 \
 	$(top_srcdir)/config/kernel-kobj-name-len.m4 \
 	$(top_srcdir)/config/kernel-lookup-bdev.m4 \
 	$(top_srcdir)/config/kernel-lookup-nameidata.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
+	$(top_srcdir)/config/kernel-mk-request-fn.m4 \
 	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
 	$(top_srcdir)/config/kernel-mount-nodev.m4 \
 	$(top_srcdir)/config/kernel-open-bdev-exclusive.m4 \
-	$(top_srcdir)/config/kernel-rq-for-each_segment.m4 \
-	$(top_srcdir)/config/kernel-rq-is_sync.m4 \
+	$(top_srcdir)/config/kernel-put-link-nameidata.m4 \
 	$(top_srcdir)/config/kernel-security-inode-init.m4 \
 	$(top_srcdir)/config/kernel-set-nlink.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
@@ -170,11 +166,13 @@ libzfs_la_DEPENDENCIES =  \
 	$(top_builddir)/lib/libshare/libshare.la \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libzpool/libzpool.la $(am__DEPENDENCIES_1)
-am_libzfs_la_OBJECTS = libzfs_changelist.lo libzfs_config.lo \
+am__objects_1 = libzfs_changelist.lo libzfs_config.lo \
 	libzfs_dataset.lo libzfs_diff.lo libzfs_fru.lo libzfs_graph.lo \
 	libzfs_import.lo libzfs_iter.lo libzfs_mount.lo libzfs_pool.lo \
 	libzfs_sendrecv.lo libzfs_status.lo libzfs_util.lo
-libzfs_la_OBJECTS = $(am_libzfs_la_OBJECTS)
+am__objects_2 =
+nodist_libzfs_la_OBJECTS = $(am__objects_1) $(am__objects_2)
+libzfs_la_OBJECTS = $(nodist_libzfs_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -206,8 +204,8 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libzfs_la_SOURCES)
-DIST_SOURCES = $(libzfs_la_SOURCES)
+SOURCES = $(nodist_libzfs_la_SOURCES)
+DIST_SOURCES =
 DATA = $(libzfs_pc_DATA)
 ETAGS = etags
 CTAGS = ctags
@@ -235,9 +233,11 @@ DEBUG_CFLAGS = @DEBUG_CFLAGS@
 DEBUG_DMU_TX = @DEBUG_DMU_TX@
 DEBUG_STACKFLAGS = @DEBUG_STACKFLAGS@
 DEBUG_ZFS = @DEBUG_ZFS@
+DEFAULT_INITCONF_DIR = @DEFAULT_INITCONF_DIR@
 DEFAULT_INIT_DIR = @DEFAULT_INIT_DIR@
 DEFAULT_INIT_SCRIPT = @DEFAULT_INIT_SCRIPT@
 DEFAULT_PACKAGE = @DEFAULT_PACKAGE@
+DEFINE_INITRAMFS = @DEFINE_INITRAMFS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
@@ -287,6 +287,7 @@ MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
+NO_BOOL_COMPARE = @NO_BOOL_COMPARE@
 NO_UNUSED_BUT_SET_VARIABLE = @NO_UNUSED_BUT_SET_VARIABLE@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
@@ -409,7 +410,8 @@ DEFAULT_INCLUDES = -include ${top_builddir}/zfs_config.h \
 	-I$(top_srcdir)/include -I$(top_srcdir)/lib/libspl/include
 AM_LIBTOOLFLAGS = --silent
 AM_CFLAGS = ${DEBUG_CFLAGS} -Wall -Wstrict-prototypes \
-	${NO_UNUSED_BUT_SET_VARIABLE} -fno-strict-aliasing
+	${NO_UNUSED_BUT_SET_VARIABLE} ${NO_BOOL_COMPARE} \
+	-fno-strict-aliasing
 AM_CPPFLAGS = -D_GNU_SOURCE -D__EXTENSIONS__ -D_REENTRANT \
 	-D_POSIX_PTHREAD_SEMANTICS -D_FILE_OFFSET_BITS=64 \
 	-D_LARGEFILE64_SOURCE -DTEXT_DOMAIN=\"zfs-linux-user\" \
@@ -417,29 +419,34 @@ AM_CPPFLAGS = -D_GNU_SOURCE -D__EXTENSIONS__ -D_REENTRANT \
 	-DRUNSTATEDIR=\"$(runstatedir)\" -DSBINDIR=\"$(sbindir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 libzfs_pcdir = $(datarootdir)/pkgconfig
-libzfs_pc_DATA = $(top_srcdir)/lib/libzfs/libzfs.pc $(top_srcdir)/lib/libzfs/libzfs_core.pc
-EXTRA_DIST = $(top_srcdir)/lib/libzfs/libzfs.pc $(top_srcdir)/lib/libzfs/libzfs_core.pc
+libzfs_pc_DATA = libzfs.pc libzfs_core.pc
 lib_LTLIBRARIES = libzfs.la
-libzfs_la_SOURCES = \
-	$(top_srcdir)/lib/libzfs/libzfs_changelist.c \
-	$(top_srcdir)/lib/libzfs/libzfs_config.c \
-	$(top_srcdir)/lib/libzfs/libzfs_dataset.c \
-	$(top_srcdir)/lib/libzfs/libzfs_diff.c \
-	$(top_srcdir)/lib/libzfs/libzfs_fru.c \
-	$(top_srcdir)/lib/libzfs/libzfs_graph.c \
-	$(top_srcdir)/lib/libzfs/libzfs_import.c \
-	$(top_srcdir)/lib/libzfs/libzfs_iter.c \
-	$(top_srcdir)/lib/libzfs/libzfs_mount.c \
-	$(top_srcdir)/lib/libzfs/libzfs_pool.c \
-	$(top_srcdir)/lib/libzfs/libzfs_sendrecv.c \
-	$(top_srcdir)/lib/libzfs/libzfs_status.c \
-	$(top_srcdir)/lib/libzfs/libzfs_util.c
+USER_C = \
+	libzfs_changelist.c \
+	libzfs_config.c \
+	libzfs_dataset.c \
+	libzfs_diff.c \
+	libzfs_fru.c \
+	libzfs_graph.c \
+	libzfs_import.c \
+	libzfs_iter.c \
+	libzfs_mount.c \
+	libzfs_pool.c \
+	libzfs_sendrecv.c \
+	libzfs_status.c \
+	libzfs_util.c
+
+KERNEL_C = 
+nodist_libzfs_la_SOURCES = \
+	$(USER_C) \
+	$(KERNEL_C)
 
 libzfs_la_LIBADD = $(top_builddir)/lib/libzfs_core/libzfs_core.la \
 	$(top_builddir)/lib/libshare/libshare.la \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libzpool/libzpool.la -lm -ldl $(LIBBLKID)
 libzfs_la_LDFLAGS = -version-info 2:0:0
+EXTRA_DIST = $(libzfs_pc_DATA) $(USER_C)
 all: all-am
 
 .SUFFIXES:
@@ -553,97 +560,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
-
-libzfs_changelist.lo: $(top_srcdir)/lib/libzfs/libzfs_changelist.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_changelist.lo -MD -MP -MF $(DEPDIR)/libzfs_changelist.Tpo -c -o libzfs_changelist.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_changelist.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_changelist.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_changelist.Tpo $(DEPDIR)/libzfs_changelist.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_changelist.c' object='libzfs_changelist.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_changelist.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_changelist.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_changelist.c
-
-libzfs_config.lo: $(top_srcdir)/lib/libzfs/libzfs_config.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_config.lo -MD -MP -MF $(DEPDIR)/libzfs_config.Tpo -c -o libzfs_config.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_config.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_config.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_config.Tpo $(DEPDIR)/libzfs_config.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_config.c' object='libzfs_config.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_config.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_config.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_config.c
-
-libzfs_dataset.lo: $(top_srcdir)/lib/libzfs/libzfs_dataset.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_dataset.lo -MD -MP -MF $(DEPDIR)/libzfs_dataset.Tpo -c -o libzfs_dataset.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_dataset.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_dataset.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_dataset.Tpo $(DEPDIR)/libzfs_dataset.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_dataset.c' object='libzfs_dataset.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_dataset.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_dataset.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_dataset.c
-
-libzfs_diff.lo: $(top_srcdir)/lib/libzfs/libzfs_diff.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_diff.lo -MD -MP -MF $(DEPDIR)/libzfs_diff.Tpo -c -o libzfs_diff.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_diff.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_diff.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_diff.Tpo $(DEPDIR)/libzfs_diff.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_diff.c' object='libzfs_diff.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_diff.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_diff.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_diff.c
-
-libzfs_fru.lo: $(top_srcdir)/lib/libzfs/libzfs_fru.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_fru.lo -MD -MP -MF $(DEPDIR)/libzfs_fru.Tpo -c -o libzfs_fru.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_fru.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_fru.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_fru.Tpo $(DEPDIR)/libzfs_fru.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_fru.c' object='libzfs_fru.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_fru.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_fru.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_fru.c
-
-libzfs_graph.lo: $(top_srcdir)/lib/libzfs/libzfs_graph.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_graph.lo -MD -MP -MF $(DEPDIR)/libzfs_graph.Tpo -c -o libzfs_graph.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_graph.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_graph.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_graph.Tpo $(DEPDIR)/libzfs_graph.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_graph.c' object='libzfs_graph.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_graph.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_graph.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_graph.c
-
-libzfs_import.lo: $(top_srcdir)/lib/libzfs/libzfs_import.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_import.lo -MD -MP -MF $(DEPDIR)/libzfs_import.Tpo -c -o libzfs_import.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_import.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_import.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_import.Tpo $(DEPDIR)/libzfs_import.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_import.c' object='libzfs_import.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_import.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_import.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_import.c
-
-libzfs_iter.lo: $(top_srcdir)/lib/libzfs/libzfs_iter.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_iter.lo -MD -MP -MF $(DEPDIR)/libzfs_iter.Tpo -c -o libzfs_iter.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_iter.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_iter.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_iter.Tpo $(DEPDIR)/libzfs_iter.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_iter.c' object='libzfs_iter.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_iter.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_iter.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_iter.c
-
-libzfs_mount.lo: $(top_srcdir)/lib/libzfs/libzfs_mount.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_mount.lo -MD -MP -MF $(DEPDIR)/libzfs_mount.Tpo -c -o libzfs_mount.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_mount.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_mount.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_mount.Tpo $(DEPDIR)/libzfs_mount.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_mount.c' object='libzfs_mount.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_mount.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_mount.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_mount.c
-
-libzfs_pool.lo: $(top_srcdir)/lib/libzfs/libzfs_pool.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_pool.lo -MD -MP -MF $(DEPDIR)/libzfs_pool.Tpo -c -o libzfs_pool.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_pool.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_pool.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_pool.Tpo $(DEPDIR)/libzfs_pool.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_pool.c' object='libzfs_pool.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_pool.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_pool.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_pool.c
-
-libzfs_sendrecv.lo: $(top_srcdir)/lib/libzfs/libzfs_sendrecv.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_sendrecv.lo -MD -MP -MF $(DEPDIR)/libzfs_sendrecv.Tpo -c -o libzfs_sendrecv.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_sendrecv.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_sendrecv.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_sendrecv.Tpo $(DEPDIR)/libzfs_sendrecv.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_sendrecv.c' object='libzfs_sendrecv.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_sendrecv.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_sendrecv.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_sendrecv.c
-
-libzfs_status.lo: $(top_srcdir)/lib/libzfs/libzfs_status.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_status.lo -MD -MP -MF $(DEPDIR)/libzfs_status.Tpo -c -o libzfs_status.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_status.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_status.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_status.Tpo $(DEPDIR)/libzfs_status.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_status.c' object='libzfs_status.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_status.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_status.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_status.c
-
-libzfs_util.lo: $(top_srcdir)/lib/libzfs/libzfs_util.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libzfs_util.lo -MD -MP -MF $(DEPDIR)/libzfs_util.Tpo -c -o libzfs_util.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_util.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_util.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzfs_util.Tpo $(DEPDIR)/libzfs_util.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libzfs/libzfs_util.c' object='libzfs_util.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libzfs_util.lo `test -f '$(top_srcdir)/lib/libzfs/libzfs_util.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libzfs/libzfs_util.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
