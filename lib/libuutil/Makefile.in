@@ -39,7 +39,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/config/Rules.am
 subdir = lib/libuutil
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps =  \
+am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/always-no-unused-but-set-variable.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
@@ -50,20 +50,11 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-bio-bvec-iter.m4 \
 	$(top_srcdir)/config/kernel-bio-end-io-t-args.m4 \
 	$(top_srcdir)/config/kernel-bio-failfast.m4 \
-	$(top_srcdir)/config/kernel-bio-rw-syncio.m4 \
-	$(top_srcdir)/config/kernel-blk-end-request.m4 \
-	$(top_srcdir)/config/kernel-blk-fetch-request.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-discard.m4 \
+	$(top_srcdir)/config/kernel-bio-rw-barrier.m4 \
+	$(top_srcdir)/config/kernel-bio-rw-discard.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-flush.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-io-opt.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-hw-sectors.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-segments.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-nonrot.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-physical-block-size.m4 \
-	$(top_srcdir)/config/kernel-blk-requeue-request.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-bytes.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-pos.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-sectors.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get-by-path.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations-release-void.m4 \
@@ -71,6 +62,7 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-clear-inode.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-create-nameidata.m4 \
+	$(top_srcdir)/config/kernel-current_bio_tail.m4 \
 	$(top_srcdir)/config/kernel-d-make-root.m4 \
 	$(top_srcdir)/config/kernel-d-obtain-alias.m4 \
 	$(top_srcdir)/config/kernel-d-prune-aliases.m4 \
@@ -84,21 +76,25 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-fallocate.m4 \
 	$(top_srcdir)/config/kernel-file-inode.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
+	$(top_srcdir)/config/kernel-follow-down-one.m4 \
+	$(top_srcdir)/config/kernel-follow-link-nameidata.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
+	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
 	$(top_srcdir)/config/kernel-get-disk-ro.m4 \
 	$(top_srcdir)/config/kernel-get-gendisk.m4 \
 	$(top_srcdir)/config/kernel-insert-inode-locked.m4 \
 	$(top_srcdir)/config/kernel-invalidate-bdev-args.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
+	$(top_srcdir)/config/kernel-kmap-atomic-args.m4 \
 	$(top_srcdir)/config/kernel-kobj-name-len.m4 \
 	$(top_srcdir)/config/kernel-lookup-bdev.m4 \
 	$(top_srcdir)/config/kernel-lookup-nameidata.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
+	$(top_srcdir)/config/kernel-mk-request-fn.m4 \
 	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
 	$(top_srcdir)/config/kernel-mount-nodev.m4 \
 	$(top_srcdir)/config/kernel-open-bdev-exclusive.m4 \
-	$(top_srcdir)/config/kernel-rq-for-each_segment.m4 \
-	$(top_srcdir)/config/kernel-rq-is_sync.m4 \
+	$(top_srcdir)/config/kernel-put-link-nameidata.m4 \
 	$(top_srcdir)/config/kernel-security-inode-init.m4 \
 	$(top_srcdir)/config/kernel-set-nlink.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
@@ -165,10 +161,12 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libuutil_la_DEPENDENCIES = $(top_builddir)/lib/libavl/libavl.la \
 	$(top_builddir)/lib/libspl/libspl.la \
 	$(top_builddir)/lib/libefi/libefi.la
-am_libuutil_la_OBJECTS = uu_alloc.lo uu_avl.lo uu_dprintf.lo \
-	uu_ident.lo uu_list.lo uu_misc.lo uu_open.lo uu_pname.lo \
-	uu_string.lo uu_strtoint.lo
-libuutil_la_OBJECTS = $(am_libuutil_la_OBJECTS)
+am__objects_1 = uu_alloc.lo uu_avl.lo uu_dprintf.lo uu_ident.lo \
+	uu_list.lo uu_misc.lo uu_open.lo uu_pname.lo uu_string.lo \
+	uu_strtoint.lo
+am__objects_2 =
+nodist_libuutil_la_OBJECTS = $(am__objects_1) $(am__objects_2)
+libuutil_la_OBJECTS = $(nodist_libuutil_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -200,8 +198,8 @@ am__v_CCLD_0 = @echo "  CCLD  " $@;
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN   " $@;
-SOURCES = $(libuutil_la_SOURCES)
-DIST_SOURCES = $(libuutil_la_SOURCES)
+SOURCES = $(nodist_libuutil_la_SOURCES)
+DIST_SOURCES =
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -228,9 +226,11 @@ DEBUG_CFLAGS = @DEBUG_CFLAGS@
 DEBUG_DMU_TX = @DEBUG_DMU_TX@
 DEBUG_STACKFLAGS = @DEBUG_STACKFLAGS@
 DEBUG_ZFS = @DEBUG_ZFS@
+DEFAULT_INITCONF_DIR = @DEFAULT_INITCONF_DIR@
 DEFAULT_INIT_DIR = @DEFAULT_INIT_DIR@
 DEFAULT_INIT_SCRIPT = @DEFAULT_INIT_SCRIPT@
 DEFAULT_PACKAGE = @DEFAULT_PACKAGE@
+DEFINE_INITRAMFS = @DEFINE_INITRAMFS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
@@ -280,6 +280,7 @@ MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
+NO_BOOL_COMPARE = @NO_BOOL_COMPARE@
 NO_UNUSED_BUT_SET_VARIABLE = @NO_UNUSED_BUT_SET_VARIABLE@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
@@ -402,8 +403,8 @@ DEFAULT_INCLUDES = -include ${top_builddir}/zfs_config.h \
 	-I$(top_srcdir)/include -I$(top_srcdir)/lib/libspl/include
 AM_LIBTOOLFLAGS = --silent
 AM_CFLAGS = ${DEBUG_CFLAGS} -Wall -Wstrict-prototypes \
-	${NO_UNUSED_BUT_SET_VARIABLE} -fno-strict-aliasing \
-	$(DEBUG_STACKFLAGS) $(FRAME_LARGER_THAN)
+	${NO_UNUSED_BUT_SET_VARIABLE} ${NO_BOOL_COMPARE} \
+	-fno-strict-aliasing $(DEBUG_STACKFLAGS) $(FRAME_LARGER_THAN)
 AM_CPPFLAGS = -D_GNU_SOURCE -D__EXTENSIONS__ -D_REENTRANT \
 	-D_POSIX_PTHREAD_SEMANTICS -D_FILE_OFFSET_BITS=64 \
 	-D_LARGEFILE64_SOURCE -DTEXT_DOMAIN=\"zfs-linux-user\" \
@@ -411,17 +412,22 @@ AM_CPPFLAGS = -D_GNU_SOURCE -D__EXTENSIONS__ -D_REENTRANT \
 	-DRUNSTATEDIR=\"$(runstatedir)\" -DSBINDIR=\"$(sbindir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 lib_LTLIBRARIES = libuutil.la
-libuutil_la_SOURCES = \
-	$(top_srcdir)/lib/libuutil/uu_alloc.c \
-	$(top_srcdir)/lib/libuutil/uu_avl.c \
-	$(top_srcdir)/lib/libuutil/uu_dprintf.c \
-	$(top_srcdir)/lib/libuutil/uu_ident.c \
-	$(top_srcdir)/lib/libuutil/uu_list.c \
-	$(top_srcdir)/lib/libuutil/uu_misc.c \
-	$(top_srcdir)/lib/libuutil/uu_open.c \
-	$(top_srcdir)/lib/libuutil/uu_pname.c \
-	$(top_srcdir)/lib/libuutil/uu_string.c \
-	$(top_srcdir)/lib/libuutil/uu_strtoint.c
+USER_C = \
+	uu_alloc.c \
+	uu_avl.c \
+	uu_dprintf.c \
+	uu_ident.c \
+	uu_list.c \
+	uu_misc.c \
+	uu_open.c \
+	uu_pname.c \
+	uu_string.c \
+	uu_strtoint.c
+
+KERNEL_C = 
+nodist_libuutil_la_SOURCES = \
+	$(USER_C) \
+	$(KERNEL_C)
 
 libuutil_la_LIBADD = \
 	$(top_builddir)/lib/libavl/libavl.la \
@@ -429,6 +435,7 @@ libuutil_la_LIBADD = \
 	$(top_builddir)/lib/libefi/libefi.la
 
 libuutil_la_LDFLAGS = -pthread -version-info 1:1:0
+EXTRA_DIST = $(USER_C)
 all: all-am
 
 .SUFFIXES:
@@ -535,76 +542,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
-
-uu_alloc.lo: $(top_srcdir)/lib/libuutil/uu_alloc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT uu_alloc.lo -MD -MP -MF $(DEPDIR)/uu_alloc.Tpo -c -o uu_alloc.lo `test -f '$(top_srcdir)/lib/libuutil/uu_alloc.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_alloc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/uu_alloc.Tpo $(DEPDIR)/uu_alloc.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libuutil/uu_alloc.c' object='uu_alloc.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o uu_alloc.lo `test -f '$(top_srcdir)/lib/libuutil/uu_alloc.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_alloc.c
-
-uu_avl.lo: $(top_srcdir)/lib/libuutil/uu_avl.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT uu_avl.lo -MD -MP -MF $(DEPDIR)/uu_avl.Tpo -c -o uu_avl.lo `test -f '$(top_srcdir)/lib/libuutil/uu_avl.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_avl.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/uu_avl.Tpo $(DEPDIR)/uu_avl.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libuutil/uu_avl.c' object='uu_avl.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o uu_avl.lo `test -f '$(top_srcdir)/lib/libuutil/uu_avl.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_avl.c
-
-uu_dprintf.lo: $(top_srcdir)/lib/libuutil/uu_dprintf.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT uu_dprintf.lo -MD -MP -MF $(DEPDIR)/uu_dprintf.Tpo -c -o uu_dprintf.lo `test -f '$(top_srcdir)/lib/libuutil/uu_dprintf.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_dprintf.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/uu_dprintf.Tpo $(DEPDIR)/uu_dprintf.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libuutil/uu_dprintf.c' object='uu_dprintf.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o uu_dprintf.lo `test -f '$(top_srcdir)/lib/libuutil/uu_dprintf.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_dprintf.c
-
-uu_ident.lo: $(top_srcdir)/lib/libuutil/uu_ident.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT uu_ident.lo -MD -MP -MF $(DEPDIR)/uu_ident.Tpo -c -o uu_ident.lo `test -f '$(top_srcdir)/lib/libuutil/uu_ident.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_ident.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/uu_ident.Tpo $(DEPDIR)/uu_ident.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libuutil/uu_ident.c' object='uu_ident.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o uu_ident.lo `test -f '$(top_srcdir)/lib/libuutil/uu_ident.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_ident.c
-
-uu_list.lo: $(top_srcdir)/lib/libuutil/uu_list.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT uu_list.lo -MD -MP -MF $(DEPDIR)/uu_list.Tpo -c -o uu_list.lo `test -f '$(top_srcdir)/lib/libuutil/uu_list.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_list.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/uu_list.Tpo $(DEPDIR)/uu_list.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libuutil/uu_list.c' object='uu_list.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o uu_list.lo `test -f '$(top_srcdir)/lib/libuutil/uu_list.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_list.c
-
-uu_misc.lo: $(top_srcdir)/lib/libuutil/uu_misc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT uu_misc.lo -MD -MP -MF $(DEPDIR)/uu_misc.Tpo -c -o uu_misc.lo `test -f '$(top_srcdir)/lib/libuutil/uu_misc.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_misc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/uu_misc.Tpo $(DEPDIR)/uu_misc.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libuutil/uu_misc.c' object='uu_misc.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o uu_misc.lo `test -f '$(top_srcdir)/lib/libuutil/uu_misc.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_misc.c
-
-uu_open.lo: $(top_srcdir)/lib/libuutil/uu_open.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT uu_open.lo -MD -MP -MF $(DEPDIR)/uu_open.Tpo -c -o uu_open.lo `test -f '$(top_srcdir)/lib/libuutil/uu_open.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_open.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/uu_open.Tpo $(DEPDIR)/uu_open.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libuutil/uu_open.c' object='uu_open.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o uu_open.lo `test -f '$(top_srcdir)/lib/libuutil/uu_open.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_open.c
-
-uu_pname.lo: $(top_srcdir)/lib/libuutil/uu_pname.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT uu_pname.lo -MD -MP -MF $(DEPDIR)/uu_pname.Tpo -c -o uu_pname.lo `test -f '$(top_srcdir)/lib/libuutil/uu_pname.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_pname.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/uu_pname.Tpo $(DEPDIR)/uu_pname.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libuutil/uu_pname.c' object='uu_pname.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o uu_pname.lo `test -f '$(top_srcdir)/lib/libuutil/uu_pname.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_pname.c
-
-uu_string.lo: $(top_srcdir)/lib/libuutil/uu_string.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT uu_string.lo -MD -MP -MF $(DEPDIR)/uu_string.Tpo -c -o uu_string.lo `test -f '$(top_srcdir)/lib/libuutil/uu_string.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_string.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/uu_string.Tpo $(DEPDIR)/uu_string.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libuutil/uu_string.c' object='uu_string.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o uu_string.lo `test -f '$(top_srcdir)/lib/libuutil/uu_string.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_string.c
-
-uu_strtoint.lo: $(top_srcdir)/lib/libuutil/uu_strtoint.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT uu_strtoint.lo -MD -MP -MF $(DEPDIR)/uu_strtoint.Tpo -c -o uu_strtoint.lo `test -f '$(top_srcdir)/lib/libuutil/uu_strtoint.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_strtoint.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/uu_strtoint.Tpo $(DEPDIR)/uu_strtoint.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(top_srcdir)/lib/libuutil/uu_strtoint.c' object='uu_strtoint.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o uu_strtoint.lo `test -f '$(top_srcdir)/lib/libuutil/uu_strtoint.c' || echo '$(srcdir)/'`$(top_srcdir)/lib/libuutil/uu_strtoint.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

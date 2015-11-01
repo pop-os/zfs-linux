@@ -38,7 +38,7 @@ target_triplet = @target@
 subdir = etc/init.d
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps =  \
+am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/always-no-unused-but-set-variable.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
@@ -49,20 +49,11 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-bio-bvec-iter.m4 \
 	$(top_srcdir)/config/kernel-bio-end-io-t-args.m4 \
 	$(top_srcdir)/config/kernel-bio-failfast.m4 \
-	$(top_srcdir)/config/kernel-bio-rw-syncio.m4 \
-	$(top_srcdir)/config/kernel-blk-end-request.m4 \
-	$(top_srcdir)/config/kernel-blk-fetch-request.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-discard.m4 \
+	$(top_srcdir)/config/kernel-bio-rw-barrier.m4 \
+	$(top_srcdir)/config/kernel-bio-rw-discard.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-flush.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-io-opt.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-hw-sectors.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-segments.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-nonrot.m4 \
-	$(top_srcdir)/config/kernel-blk-queue-physical-block-size.m4 \
-	$(top_srcdir)/config/kernel-blk-requeue-request.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-bytes.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-pos.m4 \
-	$(top_srcdir)/config/kernel-blk-rq-sectors.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get-by-path.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations-release-void.m4 \
@@ -70,6 +61,7 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-clear-inode.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-create-nameidata.m4 \
+	$(top_srcdir)/config/kernel-current_bio_tail.m4 \
 	$(top_srcdir)/config/kernel-d-make-root.m4 \
 	$(top_srcdir)/config/kernel-d-obtain-alias.m4 \
 	$(top_srcdir)/config/kernel-d-prune-aliases.m4 \
@@ -83,21 +75,25 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/kernel-fallocate.m4 \
 	$(top_srcdir)/config/kernel-file-inode.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
+	$(top_srcdir)/config/kernel-follow-down-one.m4 \
+	$(top_srcdir)/config/kernel-follow-link-nameidata.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
+	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
 	$(top_srcdir)/config/kernel-get-disk-ro.m4 \
 	$(top_srcdir)/config/kernel-get-gendisk.m4 \
 	$(top_srcdir)/config/kernel-insert-inode-locked.m4 \
 	$(top_srcdir)/config/kernel-invalidate-bdev-args.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
+	$(top_srcdir)/config/kernel-kmap-atomic-args.m4 \
 	$(top_srcdir)/config/kernel-kobj-name-len.m4 \
 	$(top_srcdir)/config/kernel-lookup-bdev.m4 \
 	$(top_srcdir)/config/kernel-lookup-nameidata.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
+	$(top_srcdir)/config/kernel-mk-request-fn.m4 \
 	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
 	$(top_srcdir)/config/kernel-mount-nodev.m4 \
 	$(top_srcdir)/config/kernel-open-bdev-exclusive.m4 \
-	$(top_srcdir)/config/kernel-rq-for-each_segment.m4 \
-	$(top_srcdir)/config/kernel-rq-is_sync.m4 \
+	$(top_srcdir)/config/kernel-put-link-nameidata.m4 \
 	$(top_srcdir)/config/kernel-security-inode-init.m4 \
 	$(top_srcdir)/config/kernel-set-nlink.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
@@ -159,8 +155,9 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(initdir)"
-SCRIPTS = $(init_SCRIPTS)
+am__installdirs = "$(DESTDIR)$(initdir)" "$(DESTDIR)$(initcommondir)" \
+	"$(DESTDIR)$(initconfdir)"
+SCRIPTS = $(init_SCRIPTS) $(initcommon_SCRIPTS) $(initconf_SCRIPTS)
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN   " $@;
@@ -193,9 +190,11 @@ DEBUG_CFLAGS = @DEBUG_CFLAGS@
 DEBUG_DMU_TX = @DEBUG_DMU_TX@
 DEBUG_STACKFLAGS = @DEBUG_STACKFLAGS@
 DEBUG_ZFS = @DEBUG_ZFS@
+DEFAULT_INITCONF_DIR = @DEFAULT_INITCONF_DIR@
 DEFAULT_INIT_DIR = @DEFAULT_INIT_DIR@
 DEFAULT_INIT_SCRIPT = @DEFAULT_INIT_SCRIPT@
 DEFAULT_PACKAGE = @DEFAULT_PACKAGE@
+DEFINE_INITRAMFS = @DEFINE_INITRAMFS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
@@ -245,6 +244,7 @@ MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
+NO_BOOL_COMPARE = @NO_BOOL_COMPARE@
 NO_UNUSED_BUT_SET_VARIABLE = @NO_UNUSED_BUT_SET_VARIABLE@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
@@ -364,13 +364,18 @@ top_srcdir = @top_srcdir@
 udevdir = @udevdir@
 udevruledir = @udevruledir@
 initdir = $(DEFAULT_INIT_DIR)
-init_SCRIPTS = zfs
+init_SCRIPTS = zfs-import zfs-mount zfs-share zfs-zed
+initcommondir = $(sysconfdir)/zfs
+initcommon_SCRIPTS = zfs-functions
+initconfdir = $(DEFAULT_INITCONF_DIR)
+initconf_SCRIPTS = zfs
 EXTRA_DIST = \
-	$(top_srcdir)/etc/init.d/zfs.fedora.in \
-	$(top_srcdir)/etc/init.d/zfs.gentoo.in \
-	$(top_srcdir)/etc/init.d/zfs.lsb.in \
-	$(top_srcdir)/etc/init.d/zfs.lunar.in \
-	$(top_srcdir)/etc/init.d/zfs.redhat.in
+	$(top_srcdir)/etc/init.d/zfs-functions.in \
+	$(top_srcdir)/etc/init.d/zfs-share.in \
+	$(top_srcdir)/etc/init.d/zfs-import.in \
+	$(top_srcdir)/etc/init.d/zfs-mount.in \
+	$(top_srcdir)/etc/init.d/zfs-zed.in \
+	$(top_srcdir)/etc/init.d/zfs.in
 
 all: all-am
 
@@ -437,6 +442,70 @@ uninstall-initSCRIPTS:
 	files=`for p in $$list; do echo "$$p"; done | \
 	       sed -e 's,.*/,,;$(transform)'`; \
 	dir='$(DESTDIR)$(initdir)'; $(am__uninstall_files_from_dir)
+install-initcommonSCRIPTS: $(initcommon_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	test -z "$(initcommondir)" || $(MKDIR_P) "$(DESTDIR)$(initcommondir)"
+	@list='$(initcommon_SCRIPTS)'; test -n "$(initcommondir)" || list=; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n' \
+	    -e 'h;s|.*|.|' \
+	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
+	      if (++n[d] == $(am__install_max)) { \
+		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
+	    else { print "f", d "/" $$4, $$1 } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	     test -z "$$files" || { \
+	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(initcommondir)$$dir'"; \
+	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(initcommondir)$$dir" || exit $$?; \
+	     } \
+	; done
+
+uninstall-initcommonSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(initcommon_SCRIPTS)'; test -n "$(initcommondir)" || exit 0; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	       sed -e 's,.*/,,;$(transform)'`; \
+	dir='$(DESTDIR)$(initcommondir)'; $(am__uninstall_files_from_dir)
+install-initconfSCRIPTS: $(initconf_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	test -z "$(initconfdir)" || $(MKDIR_P) "$(DESTDIR)$(initconfdir)"
+	@list='$(initconf_SCRIPTS)'; test -n "$(initconfdir)" || list=; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n' \
+	    -e 'h;s|.*|.|' \
+	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
+	      if (++n[d] == $(am__install_max)) { \
+		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
+	    else { print "f", d "/" $$4, $$1 } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	     test -z "$$files" || { \
+	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(initconfdir)$$dir'"; \
+	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(initconfdir)$$dir" || exit $$?; \
+	     } \
+	; done
+
+uninstall-initconfSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(initconf_SCRIPTS)'; test -n "$(initconfdir)" || exit 0; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	       sed -e 's,.*/,,;$(transform)'`; \
+	dir='$(DESTDIR)$(initconfdir)'; $(am__uninstall_files_from_dir)
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -484,7 +553,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(SCRIPTS)
 installdirs:
-	for dir in "$(DESTDIR)$(initdir)"; do \
+	for dir in "$(DESTDIR)$(initdir)" "$(DESTDIR)$(initcommondir)" "$(DESTDIR)$(initconfdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -537,7 +606,8 @@ info: info-am
 
 info-am:
 
-install-data-am: install-initSCRIPTS
+install-data-am: install-initSCRIPTS install-initcommonSCRIPTS \
+	install-initconfSCRIPTS
 
 install-dvi: install-dvi-am
 
@@ -581,7 +651,8 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-initSCRIPTS
+uninstall-am: uninstall-initSCRIPTS uninstall-initcommonSCRIPTS \
+	uninstall-initconfSCRIPTS
 
 .MAKE: install-am install-strip
 
@@ -591,26 +662,43 @@ uninstall-am: uninstall-initSCRIPTS
 	install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-info install-info-am \
-	install-initSCRIPTS install-man install-pdf install-pdf-am \
+	install-initSCRIPTS install-initcommonSCRIPTS \
+	install-initconfSCRIPTS install-man install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic \
 	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-initSCRIPTS
+	uninstall-initSCRIPTS uninstall-initcommonSCRIPTS \
+	uninstall-initconfSCRIPTS
 
 
-$(init_SCRIPTS):
-	-$(SED) -e 's,@bindir\@,$(bindir),g' \
-		-e 's,@sbindir\@,$(sbindir),g' \
-		-e 's,@udevdir\@,$(udevdir),g' \
-		-e 's,@udevruledir\@,$(udevruledir),g' \
-		-e 's,@sysconfdir\@,$(sysconfdir),g' \
-		-e 's,@initdir\@,$(initdir),g' \
-		-e 's,@runstatedir\@,$(runstatedir),g' \
-		'$@.$(DEFAULT_INIT_SCRIPT).in' >'$@'
+$(init_SCRIPTS) $(initconf_SCRIPTS) $(initcommon_SCRIPTS): $(EXTRA_DIST)
+	-(if [ -e /etc/debian_version ]; then \
+		NFS_SRV=nfs-kernel-server; \
+	  else \
+		NFS_SRV=nfs; \
+	  fi; \
+	  if [ -e /etc/gentoo-release ]; then \
+		SHELL=/sbin/runscript; \
+	  else \
+		SHELL=/bin/sh; \
+	  fi; \
+	  $(SED) -e 's,@bindir\@,$(bindir),g' \
+		 -e 's,@sbindir\@,$(sbindir),g' \
+		 -e 's,@udevdir\@,$(udevdir),g' \
+		 -e 's,@udevruledir\@,$(udevruledir),g' \
+		 -e 's,@sysconfdir\@,$(sysconfdir),g' \
+		 -e 's,@initconfdir\@,$(initconfdir),g' \
+		 -e 's,@initdir\@,$(initdir),g' \
+		 -e 's,@runstatedir\@,$(runstatedir),g' \
+		 -e "s,@SHELL\@,$$SHELL,g" \
+		 -e "s,@NFS_SRV\@,$$NFS_SRV,g" \
+		 "$(top_srcdir)/etc/init.d/$@.in" >'$@'; \
+	  [ '$@' = 'zfs-functions' -o '$@' = 'zfs' ] || \
+		chmod +x '$@')
 
 distclean-local::
-	-$(RM) $(init_SCRIPTS)
+	-$(RM) $(init_SCRIPTS) $(initcommon_SCRIPTS) $(initconf_SCRIPTS)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
