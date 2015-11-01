@@ -4,7 +4,7 @@ set -e
 # Source debconf library (see dh_installdebconf(1) and #106070 #626312)
 . /usr/share/debconf/confmodule
 
-db_input low zfs-dkms/note-incompatible-licenses || true
+db_input high zfs-dkms/note-incompatible-licenses || true
 
 kernelbits=unknown
 if [ -r /proc/kallsyms ]; then
