@@ -1,5 +1,5 @@
 Source: zfs-linux
-Section: kernel
+Section: contrib/kernel
 Priority: extra
 Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@lists.alioth.debian.org>
 Build-Depends: autotools-dev,
@@ -37,7 +37,7 @@ Description: Native ZFS filesystem kernel modules for Linux (kernel _KVERS_)
 
 Package: zfs-modules-_KVERS_-di
 Package-Type: udeb
-Section: debian-installer
+Section: contrib/debian-installer
 Architecture: _ARCH_
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Provides: zfs-modules, zfs-modules-_KVERS_-udeb

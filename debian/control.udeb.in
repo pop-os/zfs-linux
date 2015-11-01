@@ -1,7 +1,7 @@
 
 Package: libnvpair1-udeb
 Package-Type: udeb
-Section: debian-installer
+Section: contrib/debian-installer
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Solaris name-value library for Linux (debian-installer)
@@ -13,7 +13,7 @@ Description: Solaris name-value library for Linux (debian-installer)
 
 Package: libuutil1-udeb
 Package-Type: udeb
-Section: debian-installer
+Section: contrib/debian-installer
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Solaris userland utility library for Linux (debian-installer)
@@ -31,7 +31,7 @@ Description: Solaris userland utility library for Linux (debian-installer)
 
 Package: libzfs1-udeb
 Package-Type: udeb
-Section: debian-installer
+Section: contrib/debian-installer
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: OpenSolaris ZFS library (debian-installer)
@@ -44,7 +44,7 @@ Description: OpenSolaris ZFS library (debian-installer)
 
 Package: libzpool1-udeb
 Package-Type: udeb
-Section: debian-installer
+Section: contrib/debian-installer
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Native ZFS pool library for Linux (debian-installer)
@@ -58,7 +58,7 @@ Description: Native ZFS pool library for Linux (debian-installer)
 
 Package: zfsutils-udeb
 Package-Type: udeb
-Section: debian-installer
+Section: contrib/debian-installer
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  libuutil1-udeb (= ${binary:Version}), libnvpair1-udeb (= ${binary:Version}),
