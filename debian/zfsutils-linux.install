@@ -2,3 +2,4 @@
 lib/udev
 sbin
 usr/share/man
+usr/lib/modules-load.d/zfs.conf
