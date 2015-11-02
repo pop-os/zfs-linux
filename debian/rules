@@ -33,7 +33,7 @@ pmodules = $(PACKAGE)-modules-$(non_epoch_version)
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --with dkms --parallel
+	dh $@ --with autoreconf,dkms --parallel
 
 override_dh_auto_configure:
 	@cp debian/control.in debian/control
@@ -43,9 +43,6 @@ endif
 
 	@# Embed the downstream version in the module.
 	@sed -e 's/^Version:.*/Version:      $(VERSION)/' -i.orig META
-
-	@# Create the makefiles and configure script.
-	./autogen.sh
 
 	@# Build the userland, but don't build the kernel modules.
 	dh_auto_configure -- \
