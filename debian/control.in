@@ -85,10 +85,8 @@ Package: zfs-dkms
 Architecture: all
 Pre-Depends: spl-dkms (>= ${source:Upstream-Version})
 Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}
-Recommends: zfsutils-linux
-Replaces: lzfs, lzfs-dkms
-Provides: lustre-backend-fs, lzfs, lzfs-dkms, zfs-modules
-Conflicts: lzfs, lzfs-dkms
+Recommends: zfsutils-linux, zfs-zed
+Provides: zfs-modules
 Description: Native ZFS filesystem kernel modules for Linux
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
@@ -122,10 +120,9 @@ Package: zfsutils-linux
 Section: contrib/admin
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Recommends: lsb-base, zfs-modules | zfs-dkms
+Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
 Suggests: nfs-kernel-server, samba-common-bin (>= 3.0.23), zfs-initramfs | zfs-dracut
 Conflicts: zfs, zfs-fuse
-Replaces: zfs
 Provides: zfsutils
 Description: command-line tools to manage ZFS filesystems
  The Z file system is a pooled filesystem designed for maximum data
@@ -138,8 +135,7 @@ Description: command-line tools to manage ZFS filesystems
 Package: zfs-zed
 Section: contrib/admin
 Architecture: linux-any
-Depends: ${misc:Depends}, ${shlibs:Depends}
-Recommends: zfsutils-linux, zfs-modules | zfs-dkms
+Depends: ${misc:Depends}, ${shlibs:Depends}, zfs-modules | zfs-dkms, zfsutils-linux
 Description: OpenZFS Event Daemon
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
@@ -156,7 +152,7 @@ Depends: libnvpair1linux (= ${binary:Version}),
          libzfs2linux (= ${binary:Version}),
          libzpool2linux (= ${binary:Version}),
          ${misc:Depends}
-Recommends: zfsutils-linux (= ${binary:Version})
+Recommends: zfsutils-linux (= ${binary:Version}), zfs-zed (= ${binary:Version})
 Description: Debugging symbols for ZFS userland libraries and tools
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
