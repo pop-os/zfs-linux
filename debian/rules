@@ -105,7 +105,7 @@ ifeq ($(BUILD_UDEB), true)
 	dh_makeshlibs -plibzfs2linux --add-udeb=libzfs2-udeb
 	dh_makeshlibs -plibzpool2linux --add-udeb=libzpool2-udeb
 	dh_makeshlibs -pzfsutils-linux --add-udeb=zfsutils-udeb
-   endif
+endif
 
 override_dh_strip:
 	dh_strip --dbg-package=zfs-dbg
