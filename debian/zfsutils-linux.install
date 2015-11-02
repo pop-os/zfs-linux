@@ -1,5 +1,11 @@
 ../tree/zfsutils/* /
 lib/udev
 sbin
+bin
 usr/share/man
 usr/lib/modules-load.d/zfs.conf
+etc/default/zfs
+etc/init.d/zfs-*
+etc/zfs/*
+usr/share/zfs/*
+usr/lib/systemd/
