@@ -87,8 +87,7 @@ override_dh_auto_install:
 
 	@# This shunt allows DKMS to install the Module.symvers and zfs_config.h
 	@# files to the ${dkms_tree} area through the POST_INSTALL directive.
-	echo '#!/bin/sh'  >'$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/cp'
-	echo 'cp "$$@"'  >>'$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/cp'
+	printf '#!/bin/sh\ncp "$$@"\n' >'$(META_DISTDIR)/cp'
 	chmod 755 '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/cp'
 
 	mkdir -p $(CURDIR)/debian/tmp/usr/lib
@@ -103,11 +102,11 @@ override_dh_dkms:
 override_dh_makeshlibs:
 	dh_makeshlibs -a
 ifeq ($(BUILD_UDEB), true)
-	dh_makeshlibs -plibnvpair$(SHLIB_MAJOR) --add-udeb=libnvpair$(SHLIB_MAJOR)-udeb
-	dh_makeshlibs -plibuutil$(SHLIB_MAJOR) --add-udeb=libuutil$(SHLIB_MAJOR)-udeb
-	dh_makeshlibs -plibzfs$(SHLIB_MAJOR) --add-udeb=libzfs$(SHLIB_MAJOR)-udeb
-	dh_makeshlibs -plibzpool$(SHLIB_MAJOR) --add-udeb=libzpool$(SHLIB_MAJOR)-udeb
-	dh_makeshlibs -pzfsutils --add-udeb=zfsutils-udeb
+	dh_makeshlibs -plibnvpair$(SHLIB_MAJOR)linux --add-udeb=libnvpair$(SHLIB_MAJOR)-udeb
+	dh_makeshlibs -plibuutil$(SHLIB_MAJOR)linux --add-udeb=libuutil$(SHLIB_MAJOR)-udeb
+	dh_makeshlibs -plibzfs$(SHLIB_MAJOR)linux --add-udeb=libzfs$(SHLIB_MAJOR)-udeb
+	dh_makeshlibs -plibzpool$(SHLIB_MAJOR)linux --add-udeb=libzpool$(SHLIB_MAJOR)-udeb
+	dh_makeshlibs -pzfsutils-linux --add-udeb=zfsutils-udeb
    endif
 
 override_dh_strip:
