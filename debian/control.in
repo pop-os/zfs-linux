@@ -52,29 +52,29 @@ Depends: libzfs2linux (= ${binary:Version}), libzpool2linux (= ${binary:Version}
  libnvpair1linux (= ${binary:Version}), libuutil1linux (= ${binary:Version}),
  ${misc:Depends}
 Provides: libnvpair-dev, libuutil-dev
-Description: Native ZFS filesystem development files for Linux
- Header files and static libraries for compiling software  against
- libraries of native ZFS filesystem.
+Description: OpenZFS filesystem development files for Linux
+ Header files and static libraries for compiling software against
+ libraries of OpenZFS filesystem.
  .
  This package includes the development files of libnvpair1, libuutil1,
- and libzfs2.
+ libzpool2 and libzfs2.
 
 Package: libzfs2linux
 Section: contrib/libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Description: Native ZFS filesystem library for Linux
+Description: OpenZFS filesystem library for Linux
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
  .
- The ZFS library provides support for managing ZFS filesystems.
+ The OpenZFS library provides support for managing OpenZFS filesystems.
 
 Package: libzpool2linux
 Section: contrib/libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Description: Native ZFS pool library for Linux
+Description: OpenZFS pool library for Linux
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
@@ -87,33 +87,34 @@ Pre-Depends: spl-dkms (>= ${source:Upstream-Version})
 Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}
 Recommends: zfsutils-linux, zfs-zed
 Provides: zfs-modules
-Description: Native ZFS filesystem kernel modules for Linux
+Description: OpenZFS filesystem kernel modules for Linux
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
  .
- This DKMS package includes the SPA, DMU, ZVOL, and ZPL components of ZFS.
+ This DKMS package includes the SPA, DMU, ZVOL, and ZPL components of
+ OpenZFS.
 
 Package: zfs-initramfs
 Architecture: linux-any
 Depends: initramfs-tools, zfs-modules | zfs-dkms, zfsutils-linux, ${misc:Depends}
-Description: Native ZFS root filesystem capabilities for Linux - initramfs
+Description: OpenZFS root filesystem capabilities for Linux - initramfs
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
  .
- This package adds ZFS to the system initramfs with a hook
+ This package adds OpenZFS to the system initramfs with a hook
  for the initramfs-tools infrastructure.
 
 Package: zfs-dracut
 Architecture: linux-any
 Depends: dracut, zfs-modules | zfs-dkms, zfsutils-linux, ${misc:Depends}
-Description: Native ZFS root filesystem capabilities for Linux - dracut
+Description: OpenZFS root filesystem capabilities for Linux - dracut
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
  .
- This package adds ZFS to the system initramfs with a hook
+ This package adds OpenZFS to the system initramfs with a hook
  for the dracut infrastructure.
 
 Package: zfsutils-linux
@@ -124,13 +125,13 @@ Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
 Suggests: nfs-kernel-server, samba-common-bin (>= 3.0.23), zfs-initramfs | zfs-dracut
 Conflicts: zfs, zfs-fuse
 Provides: zfsutils
-Description: command-line tools to manage ZFS filesystems
+Description: command-line tools to manage OpenZFS filesystems
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
  .
  This package provides the zfs and zpool commands to create and administer
- ZFS filesystems.
+ OpenZFS filesystems.
 
 Package: zfs-zed
 Section: contrib/admin
@@ -141,7 +142,7 @@ Description: OpenZFS Event Daemon
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
  .
- This package provides the Z Event Daemon (zed).
+ This package provides the OpenZFS Event Daemon (zed).
 
 Package: zfs-dbg
 Section: contrib/debug
@@ -153,10 +154,10 @@ Depends: libnvpair1linux (= ${binary:Version}),
          libzpool2linux (= ${binary:Version}),
          ${misc:Depends}
 Recommends: zfsutils-linux (= ${binary:Version}), zfs-zed (= ${binary:Version})
-Description: Debugging symbols for ZFS userland libraries and tools
+Description: Debugging symbols for OpenZFS userland libraries and tools
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
  .
- This package contains the debugging symbols for libzpoo1linux, libzfs2linux,
- libnvpair1linux, libuutil1linux, and zfsutils-linux.
+ This package contains the debugging symbols for libzpool2linux, libzfs2linux,
+ libnvpair1linux, libuutil1linux, zfs-zed and zfsutils-linux.
