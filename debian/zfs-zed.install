@@ -1,5 +1,6 @@
 sbin/zed
-usr/lib/*/zfs/zed.d/*
 etc/init.d/zfs-zed
 etc/zfs/zed.d/*
+usr/lib/*/zfs/zed.d/*
 usr/lib/systemd/system/zed.service
+usr/share/man/man8/zed.8
