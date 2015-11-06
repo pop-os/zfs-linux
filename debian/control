@@ -151,8 +151,8 @@ Depends: libnvpair1linux (= ${binary:Version}),
          libuutil1linux (= ${binary:Version}),
          libzfs2linux (= ${binary:Version}),
          libzpool2linux (= ${binary:Version}),
+         zfsutils-linux (= ${binary:Version}), zfs-zed (= ${binary:Version}),
          ${misc:Depends}
-Recommends: zfsutils-linux (= ${binary:Version}), zfs-zed (= ${binary:Version})
 Description: Debugging symbols for OpenZFS userland libraries and tools
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
