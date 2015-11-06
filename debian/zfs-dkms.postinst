@@ -4,8 +4,6 @@ set -e
 # Source debconf library (see dh_installdebconf(1) and #106070 #626312)
 . /usr/share/debconf/confmodule
 
-db_input high zfs-dkms/note-incompatible-licenses || true
-
 kernelbits=unknown
 if [ -r /proc/kallsyms ]; then
 	addrlen=$(head -1 /proc/kallsyms|awk '{print $1}'|wc -c)
