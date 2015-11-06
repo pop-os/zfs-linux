@@ -5,6 +5,7 @@ Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@lists.alioth.d
 Uploaders: Aron Xu <aron@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>
 Build-Depends: dh-autoreconf,
+               dh-systemd,
                autotools-dev,
                debhelper (>= 9),
                dkms (>> 2.1.1.2-5),
