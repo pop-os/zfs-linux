@@ -1,7 +1,7 @@
 ../tree/zfsutils/* /
-usr/lib/systemd/system/zfs*
-usr/lib/systemd/system-preset/
-usr/lib/modules-load.d/
+usr/lib/systemd/system/zfs* lib/systemd/system/
+usr/lib/systemd/system-preset/ lib/systemd/
+usr/lib/modules-load.d/ lib/
 lib/udev/
 etc/default/zfs
 etc/init.d/zfs-share
