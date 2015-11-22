@@ -4,9 +4,6 @@ usr/lib/systemd/system-preset/ lib/systemd/
 usr/lib/modules-load.d/ lib/
 lib/udev/
 etc/default/zfs
-etc/init.d/zfs-share
-etc/init.d/zfs-mount
-etc/init.d/zfs-import
 etc/zfs/zfs-functions
 bin/
 sbin/fsck.zfs
