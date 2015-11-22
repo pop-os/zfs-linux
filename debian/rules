@@ -31,7 +31,7 @@ pmodules = $(PACKAGE)-modules-$(non_epoch_version)
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --with autoreconf,dkms,systemd --parallel
+	dh $@ --with autoreconf,dkms,python2,systemd --parallel
 
 override_dh_auto_configure:
 	@cp debian/control.in debian/control

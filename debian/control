@@ -14,7 +14,8 @@ Build-Depends: dh-autoreconf,
                lsb-release,
                po-debconf,
                uuid-dev,
-               zlib1g-dev
+               zlib1g-dev,
+               python
 Standards-Version: 3.9.6
 Homepage: http://www.zfsonlinux.org/
 Vcs-Git: git://anonscm.debian.org/pkg-zfsonlinux/zfs.git
@@ -119,7 +120,7 @@ Description: OpenZFS root filesystem capabilities for Linux - dracut
 Package: zfsutils-linux
 Section: contrib/admin
 Architecture: linux-any
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${python:Depends}
 Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
 Suggests: nfs-kernel-server, samba-common-bin (>= 3.0.23), zfs-initramfs | zfs-dracut
 Conflicts: zfs, zfs-fuse
