@@ -189,6 +189,15 @@
 /* get_gendisk() is available */
 #undef HAVE_GET_GENDISK
 
+/* xattr_handler->get() wants xattr_handler */
+#undef HAVE_HANDLER_XATTR_GET
+
+/* xattr_handler->list() wants xattr_handler */
+#undef HAVE_HANDLER_XATTR_LIST
+
+/* xattr_handler->set() wants xattr_handler */
+#undef HAVE_HANDLER_XATTR_SET
+
 /* fops->fallocate() exists */
 #undef HAVE_INODE_FALLOCATE
 
@@ -230,6 +239,9 @@
 
 /* Noting that make_request_fn() returns int */
 #undef HAVE_MAKE_REQUEST_FN_RET_INT
+
+/* Noting that make_request_fn() returns blk_qc_t */
+#undef HAVE_MAKE_REQUEST_FN_RET_QC
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -337,7 +349,7 @@
    */
 #undef LT_OBJDIR
 
-/* make_request_fn() returns void */
+/* make_request_fn() returns blk_qc_t */
 #undef MAKE_REQUEST_FN_RET
 
 /* Name of package */
