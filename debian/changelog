@@ -1,3 +1,9 @@
+zfs-linux (0.6.5.4-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Aron Xu <aron@debian.org>  Sun, 10 Jan 2016 20:22:58 +0800
+
 zfs-linux (0.6.5.3-1) unstable; urgency=medium
 
   * Initial Release (Closes: #686447)
