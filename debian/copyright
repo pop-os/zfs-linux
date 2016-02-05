@@ -126,6 +126,14 @@ Files: debian/tree/zfsutils/usr/share/bash-completion/completions/zfs
 Copyright: 2013, Aneurin Price <aneurin.price@gmail.com>
 License: Expat
 
+Files: etc/init.d/zfs-*.in
+Copyright:
+ Tuco Xyz <tuco.xyz@gmail.com>,
+ Petr Salinger <Petr.Salinger@seznam.cz>,
+ Aurelien Jarno <aurel32@debian.org>,
+ Lawrence Livermore National Security, LLC.
+License: BSD-2-clause
+
 Files: include/libnvpair.h
 Copyright: Oracle
 License: CDDL-1.0
@@ -1563,3 +1571,27 @@ License: CDDL-1.0
  of rights under this License and You agree to work with Initial Developer and
  Contributors to distribute such responsibility on an equitable basis. Nothing
  herein is intended or shall be deemed to constitute any admission of liability.
+
+License: BSD-2-clause
+ All rights reserved.
+ .
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ .
+ 1. Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer.
+ .
+ 2. Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
+ and/or other materials provided with the distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
