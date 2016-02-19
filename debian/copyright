@@ -30,6 +30,13 @@ Files: *
 Copyright: Lawrence Livermore National Security, LLC.
 License: CDDL-1.0
 
+Files: cmd/arc_summary/*
+Copyright:
+  2010, 2011, Jason J. Hellenthal <jhell@DataIX.net>
+  2010, Martin Matuska <mm@FreeBSD.org>
+  2008, Ben Rockwood <benr@cuddletech.com>
+License: BSD-2-clause
+
 Files: cmd/mount_zfs/*
 Copyright: Oracle
  Lawrence Livermore National Security, LLC.
@@ -979,6 +986,10 @@ License: CDDL-1.0
 Files: module/zfs/lzjb.c
 Copyright: Oracle
 License: CDDL-1.0
+
+Files: module/zfs/lz4.c
+Copyright: 2011-2013, Yann Collet
+License: BSD-2-clause
 
 Files: module/zfs/metaslab.c
 Copyright: Oracle
