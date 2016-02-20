@@ -118,9 +118,28 @@ Files: cmd/zvol_id/*
 Copyright: Fajar A. Nugraha.
 License: CDDL-1.0
 
-Files: config/config.guess config/config.sub config/depcomp config/ltmain.sh config/missing
+Files: config/*
 Copyright: Free Software Foundation, Inc.
-License: GPL-2+
+License: GPL-2+ with autoconf exception
+
+
+Files: config/ltoptions.m4
+       config/lt~obsolete.m4
+       config/ltversion.m4
+       config/libtool.m4
+       config/ltsugar.m4
+License: PERMISSIVE
+ This file is free software; the Free Software Foundation gives
+ unlimited permission to copy and/or distribute it, with or without
+ modifications, as long as this notice is preserved.
+
+Files: config/install-sh
+Copyright: X Consortium
+License: Expat
+
+Files: contrib/bash_completion.d/zfs
+Copyright: Aneurin Price <aneurin.price@gmail.com>
+License: Expat
 
 Files: debian/*
 Copyright:
@@ -128,6 +147,11 @@ Copyright:
  Carlos Alberto Lopez Perez <clopez@igalia.com>
  Aron Xu <aron@debian.org>
 License: GPL-2+
+
+Files: debian/po/*
+Copyright:
+ 2013, The Debian po file translators.
+License: CDDL-1.0
 
 Files: debian/tree/zfsutils/usr/share/bash-completion/completions/zfs
 Copyright: 2013, Aneurin Price <aneurin.price@gmail.com>
