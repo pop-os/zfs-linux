@@ -160,6 +160,7 @@ Files: config/ltoptions.m4
        config/ltversion.m4
        config/libtool.m4
        config/ltsugar.m4
+Copyright: 1996-2012, Free Software Foundation, Inc.
 License: PERMISSIVE
  This file is free software; the Free Software Foundation gives
  unlimited permission to copy and/or distribute it, with or without
@@ -171,7 +172,7 @@ License: Expat
 
 Files: configure
 Copyright: 1992-1996, 1998-2010, Free Software
-License: PERMISSIVE
+License: PERMISSIVE2
  This configure script is free software; the Free Software Foundation
  gives unlimited permission to copy, distribute and modify it.
 
