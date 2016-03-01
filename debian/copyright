@@ -190,14 +190,14 @@ Copyright:
  2011-2013, Darik Horn <dajhorn@vanadac.com>
 License: GPL-2+
 
-Files: debian/tree/zfsutils/usr/share/bash-completion/completions/zfs
-Copyright: 2010, Aneurin Price <aneurin.price@gmail.com>
-License: Expat
-
 Files: debian/po/*
 Copyright:
  2013, The Debian po file translators.
 License: CDDL-1.0
+
+Files: debian/tree/zfsutils/usr/share/bash-completion/completions/zfs
+Copyright: 2010, Aneurin Price <aneurin.price@gmail.com>
+License: Expat
 
 Files: include/libuutil_common.h
   include/zfs_fletcher.h
