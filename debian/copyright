@@ -181,7 +181,17 @@ Copyright: 2010, 2013, Aneurin Price <aneurin.price@gmail.com>
 License: Expat
 
 Files: debian/*
-Copyright: 2010, 2013, Aneurin Price <aneurin.price@gmail.com>
+Copyright:
+ 2013-2016, Aron Xu <aron@debian.org>
+ 2016, Petter Reinholdtsen <pere@hungry.com>
+ 2013, Carlos Alberto Lopez Perez <clopez@igalia.com>
+ 2013, Turbo Fredriksson <turbo@bayour.com>
+ 2012-2013, Richard Laager <rlaager@wiktel.com>
+ 2011-2013, Darik Horn <dajhorn@vanadac.com>
+License: GPL-2+
+
+Files: debian/tree/zfsutils/usr/share/bash-completion/completions/zfs
+Copyright: 2010, Aneurin Price <aneurin.price@gmail.com>
 License: Expat
 
 Files: debian/po/*
