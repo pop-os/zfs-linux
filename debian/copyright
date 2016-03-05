@@ -762,6 +762,50 @@ Copyright: 2014, Delphix.
   2010, Sun Microsystems, Inc.
 License: CDDL-1.0
 
+Files: man/man1/zhack.1
+       man/man1/zpios.1
+       man/man8/mount.zfs.8
+       man/man8/zinject.8
+Copyright: 2013, Darik Horn <dajhorn@vanadac.com>
+License: CDDL-1.0
+
+Files: man/man1/ztest.1
+Copyright: 2009, Oracle and/or its affiliates.
+  2009, Michael Gebetsroither <michael.geb@gmx.at>
+License: CDDL-1.0
+
+Files: man/man5/zfs-events.5
+       man/man5/zfs-module-parameters.5
+Copyright: 2013, Turbo Fredriksson <turbo@bayour.com>
+License: CDDL-1.0
+
+Files: man/man5/zpool-features.5
+Copyright:
+  2013, Delphix
+  2013, Saso Kiselkov
+  2014, Joyent, Inc.
+License: CDDL-1.0
+
+Files: man/man8/zdb.8
+Copyright: 2012, Richard Lowe.
+  2012, Delphix
+License: CDDL-1.0
+
+Files: man/man8/zed.8.in
+Copyright: 2013-2014, Lawrence Livermore National Security, LLC.
+License: CDDL-1.0
+
+Files: man/man8/zpool.8
+Copyright: 2007, Sun Microsystems, Inc.
+  2011, Nexenta Systems, Inc.
+  2012, Cyril Plisko
+  2013, Delphix
+License: CDDL-1.0
+
+Files: man/man8/zstreamdump.8
+Copyright: 2009, Sun Microsystems, Inc.
+License: CDDL-1.0
+
 Files: module/*
 Copyright: 2011-2014, Delphix.
   2007, 2009, 2010, Sun Microsystems, Inc.
