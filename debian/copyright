@@ -199,9 +199,14 @@ Files: debian/tree/zfsutils/usr/share/bash-completion/completions/zfs
 Copyright: 2010, Aneurin Price <aneurin.price@gmail.com>
 License: Expat
 
-Files: etc/init.d/zfs*
+Files: etc/init.d/zfs-*.in
 Copyright:
-  2015, Turbo Fredriksson.
+  2016, Carlo Landmeter <clandmeter@gmail.com>
+  2015, James Lee <jlee@thestaticvoid.com>
+  2015, Richard Yao <ryao@gentoo.org>
+  2015, SenH <sen@senhaerens.be>
+  2015, Turbo Fredriksson <turbo@bayour.com>
+  2015, yuina822 <ayuichi@club.kyutech.ac.jp>
   2011, Darik Horn.
 License: BSD-2-clause
 
