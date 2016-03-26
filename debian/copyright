@@ -58,6 +58,11 @@ Copyright: 2011, Lawrence Livermore National Security, LLC
   2005, 2010, Oracle and/or its affiliates.
 License: CDDL-1.0
 
+Files: cmd/vdev_id/*
+Copyright: 2011, 2013, Nexenta Systems, Inc.
+  2007, 2009, Sun Microsystems, Inc.
+License: CDDL-1.0
+
 Files: cmd/zdb/*
 Copyright: 2015, Intel Corporation
   2011, 2014, Delphix.
@@ -209,6 +214,10 @@ Copyright:
   2015, yuina822 <ayuichi@club.kyutech.ac.jp>
   2011, Darik Horn.
 License: BSD-2-clause
+
+Files: include/*
+Copyright: 2000, 2002, 2004, 2005, 2007, 2009, 2010, Oracle and/or its affiliates.
+License: CDDL-1.0
 
 Files: include/libuutil_common.h
   include/zfs_fletcher.h
@@ -420,10 +429,17 @@ Copyright: 2008, 2009, Sun Microsystems, Inc.
 License: CDDL-1.0
 
 Files: include/sys/spa.h
-  include/sys/spa_impl.h
 Copyright: 2014, Spectra Logic Corporation
   2011, Nexenta Systems, Inc.
   2011, 2014, 2015, Delphix.
+  2005, 2010, Oracle and/or its affiliates.
+License: CDDL-1.0
+
+Files: include/sys/spa_impl.h
+Copyright: 2016, Actifio, Inc.
+  2014, Spectra Logic Corporation
+  2011, Nexenta Systems, Inc.
+  2011, 2015, Delphix.
   2005, 2010, Oracle and/or its affiliates.
 License: CDDL-1.0
 
@@ -513,6 +529,11 @@ Copyright: 2013, Saso Kiselkov.
   2005, 2010, Oracle and/or its affiliates.
 License: CDDL-1.0
 
+Files: include/sys/zvol.h
+Copyright: 2016, Actifio, Inc.
+  2005, 2006, 2010, Oracle and/or its affiliates.
+License: CDDL-1.0
+
 Files: include/zfeature_common.h
 Copyright: 2013, Saso Kiselkov.
   2013, Delphix.
@@ -534,6 +555,10 @@ Files: include/zpios-ctl.h
 Copyright: 2008-2010, Lawrence Livermore National Security, LLC
   2004, Cluster File Systems, Inc
 License: GPL-2+
+
+Files: lib/*
+Copyright: 2000, 2002, 2004, 2005, 2007, 2009, 2010, Oracle and/or its affiliates.
+License: CDDL-1.0
 
 Files: lib/libnvpair/*
 Copyright: 2011-2015, Delphix.
@@ -927,7 +952,8 @@ Copyright: 2014, HybridCluster.
 License: CDDL-1.0
 
 Files: module/zfs/dmu_objset.c
-Copyright: 2015, STRATO AG, Inc.
+Copyright: 2016, Actifio, Inc.
+  2015, STRATO AG, Inc.
   2015, Nexenta Systems, Inc.
   2014, Spectra Logic Corporation
   2013, Saso Kiselkov.
@@ -938,7 +964,8 @@ Copyright: 2015, STRATO AG, Inc.
 License: CDDL-1.0
 
 Files: module/zfs/dmu_send.c
-Copyright: 2014, Joyent, Inc.
+Copyright: 2016, Actifio, Inc.
+  2014, Joyent, Inc.
   2011, Nexenta Systems, Inc.
   2011, 2014, Delphix.
   2005, 2010, Oracle and/or its affiliates.
@@ -979,7 +1006,8 @@ Copyright: 2014, Spectra Logic Corporation
 License: CDDL-1.0
 
 Files: module/zfs/dsl_dataset.c
-Copyright: 2014, Spectra Logic Corporation
+Copyright: 2016, Actifio, Inc.
+  2014, Spectra Logic Corporation
   2014, RackTop Systems
   2014, Joyent, Inc.
   2013, Delphix.
@@ -987,14 +1015,16 @@ Copyright: 2014, Spectra Logic Corporation
 License: CDDL-1.0
 
 Files: module/zfs/dsl_destroy.c
-Copyright: 2013, Steven Hartland.
+Copyright: 2016, Actifio, Inc.
+  2013, Steven Hartland.
   2012, 2013, Joyent, Inc.
   2012, 2014, Delphix.
   2005, 2010, Oracle and/or its affiliates.
 License: CDDL-1.0
 
 Files: module/zfs/dsl_dir.c
-Copyright: 2014, Spectra Logic Corporation
+Copyright: 2016, Actifio, Inc.
+  2014, Spectra Logic Corporation
   2014, Joyent, Inc.
   2013, Martin Matuska.
   2012, 2014, Delphix.
@@ -1040,7 +1070,8 @@ Copyright: 2013, Saso Kiselkov.
 License: CDDL-1.0
 
 Files: module/zfs/spa.c
-Copyright: 2014, Spectra Logic Corporation
+Copyright: 2016, Actifio, Inc.
+  2014, Spectra Logic Corporation
   2013, Delphix.
   2013, 2014, Nexenta Systems, Inc.
   2005, 2010, Oracle and/or its affiliates.
@@ -1077,6 +1108,11 @@ Copyright: 2014, Nexenta Systems, Inc.
   2013, Delphix.
 License: CDDL-1.0
 
+Files: module/zfs/zfs.mod.c
+Copyright: 2011-2015, Delphix.
+  2000, 2005-2010, Oracle and/or its affiliates.
+License: CDDL-1.0
+
 Files: module/zfs/zfs_ctldir.c
 Copyright: 2013, Delphix.
   2011, Lawrence Livermore National Security, LLC
@@ -1084,7 +1120,8 @@ Copyright: 2013, Delphix.
 License: CDDL-1.0
 
 Files: module/zfs/zfs_ioctl.c
-Copyright: 2013, Steven Hartland.
+Copyright: 2016, Actifio, Inc.
+  2013, Steven Hartland.
   2013, Saso Kiselkov.
   2012, Pawel Jakub Dawidek <pawel@dawidek.net>
   2012, 2014, Joyent, Inc.
