@@ -1,0 +1,21 @@
+zfs-linux (0.6.5.6-1) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * New upstream version 0.6.5.6.
+
+  [ Petter Reinholdtsen ]
+  * Generated new copyright.cme file based on version 0.6.5.6.
+  * Updated d/copyright file, add missing BSD licensed init.d scripts, and
+    new copyright holders in the new upstream version.
+  * Updated Standards-Version from 3.9.6 to 3.9.7.
+  * Added myself as uploader.
+  * Updated debconf po files based on newest pot file.
+  * Correct URL to git repo in d/control.
+
+ -- Petter Reinholdtsen <pere@debian.org>  Sat, 26 Mar 2016 07:08:11 +0000
+
+zfs-linux (0.6.5.5-1) unstable; urgency=medium
+
+  * Initial Release (Closes: #686447)
+
+ -- Aron Xu <aron@debian.org>  Sun, 20 Mar 2016 22:57:06 +0800

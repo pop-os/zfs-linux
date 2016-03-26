@@ -1,0 +1,29 @@
+../tree/zfsutils/* /
+usr/lib/systemd/system/zfs* lib/systemd/system/
+usr/lib/systemd/system-preset/ lib/systemd/
+usr/lib/modules-load.d/ lib/
+lib/udev/
+etc/default/zfs
+etc/zfs/zfs-functions
+bin/
+sbin/fsck.zfs
+sbin/mount.zfs
+sbin/ztest
+sbin/zstreamdump
+sbin/zinject
+sbin/zhack
+sbin/zdb
+sbin/zpios
+sbin/zpool
+sbin/zfs
+usr/share/zfs/
+usr/share/man/man1/
+usr/share/man/man5/
+usr/share/man/man8/zstreamdump.8
+usr/share/man/man8/zpool.8
+usr/share/man/man8/zinject.8
+usr/share/man/man8/zfs.8
+usr/share/man/man8/zdb.8
+usr/share/man/man8/vdev_id.8
+usr/share/man/man8/mount.zfs.8
+usr/share/man/man8/fsck.zfs.8
