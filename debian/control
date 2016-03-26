@@ -3,6 +3,7 @@ Section: contrib/kernel
 Priority: optional
 Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@lists.alioth.debian.org>
 Uploaders: Aron Xu <aron@debian.org>,
+           Petter Reinholdtsen <pere@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>
 Build-Depends: dh-autoreconf,
                dh-systemd,
