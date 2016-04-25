@@ -24,6 +24,10 @@ ifndef SPL
 SPL=/usr/src/spl-$(VERSION)
 endif
 
+ifndef SPLOBJ
+SPLOBJ=/var/lib/dkms/spl/$(VERSION)/$(KVERS)/$(shell dpkg-architecture -qDEB_TARGET_GNU_CPU)
+endif
+
 non_epoch_version=$(shell echo $(KVERS) | perl -pe 's/^\d+://')
 PACKAGE=zfs
 pmodules = $(PACKAGE)-modules-$(non_epoch_version)
@@ -150,7 +154,8 @@ override_dh_configure_modules_udeb_stamp:
 		--with-config=kernel \
 		--with-linux=$(KSRC) \
 		--with-linux-obj=$(KOBJ) \
-		--with-spl=$(SPL)
+		--with-spl=$(SPL) \
+		--with-spl-obj=$(SPLOBJ)
 	touch override_dh_configure_modules_udeb_stamp
 
 override_dh_configure_modules: override_dh_configure_modules_stamp
@@ -159,7 +164,8 @@ override_dh_configure_modules_stamp:
 		--with-config=kernel \
 		--with-linux=$(KSRC) \
 		--with-linux-obj=$(KOBJ) \
-		--with-spl=$(SPL)
+		--with-spl=$(SPL) \
+		--with-spl-obj=$(SPLOBJ)
 	touch override_dh_configure_modules_stamp
 
 override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configure_modules_udeb
