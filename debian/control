@@ -16,7 +16,9 @@ Build-Depends: dh-autoreconf,
                po-debconf,
                uuid-dev,
                zlib1g-dev,
-               python
+               python,
+               libblkid-dev,
+               libattr1-dev
 Standards-Version: 3.9.7
 Homepage: http://www.zfsonlinux.org/
 Vcs-Git: git://anonscm.debian.org/pkg-zfsonlinux/zfs.git
