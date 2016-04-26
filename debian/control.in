@@ -17,6 +17,7 @@ Build-Depends: dh-autoreconf,
                uuid-dev,
                zlib1g-dev,
                python,
+               dh-python,
                libblkid-dev,
                libattr1-dev
 Standards-Version: 3.9.7
