@@ -125,6 +125,8 @@ ifeq ($(BUILD_UDEB), true)
 endif
 
 override_dh_auto_clean:
+	find . -name .gitignore -delete
+	rm -rf zfs-$(VERSION)
 	dh_auto_clean
 	debconf-updatepo
 	@if test -e META.orig; then mv META.orig META; fi
