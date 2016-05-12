@@ -1,3 +1,27 @@
+zfs-linux (0.6.5.6-2) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * Adding smoke testing scripts from Ubuntu
+  * Fix binary module builds
+  * Add libblkid-dev, libattr1-dev to build-dep
+  * Re-sync source tree
+  * Add dh-python to b-d
+  * Remove .gitignore files and clean build tree
+  * Scrub all healthy pools monthly from Richard Laager
+
+  [ Petter Reinholdtsen ]
+  * Copied 1000-ppc64el-endian-support.patch from Ubuntu to fix endian
+    build problem on ppc64el
+  * Copied 1001-Fix-aarch64-compilation.patch from Ubuntu to fix build
+    problem on arm64.
+  * Copied 0001-Prevent-manual-builds-in-the-DKMS-source.patch from
+    Ubuntu to block manual building in the DKMS source tree.
+  * Updated Standards-Version from 3.9.7 to 3.9.8.
+  * Bring some files back to the upstream tarball content to get gbp
+    buildpackage working.
+
+ -- Petter Reinholdtsen <pere@debian.org>  Thu, 12 May 2016 12:19:55 +0200
+
 zfs-linux (0.6.5.6-1) unstable; urgency=medium
 
   [ Aron Xu ]
