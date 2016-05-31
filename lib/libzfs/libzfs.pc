@@ -1,0 +1,12 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libzfs
+Description: LibZFS library
+Version: 0.6.5.7
+URL: http://zfsonlinux.org
+Requires: libzfs_core
+Cflags: -I${includedir}/libzfs -I${includedir}/libspl
+Libs: -L${libdir} -lzfs
