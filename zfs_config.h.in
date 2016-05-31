@@ -345,6 +345,9 @@
 /* xattr_handler->get() wants inode */
 #undef HAVE_XATTR_GET_INODE
 
+/* xattr_handler has name */
+#undef HAVE_XATTR_HANDLER_NAME
+
 /* xattr_handler->list() wants dentry */
 #undef HAVE_XATTR_LIST_DENTRY
 
