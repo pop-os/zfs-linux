@@ -1,4 +1,3 @@
 0001-Prevent-manual-builds-in-the-DKMS-source.patch
 1000-ppc64el-endian-support.patch
-1001-Fix-aarch64-compilation.patch
 1002-fix-mips-build.patch
