@@ -1,3 +1,18 @@
+zfs-linux (0.6.5.7-1) unstable; urgency=medium
+
+  [ YunQiang Su ]
+  * 1002-fix-mips-build.patch: fix builds on mips* archs
+
+  [ Aron Xu ]
+  * New upstream release.
+  * 1001-Fix-aarch64-compilation.patch: dropped, not needed anymore
+  * Merge patches from Ubuntu:
+    - 0002-Check-for-META-and-DCH-consistency-in-autoconf.patch
+    - 0003-Add-libuutil-to-LIBADD-for-libzfs-and-libzfs_core.patch
+    - enable-zed.patch
+
+ -- Aron Xu <aron@debian.org>  Tue, 31 May 2016 14:10:49 +0800
+
 zfs-linux (0.6.5.6-2) unstable; urgency=medium
 
   [ Aron Xu ]
