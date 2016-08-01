@@ -1,3 +1,9 @@
+zfs-linux (0.6.5.7-2) unstable; urgency=medium
+
+  * Change utilities path (bindir) to /usr/sbin
+
+ -- Eric Desrochers <eric.desrochers@canonical.com>  Mon, 01 Aug 2016 15:53:58 -0400
+
 zfs-linux (0.6.5.7-1) unstable; urgency=medium
 
   [ YunQiang Su ]
