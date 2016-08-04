@@ -101,7 +101,10 @@ Description: OpenZFS filesystem kernel modules for Linux
 
 Package: zfs-initramfs
 Architecture: all
-Depends: initramfs-tools, zfs-modules | zfs-dkms, zfsutils-linux, ${misc:Depends}
+Depends: initramfs-tools,
+ busybox-initramfs | busybox-static | busybox,
+ zfs-modules | zfs-dkms, zfsutils-linux,
+ ${misc:Depends}
 Description: OpenZFS root filesystem capabilities for Linux - initramfs
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
