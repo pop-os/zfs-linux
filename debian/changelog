@@ -1,8 +1,20 @@
 zfs-linux (0.6.5.7-2) unstable; urgency=medium
 
-  * Change utilities path (bindir) to /usr/sbin
+  [ Aron Xu ]
+  * Add busybox to zfs-initramfs list of dependencies. (Closes: #824976)
 
- -- Eric Desrochers <eric.desrochers@canonical.com>  Mon, 01 Aug 2016 15:53:58 -0400
+  [ Petter Reinholdtsen ]
+  * Updated Danish debconf translation by Joe Hansen. (Closes: #830652)
+  * Added Dutch (nl) debconf translation by Frans Spiesschaert. (Closes: #832280)
+  * Norwegian Bokmål (nb) debconf template translation by Petter Reinholdtsen.
+
+  [ Eric Desrochers ]
+  * Change utilities path (bindir) to /usr/sbin. (Closes: #832938)
+
+  [ Carlos Alberto Lopez Perez]
+  * Add tunable to ignore hole_birth, and enable it by default. (Closes: #830824)
+
+ -- Carlos Alberto Lopez Perez <clopez@igalia.com>  Tue, 16 Aug 2016 17:43:48 +0200
 
 zfs-linux (0.6.5.7-1) unstable; urgency=medium
 
