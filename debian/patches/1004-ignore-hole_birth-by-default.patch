@@ -1,0 +1,20 @@
+Description: Enable by default the tunable to ignore hole_birth.
+  Once hole_birth becomes more reliable, this patch should be
+  removed, making the tunable default back to false.
+Bug: https://github.com/zfsonlinux/zfs/issues/4050
+Bug-Debian: https://bugs.debian.org/830824
+Forwarded: https://github.com/zfsonlinux/zfs/pull/4833
+Author: Carlos Alberto Lopez Perez <clopez@igalia.com>
+Last-Update: 2016-08-16
+
+--- a/module/zfs/dmu_traverse.c
++++ b/module/zfs/dmu_traverse.c
+@@ -39,7 +39,7 @@
+ #include <sys/zfeature.h>
+ 
+ int32_t zfs_pd_bytes_max = 50 * 1024 * 1024;	/* 50MB */
+-int32_t ignore_hole_birth = 0;
++int32_t ignore_hole_birth = 1;
+ 
+ typedef struct prefetch_data {
+ 	kmutex_t pd_mtx;

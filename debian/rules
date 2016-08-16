@@ -48,7 +48,7 @@ endif
 
 	@# Build the userland, but don't build the kernel modules.
 	dh_auto_configure -- \
-	  --bindir=/bin \
+	  --bindir=/usr/sbin \
 	  --sbindir=/sbin \
 	  --libdir=/lib \
 	  --with-udevdir=/lib/udev \

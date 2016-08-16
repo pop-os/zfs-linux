@@ -1,3 +1,12 @@
+Description: Block manual building in the DKMS source tree.
+  To avoid messing up future DKMS builds and the zfs installation,
+  block manual building of the DKMS source tree.
+Author: unknown
+Origin: ubuntu
+Forwarded: no
+Reviewed-By: Petter Reinholdtsen <pere@hungry.com>
+Last-Update: 2016-05-12
+
 Index: zfs-linux-0.6.5.6/config/dkms.m4
 ===================================================================
 --- /dev/null
@@ -35,7 +44,7 @@ Index: zfs-linux-0.6.5.6/config/zfs-build.m4
 +++ zfs-linux-0.6.5.6/config/zfs-build.m4
 @@ -87,8 +87,8 @@ AC_DEFUN([ZFS_AC_CONFIG], [
  	ZFS_AC_CONFIG_ALWAYS
- 
+
  	case "$ZFS_CONFIG" in
 -		kernel) ZFS_AC_CONFIG_KERNEL ;;
  		user)	ZFS_AC_CONFIG_USER   ;;
