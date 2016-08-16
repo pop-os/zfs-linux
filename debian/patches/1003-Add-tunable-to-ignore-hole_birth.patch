@@ -1,0 +1,63 @@
+Description: Add tunable to ignore hole_birth.
+  Adds a module option which disables the hole_birth optimization
+  which has been responsible for several recent bugs, including
+  issue https://github.com/zfsonlinux/zfs/issues/4050.
+Forwarded: https://github.com/zfsonlinux/zfs/pull/4833
+Author: Rich Ercolani <rincebrain@gmail.com>
+Reviewed-By: Brian Behlendorf <behlendorf1@llnl.gov>
+Applied-Upstream: 6d836e6f8b358270d55a57ad8e8868c957f15bf3 (master commit)
+Last-Update: 2016-08-16
+---
+ man/man5/zfs-module-parameters.5 | 13 +++++++++++++
+ module/zfs/dmu_traverse.c        |  6 +++++-
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+--- a/man/man5/zfs-module-parameters.5
++++ b/man/man5/zfs-module-parameters.5
+@@ -27,6 +27,19 @@
+ .sp
+ .ne 2
+ .na
++\fBignore_hole_birth\fR (int)
++.ad
++.RS 12n
++When set, the hole_birth optimization will not be used, and all holes will
++always be sent on zfs send. Useful if you suspect your datasets are affected
++by a bug in hole_birth.
++.sp
++Use \fB1\fR for on and \fB0\fR (default) for off.
++.RE
++
++.sp
++.ne 2
++.na
+ \fBl2arc_feed_again\fR (int)
+ .ad
+ .RS 12n
+--- a/module/zfs/dmu_traverse.c
++++ b/module/zfs/dmu_traverse.c
+@@ -39,6 +39,7 @@
+ #include <sys/zfeature.h>
+ 
+ int32_t zfs_pd_bytes_max = 50 * 1024 * 1024;	/* 50MB */
++int32_t ignore_hole_birth = 0;
+ 
+ typedef struct prefetch_data {
+ 	kmutex_t pd_mtx;
+@@ -250,7 +251,7 @@
+ 		 *
+ 		 * Note that the meta-dnode cannot be reallocated.
+ 		 */
+-		if ((!td->td_realloc_possible ||
++		if (!ignore_hole_birth && (!td->td_realloc_possible ||
+ 			zb->zb_object == DMU_META_DNODE_OBJECT) &&
+ 			td->td_hole_birth_enabled_txg <= td->td_min_txg)
+ 			return (0);
+@@ -692,4 +693,7 @@
+ 
+ module_param(zfs_pd_bytes_max, int, 0644);
+ MODULE_PARM_DESC(zfs_pd_bytes_max, "Max number of bytes to prefetch");
++
++module_param(ignore_hole_birth, int, 0644);
++MODULE_PARM_DESC(ignore_hole_birth, "Ignore hole_birth txg for send");
+ #endif
