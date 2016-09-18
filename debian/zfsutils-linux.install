@@ -1,5 +1,9 @@
 ../tree/zfsutils/* /
-usr/lib/systemd/system/zfs* lib/systemd/system/
+usr/lib/systemd/system/zfs-mount.service lib/systemd/system/
+usr/lib/systemd/system/zfs-share.service lib/systemd/system/
+usr/lib/systemd/system/zfs-import-scan.service lib/systemd/system/
+usr/lib/systemd/system/zfs-import-cache.service lib/systemd/system/
+usr/lib/systemd/system/zfs.target lib/systemd/system/
 usr/lib/systemd/system-preset/ lib/systemd/
 usr/lib/modules-load.d/ lib/
 lib/udev/
