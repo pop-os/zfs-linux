@@ -12,6 +12,9 @@
 /* kmap_atomic wants 1 args */
 #undef HAVE_1ARG_KMAP_ATOMIC
 
+/* submit_bio() wants 1 arg */
+#undef HAVE_1ARG_SUBMIT_BIO
+
 /* bdi_setup_and_register() wants 2 args */
 #undef HAVE_2ARGS_BDI_SETUP_AND_REGISTER
 
@@ -39,6 +42,9 @@
 /* bdev_physical_block_size() is available */
 #undef HAVE_BDEV_PHYSICAL_BLOCK_SIZE
 
+/* bio->bi_opf is defined */
+#undef HAVE_BIO_BI_OPF
+
 /* bio has bi_iter */
 #undef HAVE_BIO_BVEC_ITER
 
@@ -65,6 +71,12 @@
 
 /* blk_queue_max_segments() is available */
 #undef HAVE_BLK_QUEUE_MAX_SEGMENTS
+
+/* blk_queue_write_cache() exists */
+#undef HAVE_BLK_QUEUE_WRITE_CACHE
+
+/* blk_queue_write_cache() is GPL-only */
+#undef HAVE_BLK_QUEUE_WRITE_CACHE_GPL_ONLY
 
 /* struct block_device_operations.release returns void */
 #undef HAVE_BLOCK_DEVICE_OPERATIONS_RELEASE_VOID
@@ -101,9 +113,6 @@
 
 /* current->bio_tail exists */
 #undef HAVE_CURRENT_BIO_TAIL
-
-/* current_umask() exists */
-#undef HAVE_CURRENT_UMASK
 
 /* DECLARE_EVENT_CLASS() is available */
 #undef HAVE_DECLARE_EVENT_CLASS
@@ -207,6 +216,9 @@
 /* is_owner_or_cap() exists */
 #undef HAVE_IS_OWNER_OR_CAP
 
+/* uncached_acl_sentinel() exists */
+#undef HAVE_KERNEL_GET_ACL_HANDLE_CACHE
+
 /* kernel defines KOBJ_NAME_LEN */
 #undef HAVE_KOBJ_NAME_LEN
 
@@ -258,9 +270,6 @@
 /* iops->permission() with nameidata exists */
 #undef HAVE_PERMISSION_WITH_NAMEIDATA
 
-/* inode contains i_acl and i_default_acl */
-#undef HAVE_POSIX_ACL_CACHING
-
 /* posix_acl_chmod() exists */
 #undef HAVE_POSIX_ACL_CHMOD
 
@@ -276,6 +285,9 @@
 /* posix_acl_release() is GPL-only */
 #undef HAVE_POSIX_ACL_RELEASE_GPL_ONLY
 
+/* posix_acl_valid() wants user namespace */
+#undef HAVE_POSIX_ACL_VALID_WITH_NS
+
 /* iops->put_link() cookie */
 #undef HAVE_PUT_LINK_COOKIE
 
@@ -287,6 +299,15 @@
 
 /* REQ_FAILFAST_MASK is defined */
 #undef HAVE_REQ_FAILFAST_MASK
+
+/* REQ_OP_DISCARD is defined */
+#undef HAVE_REQ_OP_DISCARD
+
+/* REQ_OP_FLUSH is defined */
+#undef HAVE_REQ_OP_FLUSH
+
+/* REQ_OP_SECURE_ERASE is defined */
+#undef HAVE_REQ_OP_SECURE_DISCARD
 
 /* set_nlink() is available */
 #undef HAVE_SET_NLINK
@@ -330,6 +351,9 @@
 /* fops->iterate() is available */
 #undef HAVE_VFS_ITERATE
 
+/* fops->iterate_shared() is available */
+#undef HAVE_VFS_ITERATE_SHARED
+
 /* fops->readdir() is available */
 #undef HAVE_VFS_READDIR
 
@@ -338,6 +362,9 @@
 
 /* xattr_handler->get() wants dentry */
 #undef HAVE_XATTR_GET_DENTRY
+
+/* xattr_handler->get() wants both dentry and inode */
+#undef HAVE_XATTR_GET_DENTRY_INODE
 
 /* xattr_handler->get() wants xattr_handler */
 #undef HAVE_XATTR_GET_HANDLER
@@ -362,6 +389,9 @@
 
 /* xattr_handler->set() wants dentry */
 #undef HAVE_XATTR_SET_DENTRY
+
+/* xattr_handler->set() wants both dentry and inode */
+#undef HAVE_XATTR_SET_DENTRY_INODE
 
 /* xattr_handler->set() wants xattr_handler */
 #undef HAVE_XATTR_SET_HANDLER
