@@ -72,6 +72,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-bio-bvec-iter.m4 \
 	$(top_srcdir)/config/kernel-bio-end-io-t-args.m4 \
 	$(top_srcdir)/config/kernel-bio-failfast.m4 \
+	$(top_srcdir)/config/kernel-bio-op.m4 \
 	$(top_srcdir)/config/kernel-bio-rw-barrier.m4 \
 	$(top_srcdir)/config/kernel-bio-rw-discard.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-flush.m4 \
@@ -122,6 +123,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
+	$(top_srcdir)/config/kernel-submit_bio.m4 \
 	$(top_srcdir)/config/kernel-truncate-range.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
 	$(top_srcdir)/config/kernel-vfs-iterate.m4 \
@@ -1213,6 +1215,13 @@ shellcheck:
 			shellcheck --format gcc "$$file"; \
 		 done; \
 	 fi
+
+lint: cppcheck
+
+cppcheck:
+	@if type cppcheck > /dev/null 2>&1; then \
+		cppcheck --quiet --force ${top_srcdir}; \
+	fi
 
 ctags:
 	$(RM) tags

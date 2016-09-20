@@ -4,5 +4,3 @@
 1000-ppc64el-endian-support.patch
 1002-fix-mips-build.patch
 enable-zed.patch
-1003-Add-tunable-to-ignore-hole_birth.patch
-1004-ignore-hole_birth-by-default.patch
