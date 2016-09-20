@@ -1,3 +1,19 @@
+zfs-linux (0.6.5.8-1) unstable; urgency=medium
+
+  [ Carlos Alberto Lopez Perez ]
+  * Reflow changelog from last upload to avoid lintian warning.
+
+  [ Aron Xu ]
+  * Imported Upstream version 0.6.5.8 (Closes: #838192)
+  * Conflicts with zutils (Closes: #836853)
+
+  [ Zhou Mo ]
+  * Patch: remove merged patches.
+  * Upstream renamed zed.service to zfs-zed.service .
+  * Avoid installing zfs-zed.service twice.
+
+ -- Aron Xu <aron@debian.org>  Tue, 20 Sep 2016 15:20:21 +0800
+
 zfs-linux (0.6.5.7-2) unstable; urgency=medium
 
   [ Aron Xu ]
