@@ -19,9 +19,9 @@ sbin/zdb
 sbin/zpios
 sbin/zpool
 sbin/zfs
-usr/sbin/arc_summary.py
-usr/sbin/arcstat.py
-usr/sbin/dbufstat.py
+usr/sbin/arc_summary
+usr/sbin/arcstat
+usr/sbin/dbufstat
 usr/share/zfs/
 usr/share/man/man1/
 usr/share/man/man5/
