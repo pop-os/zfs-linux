@@ -4,3 +4,4 @@
 1000-ppc64el-endian-support.patch
 1002-fix-mips-build.patch
 enable-zed.patch
+1001-cmd-python-exec-path.patch
