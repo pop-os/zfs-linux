@@ -158,7 +158,7 @@ Copyright: OPENSOLARIS.LICENSE README.markdown
 License: UNKNOWN
  Please fill license UNKNOWN from header of debian/rules
 
-Files: debian/tree/zfsutils/usr/share/bash-completion/*
+Files: debian/tree/zfsutils-linux/usr/share/bash-completion/*
 Copyright: 2010, 2013, Aneurin Price <aneurin.price@gmail.com>
 License: Expat
 

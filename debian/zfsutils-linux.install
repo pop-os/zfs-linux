@@ -1,4 +1,4 @@
-../tree/zfsutils/* /
+../tree/zfsutils-linux/* /
 usr/lib/systemd/system/zfs-mount.service lib/systemd/system/
 usr/lib/systemd/system/zfs-share.service lib/systemd/system/
 usr/lib/systemd/system/zfs-import-scan.service lib/systemd/system/
