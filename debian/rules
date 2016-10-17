@@ -69,6 +69,10 @@ override_dh_auto_install:
 	mv '$(CURDIR)/debian/tmp/usr/sbin/arcstat.py' '$(CURDIR)/debian/tmp/usr/sbin/arcstat'
 	mv '$(CURDIR)/debian/tmp/usr/sbin/dbufstat.py' '$(CURDIR)/debian/tmp/usr/sbin/dbufstat'
 
+	@# Zed has dependencies outside of the system root.
+	$(INSTALL) -d '$(CURDIR)/debian/tmp/usr/sbin/'
+	mv '$(CURDIR)/debian/tmp/sbin/zed' '$(CURDIR)/debian/tmp/usr/sbin/zed'
+
 	@# Get a bare copy of the source code for DKMS.
 	@# This creates the $(CURDIR)/$(NAME)-$(VERSION)/ tree, which does not
 	@# contain the userland sources. NB: Remove-userland-dist-rules.patch
