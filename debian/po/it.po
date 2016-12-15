@@ -1,13 +1,13 @@
 # Italian translation of zfs-linux debconf messages
-# Copyright (C) 2013, zfs-linux package copyright holder
+# Copyright (C) 2016, zfs-linux package copyright holder
 # This file is distributed under the same license as the zfs-linux package.
-# Beatrice Torracca <beatricet@libero.it>, 2013.
+# Beatrice Torracca <beatricet@libero.it>, 2013, 2016.
 msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
 "POT-Creation-Date: 2015-11-01 14:11+0800\n"
-"PO-Revision-Date: 2013-07-28 09:01+0200\n"
+"PO-Revision-Date: 2016-10-01 14:42+0200\n"
 "Last-Translator: Beatrice Torracca <beatricet@libero.it>\n"
 "Language-Team: Italian <debian-l10n-italian@lists.debian.org>\n"
 "Language: it\n"
@@ -69,7 +69,7 @@ msgstr ""
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid "Licenses of ZFS and Linux are incompatible"
-msgstr ""
+msgstr "Le licenze di ZFS e di Linux non sono compatibili"
 
 #. Type: note
 #. Description
@@ -82,6 +82,13 @@ msgid ""
 "prevents using pieces of code exclusively available under one license with "
 "pieces of code exclusively available under the other in the same binary."
 msgstr ""
+"ZFS è rilasciato sotto la licenza CDDL (Common Development and Distribution "
+"License) e il kernel Linux sotto la licenza GNU GPL-2 (General Public "
+"License Version 2). Sebbene siano entrambe licenze libere e open source, "
+"sono licenze restrittive. La loro combinazione crea problemi perché "
+"impedisce nello stesso binario l'utilizzo di parti di codice disponibili "
+"esclusivamente con una licenza con le parti di codice disponibili "
+"esclusivamente con l'altra."
 
 #. Type: note
 #. Description
@@ -92,3 +99,7 @@ msgid ""
 "the binaries in the same media (disk images, virtual appliances, etc) may "
 "lead to infringing."
 msgstr ""
+"Si sta per compilare ZFS usando DKMS e in questo modo non verranno compilati "
+"in un singolo binario monolitico. Notare che la distribuzione di entrambi i "
+"binari nello stesso supporto (immagini di dischi, apparecchiature virtuali, "
+"ecc.) potrebbe portare a una violazione."
