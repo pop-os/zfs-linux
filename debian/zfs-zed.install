@@ -1,4 +1,4 @@
-sbin/zed
+usr/sbin/zed
 etc/zfs/zed.d/*
 usr/lib/*/zfs/zed.d/*
 usr/lib/systemd/system/zfs-zed.service lib/systemd/system/

@@ -200,7 +200,7 @@ Copyright:
  2013, The Debian po file translators.
 License: CDDL-1.0
 
-Files: debian/tree/zfsutils/usr/share/bash-completion/completions/zfs
+Files: debian/tree/zfsutils-linux/usr/share/bash-completion/completions/zfs
 Copyright: 2010, Aneurin Price <aneurin.price@gmail.com>
 License: Expat
 
