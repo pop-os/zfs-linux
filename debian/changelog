@@ -1,3 +1,29 @@
+zfs-linux (0.6.5.8-2) unstable; urgency=medium
+
+  [ Richard Laager ]
+  * Remove .py extension from utilities in /usr/sbin as per policy
+    10.4 Scripts (LP: #1628279)
+
+  [ Colin Ian King ]
+  * Use python3 for arcstat.py, arc_summary.py & dbufstat.py (LP: #1627909)
+
+  [ Richard Laager ]
+  * Set PATH in cron.d job to fix monthly scrubs. (LP: #1548009)
+
+  [ Aron Xu ]
+  * Install zed into /usr/sbin
+  * Rename zfsutils path to follow the package name
+  * Add missing part in python3 move
+  * Install zed to /usr/sbin
+
+  [ Petter Reinholdtsen ]
+  * Updated Italian debconf translation by Beatrice Torracca.
+    (Closes: #846928)
+  * Added patch 1003-linux-4.9-compat.patch from upstream to build with
+    Linux kernel 4.9. (Closes: #847018)
+
+ -- Aron Xu <aron@debian.org>  Sat, 17 Dec 2016 17:42:21 +0800
+
 zfs-linux (0.6.5.8-1) unstable; urgency=medium
 
   [ Carlos Alberto Lopez Perez ]
