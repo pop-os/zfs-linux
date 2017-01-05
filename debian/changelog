@@ -1,3 +1,9 @@
+zfs-linux (0.6.5.8-3) unstable; urgency=medium
+
+  * Fix the path on the zfs-zed unit file (Closes: #849813)
+
+ -- Carlos Alberto Lopez Perez <clopez@igalia.com>  Thu, 05 Jan 2017 16:23:16 +0100
+
 zfs-linux (0.6.5.8-2) unstable; urgency=medium
 
   [ Richard Laager ]
