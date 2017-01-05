@@ -6,3 +6,4 @@
 enable-zed.patch
 1001-cmd-python-exec-path.patch
 1003-linux-4.9-compat.patch
+1004-zed-service-bindir.patch
