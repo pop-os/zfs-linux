@@ -1,8 +1,14 @@
+zfs-linux (0.6.5.8-3) unstable; urgency=medium
+
+  * Fix the path on the zfs-zed unit file (Closes: #849813)
+
+ -- Carlos Alberto Lopez Perez <clopez@igalia.com>  Thu, 05 Jan 2017 16:23:16 +0100
+
 zfs-linux (0.6.5.8-2) unstable; urgency=medium
 
   [ Richard Laager ]
-  * Remove .py extension from utilities in /usr/sbin as per policy 10.4 Scripts
-    (LP: #1628279)
+  * Remove .py extension from utilities in /usr/sbin as per policy
+    10.4 Scripts (LP: #1628279)
 
   [ Colin Ian King ]
   * Use python3 for arcstat.py, arc_summary.py & dbufstat.py (LP: #1627909)
@@ -17,9 +23,10 @@ zfs-linux (0.6.5.8-2) unstable; urgency=medium
   * Install zed to /usr/sbin
 
   [ Petter Reinholdtsen ]
-  * Updated Italian debconf translation by Beatrice Torracca. (Closes: #846928)
-  * Added patch 1003-linux-4.9-compat.patch from upstream to build with Linux
-    kernel 4.9. (Closes: #847018)
+  * Updated Italian debconf translation by Beatrice Torracca.
+    (Closes: #846928)
+  * Added patch 1003-linux-4.9-compat.patch from upstream to build with
+    Linux kernel 4.9. (Closes: #847018)
 
  -- Aron Xu <aron@debian.org>  Sat, 17 Dec 2016 17:42:21 +0800
 
