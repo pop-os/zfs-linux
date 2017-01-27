@@ -52,6 +52,8 @@ endif
 	  --sbindir=/sbin \
 	  --libdir=/lib \
 	  --with-udevdir=/lib/udev \
+	  --with-systemdunitdir=/lib/systemd/system \
+	  --with-systemdpresetdir=/lib/systemd/system-preset \
 	  --with-config=user
 
 override_dh_auto_test:
