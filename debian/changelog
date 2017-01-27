@@ -1,3 +1,15 @@
+zfs-linux (0.6.5.8-4) UNRELEASED; urgency=medium
+
+  [ Aron Xu ]
+  * Linux 4.9 compatibility (Closes: #851513)
+  * Remove not needed .pc directory
+
+  [ Lukas Wunner ]
+  * Cherry picks for root zpool with dracut (Closes: #849969)
+  * Fix installation path of systemd files
+
+ -- Aron Xu <aron@debian.org>  Sat, 28 Jan 2017 02:43:28 +0800
+
 zfs-linux (0.6.5.8-3) unstable; urgency=medium
 
   * Fix the path on the zfs-zed unit file (Closes: #849813)
