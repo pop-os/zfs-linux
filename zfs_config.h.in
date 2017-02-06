@@ -12,11 +12,17 @@
 /* kmap_atomic wants 1 args */
 #undef HAVE_1ARG_KMAP_ATOMIC
 
+/* lookup_bdev() wants 1 arg */
+#undef HAVE_1ARG_LOOKUP_BDEV
+
 /* submit_bio() wants 1 arg */
 #undef HAVE_1ARG_SUBMIT_BIO
 
 /* bdi_setup_and_register() wants 2 args */
 #undef HAVE_2ARGS_BDI_SETUP_AND_REGISTER
+
+/* lookup_bdev() wants 2 args */
+#undef HAVE_2ARGS_LOOKUP_BDEV
 
 /* bdi_setup_and_register() wants 3 args */
 #undef HAVE_3ARGS_BDI_SETUP_AND_REGISTER
@@ -57,6 +63,9 @@
 /* BIO_RW_FAILFAST_* are defined */
 #undef HAVE_BIO_RW_FAILFAST_DTD
 
+/* bio_set_op_attrs is available */
+#undef HAVE_BIO_SET_OP_ATTRS
+
 /* blkdev_get_by_path() is available */
 #undef HAVE_BLKDEV_GET_BY_PATH
 
@@ -65,6 +74,12 @@
 
 /* blk_queue_flush() is GPL-only */
 #undef HAVE_BLK_QUEUE_FLUSH_GPL_ONLY
+
+/* BIO_RW_UNPLUG is available */
+#undef HAVE_BLK_QUEUE_HAVE_BIO_RW_UNPLUG
+
+/* struct blk_plug is available */
+#undef HAVE_BLK_QUEUE_HAVE_BLK_PLUG
 
 /* blk_queue_max_hw_sectors() is available */
 #undef HAVE_BLK_QUEUE_MAX_HW_SECTORS
@@ -150,6 +165,9 @@
 /* sops->evict_inode() exists */
 #undef HAVE_EVICT_INODE
 
+/* fops->aio_fsync() exists */
+#undef HAVE_FILE_AIO_FSYNC
+
 /* fops->fallocate() exists */
 #undef HAVE_FILE_FALLOCATE
 
@@ -182,6 +200,15 @@
 
 /* generic_start_io_acct()/generic_end_io_acct() avaliable */
 #undef HAVE_GENERIC_IO_ACCT
+
+/* generic_readlink is global */
+#undef HAVE_GENERIC_READLINK
+
+/* generic_setxattr() exists */
+#undef HAVE_GENERIC_SETXATTR
+
+/* generic_write_checks() takes kiocb */
+#undef HAVE_GENERIC_WRITE_CHECKS_KIOCB
 
 /* iops->get_acl() exists */
 #undef HAVE_GET_ACL
@@ -222,6 +249,9 @@
 /* kernel defines KOBJ_NAME_LEN */
 #undef HAVE_KOBJ_NAME_LEN
 
+/* kernel has large stacks */
+#undef HAVE_LARGE_STACKS
+
 /* Define if you have libblkid */
 #undef HAVE_LIBBLKID
 
@@ -230,9 +260,6 @@
 
 /* Define to 1 if you have the `z' library (-lz). */
 #undef HAVE_LIBZ
-
-/* lookup_bdev() is available */
-#undef HAVE_LOOKUP_BDEV
 
 /* iops->lookup() passes nameidata */
 #undef HAVE_LOOKUP_NAMEIDATA
@@ -297,6 +324,9 @@
 /* iops->put_link() nameidata */
 #undef HAVE_PUT_LINK_NAMEIDATA
 
+/* iops->rename() wants flags */
+#undef HAVE_RENAME_WANTS_FLAGS
+
 /* REQ_FAILFAST_MASK is defined */
 #undef HAVE_REQ_FAILFAST_MASK
 
@@ -307,7 +337,16 @@
 #undef HAVE_REQ_OP_FLUSH
 
 /* REQ_OP_SECURE_ERASE is defined */
-#undef HAVE_REQ_OP_SECURE_DISCARD
+#undef HAVE_REQ_OP_SECURE_ERASE
+
+/* setattr_prepare() is available */
+#undef HAVE_SETATTR_PREPARE
+
+/* iops->set_acl() exists */
+#undef HAVE_SET_ACL
+
+/* posix_acl_release() is usable */
+#undef HAVE_SET_CACHED_ACL_USABLE
 
 /* set_nlink() is available */
 #undef HAVE_SET_NLINK
@@ -405,8 +444,7 @@
 /* __posix_acl_chmod() exists */
 #undef HAVE___POSIX_ACL_CHMOD
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* make_request_fn() returns blk_qc_t */
