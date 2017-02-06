@@ -1,14 +1,17 @@
-zfs-linux (0.6.5.8-4) UNRELEASED; urgency=medium
+zfs-linux (0.6.5.9-1) unstable; urgency=medium
 
   [ Aron Xu ]
-  * Linux 4.9 compatibility (Closes: #851513)
-  * Remove not needed .pc directory
+  * Imported Upstream version 0.6.5.9 (Closes: #851513)
 
   [ Lukas Wunner ]
   * Cherry picks for root zpool with dracut (Closes: #849969)
   * Fix installation path of systemd files
+  * Fix build breakage caused by nonstandard umask
 
- -- Aron Xu <aron@debian.org>  Sat, 28 Jan 2017 02:43:28 +0800
+  [ Fabian Grünbichler ]
+  * fix python script install path (Closes: #842237)
+
+ -- Aron Xu <aron@debian.org>  Mon, 06 Feb 2017 15:57:50 +0800
 
 zfs-linux (0.6.5.8-3) unstable; urgency=medium
 
