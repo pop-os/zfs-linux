@@ -1,3 +1,10 @@
+zfs-linux (0.6.5.9-2) unstable; urgency=medium
+
+  [ Fabian Grünbichler ]
+  * fix zed-service-bindir patch
+
+ -- Aron Xu <aron@debian.org>  Tue, 07 Feb 2017 17:22:02 +0800
+
 zfs-linux (0.6.5.9-1) unstable; urgency=medium
 
   [ Aron Xu ]
