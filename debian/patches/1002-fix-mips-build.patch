@@ -1,10 +1,11 @@
 Description: Fix build problem on mips*
   Make sure required defines are set on mips.
 Author: YunQiang Su <wzssyqa@gmail.com>
-Debian-Bug: https://bugs.debian.org/824190
-Forwarded: no
+Bug-Debian: https://bugs.debian.org/824190
+Bug: https://github.com/zfsonlinux/zfs/pull/4712
 Reviewed-By: Petter Reinholdtsen <pere@hungry.com>
 Last-Update: 2016-05-25
+Applied-upstream: https://github.com/zfsonlinux/zfs/commit/2493dca54e18b24bcd8b7ff5432f4dc51dddc472
 
 Index: zfs-linux-0.6.5.6/lib/libspl/include/sys/isa_defs.h
 ===================================================================

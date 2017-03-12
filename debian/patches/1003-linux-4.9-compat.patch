@@ -2,7 +2,7 @@ Description: Fix dkms build problem with linux 2.9
  Commit 3b0ba3ba99b8a3af0fb532bf264629436b1abd84 fetched from upstream
  and refreshed to apply cleanly.
 Author: Brian Behlendorf <behlendorf1@llnl.gov>
-Debian-Bug: https://bugs.debian.org/847018
+Bug-Debian: https://bugs.debian.org/847018
 Forwarded: no
 Reviewed-By: Petter Reinholdtsen <pere@hungry.com>
 Last-Update: 2016-12-15

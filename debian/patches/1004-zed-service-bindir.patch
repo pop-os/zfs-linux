@@ -5,7 +5,7 @@ Description: Fix the path to the zed binary on the systemd unit.
  zfs-zed unit.
 Author: Carlos Alberto Lopez <clopez@igalia.com>
 Author: Fabian Grünbichler <f.gruenbichler@proxmox.com>
-Debian-Bug: https://bugs.debian.org/849813
+Bug-Debian: https://bugs.debian.org/849813
 Forwarded: no
 --- a/etc/systemd/system/zfs-zed.service.in
 +++ b/etc/systemd/system/zfs-zed.service.in
