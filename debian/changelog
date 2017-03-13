@@ -1,3 +1,15 @@
+zfs-linux (0.6.5.9-3) unstable; urgency=medium
+
+  [ Petter Reinholdtsen ]
+  * Updated German debconf translation by Helge Kreutzmann. (Closes: #857528)
+  * Updated metadata on a few patches.
+
+  [ Aron Xu ]
+  * Cherry-pick upstream fix for merged /usr/lib and /lib
+  * Manually maintain adt test Depends
+
+ -- Aron Xu <aron@debian.org>  Mon, 13 Mar 2017 12:23:32 +0800
+
 zfs-linux (0.6.5.9-2) unstable; urgency=medium
 
   [ Fabian Grünbichler ]

@@ -17,3 +17,4 @@ enable-zed.patch
 0296-Use-a-different-technique-to-detect-whether-to-mount.patch
 0334-Use-F-to-export-pools-so-as-not-to-dirty-up-device-l.patch
 0336-Properly-use-the-Dracut-cleanup-hook-to-order-pool-s.patch
+0020-Fix-initramfs-hook-for-merged-usr-lib-and-lib.patch
