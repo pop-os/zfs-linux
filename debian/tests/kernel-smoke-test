@@ -38,6 +38,9 @@ then
 	exit 0
 fi
 
+# Load zfs kernel module before tests
+/sbin/modprobe zfs
+
 for t in ${TESTS}
 do
 	./debian/tests/$t
