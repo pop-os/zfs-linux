@@ -1,3 +1,9 @@
+zfs-linux (0.6.5.9-4) unstable; urgency=medium
+
+  * autopkgtest: load zfs module before running tests
+
+ -- Aron Xu <aron@debian.org>  Tue, 14 Mar 2017 11:38:08 +0800
+
 zfs-linux (0.6.5.9-3) unstable; urgency=medium
 
   [ Petter Reinholdtsen ]
