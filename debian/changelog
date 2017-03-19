@@ -1,3 +1,10 @@
+zfs-linux (0.6.5.9-5) unstable; urgency=medium
+
+  * Add zfs initramfs conf for root pool setup
+    (Closes: #848157, LP: #1673197)
+
+ -- Aron Xu <aron@debian.org>  Sun, 19 Mar 2017 18:14:57 +0800
+
 zfs-linux (0.6.5.9-4) unstable; urgency=medium
 
   * autopkgtest: load zfs module before running tests
