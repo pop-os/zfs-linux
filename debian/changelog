@@ -1,3 +1,10 @@
+zfs-linux (0.6.5.10-1) unstable; urgency=medium
+
+  * Add kernel version to depmod cmd (Closes: #860958)
+  * New upstream version 0.6.5.10
+
+ -- Aron Xu <aron@debian.org>  Wed, 05 Jul 2017 18:11:39 +0800
+
 zfs-linux (0.6.5.9-5) unstable; urgency=medium
 
   * Add zfs initramfs conf for root pool setup
