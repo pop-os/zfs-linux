@@ -3,6 +3,7 @@
 0003-Add-libuutil-to-LIBADD-for-libzfs-and-libzfs_core.patch
 1000-ppc64el-endian-support.patch
 1002-fix-mips-build.patch
+1003-fix-rm-path-in-zfs-share.service.patch
 enable-zed.patch
 1001-cmd-python-exec-path.patch
 1004-zed-service-bindir.patch

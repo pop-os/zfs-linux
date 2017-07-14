@@ -1,3 +1,13 @@
+zfs-linux (0.6.5.11-1) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * Imported Upstream version 0.6.5.11
+
+  [ Fabian Grünbichler ]
+  * fix rm path in zfs-share.service
+
+ -- Aron Xu <aron@debian.org>  Fri, 14 Jul 2017 16:33:23 +0800
+
 zfs-linux (0.6.5.10-1) unstable; urgency=medium
 
   * Add kernel version to depmod cmd (Closes: #860958)
