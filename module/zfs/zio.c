@@ -139,10 +139,10 @@ zio_init(void)
 		if (arc_watch && !IS_P2ALIGNED(size, PAGESIZE))
 			continue;
 #endif
-		if (size <= 4 * SPA_MINBLOCKSIZE) {
+		if (size < PAGESIZE) {
 			align = SPA_MINBLOCKSIZE;
 		} else if (IS_P2ALIGNED(size, p2 >> 2)) {
-			align = MIN(p2 >> 2, PAGESIZE);
+			align = PAGESIZE;
 		}
 
 		if (align != 0) {
@@ -3472,7 +3472,7 @@ zbookmark_is_before(const dnode_phys_t *dnp, const zbookmark_phys_t *zb1,
 
 	if (zb1->zb_object == DMU_META_DNODE_OBJECT) {
 		uint64_t nextobj = zb1nextL0 *
-		    (dnp->dn_datablkszsec << SPA_MINBLOCKSHIFT) >> DNODE_SHIFT;
+		    (dnp->dn_datablkszsec << (SPA_MINBLOCKSHIFT - DNODE_SHIFT));
 		return (nextobj <= zb2thisobj);
 	}
 

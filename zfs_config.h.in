@@ -129,6 +129,9 @@
 /* current->bio_tail exists */
 #undef HAVE_CURRENT_BIO_TAIL
 
+/* current_time() exists */
+#undef HAVE_CURRENT_TIME
+
 /* DECLARE_EVENT_CLASS() is available */
 #undef HAVE_DECLARE_EVENT_CLASS
 
@@ -267,6 +270,12 @@
 /* lseek_execute() is available */
 #undef HAVE_LSEEK_EXECUTE
 
+/* makedev() is declared in sys/mkdev.h */
+#undef HAVE_MAKEDEV_IN_MKDEV
+
+/* makedev() is declared in sys/sysmacros.h */
+#undef HAVE_MAKEDEV_IN_SYSMACROS
+
 /* Noting that make_request_fn() returns int */
 #undef HAVE_MAKE_REQUEST_FN_RET_INT
 
@@ -285,11 +294,17 @@
 /* mount_nodev() is available */
 #undef HAVE_MOUNT_NODEV
 
+/* new_sync_read() is available */
+#undef HAVE_NEW_SYNC_READ
+
 /* sops->nr_cached_objects() exists */
 #undef HAVE_NR_CACHED_OBJECTS
 
 /* open_bdev_exclusive() is available */
 #undef HAVE_OPEN_BDEV_EXCLUSIVE
+
+/* iops->getattr() takes a path */
+#undef HAVE_PATH_IOPS_GETATTR
 
 /* iops->permission() exists */
 #undef HAVE_PERMISSION
@@ -369,6 +384,9 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
+/* super_setup_bdi_name() exits */
+#undef HAVE_SUPER_SETUP_BDI_NAME
+
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
@@ -386,6 +404,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* iops->getattr() takes a vfsmount */
+#undef HAVE_VFSMOUNT_IOPS_GETATTR
 
 /* fops->iterate() is available */
 #undef HAVE_VFS_ITERATE
@@ -444,7 +465,8 @@
 /* __posix_acl_chmod() exists */
 #undef HAVE___POSIX_ACL_CHMOD
 
-/* Define to the sub-directory where libtool stores uninstalled libraries. */
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
 #undef LT_OBJDIR
 
 /* make_request_fn() returns blk_qc_t */
@@ -464,9 +486,6 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
-
-/* Define to the home page for this package. */
-#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
