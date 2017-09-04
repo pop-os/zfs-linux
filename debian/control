@@ -151,6 +151,19 @@ Description: OpenZFS Event Daemon
  .
  This package provides the OpenZFS Event Daemon (zed).
 
+Package: zfs-test
+Section: contrib/admin
+Architecture: linux-any
+Depends: ${misc:Depends}, ${shlibs:Depends}, zfs-modules | zfs-dkms, zfsutils-linux, parted, lsscsi, mdadm, bc, ksh, fio, acl, sudo, sysstat, python
+Description: OpenZFS test infrastructure an support scripts
+ The Z file system is a pooled filesystem designed for maximum data
+ integrity, supporting data snapshots, multiple copies, and data
+ checksums.
+ .
+ This package provides the OpenZFS test infrastructure for destructively
+ testing and validating a system using OpenZFS. It is entirely optional
+ and should only be installed and used in test environments.
+
 Package: zfs-dbg
 Section: contrib/debug
 Priority: extra
