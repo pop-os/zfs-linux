@@ -1,0 +1,59 @@
+From: =?utf-8?q?Fabian_Gr=C3=BCnbichler?= <f.gruenbichler@proxmox.com>
+Date: Mon, 4 Sep 2017 10:59:32 +0200
+Subject: add man page reference to systemd units
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Fabian Grünbichler <f.gruenbichler@proxmox.com>
+---
+ etc/systemd/system/zfs-import-cache.service.in | 1 +
+ etc/systemd/system/zfs-import-scan.service.in  | 1 +
+ etc/systemd/system/zfs-mount.service.in        | 1 +
+ etc/systemd/system/zfs-share.service.in        | 1 +
+ 4 files changed, 4 insertions(+)
+
+diff --git a/etc/systemd/system/zfs-import-cache.service.in b/etc/systemd/system/zfs-import-cache.service.in
+index 02184a6..6170676 100644
+--- a/etc/systemd/system/zfs-import-cache.service.in
++++ b/etc/systemd/system/zfs-import-cache.service.in
+@@ -1,5 +1,6 @@
+ [Unit]
+ Description=Import ZFS pools by cache file
++Documentation=man:zpool(8)
+ DefaultDependencies=no
+ Requires=systemd-udev-settle.service
+ After=systemd-udev-settle.service
+diff --git a/etc/systemd/system/zfs-import-scan.service.in b/etc/systemd/system/zfs-import-scan.service.in
+index 625f3a9..9254fd3 100644
+--- a/etc/systemd/system/zfs-import-scan.service.in
++++ b/etc/systemd/system/zfs-import-scan.service.in
+@@ -1,5 +1,6 @@
+ [Unit]
+ Description=Import ZFS pools by device scanning
++Documentation=man:zpool(8)
+ DefaultDependencies=no
+ Requires=systemd-udev-settle.service
+ After=systemd-udev-settle.service
+diff --git a/etc/systemd/system/zfs-mount.service.in b/etc/systemd/system/zfs-mount.service.in
+index 36dc3be..d3c912e 100644
+--- a/etc/systemd/system/zfs-mount.service.in
++++ b/etc/systemd/system/zfs-mount.service.in
+@@ -1,5 +1,6 @@
+ [Unit]
+ Description=Mount ZFS filesystems
++Documentation=man:zfs(8)
+ DefaultDependencies=no
+ After=systemd-udev-settle.service
+ After=zfs-import-cache.service
+diff --git a/etc/systemd/system/zfs-share.service.in b/etc/systemd/system/zfs-share.service.in
+index 494f5cb..d0c93a3 100644
+--- a/etc/systemd/system/zfs-share.service.in
++++ b/etc/systemd/system/zfs-share.service.in
+@@ -1,5 +1,6 @@
+ [Unit]
+ Description=ZFS file system shares
++Documentation=man:zfs(8)
+ After=nfs-server.service nfs-kernel-server.service
+ After=smb.service
+ After=zfs-mount.service
