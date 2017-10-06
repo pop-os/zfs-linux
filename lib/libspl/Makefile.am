@@ -24,12 +24,12 @@ USER_C = \
 	getmntany.c \
 	list.c \
 	mkdirp.c \
+	page.c \
 	strlcat.c \
 	strlcpy.c \
 	strnlen.c \
 	timestamp.c \
 	zone.c \
-	xdr.c \
 	include/sys/list.h \
 	include/sys/list_impl.h
 
