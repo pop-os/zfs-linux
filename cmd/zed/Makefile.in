@@ -43,7 +43,8 @@ DIST_COMMON = $(dist_zedconf_DATA) $(dist_zedexec_SCRIPTS) \
 sbin_PROGRAMS = zed$(EXEEXT)
 subdir = cmd/zed
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
+	$(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/always-no-unused-but-set-variable.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-aio-fsync.m4 \
@@ -58,6 +59,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-bio-op.m4 \
 	$(top_srcdir)/config/kernel-bio-rw-barrier.m4 \
 	$(top_srcdir)/config/kernel-bio-rw-discard.m4 \
+	$(top_srcdir)/config/kernel-bio_set_dev.m4 \
+	$(top_srcdir)/config/kernel-blk-queue-bdi.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-flush.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-hw-sectors.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-segments.m4 \
@@ -65,7 +68,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get-by-path.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations-release-void.m4 \
-	$(top_srcdir)/config/kernel-check-disk-size-change.m4 \
 	$(top_srcdir)/config/kernel-clear-inode.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-create-nameidata.m4 \
@@ -82,9 +84,11 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-encode-fh-inode.m4 \
 	$(top_srcdir)/config/kernel-evict-inode.m4 \
 	$(top_srcdir)/config/kernel-fallocate.m4 \
+	$(top_srcdir)/config/kernel-file-dentry.m4 \
 	$(top_srcdir)/config/kernel-file-inode.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
 	$(top_srcdir)/config/kernel-follow-down-one.m4 \
+	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
 	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
 	$(top_srcdir)/config/kernel-generic_readlink.m4 \
@@ -92,17 +96,20 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-get-gendisk.m4 \
 	$(top_srcdir)/config/kernel-get-link.m4 \
 	$(top_srcdir)/config/kernel-inode-getattr.m4 \
+	$(top_srcdir)/config/kernel-inode-set-flags.m4 \
 	$(top_srcdir)/config/kernel-insert-inode-locked.m4 \
 	$(top_srcdir)/config/kernel-invalidate-bdev-args.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
 	$(top_srcdir)/config/kernel-kmap-atomic-args.m4 \
-	$(top_srcdir)/config/kernel-kobj-name-len.m4 \
+	$(top_srcdir)/config/kernel-kuid-helpers.m4 \
 	$(top_srcdir)/config/kernel-lookup-bdev.m4 \
 	$(top_srcdir)/config/kernel-lookup-nameidata.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
 	$(top_srcdir)/config/kernel-mk-request-fn.m4 \
 	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
+	$(top_srcdir)/config/kernel-mod-param.m4 \
 	$(top_srcdir)/config/kernel-mount-nodev.m4 \
+	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-open-bdev-exclusive.m4 \
 	$(top_srcdir)/config/kernel-put-link.m4 \
 	$(top_srcdir)/config/kernel-rename.m4 \
@@ -113,10 +120,13 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
 	$(top_srcdir)/config/kernel-submit_bio.m4 \
+	$(top_srcdir)/config/kernel-super-userns.m4 \
+	$(top_srcdir)/config/kernel-tmpfile.m4 \
 	$(top_srcdir)/config/kernel-truncate-range.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
 	$(top_srcdir)/config/kernel-vfs-iterate.m4 \
 	$(top_srcdir)/config/kernel-vfs-rw-iterate.m4 \
+	$(top_srcdir)/config/kernel-vm_node_stat.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
 	$(top_srcdir)/config/kernel.m4 $(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/ltoptions.m4 \
@@ -124,10 +134,13 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/ltversion.m4 \
 	$(top_srcdir)/config/lt~obsolete.m4 \
 	$(top_srcdir)/config/mount-helper.m4 \
-	$(top_srcdir)/config/user-arch.m4 \
+	$(top_srcdir)/config/toolchain-simd.m4 \
 	$(top_srcdir)/config/user-dracut.m4 \
 	$(top_srcdir)/config/user-frame-larger-than.m4 \
+	$(top_srcdir)/config/user-libattr.m4 \
 	$(top_srcdir)/config/user-libblkid.m4 \
+	$(top_srcdir)/config/user-libtirpc.m4 \
+	$(top_srcdir)/config/user-libudev.m4 \
 	$(top_srcdir)/config/user-libuuid.m4 \
 	$(top_srcdir)/config/user-makedev.m4 \
 	$(top_srcdir)/config/user-no-format-truncation.m4 \
@@ -147,19 +160,30 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(zedexecdir)" \
 	"$(DESTDIR)$(zedconfdir)"
 PROGRAMS = $(sbin_PROGRAMS)
-am_zed_OBJECTS = zed.$(OBJEXT) zed_conf.$(OBJEXT) zed_event.$(OBJEXT) \
+am__objects_1 = zed.$(OBJEXT) zed_conf.$(OBJEXT) \
+	zed_disk_event.$(OBJEXT) zed_event.$(OBJEXT) \
 	zed_exec.$(OBJEXT) zed_file.$(OBJEXT) zed_log.$(OBJEXT) \
 	zed_strings.$(OBJEXT)
+am__dirstamp = $(am__leading_dot)dirstamp
+am__objects_2 = agents/zfs_agents.$(OBJEXT) \
+	agents/zfs_diagnosis.$(OBJEXT) agents/zfs_mod.$(OBJEXT) \
+	agents/zfs_retire.$(OBJEXT) agents/fmd_api.$(OBJEXT) \
+	agents/fmd_serd.$(OBJEXT)
+am_zed_OBJECTS = $(am__objects_1) $(am__objects_2)
 zed_OBJECTS = $(am_zed_OBJECTS)
 zed_DEPENDENCIES = $(top_builddir)/lib/libavl/libavl.la \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libspl/libspl.la \
+	$(top_builddir)/lib/libuutil/libuutil.la \
 	$(top_builddir)/lib/libzpool/libzpool.la \
 	$(top_builddir)/lib/libzfs/libzfs.la \
 	$(top_builddir)/lib/libzfs_core/libzfs_core.la
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
+zed_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(zed_LDFLAGS) $(LDFLAGS) -o $@
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -233,7 +257,6 @@ CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEBUG_CFLAGS = @DEBUG_CFLAGS@
-DEBUG_DMU_TX = @DEBUG_DMU_TX@
 DEBUG_STACKFLAGS = @DEBUG_STACKFLAGS@
 DEBUG_ZFS = @DEBUG_ZFS@
 DEFAULT_INITCONF_DIR = @DEFAULT_INITCONF_DIR@
@@ -271,10 +294,14 @@ KERNELCPPFLAGS = @KERNELCPPFLAGS@
 KERNELMAKE_PARAMS = @KERNELMAKE_PARAMS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
+LIBATTR = @LIBATTR@
 LIBBLKID = @LIBBLKID@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTIRPC = @LIBTIRPC@
+LIBTIRPC_CFLAGS = @LIBTIRPC_CFLAGS@
 LIBTOOL = @LIBTOOL@
+LIBUDEV = @LIBUDEV@
 LIBUUID = @LIBUUID@
 LINUX = @LINUX@
 LINUX_OBJ = @LINUX_OBJ@
@@ -302,8 +329,12 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+QAT_OBJ = @QAT_OBJ@
+QAT_SRC = @QAT_SRC@
+QAT_SYMBOLS = @QAT_SYMBOLS@
 RANLIB = @RANLIB@
 RELEASE = @RELEASE@
+RM = @RM@
 RPM = @RPM@
 RPMBUILD = @RPMBUILD@
 RPMBUILD_VERSION = @RPMBUILD_VERSION@
@@ -343,6 +374,7 @@ ZFS_META_RELEASE = @ZFS_META_RELEASE@
 ZFS_META_VERSION = @ZFS_META_VERSION@
 ZFS_MODULE_LOAD = @ZFS_MODULE_LOAD@
 ZLIB = @ZLIB@
+ZONENAME = @ZONENAME@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -412,7 +444,7 @@ DEFAULT_INCLUDES = -include ${top_builddir}/zfs_config.h \
 AM_LIBTOOLFLAGS = --silent
 AM_CFLAGS = ${DEBUG_CFLAGS} -Wall -Wstrict-prototypes \
 	${NO_UNUSED_BUT_SET_VARIABLE} ${NO_BOOL_COMPARE} \
-	-fno-strict-aliasing
+	-fno-strict-aliasing -std=gnu99
 AM_CPPFLAGS = -D_GNU_SOURCE -D__EXTENSIONS__ -D_REENTRANT \
 	-D_POSIX_PTHREAD_SEMANTICS -D_FILE_OFFSET_BITS=64 \
 	-D_LARGEFILE64_SOURCE -DHAVE_LARGE_STACKS=1 \
@@ -421,11 +453,13 @@ AM_CPPFLAGS = -D_GNU_SOURCE -D__EXTENSIONS__ -D_REENTRANT \
 	-DRUNSTATEDIR=\"$(runstatedir)\" -DSBINDIR=\"$(sbindir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 EXTRA_DIST = zed.d/README
-zed_SOURCES = \
+ZED_SRC = \
 	zed.c \
 	zed.h \
 	zed_conf.c \
 	zed_conf.h \
+	zed_disk_event.c \
+	zed_disk_event.h \
 	zed_event.c \
 	zed_event.h \
 	zed_exec.c \
@@ -437,14 +471,28 @@ zed_SOURCES = \
 	zed_strings.c \
 	zed_strings.h
 
+FMA_SRC = \
+	agents/zfs_agents.c \
+	agents/zfs_agents.h \
+	agents/zfs_diagnosis.c \
+	agents/zfs_mod.c \
+	agents/zfs_retire.c \
+	agents/fmd_api.c \
+	agents/fmd_api.h \
+	agents/fmd_serd.c \
+	agents/fmd_serd.h
+
+zed_SOURCES = $(ZED_SRC) $(FMA_SRC)
 zed_LDADD = \
 	$(top_builddir)/lib/libavl/libavl.la \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libspl/libspl.la \
+	$(top_builddir)/lib/libuutil/libuutil.la \
 	$(top_builddir)/lib/libzpool/libzpool.la \
 	$(top_builddir)/lib/libzfs/libzfs.la \
 	$(top_builddir)/lib/libzfs_core/libzfs_core.la
 
+zed_LDFLAGS = -lrt -pthread
 zedconfdir = $(sysconfdir)/zfs/zed.d
 dist_zedconf_DATA = \
 	zed.d/zed-functions.sh \
@@ -454,24 +502,26 @@ zedexecdir = $(libexecdir)/zfs/zed.d
 dist_zedexec_SCRIPTS = \
 	zed.d/all-debug.sh \
 	zed.d/all-syslog.sh \
-	zed.d/checksum-notify.sh \
-	zed.d/checksum-spare.sh \
 	zed.d/data-notify.sh \
 	zed.d/generic-notify.sh \
-	zed.d/io-notify.sh \
-	zed.d/io-spare.sh \
-	zed.d/resilver.finish-notify.sh \
-	zed.d/scrub.finish-notify.sh
+	zed.d/resilver_finish-notify.sh \
+	zed.d/scrub_finish-notify.sh \
+	zed.d/statechange-led.sh \
+	zed.d/statechange-notify.sh \
+	zed.d/vdev_clear-led.sh \
+	zed.d/vdev_attach-led.sh \
+	zed.d/pool_import-led.sh
 
 zedconfdefaults = \
 	all-syslog.sh \
-	checksum-notify.sh \
-	checksum-spare.sh \
 	data-notify.sh \
-	io-notify.sh \
-	io-spare.sh \
-	resilver.finish-notify.sh \
-	scrub.finish-notify.sh
+	resilver_finish-notify.sh \
+	scrub_finish-notify.sh \
+	statechange-led.sh \
+	statechange-notify.sh \
+	vdev_clear-led.sh \
+	vdev_attach-led.sh \
+	pool_import-led.sh
 
 all: all-am
 
@@ -550,9 +600,27 @@ clean-sbinPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+agents/$(am__dirstamp):
+	@$(MKDIR_P) agents
+	@: > agents/$(am__dirstamp)
+agents/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) agents/$(DEPDIR)
+	@: > agents/$(DEPDIR)/$(am__dirstamp)
+agents/zfs_agents.$(OBJEXT): agents/$(am__dirstamp) \
+	agents/$(DEPDIR)/$(am__dirstamp)
+agents/zfs_diagnosis.$(OBJEXT): agents/$(am__dirstamp) \
+	agents/$(DEPDIR)/$(am__dirstamp)
+agents/zfs_mod.$(OBJEXT): agents/$(am__dirstamp) \
+	agents/$(DEPDIR)/$(am__dirstamp)
+agents/zfs_retire.$(OBJEXT): agents/$(am__dirstamp) \
+	agents/$(DEPDIR)/$(am__dirstamp)
+agents/fmd_api.$(OBJEXT): agents/$(am__dirstamp) \
+	agents/$(DEPDIR)/$(am__dirstamp)
+agents/fmd_serd.$(OBJEXT): agents/$(am__dirstamp) \
+	agents/$(DEPDIR)/$(am__dirstamp)
 zed$(EXEEXT): $(zed_OBJECTS) $(zed_DEPENDENCIES) 
 	@rm -f zed$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(zed_OBJECTS) $(zed_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(zed_LINK) $(zed_OBJECTS) $(zed_LDADD) $(LIBS)
 install-dist_zedexecSCRIPTS: $(dist_zedexec_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	test -z "$(zedexecdir)" || $(MKDIR_P) "$(DESTDIR)$(zedexecdir)"
@@ -590,37 +658,53 @@ uninstall-dist_zedexecSCRIPTS:
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f agents/fmd_api.$(OBJEXT)
+	-rm -f agents/fmd_serd.$(OBJEXT)
+	-rm -f agents/zfs_agents.$(OBJEXT)
+	-rm -f agents/zfs_diagnosis.$(OBJEXT)
+	-rm -f agents/zfs_mod.$(OBJEXT)
+	-rm -f agents/zfs_retire.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zed_conf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zed_disk_event.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zed_event.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zed_exec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zed_file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zed_log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zed_strings.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@agents/$(DEPDIR)/fmd_api.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@agents/$(DEPDIR)/fmd_serd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@agents/$(DEPDIR)/zfs_agents.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@agents/$(DEPDIR)/zfs_diagnosis.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@agents/$(DEPDIR)/zfs_mod.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@agents/$(DEPDIR)/zfs_retire.Po@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .c.lo:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
@@ -762,6 +846,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f agents/$(DEPDIR)/$(am__dirstamp)
+	-rm -f agents/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -772,7 +858,7 @@ clean-am: clean-generic clean-libtool clean-sbinPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR) agents/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -819,7 +905,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR) agents/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

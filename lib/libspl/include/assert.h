@@ -72,7 +72,8 @@ do {									\
 	const TYPE __right = (TYPE)(RIGHT);				\
 	if (!(__left OP __right))					\
 		libspl_assertf(__FILE__, __FUNCTION__, __LINE__,	\
-		    "%s %s %s (0x%llx %s 0x%llx)", #LEFT, #OP, #RIGHT);	\
+		    "%s %s %s (0x%llx %s 0x%llx)", #LEFT, #OP, #RIGHT,	\
+		    (u_longlong_t)__left, #OP, (u_longlong_t)__right);	\
 } while (0)
 
 #define	VERIFY3S(x, y, z)	VERIFY3_IMPL(x, y, z, int64_t)
@@ -83,6 +84,14 @@ do {									\
 #ifdef assert
 #undef assert
 #endif
+
+/* Compile time assert */
+#define	CTASSERT_GLOBAL(x)		_CTASSERT(x, __LINE__)
+#define	CTASSERT(x)			{ _CTASSERT(x, __LINE__); }
+#define	_CTASSERT(x, y)			__CTASSERT(x, y)
+#define	__CTASSERT(x, y)						\
+	typedef char __attribute__((unused))				\
+	__compile_time_assertion__ ## y[(x) ? 1 : -1]
 
 #ifdef NDEBUG
 #define	ASSERT3S(x, y, z)	((void)0)

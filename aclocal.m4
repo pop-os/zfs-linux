@@ -701,6 +701,41 @@ AC_MSG_RESULT([$_am_result])
 rm -f confinc confmf
 ])
 
+# Copyright (C) 1999, 2000, 2001, 2003, 2004, 2005, 2008
+# Free Software Foundation, Inc.
+#
+# This file is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# serial 6
+
+# AM_PROG_CC_C_O
+# --------------
+# Like AC_PROG_CC_C_O, but changed for automake.
+AC_DEFUN([AM_PROG_CC_C_O],
+[AC_REQUIRE([AC_PROG_CC_C_O])dnl
+AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
+AC_REQUIRE_AUX_FILE([compile])dnl
+# FIXME: we rely on the cache variable name because
+# there is no other way.
+set dummy $CC
+am_cc=`echo $[2] | sed ['s/[^a-zA-Z0-9_]/_/g;s/^[0-9]/_/']`
+eval am_t=\$ac_cv_prog_cc_${am_cc}_c_o
+if test "$am_t" != yes; then
+   # Losing compiler, so override with the script.
+   # FIXME: It is wrong to rewrite CC.
+   # But if we don't then we get into trouble of one sort or another.
+   # A longer-term fix would be to have automake use am__CC in this case,
+   # and then we could set am__CC="\$(top_srcdir)/compile \$(CC)"
+   CC="$am_aux_dir/compile $CC"
+fi
+dnl Make sure AC_PROG_CC is never called again, or it will override our
+dnl setting of CC.
+m4_define([AC_PROG_CC],
+          [m4_fatal([AC_PROG_CC cannot be called after AM_PROG_CC_C_O])])
+])
+
 # Fake the existence of programs that GNU maintainers use.  -*- Autoconf -*-
 
 # Copyright (C) 1997, 1999, 2000, 2001, 2003, 2004, 2005, 2008
@@ -1038,6 +1073,7 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
+m4_include([config/always-arch.m4])
 m4_include([config/always-no-bool-compare.m4])
 m4_include([config/always-no-unused-but-set-variable.m4])
 m4_include([config/kernel-acl.m4])
@@ -1053,6 +1089,8 @@ m4_include([config/kernel-bio-failfast.m4])
 m4_include([config/kernel-bio-op.m4])
 m4_include([config/kernel-bio-rw-barrier.m4])
 m4_include([config/kernel-bio-rw-discard.m4])
+m4_include([config/kernel-bio_set_dev.m4])
+m4_include([config/kernel-blk-queue-bdi.m4])
 m4_include([config/kernel-blk-queue-flush.m4])
 m4_include([config/kernel-blk-queue-max-hw-sectors.m4])
 m4_include([config/kernel-blk-queue-max-segments.m4])
@@ -1060,7 +1098,6 @@ m4_include([config/kernel-blk-queue-unplug.m4])
 m4_include([config/kernel-blkdev-get-by-path.m4])
 m4_include([config/kernel-blkdev-get.m4])
 m4_include([config/kernel-block-device-operations-release-void.m4])
-m4_include([config/kernel-check-disk-size-change.m4])
 m4_include([config/kernel-clear-inode.m4])
 m4_include([config/kernel-commit-metadata.m4])
 m4_include([config/kernel-create-nameidata.m4])
@@ -1077,9 +1114,11 @@ m4_include([config/kernel-elevator-change.m4])
 m4_include([config/kernel-encode-fh-inode.m4])
 m4_include([config/kernel-evict-inode.m4])
 m4_include([config/kernel-fallocate.m4])
+m4_include([config/kernel-file-dentry.m4])
 m4_include([config/kernel-file-inode.m4])
 m4_include([config/kernel-fmode-t.m4])
 m4_include([config/kernel-follow-down-one.m4])
+m4_include([config/kernel-fpu.m4])
 m4_include([config/kernel-fsync.m4])
 m4_include([config/kernel-generic_io_acct.m4])
 m4_include([config/kernel-generic_readlink.m4])
@@ -1087,17 +1126,20 @@ m4_include([config/kernel-get-disk-ro.m4])
 m4_include([config/kernel-get-gendisk.m4])
 m4_include([config/kernel-get-link.m4])
 m4_include([config/kernel-inode-getattr.m4])
+m4_include([config/kernel-inode-set-flags.m4])
 m4_include([config/kernel-insert-inode-locked.m4])
 m4_include([config/kernel-invalidate-bdev-args.m4])
 m4_include([config/kernel-is_owner_or_cap.m4])
 m4_include([config/kernel-kmap-atomic-args.m4])
-m4_include([config/kernel-kobj-name-len.m4])
+m4_include([config/kernel-kuid-helpers.m4])
 m4_include([config/kernel-lookup-bdev.m4])
 m4_include([config/kernel-lookup-nameidata.m4])
 m4_include([config/kernel-lseek-execute.m4])
 m4_include([config/kernel-mk-request-fn.m4])
 m4_include([config/kernel-mkdir-umode-t.m4])
+m4_include([config/kernel-mod-param.m4])
 m4_include([config/kernel-mount-nodev.m4])
+m4_include([config/kernel-objtool.m4])
 m4_include([config/kernel-open-bdev-exclusive.m4])
 m4_include([config/kernel-put-link.m4])
 m4_include([config/kernel-rename.m4])
@@ -1108,10 +1150,13 @@ m4_include([config/kernel-sget-args.m4])
 m4_include([config/kernel-show-options.m4])
 m4_include([config/kernel-shrink.m4])
 m4_include([config/kernel-submit_bio.m4])
+m4_include([config/kernel-super-userns.m4])
+m4_include([config/kernel-tmpfile.m4])
 m4_include([config/kernel-truncate-range.m4])
 m4_include([config/kernel-truncate-setsize.m4])
 m4_include([config/kernel-vfs-iterate.m4])
 m4_include([config/kernel-vfs-rw-iterate.m4])
+m4_include([config/kernel-vm_node_stat.m4])
 m4_include([config/kernel-xattr-handler.m4])
 m4_include([config/kernel.m4])
 m4_include([config/libtool.m4])
@@ -1120,10 +1165,13 @@ m4_include([config/ltsugar.m4])
 m4_include([config/ltversion.m4])
 m4_include([config/lt~obsolete.m4])
 m4_include([config/mount-helper.m4])
-m4_include([config/user-arch.m4])
+m4_include([config/toolchain-simd.m4])
 m4_include([config/user-dracut.m4])
 m4_include([config/user-frame-larger-than.m4])
+m4_include([config/user-libattr.m4])
 m4_include([config/user-libblkid.m4])
+m4_include([config/user-libtirpc.m4])
+m4_include([config/user-libudev.m4])
 m4_include([config/user-libuuid.m4])
 m4_include([config/user-makedev.m4])
 m4_include([config/user-no-format-truncation.m4])

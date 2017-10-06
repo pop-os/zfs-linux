@@ -38,7 +38,8 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/config/Rules.am
 subdir = lib/libzpool
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
+	$(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/always-no-unused-but-set-variable.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-aio-fsync.m4 \
@@ -53,6 +54,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-bio-op.m4 \
 	$(top_srcdir)/config/kernel-bio-rw-barrier.m4 \
 	$(top_srcdir)/config/kernel-bio-rw-discard.m4 \
+	$(top_srcdir)/config/kernel-bio_set_dev.m4 \
+	$(top_srcdir)/config/kernel-blk-queue-bdi.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-flush.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-hw-sectors.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-segments.m4 \
@@ -60,7 +63,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get-by-path.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations-release-void.m4 \
-	$(top_srcdir)/config/kernel-check-disk-size-change.m4 \
 	$(top_srcdir)/config/kernel-clear-inode.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-create-nameidata.m4 \
@@ -77,9 +79,11 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-encode-fh-inode.m4 \
 	$(top_srcdir)/config/kernel-evict-inode.m4 \
 	$(top_srcdir)/config/kernel-fallocate.m4 \
+	$(top_srcdir)/config/kernel-file-dentry.m4 \
 	$(top_srcdir)/config/kernel-file-inode.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
 	$(top_srcdir)/config/kernel-follow-down-one.m4 \
+	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
 	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
 	$(top_srcdir)/config/kernel-generic_readlink.m4 \
@@ -87,17 +91,20 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-get-gendisk.m4 \
 	$(top_srcdir)/config/kernel-get-link.m4 \
 	$(top_srcdir)/config/kernel-inode-getattr.m4 \
+	$(top_srcdir)/config/kernel-inode-set-flags.m4 \
 	$(top_srcdir)/config/kernel-insert-inode-locked.m4 \
 	$(top_srcdir)/config/kernel-invalidate-bdev-args.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
 	$(top_srcdir)/config/kernel-kmap-atomic-args.m4 \
-	$(top_srcdir)/config/kernel-kobj-name-len.m4 \
+	$(top_srcdir)/config/kernel-kuid-helpers.m4 \
 	$(top_srcdir)/config/kernel-lookup-bdev.m4 \
 	$(top_srcdir)/config/kernel-lookup-nameidata.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
 	$(top_srcdir)/config/kernel-mk-request-fn.m4 \
 	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
+	$(top_srcdir)/config/kernel-mod-param.m4 \
 	$(top_srcdir)/config/kernel-mount-nodev.m4 \
+	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-open-bdev-exclusive.m4 \
 	$(top_srcdir)/config/kernel-put-link.m4 \
 	$(top_srcdir)/config/kernel-rename.m4 \
@@ -108,10 +115,13 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
 	$(top_srcdir)/config/kernel-submit_bio.m4 \
+	$(top_srcdir)/config/kernel-super-userns.m4 \
+	$(top_srcdir)/config/kernel-tmpfile.m4 \
 	$(top_srcdir)/config/kernel-truncate-range.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
 	$(top_srcdir)/config/kernel-vfs-iterate.m4 \
 	$(top_srcdir)/config/kernel-vfs-rw-iterate.m4 \
+	$(top_srcdir)/config/kernel-vm_node_stat.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
 	$(top_srcdir)/config/kernel.m4 $(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/ltoptions.m4 \
@@ -119,10 +129,13 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/ltversion.m4 \
 	$(top_srcdir)/config/lt~obsolete.m4 \
 	$(top_srcdir)/config/mount-helper.m4 \
-	$(top_srcdir)/config/user-arch.m4 \
+	$(top_srcdir)/config/toolchain-simd.m4 \
 	$(top_srcdir)/config/user-dracut.m4 \
 	$(top_srcdir)/config/user-frame-larger-than.m4 \
+	$(top_srcdir)/config/user-libattr.m4 \
 	$(top_srcdir)/config/user-libblkid.m4 \
+	$(top_srcdir)/config/user-libtirpc.m4 \
+	$(top_srcdir)/config/user-libudev.m4 \
 	$(top_srcdir)/config/user-libuuid.m4 \
 	$(top_srcdir)/config/user-makedev.m4 \
 	$(top_srcdir)/config/user-no-format-truncation.m4 \
@@ -167,27 +180,36 @@ libzpool_la_DEPENDENCIES =  \
 	$(top_builddir)/lib/libunicode/libunicode.la \
 	$(top_builddir)/lib/libuutil/libuutil.la \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
-	$(am__DEPENDENCIES_1)
+	$(top_builddir)/lib/libicp/libicp.la $(am__DEPENDENCIES_1)
 am__objects_1 = kernel.lo taskq.lo util.lo
 am__objects_2 = zfs_comutil.lo zfs_deleg.lo zfs_fletcher.lo \
+	zfs_fletcher_intel.lo zfs_fletcher_sse.lo \
+	zfs_fletcher_avx512.lo zfs_fletcher_aarch64_neon.lo \
+	zfs_fletcher_superscalar.lo zfs_fletcher_superscalar4.lo \
 	zfs_namecheck.lo zfs_prop.lo zfs_uio.lo zpool_prop.lo \
-	zprop_common.lo arc.lo blkptr.lo bplist.lo bpobj.lo bptree.lo \
-	dbuf.lo dbuf_stats.lo ddt.lo ddt_zap.lo dmu.lo dmu_diff.lo \
-	dmu_object.lo dmu_objset.lo dmu_send.lo dmu_traverse.lo \
-	dmu_tx.lo dmu_zfetch.lo dnode.lo dnode_sync.lo dsl_bookmark.lo \
-	dsl_dataset.lo dsl_deadlist.lo dsl_deleg.lo dsl_dir.lo \
-	dsl_pool.lo dsl_prop.lo dsl_scan.lo dsl_synctask.lo \
-	dsl_destroy.lo dsl_userhold.lo fm.lo gzip.lo lzjb.lo lz4.lo \
-	metaslab.lo multilist.lo range_tree.lo refcount.lo rrwlock.lo \
-	sa.lo sha256.lo spa.lo spa_boot.lo spa_config.lo spa_errlog.lo \
+	zprop_common.lo abd.lo arc.lo blkptr.lo bplist.lo bpobj.lo \
+	bptree.lo bqueue.lo dbuf.lo dbuf_stats.lo ddt.lo ddt_zap.lo \
+	dmu.lo dmu_diff.lo dmu_object.lo dmu_objset.lo dmu_send.lo \
+	dmu_traverse.lo dmu_tx.lo dmu_zfetch.lo dnode.lo dnode_sync.lo \
+	dsl_bookmark.lo dsl_dataset.lo dsl_deadlist.lo dsl_deleg.lo \
+	dsl_dir.lo dsl_pool.lo dsl_prop.lo dsl_scan.lo dsl_synctask.lo \
+	dsl_destroy.lo dsl_userhold.lo edonr_zfs.lo fm.lo gzip.lo \
+	lzjb.lo lz4.lo metaslab.lo mmp.lo multilist.lo pathname.lo \
+	range_tree.lo refcount.lo rrwlock.lo sa.lo sha256.lo \
+	skein_zfs.lo spa.lo spa_boot.lo spa_config.lo spa_errlog.lo \
 	spa_history.lo spa_misc.lo spa_stats.lo space_map.lo \
 	space_reftree.lo txg.lo trace.lo uberblock.lo unique.lo \
 	vdev.lo vdev_cache.lo vdev_file.lo vdev_label.lo \
 	vdev_mirror.lo vdev_missing.lo vdev_queue.lo vdev_raidz.lo \
-	vdev_root.lo zap.lo zap_leaf.lo zap_micro.lo zfeature.lo \
-	zfeature_common.lo zfs_byteswap.lo zfs_debug.lo zfs_fm.lo \
-	zfs_fuid.lo zfs_sa.lo zfs_znode.lo zil.lo zio.lo \
-	zio_checksum.lo zio_compress.lo zio_inject.lo zle.lo zrlock.lo
+	vdev_raidz_math.lo vdev_raidz_math_scalar.lo \
+	vdev_raidz_math_sse2.lo vdev_raidz_math_ssse3.lo \
+	vdev_raidz_math_avx2.lo vdev_raidz_math_avx512f.lo \
+	vdev_raidz_math_avx512bw.lo vdev_raidz_math_aarch64_neon.lo \
+	vdev_raidz_math_aarch64_neonx2.lo vdev_root.lo zap.lo \
+	zap_leaf.lo zap_micro.lo zfeature.lo zfeature_common.lo \
+	zfs_byteswap.lo zfs_debug.lo zfs_fm.lo zfs_fuid.lo zfs_sa.lo \
+	zfs_znode.lo zfs_rlock.lo zil.lo zio.lo zio_checksum.lo \
+	zio_compress.lo zio_inject.lo zle.lo zrlock.lo
 nodist_libzpool_la_OBJECTS = $(am__objects_1) $(am__objects_2)
 libzpool_la_OBJECTS = $(nodist_libzpool_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
@@ -251,7 +273,6 @@ CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEBUG_CFLAGS = @DEBUG_CFLAGS@
-DEBUG_DMU_TX = @DEBUG_DMU_TX@
 DEBUG_STACKFLAGS = @DEBUG_STACKFLAGS@
 DEBUG_ZFS = @DEBUG_ZFS@
 DEFAULT_INITCONF_DIR = @DEFAULT_INITCONF_DIR@
@@ -289,10 +310,14 @@ KERNELCPPFLAGS = @KERNELCPPFLAGS@
 KERNELMAKE_PARAMS = @KERNELMAKE_PARAMS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
+LIBATTR = @LIBATTR@
 LIBBLKID = @LIBBLKID@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTIRPC = @LIBTIRPC@
+LIBTIRPC_CFLAGS = @LIBTIRPC_CFLAGS@
 LIBTOOL = @LIBTOOL@
+LIBUDEV = @LIBUDEV@
 LIBUUID = @LIBUUID@
 LINUX = @LINUX@
 LINUX_OBJ = @LINUX_OBJ@
@@ -320,8 +345,12 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+QAT_OBJ = @QAT_OBJ@
+QAT_SRC = @QAT_SRC@
+QAT_SYMBOLS = @QAT_SYMBOLS@
 RANLIB = @RANLIB@
 RELEASE = @RELEASE@
+RM = @RM@
 RPM = @RPM@
 RPMBUILD = @RPMBUILD@
 RPMBUILD_VERSION = @RPMBUILD_VERSION@
@@ -361,6 +390,7 @@ ZFS_META_RELEASE = @ZFS_META_RELEASE@
 ZFS_META_VERSION = @ZFS_META_VERSION@
 ZFS_MODULE_LOAD = @ZFS_MODULE_LOAD@
 ZLIB = @ZLIB@
+ZONENAME = @ZONENAME@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -430,7 +460,8 @@ DEFAULT_INCLUDES = -include ${top_builddir}/zfs_config.h \
 AM_LIBTOOLFLAGS = --silent
 AM_CFLAGS = ${DEBUG_CFLAGS} -Wall -Wstrict-prototypes \
 	${NO_UNUSED_BUT_SET_VARIABLE} ${NO_BOOL_COMPARE} \
-	-fno-strict-aliasing $(DEBUG_STACKFLAGS) $(FRAME_LARGER_THAN)
+	-fno-strict-aliasing -std=gnu99 $(DEBUG_STACKFLAGS) \
+	$(FRAME_LARGER_THAN)
 AM_CPPFLAGS = -D_GNU_SOURCE -D__EXTENSIONS__ -D_REENTRANT \
 	-D_POSIX_PTHREAD_SEMANTICS -D_FILE_OFFSET_BITS=64 \
 	-D_LARGEFILE64_SOURCE -DHAVE_LARGE_STACKS=1 \
@@ -448,16 +479,24 @@ KERNEL_C = \
 	zfs_comutil.c \
 	zfs_deleg.c \
 	zfs_fletcher.c \
+	zfs_fletcher_intel.c \
+	zfs_fletcher_sse.c \
+	zfs_fletcher_avx512.c \
+	zfs_fletcher_aarch64_neon.c \
+	zfs_fletcher_superscalar.c \
+	zfs_fletcher_superscalar4.c \
 	zfs_namecheck.c \
 	zfs_prop.c \
 	zfs_uio.c \
 	zpool_prop.c \
 	zprop_common.c \
+	abd.c \
 	arc.c \
 	blkptr.c \
 	bplist.c \
 	bpobj.c \
 	bptree.c \
+	bqueue.c \
 	dbuf.c \
 	dbuf_stats.c \
 	ddt.c \
@@ -483,17 +522,21 @@ KERNEL_C = \
 	dsl_synctask.c \
 	dsl_destroy.c \
 	dsl_userhold.c \
+	edonr_zfs.c \
 	fm.c \
 	gzip.c \
 	lzjb.c \
 	lz4.c \
 	metaslab.c \
+	mmp.c \
 	multilist.c \
+	pathname.c \
 	range_tree.c \
 	refcount.c \
 	rrwlock.c \
 	sa.c \
 	sha256.c \
+	skein_zfs.c \
 	spa.c \
 	spa_boot.c \
 	spa_config.c \
@@ -515,6 +558,15 @@ KERNEL_C = \
 	vdev_missing.c \
 	vdev_queue.c \
 	vdev_raidz.c \
+	vdev_raidz_math.c \
+	vdev_raidz_math_scalar.c \
+	vdev_raidz_math_sse2.c \
+	vdev_raidz_math_ssse3.c \
+	vdev_raidz_math_avx2.c \
+	vdev_raidz_math_avx512f.c \
+	vdev_raidz_math_avx512bw.c \
+	vdev_raidz_math_aarch64_neon.c \
+	vdev_raidz_math_aarch64_neonx2.c \
 	vdev_root.c \
 	zap.c \
 	zap_leaf.c \
@@ -527,6 +579,7 @@ KERNEL_C = \
 	zfs_fuid.c \
 	zfs_sa.c \
 	zfs_znode.c \
+	zfs_rlock.c \
 	zil.c \
 	zio.c \
 	zio_checksum.c \
@@ -541,7 +594,8 @@ nodist_libzpool_la_SOURCES = \
 
 libzpool_la_LIBADD = $(top_builddir)/lib/libunicode/libunicode.la \
 	$(top_builddir)/lib/libuutil/libuutil.la \
-	$(top_builddir)/lib/libnvpair/libnvpair.la $(ZLIB)
+	$(top_builddir)/lib/libnvpair/libnvpair.la \
+	$(top_builddir)/lib/libicp/libicp.la $(ZLIB) -ldl
 libzpool_la_LDFLAGS = -version-info 2:0:0
 EXTRA_DIST = $(USER_C)
 all: all-am
@@ -618,11 +672,13 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/abd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blkptr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bplist.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bpobj.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bptree.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bqueue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbuf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbuf_stats.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ddt.Plo@am__quote@
@@ -648,18 +704,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_scan.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_synctask.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dsl_userhold.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/edonr_zfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gzip.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/kernel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lz4.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lzjb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/metaslab.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mmp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multilist.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pathname.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/range_tree.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/refcount.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rrwlock.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sa.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sha256.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/skein_zfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spa.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spa_boot.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spa_config.Plo@am__quote@
@@ -683,6 +743,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_missing.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_queue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_raidz.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_raidz_math.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_raidz_math_aarch64_neon.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_raidz_math_aarch64_neonx2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_raidz_math_avx2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_raidz_math_avx512bw.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_raidz_math_avx512f.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_raidz_math_scalar.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_raidz_math_sse2.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_raidz_math_ssse3.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vdev_root.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zap_leaf.Plo@am__quote@
@@ -694,10 +763,17 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_debug.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_deleg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_fletcher.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_fletcher_aarch64_neon.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_fletcher_avx512.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_fletcher_intel.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_fletcher_sse.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_fletcher_superscalar.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_fletcher_superscalar4.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_fm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_fuid.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_namecheck.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_prop.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_rlock.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_sa.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_uio.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_znode.Plo@am__quote@
@@ -712,24 +788,27 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zrlock.Plo@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .c.lo:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
