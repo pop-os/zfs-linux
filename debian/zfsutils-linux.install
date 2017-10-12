@@ -10,7 +10,7 @@ lib/udev/
 etc/default/zfs
 etc/zfs/zfs-functions
 etc/zfs/zpool.d/
-usr/lib/*/zfs/zpool.d/
+usr/lib/zfs-linux/zpool.d/
 sbin/fsck.zfs
 sbin/mount.zfs
 sbin/ztest

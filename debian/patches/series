@@ -6,3 +6,4 @@ enable-zed.patch
 1004-zed-service-bindir.patch
 0008-dracut-make-module-setup.sh-shebang-explicit.patch
 0009-add-man-page-reference-to-systemd-units.patch
+0010-fix-install-path-of-zpool.d-scripts.patch
