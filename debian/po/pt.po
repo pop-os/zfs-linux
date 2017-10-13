@@ -2,19 +2,22 @@
 # Copyright (C) 2013 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the zfs-linux package.
 # Miguel FIgueiredo <elmig@debianpt.org>, 2013.
+# Rui Branco <ruipb@debianpt.org>, 2017.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
 "POT-Creation-Date: 2015-11-01 14:11+0800\n"
-"PO-Revision-Date: 2013-07-07 13:57+0100\n"
-"Last-Translator: Miguel Figueiredo <elmig@debianpt.org>\n"
+"PO-Revision-Date: 2017-08-16 13:40+0100\n"
+"Last-Translator: Rui Branco <ruipb@debianpt.org>\n"
 "Language-Team: Portuguese <traduz@debianpt.org>\n"
 "Language: Portuguese\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Gtranslator 2.91.7\n"
 
 #. Type: boolean
 #. Description
@@ -39,9 +42,9 @@ msgid ""
 "strongly advised to use a 64-bit kernel; if you do decide to proceed with "
 "using ZFS on this kernel then keep in mind that it is at your own risk."
 msgstr ""
-"Embora possível, compilar num ambiente 32-bit, não é suportado e "
+"Embora possível, compilar num ambiente 32-bit não é suportado e "
 "possivelmente pode levar a instabilidade e corrupção de dados. É fortemente "
-"aconselhado a utilizar um kernel 64-bit; Se decidir utilizar ZFS com este "
+"aconselhado a utilizar um kernel 64-bit; se decidir utilizar ZFS com este "
 "kernel lembre-se que está por sua conta e risco."
 
 #. Type: boolean
@@ -67,7 +70,7 @@ msgstr ""
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid "Licenses of ZFS and Linux are incompatible"
-msgstr ""
+msgstr "As licenças do ZFS e do Linux são incompatíveis"
 
 #. Type: note
 #. Description
@@ -80,6 +83,13 @@ msgid ""
 "prevents using pieces of code exclusively available under one license with "
 "pieces of code exclusively available under the other in the same binary."
 msgstr ""
+"O ZFS está licenciado sobre a Common Development and Distribution License "
+"(CDDL),enquanto que o kernel do Linux está sobre a GNU General Public "
+"License Version 2 (GPL-2). Apesar de ambas serem licenças de open source "
+"livres, são ambas restritivas. A combinação de ambas pode causar problemas "
+"pois impedem o uso exclusivo de partes de código disponíveis para uma "
+"licença com partes de código exclusivas de outra licença no mesmo ficheiro "
+"binário."
 
 #. Type: note
 #. Description
@@ -90,3 +100,7 @@ msgid ""
 "the binaries in the same media (disk images, virtual appliances, etc) may "
 "lead to infringing."
 msgstr ""
+"Irá compilar o ZFS usando DKMS de um modo tal que não será compilado num "
+"único binário monolítico. tenha atenção que distribuir ambos os binários no "
+"mesmo suporte de media (imagens de disco, aplicações virtuais, etc) pode "
+"levar a violação da licença. "
