@@ -34,6 +34,7 @@ _Description: Licenses of ZFS and Linux are incompatible
  pieces of code exclusively available under one license with pieces of code
  exclusively available under the other in the same binary. 
  .
- You are going to build ZFS using DKMS in which way they are not going to be built
- into one monolithic binary. Please be aware that distributing both of the binaries
- in the same media (disk images, virtual appliances, etc) may lead to infringing.
+ You are going to build ZFS using DKMS in such a way that they are not going to
+ be built into one monolithic binary. Please be aware that distributing both of
+ the binaries in the same media (disk images, virtual appliances, etc) may
+ lead to infringing.
