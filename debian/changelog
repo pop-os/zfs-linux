@@ -1,3 +1,22 @@
+zfs-linux (0.7.3-0) UNRELEASED; urgency=medium
+
+  * New upstream version 0.7.3 (Closes: #871619)
+
+  [ Fabian Grünbichle ]
+  * Factor tests into zfs-test package
+  * Switch to --fail-mising and track not-installed files
+  * Add man pages references to systemd units
+  * dracut: make module-setup.sh shebang explicit
+
+  [ Rui Branco ]
+  * Portuguese translation (Closes: #873170)
+
+  [ Antonio Russo ]
+  * Fix typo in debconf templates
+  * Relax build dependency on dh-systemd
+
+ -- Antonio Russo <antonio.e.russo@gmail.com>  Tue, 24 Oct 2017 06:49:21 -0400
+
 zfs-linux (0.6.5.11-1) unstable; urgency=medium
 
   [ Aron Xu ]
