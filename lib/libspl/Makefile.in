@@ -464,7 +464,7 @@ AM_CPPFLAGS = -D_GNU_SOURCE -D__EXTENSIONS__ -D_REENTRANT \
 SUBDIRS = include $(TARGET_ASM_DIR)
 DIST_SUBDIRS = include asm-generic asm-i386 asm-x86_64
 AM_CCASFLAGS = \
-	-I$(top_srcdir)/lib/libspl/include
+	$(CFLAGS)
 
 noinst_LTLIBRARIES = libspl.la
 USER_C = \

@@ -1136,42 +1136,50 @@ deb-local:
 	fi)
 
 deb-kmod: deb-local rpm-kmod
-@CONFIG_KERNEL_TRUE@	name=${PACKAGE}; \
-@CONFIG_KERNEL_TRUE@	version=${VERSION}-${RELEASE}; \
-@CONFIG_KERNEL_TRUE@	arch=`$(RPM) -qp $${name}-kmod-$${version}.src.rpm --qf %{arch} | tail -1`; \
-@CONFIG_KERNEL_TRUE@	pkg1=kmod-$${name}*$${version}.$${arch}.rpm; \
-@CONFIG_KERNEL_TRUE@	fakeroot $(ALIEN) --bump=0 --scripts --to-deb $$pkg1; \
-@CONFIG_KERNEL_TRUE@	$(RM) $$pkg1
+	name=${PACKAGE}; \
+	version=${VERSION}-${RELEASE}; \
+	arch=`$(RPM) -qp $${name}-kmod-$${version}.src.rpm --qf %{arch} | tail -1`; \
+	pkg1=kmod-$${name}*$${version}.$${arch}.rpm; \
+	fakeroot $(ALIEN) --bump=0 --scripts --to-deb $$pkg1; \
+	$(RM) $$pkg1
+
+deb-dkms: deb-local rpm-dkms
+	name=${PACKAGE}; \
+	version=${VERSION}-${RELEASE}; \
+	arch=`$(RPM) -qp $${name}-dkms-$${version}.src.rpm --qf %{arch} | tail -1`; \
+	pkg1=$${name}-dkms-$${version}.$${arch}.rpm; \
+	fakeroot $(ALIEN) --bump=0 --scripts --to-deb $$pkg1; \
+	$(RM) $$pkg1
 
 deb-utils: deb-local rpm-utils
-@CONFIG_USER_TRUE@	name=${PACKAGE}; \
-@CONFIG_USER_TRUE@	version=${VERSION}-${RELEASE}; \
-@CONFIG_USER_TRUE@	arch=`$(RPM) -qp $${name}-$${version}.src.rpm --qf %{arch} | tail -1`; \
-@CONFIG_USER_TRUE@	pkg1=$${name}-$${version}.$${arch}.rpm; \
-@CONFIG_USER_TRUE@	pkg2=libnvpair1-$${version}.$${arch}.rpm; \
-@CONFIG_USER_TRUE@	pkg3=libuutil1-$${version}.$${arch}.rpm; \
-@CONFIG_USER_TRUE@	pkg4=libzfs2-$${version}.$${arch}.rpm; \
-@CONFIG_USER_TRUE@	pkg5=libzpool2-$${version}.$${arch}.rpm; \
-@CONFIG_USER_TRUE@	pkg6=libzfs2-devel-$${version}.$${arch}.rpm; \
-@CONFIG_USER_TRUE@	pkg7=$${name}-test-$${version}.$${arch}.rpm; \
-@CONFIG_USER_TRUE@	pkg8=$${name}-dracut-$${version}.$${arch}.rpm; \
-@CONFIG_USER_TRUE@	pkg9=$${name}-initramfs-$${version}.$${arch}.rpm; \
-@CONFIG_USER_TRUE@	path_prepend=`mktemp -d /tmp/intercept.XXX`; \
-@CONFIG_USER_TRUE@	echo "#$(SHELL)" > $${path_prepend}/dh_shlibdeps; \
-@CONFIG_USER_TRUE@	echo "`which dh_shlibdeps` -- \
-@CONFIG_USER_TRUE@	 -xlibuutil1linux -xlibnvpair1linux -xlibzfs2linux -xlibzpool2linux" \
-@CONFIG_USER_TRUE@	 >> $${path_prepend}/dh_shlibdeps; \
-@CONFIG_USER_TRUE@	chmod +x $${path_prepend}/dh_shlibdeps; \
-@CONFIG_USER_TRUE@	env PATH=$${path_prepend}:$${PATH} \
-@CONFIG_USER_TRUE@	fakeroot $(ALIEN) --bump=0 --scripts --to-deb \
-@CONFIG_USER_TRUE@	    $$pkg1 $$pkg2 $$pkg3 $$pkg4 $$pkg5 $$pkg6 $$pkg7 \
-@CONFIG_USER_TRUE@	    $$pkg8 $$pkg9; \
-@CONFIG_USER_TRUE@	$(RM) $${path_prepend}/dh_shlibdeps; \
-@CONFIG_USER_TRUE@	rmdir $${path_prepend}; \
-@CONFIG_USER_TRUE@	$(RM) $$pkg1 $$pkg2 $$pkg3 $$pkg4 $$pkg5 $$pkg6 $$pkg7 \
-@CONFIG_USER_TRUE@	    $$pkg8 $$pkg9;
+	name=${PACKAGE}; \
+	version=${VERSION}-${RELEASE}; \
+	arch=`$(RPM) -qp $${name}-$${version}.src.rpm --qf %{arch} | tail -1`; \
+	pkg1=$${name}-$${version}.$${arch}.rpm; \
+	pkg2=libnvpair1-$${version}.$${arch}.rpm; \
+	pkg3=libuutil1-$${version}.$${arch}.rpm; \
+	pkg4=libzfs2-$${version}.$${arch}.rpm; \
+	pkg5=libzpool2-$${version}.$${arch}.rpm; \
+	pkg6=libzfs2-devel-$${version}.$${arch}.rpm; \
+	pkg7=$${name}-test-$${version}.$${arch}.rpm; \
+	pkg8=$${name}-dracut-$${version}.$${arch}.rpm; \
+	pkg9=$${name}-initramfs-$${version}.$${arch}.rpm; \
+	path_prepend=`mktemp -d /tmp/intercept.XXX`; \
+	echo "#$(SHELL)" > $${path_prepend}/dh_shlibdeps; \
+	echo "`which dh_shlibdeps` -- \
+	 -xlibuutil1linux -xlibnvpair1linux -xlibzfs2linux -xlibzpool2linux" \
+	 >> $${path_prepend}/dh_shlibdeps; \
+	chmod +x $${path_prepend}/dh_shlibdeps; \
+	env PATH=$${path_prepend}:$${PATH} \
+	fakeroot $(ALIEN) --bump=0 --scripts --to-deb \
+	    $$pkg1 $$pkg2 $$pkg3 $$pkg4 $$pkg5 $$pkg6 $$pkg7 \
+	    $$pkg8 $$pkg9; \
+	$(RM) $${path_prepend}/dh_shlibdeps; \
+	rmdir $${path_prepend}; \
+	$(RM) $$pkg1 $$pkg2 $$pkg3 $$pkg4 $$pkg5 $$pkg6 $$pkg7 \
+	    $$pkg8 $$pkg9;
 
-deb: deb-kmod deb-utils
+deb: deb-kmod deb-dkms deb-utils
 tgz-local:
 	@(if test "${HAVE_ALIEN}" = "no"; then \
 		echo -e "\n" \
@@ -1270,6 +1278,7 @@ etags:
 tags: ctags etags
 
 pkg: @DEFAULT_PACKAGE@
+pkg-dkms: @DEFAULT_PACKAGE@-dkms
 pkg-kmod: @DEFAULT_PACKAGE@-kmod
 pkg-utils: @DEFAULT_PACKAGE@-utils
 
