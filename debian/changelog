@@ -1,21 +1,36 @@
-zfs-linux (0.7.3-0) UNRELEASED; urgency=medium
-
-  * New upstream version 0.7.3 (Closes: #871619)
-
-  [ Fabian Grünbichle ]
-  * Factor tests into zfs-test package
-  * Switch to --fail-mising and track not-installed files
-  * Add man pages references to systemd units
-  * dracut: make module-setup.sh shebang explicit
-
-  [ Rui Branco ]
-  * Portuguese translation (Closes: #873170)
+zfs-linux (0.7.3-1) unstable; urgency=medium
 
   [ Antonio Russo ]
-  * Fix typo in debconf templates
-  * Relax build dependency on dh-systemd
+  * Refresh manual builds DKMS prevention patch
 
- -- Antonio Russo <antonio.e.russo@gmail.com>  Tue, 24 Oct 2017 06:49:21 -0400
+  [ Fabian Grünbichler ]
+  * zfs-test package
+  * add files to debian/not-installed
+  * dh_install: switch to --fail-missing
+  * add new files from 0.7 to install
+  * dkms: build icp module as well
+
+  [ Antonio Russo ]
+  * dracut: make module-setup.sh shebang explicit
+  * add man page reference to systemd units
+  * Fix install path of zpool.d scripts
+  * Incorporate DebianPT.org Portuguese translation
+  * Fix typo in debconf templates
+  * Drop dependency on dh-systemd
+
+  [ Aron Xu ]
+  * Drop merged patches, update remainders
+  * Update std-ver to 4.1.1
+  * New upstream version 0.7.3
+  * Update debconf pot file
+  * Update control.in for dh-systemd deprecation
+  * Add lintian override for zfs-test
+
+  [ Colin King ]
+  * Improve cloning performance for large numbers of clones (LP: #1567557)
+    Bump zcmd buffer from 16K to 256K.
+
+ -- Aron Xu <aron@debian.org>  Tue, 31 Oct 2017 18:52:01 +0800
 
 zfs-linux (0.6.5.11-1) unstable; urgency=medium
 
