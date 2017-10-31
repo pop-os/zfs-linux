@@ -19,7 +19,7 @@ COPY_EXEC_LIST="$COPY_EXEC_LIST /bin/hostname /sbin/blkid"
 
 # Explicitly specify all kernel modules because automatic dependency resolution
 # is unreliable on many systems.
-BASE_MODULES="zlib_deflate spl zavl zcommon znvpair zunicode zfs"
+BASE_MODULES="zlib_deflate spl zavl zcommon znvpair zunicode zfs icp"
 CRPT_MODULES="sun-ccm sun-gcm sun-ctr"
 MANUAL_ADD_MODULES_LIST="$BASE_MODULES"
 
@@ -55,7 +55,7 @@ mkdir -p "$DESTDIR/etc/"
 # automatically detected. The `find` utility and extended `cp` options are
 # used here because libgcc_s.so could be in a subdirectory of /lib for
 # multi-arch installations.
-cp --target-directory="$DESTDIR" --parents $(find /lib -type f -name libgcc_s.so.1)
+cp --target-directory="$DESTDIR" --parents $(find /lib/ -type f -name libgcc_s.so.1)
 
 for ii in $COPY_EXEC_LIST
 do

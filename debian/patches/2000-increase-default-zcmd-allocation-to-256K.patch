@@ -1,0 +1,67 @@
+Increase default zcmd allocation to 256K (LP: #567557)
+
+When creating hundreds of clones (for example using containers with
+LXD) cloning slows down as the number of clones increases over time.
+The reason for this is that the fetching of the clone information
+using a small zcmd buffer requires two ioctl calls, one to determine
+the size and a second to return the data. However, this requires
+gathering the data twice, once to determine the size and again to
+populate the zcmd buffer to return it to userspace.
+
+These are expensive ioctl() calls, so instead, make the default buffer
+size much larger: 256K. This may sound large, but on 64 bit systems
+running ZFS this is not a huge chunk of memory for the speed
+improvement we gains for large sets of clones:
+
+        16K zcmd        256K zcmd
+Clones	Time    Clones  Time    Clone   % improvement
+        (secs) 	per sec (secs)  per sec
+100	7	14.29	5	20.00	28.57
+200	10	20.00	9	22.22	10.00
+300	19	15.79	18	16.67	5.26
+400	22	18.18	22	18.18	0.00
+500	29	17.24	29	17.24	0.00
+600	39	15.38	39	15.38	0.00
+700	46	15.22	45	15.56	2.17
+800	58	13.79	51	15.69	12.07
+900	74	12.16	61	14.75	17.57
+1000	90	11.11	74	13.51	17.78
+1100	98	11.22	87	12.64	11.22
+1200	102	11.76	95	12.63	6.86
+1300	113	11.50	104	12.50	7.96
+1400	143	9.79	109	12.84	23.78
+1500	145	10.34	132	11.36	8.97
+1600	165	9.70	145	11.03	12.12
+1700	187	9.09	156	10.90	16.58
+1800	210	8.57	166	10.84	20.95
+1900	226	8.41	183	10.38	19.03
+2000	256	7.81	198	10.10	22.66
+2200	311	7.07	238	9.24	23.47
+2400	373	6.43	271	8.86	27.35
+2600	487	5.34	316	8.23	35.11
+3000	619	4.85	426	7.04	31.18
+3400	915	3.72	549	6.19	40.00
+4000	1332	3.00	923	4.33	30.71
+
+As one can see, with > 2000 clones we get 25-40% speed
+improvement.
+
+This patch was originally suggested by Brian Behlendorf
+(see https://github.com/zfsonlinux/zfs/issues/6372), however
+this fix is a more generic fix to cover all zcmd cases.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+
+Index: zfs/lib/libzfs/libzfs_util.c
+===================================================================
+--- zfs.orig/lib/libzfs/libzfs_util.c
++++ zfs/lib/libzfs/libzfs_util.c
+@@ -1354,7 +1354,7 @@ int
+ zcmd_alloc_dst_nvlist(libzfs_handle_t *hdl, zfs_cmd_t *zc, size_t len)
+ {
+ 	if (len == 0)
+-		len = 16 * 1024;
++		len = 256 * 1024;
+ 	zc->zc_nvlist_dst_size = len;
+ 	zc->zc_nvlist_dst =
+ 	    (uint64_t)(uintptr_t)zfs_alloc(hdl, zc->zc_nvlist_dst_size);

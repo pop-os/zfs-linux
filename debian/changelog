@@ -1,3 +1,37 @@
+zfs-linux (0.7.3-1) unstable; urgency=medium
+
+  [ Antonio Russo ]
+  * Refresh manual builds DKMS prevention patch
+
+  [ Fabian Grünbichler ]
+  * zfs-test package
+  * add files to debian/not-installed
+  * dh_install: switch to --fail-missing
+  * add new files from 0.7 to install
+  * dkms: build icp module as well
+
+  [ Antonio Russo ]
+  * dracut: make module-setup.sh shebang explicit
+  * add man page reference to systemd units
+  * Fix install path of zpool.d scripts
+  * Incorporate DebianPT.org Portuguese translation
+  * Fix typo in debconf templates
+  * Drop dependency on dh-systemd
+
+  [ Aron Xu ]
+  * Drop merged patches, update remainders
+  * Update std-ver to 4.1.1
+  * New upstream version 0.7.3
+  * Update debconf pot file
+  * Update control.in for dh-systemd deprecation
+  * Add lintian override for zfs-test
+
+  [ Colin King ]
+  * Improve cloning performance for large numbers of clones (LP: #1567557)
+    Bump zcmd buffer from 16K to 256K.
+
+ -- Aron Xu <aron@debian.org>  Tue, 31 Oct 2017 18:52:01 +0800
+
 zfs-linux (0.6.5.11-1) unstable; urgency=medium
 
   [ Aron Xu ]

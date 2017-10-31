@@ -9,6 +9,8 @@ usr/lib/modules-load.d/ lib/
 lib/udev/
 etc/default/zfs
 etc/zfs/zfs-functions
+etc/zfs/zpool.d/
+usr/lib/zfs-linux/zpool.d/
 sbin/fsck.zfs
 sbin/mount.zfs
 sbin/ztest
@@ -19,10 +21,10 @@ sbin/zdb
 sbin/zpios
 sbin/zpool
 sbin/zfs
+usr/bin/zgenhostid
 usr/sbin/arc_summary
 usr/sbin/arcstat
 usr/sbin/dbufstat
-usr/share/zfs/
 usr/share/man/man1/
 usr/share/man/man5/
 usr/share/man/man8/zstreamdump.8
@@ -33,3 +35,4 @@ usr/share/man/man8/zdb.8
 usr/share/man/man8/vdev_id.8
 usr/share/man/man8/mount.zfs.8
 usr/share/man/man8/fsck.zfs.8
+usr/share/man/man8/zgenhostid.8

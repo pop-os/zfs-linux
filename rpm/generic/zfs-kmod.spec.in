@@ -86,6 +86,11 @@ BuildRequires:             kmod-spl-devel = %{version}
 %global KmodsMetaRequires  spl-kmod
 %endif
 
+# LDFLAGS are not sanitized by arch/*/Makefile for these architectures.
+%ifarch ppc ppc64 ppc64le aarch64
+%global __global_ldflags %{nil}
+%endif
+
 %if 0%{?fedora} >= 17
 %define prefix  /usr
 %endif
@@ -186,178 +191,15 @@ chmod u+x ${RPM_BUILD_ROOT}%{kmodinstdir_prefix}/*/extra/*/*/*
 rm -rf $RPM_BUILD_ROOT
 
 %changelog
-* Mon Jul 10 2017 Tony Hutter <hutter2@llnl.gov> - 0.6.5.11-1
-- Linux 4.12 compat: super_setup_bdi_name() - add missing code zfsonlinux/zfs#6089 zfsonlinux/zfs#6324
-- Musl libc fixes zfsonlinux/zfs#6310
-- Increase zfs_vdev_async_write_min_active to 2 zfsonlinux/zfs#5926
-- Fix int overflow in zbookmark_is_before()- Fix RHEL 7.4 bio_set_op_attrs build error zfsonlinux/zfs#6234 zfsonlinux/zfs#6271
-- Fix RHEL 7.4 bio_set_op_attrs build error zfsonlinux/zfs#6253 zfsonlinux/zfs#6271
-- GCC 7.1 fixes zfsonlinux/zfs#6253
-- Remove complicated libspl assert wrappers zfsonlinux/zfs#4449
-- Compatibilty with glibc-2.23 zfsonlinux/zfs#6132
-- glibc 2.5 compat: use correct header for makedev() et al. zfsonlinux/zfs#5945
-* Mon Jun 12 2017 Tony Hutter <hutter2@llnl.gov> - 0.6.5.10-1
-- OpenZFS 8005 - poor performance of 1MB writes on certain RAID-Z configurations zfsonlinux/zfs#5931
-- Add MS_MANDLOCK mount failure message zfsonlinux/zfs#4729 zfsonlinux/zfs#6199
-- Fix import wrong spare/l2 device when path change zfsonlinux/zfs#6158
-- Fix import finding spare/l2cache when path changes zfsonlinux/zfs#6158
-- Linux 4.9 compat: fix zfs_ctldir xattr handling zfsonlinux/zfs#6189
-- Linux 4.12 compat: fix super_setup_bdi_name() call zfsonlinux/zfs#6147
-- Linux 4.12 compat: CURRENT_TIME removed zfsonlinux/zfs#6114
-- Linux 4.12 compat: super_setup_bdi_name() zfsonlinux/zfs#6089
-- Limit zfs_dirty_data_max_max to 4G zfsonlinux/zfs#6072 zfsonlinux/zfs#6081
-- OpenZFS 8166 - zpool scrub thinks it repaired offline device zfsonlinux/zfs#5806 zfsonlinux/zfs#6103
-- vdev_id: fix failure due to multipath -l bug zfsonlinux/zfs#6039
-- Guarantee PAGESIZE alignment for large zio buffers zfsonlinux/zfs#6084
-- Fix harmless "BARRIER is deprecated" kernel warning on Centos 6.8 zfsonlinux/zfs#5739 zfsonlinux/zfs#5828
-- Add kmap_atomic in dmu_bio_copy- zdb: segfault in dump_bpobj_subobjs() zfsonlinux/zfs#3905
-- Fix atomic_sub_64() i386 assembly implementation zfsonlinux/zfs#5671 zfsonlinux/zfs#5717
-- Fix loop device becomes read-only zfsonlinux/zfs#5776 zfsonlinux/zfs#5855
-- Allow ZVOL bookmarks to be listed recursively zfsonlinux/zfs#4503 zfsonlinux/zfs#5072
-- Fix zfs-mount.service failure on boot zfsonlinux/zfs#5719
-- Fix iput() calls within a tx zfsonlinux/zfs#5758
-- Fix off by one in zpl_lookup zfsonlinux/zfs#5768
-- Linux 4.11 compat: iops.getattr and friends zfsonlinux/zfs#5875
-- Linux 4.11 compat: avoid refcount_t name conflict zfsonlinux/zfs#5823 zfsonlinux/zfs#5842
-* Fri Feb 3 2017 Brian Behlendorf <behlendorf1@llnl.gov> - 0.6.5.9-1
-- Use large stacks when available zfsonlinux/zfs#4059
-- Use set_cached_acl() and forget_cached_acl() when possible zfsonlinux/zfs#5378
-- Fix batch free zpl_posix_acl_release zfsonlinux/zfs#5340 zfsonlinux/zfs#5353
-- Fix zfsctl_snapshot_{,un}mount() issues zfsonlinux/zfs#5250
-- Fix systemd services configutation through preset file zfsonlinux/zfs#5356
-- Fix RLIMIT_FSIZE enforcement zfsonlinux/zfs#5587 zfsonlinux/zfs#5673 zfsonlinux/zfs#5720 zfsonlinux/zfs#5726
-- Fix leak on zfs_sb_create() failure zfsonlinux/zfs#5490 zfsonlinux/zfs#5496
-- Fix zpl_fallocate_common() creak leak zfsonlinux/zfs#5244 zfsonlinux/zfs#5330
-- Fix fchange in zpl_ioctl_setflags() zfsonlinux/zfs#5486
-- Fix wrong operator in xvattr.h zfsonlinux/zfs#5486
-- Fix counting '@' in dataset namelen zfsonlinux/zfs#5432 zfsonlinux/zfs#5456
-- Fix dmu_object_size_from_db() call under spinlock zfsonlinux/zfs#3858
-- Fix lookup_bdev() on Ubuntu zfsonlinux/zfs#5336
-- Fix receiving custom snapshot properties zfsonlinux/zfs#5189
-- Fix bio merging w/noop scheduler zfsonlinux/zfs#5181
-- Fix sync behavior for disk vdevs zfsonlinux/zfs#4858
-- Fix uninitialized variable in avl_add() zfsonlinux/zfs#3609
-- Fix tq_lock contention by making write taskq non-dynamic zfsonlinux/zfs#5236
-- Fix atime handling (relatime, lazytime) zfsonlinux/zfs#4482
-- Linux 4.10 compat: BIO flag changes zfsonlinux/zfs#5499
-- Linux 4.9 compat: inode_change_ok() renamed setattr_prepare() zfsonlinux/zfs#5307
-- Linux 4.9 compat: remove iops->{set,get,remove}xattr zfsonlinux/zfs#5307
-- Linux 4.9 compat: iops->rename() wants flags zfsonlinux/zfs#5307
-- Linux 4.9 compat: file_operations->aio_fsync removal zfsonlinux/zfs#5393
-- Linux 4.9 compat: Remove dir inode operations from zpl_inode_operations zfsonlinux/zfs#5307
-- Linux 4.7 compat: Fix deadlock during lookup on case-insensitive zfsonlinux/zfs#5124 zfsonlinux/zfs#5141 zfsonlinux/zfs#5147 zfsonlinux/zfs#5148
-- Linux 3.14 compat: assign inode->set_acl zfsonlinux/zfs#5371 zfsonlinux/zfs#5375
-- Linux 2.6.32 compat: Reorder HAVE_BIO_RW_* checks zfsonlinux/zfs#4951 zfsonlinux/zfs#4959
-- Remove dead root pool import code zfsonlinux/zfs#4951
-* Fri Sep 9 2016 Ned Bass <bass6@llnl.gov> - 0.6.5.8-1
-- Linux 4.6, 4.7 and 4.8 compatibility zfsonlinux/spl#549 zfsonlinux/spl#563 zfsonlinux/spl#565 zfsonlinux/spl#566 zfsonlinux/zfs#4664 zfsonlinux/zfs#4665 zfsonlinux/zfs#4717 zfsonlinux/zfs#4726 zfsonlinux/zfs#4892  zfsonlinux/zfs#4899 zfsonlinux/zfs#4922  zfsonlinux/zfs#4944  zfsonlinux/zfs#4946 zfsonlinux/zfs#4951
-- Fix new tunable to ignore hole_birth, enabled by default zfsonlinux/zfs#4833
-- Fix rw_tryupgrade() semantics zfsonlinux/spl#534 zfsonlinux/spl#554
-- Fix taskq_wait_outstanding() re-evaluation issue zfsonlinux/spl#553
-- Fix race between taskq_destroy and new spawning thread zfsonlinux/spl#550 zfsonlinux/spl#553
-- Fix handle NULL case in spl_kmem_free_track() zfsonlinux/spl#567
-- Fix persist vdev_resilver_txg changes zfsonlinux/zfs#4790
-- Fix array bounds read in zprop_print_one_property() zfsonlinux/zfs#5003
-- Fix call zfs_get_name() with invalid parameter zfsonlinux/zfs#4919
-- Fix incorrect pool state after import zfsonlinux/zfs#4948
-- Fix self-healing IO prior to dsl_pool_init() completion zfsonlinux/zfs#4652
-- Fix stack corruption after importing a pool with a too-long name zfsonlinux/zfs@dc4abb4
-- Fix deeply nested nvlist can overflow stack zfsonlinux/zfs#4924
-- Fix dbuf_stats_hash_table_data race zfsonlinux/zfs#4846
-- Fix NULL dereference when accessing dbuf kstat zfsonlinux/zfs#4837
-- Fix NFS fh_to_dentry() should return ESTALE when generation mismatch zfsonlinux/zfs#4828
-- Fix allowing accessing XATTR via export handle zfsonlinux/zfs#4828
-- Fix out-of-bound access in zfs_fillpage() zfsonlinux/zfs#4705 zfsonlinux/zfs#4708
-- Fix memleak in zpl_parse_options zfsonlinux/zfs#4706 zfsonlinux/zfs#4708
-- Fix arc_prune_task use-after-free zfsonlinux/zfs#4687 zfsonlinux/zfs#4690
-- Fix get_zfs_sb() race with concurrent umount zfsonlinux/zfs@5cff9a0
-- Fix xattr parent inode pinning zfsonlinux/zfs#4359 zfsonlinux/zfs#3508 zfsonlinux/zfs#4413 zfsonlinux/zfs#4827
-- Fix xattr purge during iput zfsonlinux/zfs#4359 zfsonlinux/zfs#3508 zfsonlinux/zfs#4413 zfsonlinux/zfs#4827
-- Fix metaslab_free_dva(): bad DVA X:Y:Z zfsonlinux/zfs#3937
-- Fix large kmem_alloc in vdev_metaslab_init zfsonlinux/zfs#4752
-- Fix snapdir by skipping ctldir znode in zfs_rezget zfsonlinux/zfs#4514 zfsonlinux/zfs#4661 zfsonlinux/zfs#4672
-- Fix libshare performance issue zfsonlinux/zfs#4119
-- Fix ztest truncated cache file zfsonlinux/zfs#4129
-- Fix obeying arc_meta_limit default size when changing arc_max zfsonlinux/zfs#4001
-- Fix bug in fix_paths() zfsonlinux/zfs#4632
-- Fix systemd configuration zfsonlinux/zfs#4325 zfsonlinux/zfs#4496 zfsonlinux/zfs#4658 zfsonlinux/zfs#4699
-- Fix use kernel provided mutex owner zfsonlinux/spl#540
-- Fix rename 'zed.service' to 'zfs-zed.service' zfsonlinux/zfs#3837
-- Add support for MIPS zfsonlinux/spl#558
-- Add nfs-kernel-server for Debian zfsonlinux/zfs#4350
-- Remove HAVE_CURRENT_UMASK and HAVE_POSIX_ACL_CACHING zfsonlinux/zfs#4922
-- Remove dummy znode from zvol_state zfsonlinux/zfs#4510
-- Fix gcc -Warray-bounds check for dump_object() in zdb zfsonlinux/zfs#4907
-- Handle block pointers with a corrupt logical size zfsonlinux/zfs#4069 zfsonlinux/zfs#4080
-* Thu May 12 2016 Ned Bass <bass6@llnl.gov> - 0.6.5.7-1
-- Fix user namespaces uid/gid mapping zfsonlinux/zfs#4177
-- Fix ZPL miswrite of default POSIX ACL zfsonlinux/zfs#4520
-- Linux 4.5 and 4.6 compatibility zfsonlinux/zfs#4537 zfsonlinux/zfs#4489
-- Ensure /dev/disk/by-partlabel gets correctly populated zfsonlinux/zfs#4517
-- Utilities now work reliably with newly created partitions zfsonlinux/zfs#3708
-- Import now reliably uses device names stored in label zfsonlinux/zfs#3043
-- Fix possible deadlock in zfs_secpolicy_write_perms ioctl zfsonlinux/zfs#4554
-- Fix inverted logic on none elevator comparison zfsonlinux/zfs#4507
-- Add 32 bit FS_IOC32_{GET|SET}FLAGS compat ioctls for PPC zfsonlinux/zfs#4477
-* Tue Mar 22 2016 Ned Bass <bass6@llnl.gov> - 0.6.5.6-1
-- Remove artificial architecture restrictions in packaging
-- Add support for s390[x] zfsonlinux/zfs#4425
-- Handle negative dentries in case insensitive filesystem zfsonlinux/zfs#4243
-- Fix casesensitivity=insensitive deadlock zfsonlinux/zfs#4136
-- Correctly parse zdb -R flag arguments zfsonlinux/zfs#4304
-- Fix lock order inversion with zvol_open() zfsonlinux/zfs#3681
-- Add support for asynchronous zvol minor operations zfsonlinux/zfs#2217
-- Make zvol minor functionality more robust zfsonlinux/zfs#4344
-- Prevent zpool_find_vdev() from truncating vdev path zfsonlinux/zfs#4312
-- Add -gLP to zpool subcommands for alt vdev names zfsonlinux/zfs#4341
-- Fix zpool list -v output for spares and log devices zfsonlinux/zfs#4313
-* Wed Mar 9 2016 Ned Bass <bass6@llnl.gov> - 0.6.5.5-1
-- Linux 4.5 compatibility zfsonlinux/zfs#4228
-- Create working debuginfo packages on Red Hat zfsonlinux/zfs#4224
-- Make arc_summary.py and dbufstat.py compatible with python3
-- musl libc compatibility for option parsing zfsonlinux/zfs#4222
-- Prevent arc_c collapse and possible panic zfsonlinux/zfs#3904
-- Prevent duplicated xattr between SA and dir zfsonlinux/zfs#4153
-- Fix zsb->z_hold_mtx deadlock zfsonlinux/zfs#4106
-- Prevent SA header corruption zfsonlinux/zfs#4150
-* Fri Jan  8 2016 Ned Bass <bass6@llnl.gov> - 0.6.5.4-1
-- Linux 4.4 compat
-- Assorted stability fixes
-- Fixes for NFS-exported snapshots
-- Fix kernel warning in unlock_new_inode() and deadlock
-- Fix overflow in P2ROUNDUP_TYPED macro
-- Fix write performance issue due to bad zfs_dirty_data_max calculation
-- Fix builtin kernel builds
-- Fix deadlock during direct memory reclaim
-* Tue Oct 13 2015 Ned Bass <bass6@llnl.gov> - 0.6.5.3-1
-- Don't import all visible pools in zfs-import init script zfsonlinux/zfs#3777
-- Fix use-after-free in vdev_disk_physio_completion zfsonlinux/zfs#3920
-- Fix avl_is_empty(&dn->dn_dbufs) assertion zfsonlinux/zfs#3865
-* Wed Sep 30 2015 Ned Bass <bass6@llnl.gov> - 0.6.5.2-1
-- Init script fixes zfsonlinux/zfs#3816
-- Fix uioskip crash when skip to end zfsonlinux/zfs#3806 zfsonlinux/zfs#3850
-- Userspace can trigger an assertion zfsonlinux/zfs#3792
-- Fix quota userused underflow bug zfsonlinux/zfs#3789
-- Fix performance regression from unwanted synchronous I/O zfsonlinux/zfs#3780
-- Fix deadlock during ARC reclaim zfsonlinux/zfs#3808 zfsonlinux/zfs#3834
-- Fix deadlock with zfs receive and clamscan zfsonlinux/zfs#3719
-- Allow NFS activity to defer snapshot unmounts zfsonlinux/zfs#3794
-- Linux 4.3 compatibility zfsonlinux/zfs#3799
-- Zed reload fixes zfsonlinux/zfs#3773
-- Fix PAX Patch/Grsec SLAB_USERCOPY panic zfsonlinux/zfs#3796
-- Always remove during dkms uninstall/update zfsonlinux/spl#476
-* Sat Sep 19 2015 Ned Bass <bass6@llnl.gov> - 0.6.5.1-1
-- Fix zvol corruption with TRIM/discard zfsonlinux/zfs#3798
-- Fix NULL as mount(2) syscall data parameter zfsonlinux/zfs#3804
-- Fix xattr=sa dataset property not honored zfsonlinux/zfs#3787
-* Fri Sep 11 2015 Brian Behlendorf <behlendorf1@llnl.gov> - 0.6.5-1
-- Released 0.6.5-1, detailed release notes are available at:
-- https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.6.5
-* Wed Apr  8 2015 Brian Behlendorf <behlendorf1@llnl.gov> - 0.6.4-1
-- Released 0.6.4-1
-* Thu Jun 12 2014 Brian Behlendorf <behlendorf1@llnl.gov> - 0.6.3-1
-- Released 0.6.3-1
-* Wed Aug 21 2013 Brian Behlendorf <behlendorf1@llnl.gov> - 0.6.2-1
-- Released 0.6.2-1
-* Fri Mar 22 2013 Brian Behlendorf <behlendorf1@llnl.gov> - 0.6.1-1
-- First official stable release.
+* Wed Oct 18 2017 Tony Hutter <hutter2@llnl.gov> - 0.7.3-1
+- Released 0.7.3-1, detailed release notes are available at:
+- https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.7.3
+* Fri Sep 22 2017 Tony Hutter <hutter2@llnl.gov> - 0.7.2-1
+- Released 0.7.2-1, detailed release notes are available at:
+- https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.7.2
+* Tue Aug 8 2017 Tony Hutter <hutter2@llnl.gov> - 0.7.1-1
+- Released 0.7.1-1, detailed release notes are available at:
+- https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.7.1
+* Wed Jul 26 2017 Brian Behlendorf <behlendorf1@llnl.gov> - 0.7.0-1
+- Released 0.7.0-1, detailed release notes are available at:
+- https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.7.0

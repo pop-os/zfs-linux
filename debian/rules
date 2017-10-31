@@ -152,7 +152,7 @@ endif
 
 override_dh_install:
 	find . -name lib*.la -delete
-	dh_install --list-missing
+	dh_install --fail-missing
 
 # ------------
 

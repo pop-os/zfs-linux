@@ -38,7 +38,8 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/config/Rules.am
 subdir = lib/libspl
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
+	$(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/always-no-unused-but-set-variable.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-aio-fsync.m4 \
@@ -53,6 +54,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-bio-op.m4 \
 	$(top_srcdir)/config/kernel-bio-rw-barrier.m4 \
 	$(top_srcdir)/config/kernel-bio-rw-discard.m4 \
+	$(top_srcdir)/config/kernel-bio_set_dev.m4 \
+	$(top_srcdir)/config/kernel-blk-queue-bdi.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-flush.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-hw-sectors.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-segments.m4 \
@@ -60,7 +63,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get-by-path.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations-release-void.m4 \
-	$(top_srcdir)/config/kernel-check-disk-size-change.m4 \
 	$(top_srcdir)/config/kernel-clear-inode.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-create-nameidata.m4 \
@@ -77,9 +79,11 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-encode-fh-inode.m4 \
 	$(top_srcdir)/config/kernel-evict-inode.m4 \
 	$(top_srcdir)/config/kernel-fallocate.m4 \
+	$(top_srcdir)/config/kernel-file-dentry.m4 \
 	$(top_srcdir)/config/kernel-file-inode.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
 	$(top_srcdir)/config/kernel-follow-down-one.m4 \
+	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
 	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
 	$(top_srcdir)/config/kernel-generic_readlink.m4 \
@@ -87,17 +91,20 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-get-gendisk.m4 \
 	$(top_srcdir)/config/kernel-get-link.m4 \
 	$(top_srcdir)/config/kernel-inode-getattr.m4 \
+	$(top_srcdir)/config/kernel-inode-set-flags.m4 \
 	$(top_srcdir)/config/kernel-insert-inode-locked.m4 \
 	$(top_srcdir)/config/kernel-invalidate-bdev-args.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
 	$(top_srcdir)/config/kernel-kmap-atomic-args.m4 \
-	$(top_srcdir)/config/kernel-kobj-name-len.m4 \
+	$(top_srcdir)/config/kernel-kuid-helpers.m4 \
 	$(top_srcdir)/config/kernel-lookup-bdev.m4 \
 	$(top_srcdir)/config/kernel-lookup-nameidata.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
 	$(top_srcdir)/config/kernel-mk-request-fn.m4 \
 	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
+	$(top_srcdir)/config/kernel-mod-param.m4 \
 	$(top_srcdir)/config/kernel-mount-nodev.m4 \
+	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-open-bdev-exclusive.m4 \
 	$(top_srcdir)/config/kernel-put-link.m4 \
 	$(top_srcdir)/config/kernel-rename.m4 \
@@ -108,10 +115,13 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
 	$(top_srcdir)/config/kernel-submit_bio.m4 \
+	$(top_srcdir)/config/kernel-super-userns.m4 \
+	$(top_srcdir)/config/kernel-tmpfile.m4 \
 	$(top_srcdir)/config/kernel-truncate-range.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
 	$(top_srcdir)/config/kernel-vfs-iterate.m4 \
 	$(top_srcdir)/config/kernel-vfs-rw-iterate.m4 \
+	$(top_srcdir)/config/kernel-vm_node_stat.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
 	$(top_srcdir)/config/kernel.m4 $(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/ltoptions.m4 \
@@ -119,10 +129,13 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/ltversion.m4 \
 	$(top_srcdir)/config/lt~obsolete.m4 \
 	$(top_srcdir)/config/mount-helper.m4 \
-	$(top_srcdir)/config/user-arch.m4 \
+	$(top_srcdir)/config/toolchain-simd.m4 \
 	$(top_srcdir)/config/user-dracut.m4 \
 	$(top_srcdir)/config/user-frame-larger-than.m4 \
+	$(top_srcdir)/config/user-libattr.m4 \
 	$(top_srcdir)/config/user-libblkid.m4 \
+	$(top_srcdir)/config/user-libtirpc.m4 \
+	$(top_srcdir)/config/user-libudev.m4 \
 	$(top_srcdir)/config/user-libuuid.m4 \
 	$(top_srcdir)/config/user-makedev.m4 \
 	$(top_srcdir)/config/user-no-format-truncation.m4 \
@@ -142,8 +155,8 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libspl_la_DEPENDENCIES =
 am__objects_1 = getexecname.lo gethrtime.lo gethrestime.lo \
-	getmntany.lo list.lo mkdirp.lo strlcat.lo strlcpy.lo \
-	strnlen.lo timestamp.lo zone.lo xdr.lo
+	getmntany.lo list.lo mkdirp.lo page.lo strlcat.lo strlcpy.lo \
+	strnlen.lo timestamp.lo zone.lo
 am__objects_2 = atomic.lo
 am__objects_3 =
 nodist_libspl_la_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -252,7 +265,6 @@ CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEBUG_CFLAGS = @DEBUG_CFLAGS@
-DEBUG_DMU_TX = @DEBUG_DMU_TX@
 DEBUG_STACKFLAGS = @DEBUG_STACKFLAGS@
 DEBUG_ZFS = @DEBUG_ZFS@
 DEFAULT_INITCONF_DIR = @DEFAULT_INITCONF_DIR@
@@ -290,10 +302,14 @@ KERNELCPPFLAGS = @KERNELCPPFLAGS@
 KERNELMAKE_PARAMS = @KERNELMAKE_PARAMS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
+LIBATTR = @LIBATTR@
 LIBBLKID = @LIBBLKID@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTIRPC = @LIBTIRPC@
+LIBTIRPC_CFLAGS = @LIBTIRPC_CFLAGS@
 LIBTOOL = @LIBTOOL@
+LIBUDEV = @LIBUDEV@
 LIBUUID = @LIBUUID@
 LINUX = @LINUX@
 LINUX_OBJ = @LINUX_OBJ@
@@ -321,8 +337,12 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+QAT_OBJ = @QAT_OBJ@
+QAT_SRC = @QAT_SRC@
+QAT_SYMBOLS = @QAT_SYMBOLS@
 RANLIB = @RANLIB@
 RELEASE = @RELEASE@
+RM = @RM@
 RPM = @RPM@
 RPMBUILD = @RPMBUILD@
 RPMBUILD_VERSION = @RPMBUILD_VERSION@
@@ -362,6 +382,7 @@ ZFS_META_RELEASE = @ZFS_META_RELEASE@
 ZFS_META_VERSION = @ZFS_META_VERSION@
 ZFS_MODULE_LOAD = @ZFS_MODULE_LOAD@
 ZLIB = @ZLIB@
+ZONENAME = @ZONENAME@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -431,7 +452,8 @@ DEFAULT_INCLUDES = -include ${top_builddir}/zfs_config.h \
 AM_LIBTOOLFLAGS = --silent
 AM_CFLAGS = ${DEBUG_CFLAGS} -Wall -Wstrict-prototypes \
 	${NO_UNUSED_BUT_SET_VARIABLE} ${NO_BOOL_COMPARE} \
-	-fno-strict-aliasing $(DEBUG_STACKFLAGS) $(FRAME_LARGER_THAN)
+	-fno-strict-aliasing -std=gnu99 $(DEBUG_STACKFLAGS) \
+	$(FRAME_LARGER_THAN)
 AM_CPPFLAGS = -D_GNU_SOURCE -D__EXTENSIONS__ -D_REENTRANT \
 	-D_POSIX_PTHREAD_SEMANTICS -D_FILE_OFFSET_BITS=64 \
 	-D_LARGEFILE64_SOURCE -DHAVE_LARGE_STACKS=1 \
@@ -442,7 +464,7 @@ AM_CPPFLAGS = -D_GNU_SOURCE -D__EXTENSIONS__ -D_REENTRANT \
 SUBDIRS = include $(TARGET_ASM_DIR)
 DIST_SUBDIRS = include asm-generic asm-i386 asm-x86_64
 AM_CCASFLAGS = \
-	-I$(top_srcdir)/lib/libspl/include
+	$(CFLAGS)
 
 noinst_LTLIBRARIES = libspl.la
 USER_C = \
@@ -452,12 +474,12 @@ USER_C = \
 	getmntany.c \
 	list.c \
 	mkdirp.c \
+	page.c \
 	strlcat.c \
 	strlcpy.c \
 	strnlen.c \
 	timestamp.c \
 	zone.c \
-	xdr.c \
 	include/sys/list.h \
 	include/sys/list_impl.h
 
@@ -529,56 +551,62 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getmntany.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mkdirp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/page.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strlcat.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strlcpy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strnlen.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timestamp.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xdr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zone.Plo@am__quote@
 
 .S.o:
-@am__fastdepCCAS_TRUE@	$(AM_V_CPPAS)$(CPPASCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCCAS_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCCAS_TRUE@	$(AM_V_CPPAS)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCCAS_TRUE@	$(CPPASCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCCAS_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @am__fastdepCCAS_FALSE@	$(AM_V_CPPAS) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCCAS_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCCAS_FALSE@	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCCAS_FALSE@	$(CPPASCOMPILE) -c -o $@ $<
 
 .S.obj:
-@am__fastdepCCAS_TRUE@	$(AM_V_CPPAS)$(CPPASCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCCAS_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCCAS_TRUE@	$(AM_V_CPPAS)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCCAS_TRUE@	$(CPPASCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCCAS_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @am__fastdepCCAS_FALSE@	$(AM_V_CPPAS) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCCAS_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCCAS_FALSE@	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCCAS_FALSE@	$(CPPASCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .S.lo:
-@am__fastdepCCAS_TRUE@	$(AM_V_CPPAS)$(LTCPPASCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCCAS_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@am__fastdepCCAS_TRUE@	$(AM_V_CPPAS)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCCAS_TRUE@	$(LTCPPASCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCCAS_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
 @am__fastdepCCAS_FALSE@	$(AM_V_CPPAS) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCCAS_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCCAS_FALSE@	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCCAS_FALSE@	$(LTCPPASCOMPILE) -c -o $@ $<
 
 .c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .c.lo:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@

@@ -1,0 +1,42 @@
+From: Fabian-Gruenbichler <f.gruenbichler@proxmox.com>
+Date: Mon, 14 Aug 2017 19:56:04 +0200
+Subject: dracut: make module-setup.sh shebang explicit
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+while these are source by dracut (which is a bash script)
+the practical difference is small, but it is more correct:
+
+/bin/sh is not bash on all systems (e.g. Debian and its
+derivatives use /bin/dash as /bin/sh by default).
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Fabian Grünbichler <f.gruenbichler@proxmox.com>
+Closes #6491
+(cherry picked from commit 42a76fc8d757ab82fc1ce8e5e1f2079e07a5b9d4)
+---
+ contrib/dracut/02zfsexpandknowledge/module-setup.sh.in | 2 +-
+ contrib/dracut/90zfs/module-setup.sh.in                | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/contrib/dracut/02zfsexpandknowledge/module-setup.sh.in b/contrib/dracut/02zfsexpandknowledge/module-setup.sh.in
+index 981beb3..c22141f 100755
+--- a/contrib/dracut/02zfsexpandknowledge/module-setup.sh.in
++++ b/contrib/dracut/02zfsexpandknowledge/module-setup.sh.in
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/bin/bash
+ 
+ get_devtype() {
+   local typ
+diff --git a/contrib/dracut/90zfs/module-setup.sh.in b/contrib/dracut/90zfs/module-setup.sh.in
+index 9bbee0e..7632cbc 100755
+--- a/contrib/dracut/90zfs/module-setup.sh.in
++++ b/contrib/dracut/90zfs/module-setup.sh.in
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/bin/bash
+ 
+ check() {
+ 	# We depend on udev-rules being loaded

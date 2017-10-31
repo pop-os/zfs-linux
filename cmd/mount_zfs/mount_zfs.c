@@ -33,6 +33,7 @@
 #include <libzfs.h>
 #include <locale.h>
 #include <getopt.h>
+#include <fcntl.h>
 
 #define	ZS_COMMENT	0x00000000	/* comment */
 #define	ZS_ZFSUTIL	0x00000001	/* caller is zfs(8) */
@@ -105,8 +106,6 @@ static const option_map_t option_map[] = {
 	{ MNTOPT_QUIET,		MS_SILENT,	ZS_COMMENT	},
 #endif
 	/* Custom zfs options */
-	{ MNTOPT_DIRXATTR,	MS_COMMENT,	ZS_COMMENT	},
-	{ MNTOPT_SAXATTR,	MS_COMMENT,	ZS_COMMENT	},
 	{ MNTOPT_XATTR,		MS_COMMENT,	ZS_COMMENT	},
 	{ MNTOPT_NOXATTR,	MS_COMMENT,	ZS_COMMENT	},
 	{ MNTOPT_ZFSUTIL,	MS_COMMENT,	ZS_ZFSUTIL	},
@@ -295,11 +294,11 @@ mtab_is_writeable(void)
 	struct stat st;
 	int error, fd;
 
-	error = lstat(MNTTAB, &st);
+	error = lstat("/etc/mtab", &st);
 	if (error || S_ISLNK(st.st_mode))
 		return (0);
 
-	fd = open(MNTTAB, O_RDWR | O_CREAT, 0644);
+	fd = open("/etc/mtab", O_RDWR | O_CREAT, 0644);
 	if (fd < 0)
 		return (0);
 
@@ -321,21 +320,21 @@ mtab_update(char *dataset, char *mntpoint, char *type, char *mntopts)
 	mnt.mnt_freq = 0;
 	mnt.mnt_passno = 0;
 
-	fp = setmntent(MNTTAB, "a+");
+	fp = setmntent("/etc/mtab", "a+");
 	if (!fp) {
 		(void) fprintf(stderr, gettext(
-		    "filesystem '%s' was mounted, but %s "
+		    "filesystem '%s' was mounted, but /etc/mtab "
 		    "could not be opened due to error %d\n"),
-		    dataset, MNTTAB, errno);
+		    dataset, errno);
 		return (MOUNT_FILEIO);
 	}
 
 	error = addmntent(fp, &mnt);
 	if (error) {
 		(void) fprintf(stderr, gettext(
-		    "filesystem '%s' was mounted, but %s "
+		    "filesystem '%s' was mounted, but /etc/mtab "
 		    "could not be updated due to error %d\n"),
-		    dataset, MNTTAB, errno);
+		    dataset, errno);
 		return (MOUNT_FILEIO);
 	}
 
@@ -368,7 +367,7 @@ zfs_selinux_setcontext(zfs_handle_t *zhp, zfs_prop_t zpt, const char *name,
 	if (zfs_prop_get(zhp, zpt, context, sizeof (context),
 	    NULL, NULL, 0, B_FALSE) == 0) {
 		if (strcmp(context, "none") != 0)
-		    append_mntopt(name, context, mntopts, mtabopt, B_TRUE);
+			append_mntopt(name, context, mntopts, mtabopt, B_TRUE);
 	}
 }
 
@@ -601,7 +600,7 @@ main(int argc, char **argv)
 				    gettext("filesystem '%s' (v%d) is not "
 				    "supported by this implementation of "
 				    "ZFS (max v%d).\n"), dataset,
-				    (int) zfs_version, (int) ZPL_VERSION);
+				    (int)zfs_version, (int)ZPL_VERSION);
 			} else {
 				(void) fprintf(stderr,
 				    gettext("filesystem '%s' mount "

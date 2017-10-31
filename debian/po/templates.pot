@@ -1,6 +1,6 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the zfs-linux package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2015-11-01 14:11+0800\n"
+"POT-Creation-Date: 2017-10-31 18:34+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -78,8 +78,8 @@ msgstr ""
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"You are going to build ZFS using DKMS in which way they are not going to be "
-"built into one monolithic binary. Please be aware that distributing both of "
-"the binaries in the same media (disk images, virtual appliances, etc) may "
-"lead to infringing."
+"You are going to build ZFS using DKMS in such a way that they are not going "
+"to be built into one monolithic binary. Please be aware that distributing "
+"both of the binaries in the same media (disk images, virtual appliances, "
+"etc) may lead to infringing."
 msgstr ""
