@@ -6,7 +6,7 @@ Uploaders: Aron Xu <aron@debian.org>,
            Petter Reinholdtsen <pere@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>
 Build-Depends: dh-autoreconf,
-               dh-systemd,
+               dh-systemd | debhelper (>= 10.1),
                autotools-dev,
                debhelper (>= 9),
                dkms (>> 2.1.1.2-5),
