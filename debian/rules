@@ -4,8 +4,6 @@ include /usr/share/dpkg/default.mk
 
 LSB_DISTRIBUTOR := $(shell lsb_release -is)
 NAME := $(shell awk '$$1 == "Name:" { print $$2; }' META)
-VERSION := $(shell dpkg-parsechangelog \
-  | awk '$$1 == "Version:" { print $$2; }' | cut -d- -f1)
 
 DKMSFILES := module include config zfs.release.in autogen.sh META AUTHORS \
 		DISCLAIMER COPYRIGHT OPENSOLARIS.LICENSE README.markdown
@@ -23,11 +21,11 @@ KVERS=$(shell uname -r)
 endif
 
 ifndef SPL
-SPL=/usr/src/spl-$(VERSION)
+SPL=/usr/src/spl-$(DEB_VERSION_UPSTREAM)
 endif
 
 ifndef SPLOBJ
-SPLOBJ=/var/lib/dkms/spl/$(VERSION)/$(KVERS)/$(shell dpkg-architecture -qDEB_TARGET_GNU_CPU)
+SPLOBJ=/var/lib/dkms/spl/$(DEB_VERSION_UPSTREAM)/$(KVERS)/$(shell dpkg-architecture -qDEB_TARGET_GNU_CPU)
 endif
 
 non_epoch_version=$(shell echo $(KVERS) | perl -pe 's/^\d+://')
@@ -46,7 +44,7 @@ ifeq ($(BUILD_UDEB), true)
 endif
 
 	@# Embed the downstream version in the module.
-	@sed -e 's/^Version:.*/Version:      $(VERSION)/' -i.orig META
+	@sed -e 's/^Version:.*/Version:      $(DEB_VERSION_UPSTREAM)/' -i.orig META
 
 	@# Build the userland, but don't build the kernel modules.
 	dh_auto_configure -- \
@@ -80,34 +78,34 @@ override_dh_auto_install:
 	mv '$(CURDIR)/debian/tmp/sbin/zed' '$(CURDIR)/debian/tmp/usr/sbin/zed'
 
 	@# Get a bare copy of the source code for DKMS.
-	@# This creates the $(CURDIR)/$(NAME)-$(VERSION)/ tree, which does not
+	@# This creates the $(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/ tree, which does not
 	@# contain the userland sources. NB: Remove-userland-dist-rules.patch
 	$(MAKE) distdir
 
 	@# Install the DKMS source.
 	@# We only want the files needed to build the modules
-	mkdir -p '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)'
-	$(foreach file,$(DKMSFILES),mv '$(CURDIR)/$(NAME)-$(VERSION)/$(file)' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)' || exit 1;)
+	mkdir -p '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)'
+	$(foreach file,$(DKMSFILES),mv '$(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/$(file)' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)' || exit 1;)
 	@# Hellish awk line:
 	@#  * Deletes from configure.ac the parts not needed for building the kernel module
 	@#     * It deletes from inside AC_CONFIG_FILES([]) everything except:
 	@#        (Makefile$|include/|module/|*.release$)
 	@#  * Takes care of spaces and tabs
 	awk '/^AC_CONFIG_FILES\(\[/,/^\]\)/ { if ($$0 !~ /^(AC_CONFIG_FILES\(\[([ \t]+)?$$|\]\)([ \t]+)?$$|([ \t]+)?(include\/|module\/|Makefile([ \t]+)?$$|zfs\.release([ \t]+)?$$))/){next} } {print}' \
-		'$(CURDIR)/$(NAME)-$(VERSION)/configure.ac' > '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/configure.ac'
+		'$(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/configure.ac' > '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/configure.ac'
 	@# Set "SUBDIRS = module include" for CONFIG_KERNEL and remove SUBDIRS for all other configs.
 	sed '1,/CONFIG_KERNEL/s/SUBDIRS.*=.*//g;s/SUBDIRS.*=.*/SUBDIRS = module include/g;' \
-		'$(CURDIR)/$(NAME)-$(VERSION)/Makefile.am' > '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/Makefile.am'
+		'$(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am' > '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am'
 	@# Sanity test
-	grep -q 'SUBDIRS = module include' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/Makefile.am'
+	grep -q 'SUBDIRS = module include' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am'
 	@# Run autogen on the stripped source tree
-	cd '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)'; ./autogen.sh
-	rm -fr '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/autom4te.cache'
+	cd '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)'; ./autogen.sh
+	rm -fr '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/autom4te.cache'
 
 	@# This shunt allows DKMS to install the Module.symvers and zfs_config.h
 	@# files to the ${dkms_tree} area through the POST_INSTALL directive.
-	printf '#!/bin/sh\ncp "$$@"\n' > '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/cp'
-	chmod 755 '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(VERSION)/cp'
+	printf '#!/bin/sh\ncp "$$@"\n' > '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/cp'
+	chmod 755 '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/cp'
 
 	mkdir -p $(CURDIR)/debian/tmp/usr/lib
 	for i in `ls $(CURDIR)/debian/tmp/lib/*.so`; do \
@@ -119,7 +117,7 @@ override_dh_auto_install:
 	chmod a-x $(CURDIR)/debian/tmp/etc/default/zfs
 
 override_dh_dkms:
-	dh_dkms -V $(VERSION)
+	dh_dkms -V $(DEB_VERSION_UPSTREAM)
 
 override_dh_makeshlibs:
 	dh_makeshlibs -a
@@ -143,7 +141,7 @@ endif
 
 override_dh_auto_clean:
 	find . -name .gitignore -delete
-	rm -rf zfs-$(VERSION)
+	rm -rf zfs-$(DEB_VERSION_UPSTREAM)
 	dh_auto_clean
 	debconf-updatepo
 	@if test -e META.orig; then mv META.orig META; fi
