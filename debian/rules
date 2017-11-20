@@ -12,10 +12,6 @@ ifndef BUILD_UDEB
 BUILD_UDEB=false
 endif
 
-ifndef DEB_HOST_ARCH
-DEB_HOST_ARCH = $(shell dpkg-architecture -qDEB_HOST_ARCH)
-endif
-
 ifndef KVERS
 KVERS=$(shell uname -r)
 endif
@@ -25,7 +21,7 @@ SPL=/usr/src/spl-$(DEB_VERSION_UPSTREAM)
 endif
 
 ifndef SPLOBJ
-SPLOBJ=/var/lib/dkms/spl/$(DEB_VERSION_UPSTREAM)/$(KVERS)/$(shell dpkg-architecture -qDEB_TARGET_GNU_CPU)
+SPLOBJ=/var/lib/dkms/spl/$(DEB_VERSION_UPSTREAM)/$(KVERS)/$(DEB_TARGET_GNU_CPU)
 endif
 
 non_epoch_version=$(shell echo $(KVERS) | perl -pe 's/^\d+://')
