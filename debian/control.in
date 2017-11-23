@@ -87,7 +87,7 @@ Description: OpenZFS pool library for Linux
 
 Package: zfs-dkms
 Architecture: all
-Pre-Depends: spl-dkms (>= ${source:Upstream-Version})
+Pre-Depends: spl-dkms (= ${source:Upstream-Version})
 Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}
 Recommends: zfsutils-linux, zfs-zed
 Provides: zfs-modules
