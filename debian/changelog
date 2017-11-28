@@ -1,3 +1,15 @@
+zfs-linux (0.7.3-2) unstable; urgency=medium
+
+  [ Fabian Grünbichler ]
+  * d/rules: remove obsolete calls to dpkg-architecture (Closes: #882209)
+  * zfs-test: add proper Breaks+Replaces (Closes: #880902)
+  * build: add implicit version to dh_makeshlibs (Closes: #880709)
+
+  [ Aron Xu ]
+  * Depend on matching version of spl-dkms (Closes: ##881013)
+
+ -- Aron Xu <aron@debian.org>  Tue, 28 Nov 2017 16:16:34 +0800
+
 zfs-linux (0.7.3-1) unstable; urgency=medium
 
   [ Antonio Russo ]
