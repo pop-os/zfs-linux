@@ -1,3 +1,10 @@
+zfs-linux (0.7.3-3) unstable; urgency=medium
+
+  [ Antonio Russo ]
+  * Add maximum version dependency on spl-dkms (Closes: #883008)
+
+ -- Aron Xu <aron@debian.org>  Thu, 30 Nov 2017 00:34:30 +0800
+
 zfs-linux (0.7.3-2) unstable; urgency=medium
 
   [ Fabian Grünbichler ]
