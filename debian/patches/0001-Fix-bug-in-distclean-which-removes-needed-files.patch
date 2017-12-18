@@ -1,0 +1,36 @@
+From b1490dd43e3c98649c7d23928d908f5bb019411b Mon Sep 17 00:00:00 2001
+From: David Quigley <dpquigl@users.noreply.github.com>
+Date: Wed, 13 Sep 2017 12:45:04 -0600
+Subject: [PATCH 001/144] Fix bug in distclean which removes needed files
+
+Running distclean removes the following files because of an error
+in Makefile.am
+
+deleted:    tests/zfs-tests/include/commands.cfg
+deleted:    tests/zfs-tests/include/libtest.shlib
+deleted:    tests/zfs-tests/include/math.shlib
+deleted:    tests/zfs-tests/include/properties.shlib
+deleted:    tests/zfs-tests/include/zpool_script.shlib
+
+Reviewed-by: George Melikov <mail@gmelikov.ru>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Giuseppe Di Natale <dinatale2@llnl.gov>
+Signed-off-by: David Quigley <david.quigley@intel.com>
+Closes #6636
+---
+ tests/zfs-tests/include/Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/zfs-tests/include/Makefile.am b/tests/zfs-tests/include/Makefile.am
+index 579e1356e..24633ccc3 100644
+--- a/tests/zfs-tests/include/Makefile.am
++++ b/tests/zfs-tests/include/Makefile.am
+@@ -10,4 +10,4 @@ dist_pkgdata_SCRIPTS = \
+ EXTRA_DIST=default.cfg.in
+ 
+ distclean-local::
+-	-$(RM) $(dist_pkgdata_SCRIPTS)
++	-$(RM) default.cfg
+-- 
+2.11.0
+
