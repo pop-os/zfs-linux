@@ -19,7 +19,7 @@ Build-Depends: dh-autoreconf,
                dh-python,
                libblkid-dev,
                libattr1-dev
-Standards-Version: 4.1.1
+Standards-Version: 4.1.2
 Homepage: http://www.zfsonlinux.org/
 Vcs-Git: git://anonscm.debian.org/pkg-zfsonlinux/zfs.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-zfsonlinux/zfs.git
