@@ -13,10 +13,10 @@ Signed-off-by: Fabian Grünbichler <f.gruenbichler@proxmox.com>
  etc/systemd/system/zfs-share.service.in        | 1 +
  4 files changed, 4 insertions(+)
 
-diff --git a/etc/systemd/system/zfs-import-cache.service.in b/etc/systemd/system/zfs-import-cache.service.in
-index 02184a6..6170676 100644
---- a/etc/systemd/system/zfs-import-cache.service.in
-+++ b/etc/systemd/system/zfs-import-cache.service.in
+Index: zfs/etc/systemd/system/zfs-import-cache.service.in
+===================================================================
+--- zfs.orig/etc/systemd/system/zfs-import-cache.service.in
++++ zfs/etc/systemd/system/zfs-import-cache.service.in
 @@ -1,5 +1,6 @@
  [Unit]
  Description=Import ZFS pools by cache file
@@ -24,10 +24,10 @@ index 02184a6..6170676 100644
  DefaultDependencies=no
  Requires=systemd-udev-settle.service
  After=systemd-udev-settle.service
-diff --git a/etc/systemd/system/zfs-import-scan.service.in b/etc/systemd/system/zfs-import-scan.service.in
-index 625f3a9..9254fd3 100644
---- a/etc/systemd/system/zfs-import-scan.service.in
-+++ b/etc/systemd/system/zfs-import-scan.service.in
+Index: zfs/etc/systemd/system/zfs-import-scan.service.in
+===================================================================
+--- zfs.orig/etc/systemd/system/zfs-import-scan.service.in
++++ zfs/etc/systemd/system/zfs-import-scan.service.in
 @@ -1,5 +1,6 @@
  [Unit]
  Description=Import ZFS pools by device scanning
@@ -35,21 +35,21 @@ index 625f3a9..9254fd3 100644
  DefaultDependencies=no
  Requires=systemd-udev-settle.service
  After=systemd-udev-settle.service
-diff --git a/etc/systemd/system/zfs-mount.service.in b/etc/systemd/system/zfs-mount.service.in
-index 36dc3be..d3c912e 100644
---- a/etc/systemd/system/zfs-mount.service.in
-+++ b/etc/systemd/system/zfs-mount.service.in
+Index: zfs/etc/systemd/system/zfs-mount.service.in
+===================================================================
+--- zfs.orig/etc/systemd/system/zfs-mount.service.in
++++ zfs/etc/systemd/system/zfs-mount.service.in
 @@ -1,5 +1,6 @@
  [Unit]
  Description=Mount ZFS filesystems
 +Documentation=man:zfs(8)
  DefaultDependencies=no
  After=systemd-udev-settle.service
- After=zfs-import-cache.service
-diff --git a/etc/systemd/system/zfs-share.service.in b/etc/systemd/system/zfs-share.service.in
-index 494f5cb..d0c93a3 100644
---- a/etc/systemd/system/zfs-share.service.in
-+++ b/etc/systemd/system/zfs-share.service.in
+ After=zfs-import.target
+Index: zfs/etc/systemd/system/zfs-share.service.in
+===================================================================
+--- zfs.orig/etc/systemd/system/zfs-share.service.in
++++ zfs/etc/systemd/system/zfs-share.service.in
 @@ -1,5 +1,6 @@
  [Unit]
  Description=ZFS file system shares

@@ -4,6 +4,7 @@ lib/systemd/system/zfs-share.service
 lib/systemd/system/zfs-import-scan.service
 lib/systemd/system/zfs-import-cache.service
 lib/systemd/system/zfs.target
+lib/systemd/system/zfs-import.target
 lib/systemd/system-preset/
 usr/lib/modules-load.d/ lib/
 lib/udev/

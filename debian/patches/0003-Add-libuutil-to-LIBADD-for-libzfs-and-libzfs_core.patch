@@ -1,8 +1,8 @@
-Index: zfs-linux-0.6.5.3/lib/libzfs/Makefile.am
+Index: zfs/lib/libzfs/Makefile.am
 ===================================================================
---- zfs-linux-0.6.5.3.orig/lib/libzfs/Makefile.am	2015-10-27 14:34:47.344602154 -0600
-+++ zfs-linux-0.6.5.3/lib/libzfs/Makefile.am	2015-10-27 14:35:15.236602845 -0600
-@@ -32,6 +32,7 @@
+--- zfs.orig/lib/libzfs/Makefile.am
++++ zfs/lib/libzfs/Makefile.am
+@@ -31,6 +31,7 @@ nodist_libzfs_la_SOURCES = \
  
  libzfs_la_LIBADD = \
  	$(top_builddir)/lib/libzfs_core/libzfs_core.la \
@@ -10,11 +10,11 @@ Index: zfs-linux-0.6.5.3/lib/libzfs/Makefile.am
  	$(top_builddir)/lib/libshare/libshare.la \
  	$(top_builddir)/lib/libnvpair/libnvpair.la \
  	$(top_builddir)/lib/libzpool/libzpool.la
-Index: zfs-linux-0.6.5.3/lib/libzfs_core/Makefile.am
+Index: zfs/lib/libzfs_core/Makefile.am
 ===================================================================
---- zfs-linux-0.6.5.3.orig/lib/libzfs_core/Makefile.am	2015-10-27 14:34:47.344602154 -0600
-+++ zfs-linux-0.6.5.3/lib/libzfs_core/Makefile.am	2015-10-27 14:35:15.236602845 -0600
-@@ -16,7 +16,8 @@
+--- zfs.orig/lib/libzfs_core/Makefile.am
++++ zfs/lib/libzfs_core/Makefile.am
+@@ -16,7 +16,8 @@ nodist_libzfs_core_la_SOURCES = \
  	$(KERNEL_C)
  
  libzfs_core_la_LIBADD = \

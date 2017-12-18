@@ -6,9 +6,8 @@ Uploaders: Aron Xu <aron@debian.org>,
            Petter Reinholdtsen <pere@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>
 Build-Depends: dh-autoreconf,
-               dh-systemd | debhelper (>= 10.1),
                autotools-dev,
-               debhelper (>= 9),
+               debhelper (>= 10.2),
                dkms (>> 2.1.1.2-5),
                libselinux1-dev,
                libtool,
@@ -20,7 +19,7 @@ Build-Depends: dh-autoreconf,
                dh-python,
                libblkid-dev,
                libattr1-dev
-Standards-Version: 4.1.1
+Standards-Version: 4.1.2
 Homepage: http://www.zfsonlinux.org/
 Vcs-Git: git://anonscm.debian.org/pkg-zfsonlinux/zfs.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-zfsonlinux/zfs.git

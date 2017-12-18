@@ -1,3 +1,14 @@
+zfs-linux (0.7.4-1) unstable; urgency=medium
+
+  * New upstream version 0.7.4 (Closes: #884287, #883832)
+  * Require debhelper >= 10.2
+  * cherry-pick: fix distclean which removes needed files (Closes: #884706)
+  * Refresh patches
+  * Update stdver to 4.1.2, no change required
+  * Install zfs-import.target
+
+ -- Aron Xu <aron@debian.org>  Mon, 18 Dec 2017 22:48:59 +0800
+
 zfs-linux (0.7.3-3) unstable; urgency=medium
 
   [ Antonio Russo ]
