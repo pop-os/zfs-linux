@@ -1,3 +1,13 @@
+zfs-linux (0.7.5-1) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * New upstream version 0.7.5 (Closes: #884812)
+
+  [ Antonio Russo ]
+  * Add version dependency on zfsutils-linux package (Closes: #880889)
+
+ -- Aron Xu <aron@debian.org>  Fri, 19 Jan 2018 15:39:23 +0800
+
 zfs-linux (0.7.4-1) unstable; urgency=medium
 
   * New upstream version 0.7.4 (Closes: #884287, #883832)
