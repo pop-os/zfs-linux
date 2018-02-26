@@ -5,24 +5,24 @@ Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@lists.alioth.d
 Uploaders: Aron Xu <aron@debian.org>,
            Petter Reinholdtsen <pere@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>
-Build-Depends: dh-autoreconf,
-               autotools-dev,
+Build-Depends: autotools-dev,
                debhelper (>= 10.2),
+               dh-autoreconf,
+               dh-python,
                dkms (>> 2.1.1.2-5),
+               libattr1-dev,
+               libblkid-dev,
                libselinux1-dev,
                libtool,
                lsb-release,
                po-debconf,
-               uuid-dev,
-               zlib1g-dev,
                python3,
-               dh-python,
-               libblkid-dev,
-               libattr1-dev
+               uuid-dev,
+               zlib1g-dev
 Standards-Version: 4.1.2
 Homepage: http://www.zfsonlinux.org/
-Vcs-Git: git://anonscm.debian.org/pkg-zfsonlinux/zfs.git
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-zfsonlinux/zfs.git
+Vcs-Git: git@salsa.debian.org:zfsonlinux-team/zfs.git
+Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
 
 Package: libnvpair1linux
 Section: contrib/libs
@@ -51,9 +51,11 @@ Description: Solaris userland utility library for Linux
 Package: libzfslinux-dev
 Section: contrib/libdevel
 Architecture: linux-any
-Depends: libzfs2linux (= ${binary:Version}), libzpool2linux (= ${binary:Version}),
- libnvpair1linux (= ${binary:Version}), libuutil1linux (= ${binary:Version}),
- ${misc:Depends}
+Depends: libnvpair1linux (= ${binary:Version}),
+         libuutil1linux (= ${binary:Version}),
+         libzfs2linux (= ${binary:Version}),
+         libzpool2linux (= ${binary:Version}),
+         ${misc:Depends}
 Provides: libnvpair-dev, libuutil-dev
 Description: OpenZFS filesystem development files for Linux
  Header files and static libraries for compiling software against
@@ -86,9 +88,11 @@ Description: OpenZFS pool library for Linux
 
 Package: zfs-dkms
 Architecture: all
-Pre-Depends: spl-dkms (>= ${source:Upstream-Version}), spl-dkms (<<${source:Upstream-Version}.)
+Pre-Depends: spl-dkms (<<${source:Upstream-Version}.),
+             spl-dkms (>= ${source:Upstream-Version})
 Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}
-Recommends: zfsutils-linux (>= ${binary:Version}), zfs-zed
+Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}),
+              @LINUX_COMPAT@
 Provides: zfs-modules
 Description: OpenZFS filesystem kernel modules for Linux
  The Z file system is a pooled filesystem designed for maximum data
@@ -100,10 +104,11 @@ Description: OpenZFS filesystem kernel modules for Linux
 
 Package: zfs-initramfs
 Architecture: all
-Depends: initramfs-tools,
- busybox-initramfs | busybox-static | busybox,
- zfs-modules | zfs-dkms, zfsutils-linux (>= ${binary:Version}),
- ${misc:Depends}
+Depends: busybox-initramfs | busybox-static | busybox,
+         initramfs-tools,
+         zfs-modules | zfs-dkms,
+         zfsutils-linux (>= ${binary:Version}),
+         ${misc:Depends}
 Description: OpenZFS root filesystem capabilities for Linux - initramfs
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
@@ -114,7 +119,10 @@ Description: OpenZFS root filesystem capabilities for Linux - initramfs
 
 Package: zfs-dracut
 Architecture: all
-Depends: dracut, zfs-modules | zfs-dkms, zfsutils-linux (>= ${binary:Version}), ${misc:Depends}
+Depends: dracut,
+         zfs-modules | zfs-dkms,
+         zfsutils-linux (>= ${binary:Version}),
+         ${misc:Depends}
 Description: OpenZFS root filesystem capabilities for Linux - dracut
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
@@ -126,10 +134,12 @@ Description: OpenZFS root filesystem capabilities for Linux - dracut
 Package: zfsutils-linux
 Section: contrib/admin
 Architecture: linux-any
-Depends: ${misc:Depends}, ${shlibs:Depends}, ${python3:Depends}, python3
+Depends: python3, ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}
 Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
-Breaks: zfs-dkms (>> ${binary:Version}), zfs-dkms (<< ${binary:Version})
-Suggests: nfs-kernel-server, samba-common-bin (>= 3.0.23), zfs-initramfs | zfs-dracut
+Breaks: zfs-dkms (<< ${binary:Version}), zfs-dkms (>> ${binary:Version})
+Suggests: nfs-kernel-server,
+          samba-common-bin (>= 3.0.23),
+          zfs-initramfs | zfs-dracut
 Conflicts: zfs, zfs-fuse, zutils
 Provides: zfsutils
 Description: command-line tools to manage OpenZFS filesystems
@@ -143,7 +153,10 @@ Description: command-line tools to manage OpenZFS filesystems
 Package: zfs-zed
 Section: contrib/admin
 Architecture: linux-any
-Depends: ${misc:Depends}, ${shlibs:Depends}, zfs-modules | zfs-dkms, zfsutils-linux (>= ${binary:Version})
+Depends: zfs-modules | zfs-dkms,
+         zfsutils-linux (>= ${binary:Version}),
+         ${misc:Depends},
+         ${shlibs:Depends}
 Description: OpenZFS Event Daemon
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
@@ -154,7 +167,20 @@ Description: OpenZFS Event Daemon
 Package: zfs-test
 Section: contrib/admin
 Architecture: linux-any
-Depends: ${misc:Depends}, ${shlibs:Depends}, zfs-modules | zfs-dkms, zfsutils-linux (>=${binary:Version}), parted, lsscsi, mdadm, bc, ksh, fio, acl, sudo, sysstat, python
+Depends: acl,
+         bc,
+         fio,
+         ksh,
+         lsscsi,
+         mdadm,
+         parted,
+         python,
+         sudo,
+         sysstat,
+         zfs-modules | zfs-dkms,
+         zfsutils-linux (>=${binary:Version}),
+         ${misc:Depends},
+         ${shlibs:Depends}
 Breaks: zfsutils-linux (<= 0.6.5.11-1)
 Replaces: zfsutils-linux (<= 0.6.5.11-1)
 Description: OpenZFS test infrastructure an support scripts
@@ -174,7 +200,8 @@ Depends: libnvpair1linux (= ${binary:Version}),
          libuutil1linux (= ${binary:Version}),
          libzfs2linux (= ${binary:Version}),
          libzpool2linux (= ${binary:Version}),
-         zfsutils-linux (= ${binary:Version}), zfs-zed (= ${binary:Version}),
+         zfs-zed (= ${binary:Version}),
+         zfsutils-linux (= ${binary:Version}),
          ${misc:Depends}
 Description: Debugging symbols for OpenZFS userland libraries and tools
  The Z file system is a pooled filesystem designed for maximum data
