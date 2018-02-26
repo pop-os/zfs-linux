@@ -354,7 +354,7 @@
 /* mount_nodev() is available */
 #undef HAVE_MOUNT_NODEV
 
-/* new_sync_read() is available */
+/* new_sync_read()/new_sync_write() are available */
 #undef HAVE_NEW_SYNC_READ
 
 /* sops->nr_cached_objects() exists */
