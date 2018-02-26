@@ -1,3 +1,20 @@
+zfs-linux (0.7.6-1) unstable; urgency=medium
+
+  [ Lev Lamberov ]
+  * [INTL:ru] Updated Russian translation of debconf (Closes: #885990)
+
+  [ Aron Xu]
+  * New upstream release (Closes: #889795, #890576)
+  * 0001-Fix-bug-in-distclean-which-removes-needed-files.patch:
+    removed, applied upstream
+  * Update VCS-* URL to salsa.debian.org
+  * Apply wrap-and-sort
+  * Recommends: linux-libc-dev (< ${LINUX_NEXT}):
+    Tries to prevent unexpected upgrades of kernel that is not known to
+    be supported by the packaged version of ZFS/SPL. (Closes: #849420)
+
+ -- Aron Xu <aron@debian.org>  Mon, 26 Feb 2018 16:32:29 +0800
+
 zfs-linux (0.7.5-1) unstable; urgency=medium
 
   [ Aron Xu ]
