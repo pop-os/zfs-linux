@@ -21,8 +21,8 @@ Build-Depends: dh-autoreconf,
                libattr1-dev
 Standards-Version: 4.1.2
 Homepage: http://www.zfsonlinux.org/
-Vcs-Git: git://anonscm.debian.org/pkg-zfsonlinux/zfs.git
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-zfsonlinux/zfs.git
+Vcs-Git: git@salsa.debian.org:zfsonlinux-team/zfs.git
+Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
 
 Package: libnvpair1linux
 Section: contrib/libs
