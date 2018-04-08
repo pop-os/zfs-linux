@@ -203,7 +203,7 @@ Description: OpenZFS test infrastructure an support scripts
 
 Package: zfs-dbg
 Section: contrib/debug
-Priority: extra
+Priority: optional
 Architecture: linux-any
 Depends: libnvpair1linux (= ${binary:Version}),
          libuutil1linux (= ${binary:Version}),
