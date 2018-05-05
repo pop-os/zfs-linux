@@ -672,11 +672,6 @@ Files: lib/libspl/include/sys/stat.h
 Copyright: 2010, Oracle and/or its affiliates.
 License: CDDL-1.0
 
-Files: lib/libspl/include/sys/sysevent/*
-Copyright: 2011, 2013, Nexenta Systems, Inc.
-  2007, 2009, Sun Microsystems, Inc.
-License: CDDL-1.0
-
 Files: lib/libspl/include/sys/uio.h
 Copyright: 2005, Sun Microsystems, Inc.
   1984, 1986-1989, AT&T
@@ -695,11 +690,6 @@ License: CDDL-1.0
 
 Files: lib/libspl/strnlen.c
 Copyright: 2008, Sun Microsystems, Inc
-License: CDDL-1.0
-
-Files: lib/libspl/xdr.c
-Copyright: 2005, Sun Microsystems, Inc.
-  1983-1989, AT&T
 License: CDDL-1.0
 
 Files: lib/libspl/zone.c
@@ -1104,11 +1094,6 @@ Copyright: 2014, Nexenta Systems, Inc.
   2013, Delphix.
 License: CDDL-1.0
 
-Files: module/zfs/zfs.mod.c
-Copyright: 2011-2015, Delphix.
-  2000, 2005-2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
 Files: module/zfs/zfs_ctldir.c
 Copyright: 2013, Delphix.
   2011, Lawrence Livermore National Security, LLC
@@ -1191,9 +1176,6 @@ Files: scripts/cstyle.pl
 Copyright: 2005-2010, Sun Microsystems, Inc.
 License: CDDL-1.0
 
-Files: scripts/ziltest.sh
-Copyright: 1990-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
 
 License: Expat
  Permission is hereby granted, free of charge, to any person obtaining
