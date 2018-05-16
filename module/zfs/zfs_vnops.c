@@ -398,6 +398,7 @@ mappedread(struct inode *ip, int nbytes, uio_t *uio)
 		pp = find_lock_page(mp, start >> PAGE_SHIFT);
 		if (pp) {
 			ASSERT(PageUptodate(pp));
+			unlock_page(pp);
 
 			pb = kmap(pp);
 			error = uiomove(pb + off, bytes, UIO_READ, uio);
@@ -407,7 +408,6 @@ mappedread(struct inode *ip, int nbytes, uio_t *uio)
 				flush_dcache_page(pp);
 
 			mark_page_accessed(pp);
-			unlock_page(pp);
 			put_page(pp);
 		} else {
 			error = dmu_read_uio_dbuf(sa_get_db(zp->z_sa_hdl),
@@ -2223,7 +2223,7 @@ out:
  */
 /* ARGSUSED */
 int
-zfs_readdir(struct inode *ip, struct dir_context *ctx, cred_t *cr)
+zfs_readdir(struct inode *ip, zpl_dir_context_t *ctx, cred_t *cr)
 {
 	znode_t		*zp = ITOZ(ip);
 	zfsvfs_t	*zfsvfs = ITOZSB(ip);
@@ -2328,7 +2328,7 @@ zfs_readdir(struct inode *ip, struct dir_context *ctx, cred_t *cr)
 			type = ZFS_DIRENT_TYPE(zap.za_first_integer);
 		}
 
-		done = !dir_emit(ctx, zap.za_name, strlen(zap.za_name),
+		done = !zpl_dir_emit(ctx, zap.za_name, strlen(zap.za_name),
 		    objnum, type);
 		if (done)
 			break;
