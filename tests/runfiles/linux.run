@@ -73,7 +73,7 @@ tags = ['functional', 'clean_mirror']
 
 [tests/functional/cli_root/zdb]
 tests = ['zdb_001_neg', 'zdb_002_pos', 'zdb_003_pos', 'zdb_004_pos',
-    'zdb_005_pos']
+    'zdb_005_pos', 'zdb_006_pos']
 pre =
 post =
 tags = ['functional', 'cli_root', 'zdb']
@@ -127,7 +127,7 @@ tests = ['zfs_mount_001_pos', 'zfs_mount_002_pos', 'zfs_mount_003_pos',
     'zfs_mount_004_pos', 'zfs_mount_005_pos', 'zfs_mount_007_pos',
     'zfs_mount_008_pos', 'zfs_mount_009_neg', 'zfs_mount_010_neg',
     'zfs_mount_011_neg', 'zfs_mount_012_neg', 'zfs_mount_all_001_pos',
-    'zfs_mount_remount']
+    'zfs_mount_remount', 'zfs_multi_mount']
 tags = ['functional', 'cli_root', 'zfs_mount']
 
 [tests/functional/cli_root/zfs_promote]
@@ -413,7 +413,7 @@ tests = ['devices_001_pos', 'devices_002_neg', 'devices_003_pos']
 tags = ['functional', 'devices']
 
 [tests/functional/events]
-tests = ['events_001_pos', 'events_002_pos']
+tests = ['events_001_pos', 'events_002_pos', 'zed_rc_filter']
 tags = ['functional', 'events']
 
 [tests/functional/exec]
@@ -421,7 +421,7 @@ tests = ['exec_001_pos', 'exec_002_neg']
 tags = ['functional', 'exec']
 
 [tests/functional/fault]
-tests = ['auto_online_001_pos', 'auto_replace_001_pos']
+tests = ['auto_online_001_pos', 'auto_replace_001_pos', 'scrub_after_resilver']
 tags = ['functional', 'fault']
 
 [tests/functional/features/async_destroy]
@@ -485,13 +485,13 @@ tests = ['migration_001_pos', 'migration_002_pos', 'migration_003_pos',
 tags = ['functional', 'migration']
 
 [tests/functional/mmap]
-tests = ['mmap_write_001_pos', 'mmap_read_001_pos']
+tests = ['mmap_write_001_pos', 'mmap_read_001_pos', 'mmap_libaio_001_pos']
 tags = ['functional', 'mmap']
 
 [tests/functional/mmp]
 tests = ['mmp_on_thread', 'mmp_on_uberblocks', 'mmp_on_off', 'mmp_interval',
     'mmp_active_import', 'mmp_inactive_import', 'mmp_exported_import',
-    'mmp_write_uberblocks', 'mmp_reset_interval']
+    'mmp_write_uberblocks', 'mmp_reset_interval', 'multihost_history']
 tags = ['functional', 'mmp']
 
 [tests/functional/mount]
@@ -499,7 +499,7 @@ tests = ['umount_001', 'umountall_001']
 tags = ['functional', 'mount']
 
 [tests/functional/mv_files]
-tests = ['mv_files_001_pos', 'mv_files_002_pos']
+tests = ['mv_files_001_pos', 'mv_files_002_pos', 'random_creation']
 tags = ['functional', 'mv_files']
 
 [tests/functional/nestedfs]
@@ -647,6 +647,10 @@ tags = ['functional', 'truncate']
 [tests/functional/upgrade]
 tests = [ 'upgrade_userobj_001_pos' ]
 tags = ['functional', 'upgrade']
+
+[tests/functional/user_namespace]
+tests = ['user_namespace_001']
+tags = ['functional', 'user_namespace']
 
 [tests/functional/userquota]
 tests = [

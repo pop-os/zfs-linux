@@ -35,12 +35,14 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = tests/runfiles
-DIST_COMMON = $(dist_pkgdata_SCRIPTS) $(srcdir)/Makefile.am \
+DIST_COMMON = $(dist_pkgdata_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/always-no-unused-but-set-variable.m4 \
+	$(top_srcdir)/config/ax_code_coverage.m4 \
+	$(top_srcdir)/config/kernel-acl-refcount.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-aio-fsync.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
@@ -56,6 +58,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-bio-rw-discard.m4 \
 	$(top_srcdir)/config/kernel-bio_set_dev.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-bdi.m4 \
+	$(top_srcdir)/config/kernel-blk-queue-flags.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-flush.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-hw-sectors.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-max-segments.m4 \
@@ -84,14 +87,18 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
 	$(top_srcdir)/config/kernel-follow-down-one.m4 \
 	$(top_srcdir)/config/kernel-fpu.m4 \
+	$(top_srcdir)/config/kernel-fst-mount.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
 	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
 	$(top_srcdir)/config/kernel-generic_readlink.m4 \
+	$(top_srcdir)/config/kernel-get-disk-and-module.m4 \
 	$(top_srcdir)/config/kernel-get-disk-ro.m4 \
 	$(top_srcdir)/config/kernel-get-gendisk.m4 \
 	$(top_srcdir)/config/kernel-get-link.m4 \
+	$(top_srcdir)/config/kernel-global_page_state.m4 \
 	$(top_srcdir)/config/kernel-inode-getattr.m4 \
 	$(top_srcdir)/config/kernel-inode-set-flags.m4 \
+	$(top_srcdir)/config/kernel-inode-set-iversion.m4 \
 	$(top_srcdir)/config/kernel-insert-inode-locked.m4 \
 	$(top_srcdir)/config/kernel-invalidate-bdev-args.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
@@ -103,7 +110,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-mk-request-fn.m4 \
 	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
 	$(top_srcdir)/config/kernel-mod-param.m4 \
-	$(top_srcdir)/config/kernel-mount-nodev.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-open-bdev-exclusive.m4 \
 	$(top_srcdir)/config/kernel-put-link.m4 \
@@ -119,9 +125,9 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-tmpfile.m4 \
 	$(top_srcdir)/config/kernel-truncate-range.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
+	$(top_srcdir)/config/kernel-userns-capabilities.m4 \
 	$(top_srcdir)/config/kernel-vfs-iterate.m4 \
 	$(top_srcdir)/config/kernel-vfs-rw-iterate.m4 \
-	$(top_srcdir)/config/kernel-vm_node_stat.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
 	$(top_srcdir)/config/kernel.m4 $(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/ltoptions.m4 \
@@ -132,7 +138,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/toolchain-simd.m4 \
 	$(top_srcdir)/config/user-dracut.m4 \
 	$(top_srcdir)/config/user-frame-larger-than.m4 \
-	$(top_srcdir)/config/user-libattr.m4 \
+	$(top_srcdir)/config/user-libaio.m4 \
 	$(top_srcdir)/config/user-libblkid.m4 \
 	$(top_srcdir)/config/user-libtirpc.m4 \
 	$(top_srcdir)/config/user-libudev.m4 \
@@ -152,6 +158,14 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/zfs_config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+AM_V_GEN = $(am__v_GEN_$(V))
+am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
+am__v_GEN_0 = @echo "  GEN   " $@;
+AM_V_at = $(am__v_at_$(V))
+am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
+am__v_at_0 = @
+SOURCES =
+DIST_SOURCES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -174,15 +188,7 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(pkgdatadir)"
-SCRIPTS = $(dist_pkgdata_SCRIPTS)
-AM_V_GEN = $(am__v_GEN_$(V))
-am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
-am__v_GEN_0 = @echo "  GEN   " $@;
-AM_V_at = $(am__v_at_$(V))
-am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
-am__v_at_0 = @
-SOURCES =
-DIST_SOURCES =
+DATA = $(dist_pkgdata_DATA)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 pkgdatadir = $(datadir)/@PACKAGE@/runfiles
 ACLOCAL = @ACLOCAL@
@@ -201,6 +207,12 @@ CCASDEPMODE = @CCASDEPMODE@
 CCASFLAGS = @CCASFLAGS@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CODE_COVERAGE_CFLAGS = @CODE_COVERAGE_CFLAGS@
+CODE_COVERAGE_CPPFLAGS = @CODE_COVERAGE_CPPFLAGS@
+CODE_COVERAGE_CXXFLAGS = @CODE_COVERAGE_CXXFLAGS@
+CODE_COVERAGE_ENABLED = @CODE_COVERAGE_ENABLED@
+CODE_COVERAGE_LDFLAGS = @CODE_COVERAGE_LDFLAGS@
+CODE_COVERAGE_LIBS = @CODE_COVERAGE_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -212,6 +224,7 @@ DEFAULT_INIT_DIR = @DEFAULT_INIT_DIR@
 DEFAULT_INIT_SCRIPT = @DEFAULT_INIT_SCRIPT@
 DEFAULT_PACKAGE = @DEFAULT_PACKAGE@
 DEFINE_INITRAMFS = @DEFINE_INITRAMFS@
+DEFINE_SYSTEMD = @DEFINE_SYSTEMD@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DPKG = @DPKG@
@@ -227,6 +240,8 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FRAME_LARGER_THAN = @FRAME_LARGER_THAN@
+GCOV = @GCOV@
+GENHTML = @GENHTML@
 GREP = @GREP@
 HAVE_ALIEN = @HAVE_ALIEN@
 HAVE_DPKG = @HAVE_DPKG@
@@ -240,9 +255,10 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 KERNELCPPFLAGS = @KERNELCPPFLAGS@
 KERNELMAKE_PARAMS = @KERNELMAKE_PARAMS@
+LCOV = @LCOV@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
-LIBATTR = @LIBATTR@
+LIBAIO = @LIBAIO@
 LIBBLKID = @LIBBLKID@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -261,6 +277,7 @@ LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
+MULTIARCH_LIBDIR = @MULTIARCH_LIBDIR@
 NM = @NM@
 NMEDIT = @NMEDIT@
 NO_BOOL_COMPARE = @NO_BOOL_COMPARE@
@@ -387,7 +404,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 udevdir = @udevdir@
 udevruledir = @udevruledir@
-dist_pkgdata_SCRIPTS = *.run
+dist_pkgdata_DATA = *.run
 all: all-am
 
 .SUFFIXES:
@@ -421,46 +438,32 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-install-dist_pkgdataSCRIPTS: $(dist_pkgdata_SCRIPTS)
-	@$(NORMAL_INSTALL)
-	test -z "$(pkgdatadir)" || $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)"
-	@list='$(dist_pkgdata_SCRIPTS)'; test -n "$(pkgdatadir)" || list=; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
-	done | \
-	sed -e 'p;s,.*/,,;n' \
-	    -e 'h;s|.*|.|' \
-	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
-	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
-	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
-	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
-	      if (++n[d] == $(am__install_max)) { \
-		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
-	    else { print "f", d "/" $$4, $$1 } } \
-	  END { for (d in files) print "f", d, files[d] }' | \
-	while read type dir files; do \
-	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
-	     test -z "$$files" || { \
-	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(pkgdatadir)$$dir'"; \
-	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(pkgdatadir)$$dir" || exit $$?; \
-	     } \
-	; done
-
-uninstall-dist_pkgdataSCRIPTS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dist_pkgdata_SCRIPTS)'; test -n "$(pkgdatadir)" || exit 0; \
-	files=`for p in $$list; do echo "$$p"; done | \
-	       sed -e 's,.*/,,;$(transform)'`; \
-	test -n "$$list" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(pkgdatadir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(pkgdatadir)" && rm -f $$files
 
 mostlyclean-libtool:
 	-rm -f *.lo
 
 clean-libtool:
 	-rm -rf .libs _libs
+install-dist_pkgdataDATA: $(dist_pkgdata_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(pkgdatadir)" || $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)"
+	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(pkgdatadir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pkgdatadir)" || exit $$?; \
+	done
+
+uninstall-dist_pkgdataDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(pkgdatadir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(pkgdatadir)" && rm -f $$files
 tags: TAGS
 TAGS:
 
@@ -500,7 +503,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(SCRIPTS)
+all-am: Makefile $(DATA)
 installdirs:
 	for dir in "$(DESTDIR)$(pkgdatadir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
@@ -550,7 +553,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-dist_pkgdataSCRIPTS
+install-data-am: install-dist_pkgdataDATA
 
 install-dvi: install-dvi-am
 
@@ -594,21 +597,21 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-dist_pkgdataSCRIPTS
+uninstall-am: uninstall-dist_pkgdataDATA
 
 .MAKE: install-am install-strip
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	distclean distclean-generic distclean-libtool distdir dvi \
 	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dist_pkgdataSCRIPTS \
+	install-data install-data-am install-dist_pkgdataDATA \
 	install-dvi install-dvi-am install-exec install-exec-am \
 	install-html install-html-am install-info install-info-am \
 	install-man install-pdf install-pdf-am install-ps \
 	install-ps-am install-strip installcheck installcheck-am \
 	installdirs maintainer-clean maintainer-clean-generic \
 	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
-	ps ps-am uninstall uninstall-am uninstall-dist_pkgdataSCRIPTS
+	ps ps-am uninstall uninstall-am uninstall-dist_pkgdataDATA
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -1,5 +1,6 @@
 pkgdatadir = $(datadir)/@PACKAGE@/zfs-tests/tests/functional/mmp
 dist_pkgdata_SCRIPTS = \
+	multihost_history.ksh \
 	mmp_on_thread.ksh \
 	mmp_on_uberblocks.ksh \
 	mmp_on_off.ksh \
@@ -10,6 +11,8 @@ dist_pkgdata_SCRIPTS = \
 	mmp_write_uberblocks.ksh \
 	mmp_reset_interval.ksh \
 	setup.ksh \
-	cleanup.ksh \
+	cleanup.ksh
+
+dist_pkgdata_DATA = \
 	mmp.kshlib \
 	mmp.cfg
