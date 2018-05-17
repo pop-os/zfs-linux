@@ -34,7 +34,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 	dh $@ --with autoreconf,dkms,python3,systemd --parallel
 
 override_dh_auto_configure:
-	sed "s/@LINUX_COMPAT@/linux-libc-dev \(< $(shell debian/get_next.sh)\)/" debian/control.in > debian/control
+	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(shell debian/get_next.sh)\)/" debian/control.in > debian/control
 ifeq ($(BUILD_UDEB), true)
 	cat debian/control.udeb.in >> debian/control
 endif
@@ -48,6 +48,7 @@ endif
 	  --sbindir=/sbin \
 	  --libdir=/lib \
 	  --with-udevdir=/lib/udev \
+	  --enable-systemd \
 	  --with-systemdunitdir=/lib/systemd/system \
 	  --with-systemdpresetdir=/lib/systemd/system-preset \
 	  --with-config=user
@@ -80,7 +81,8 @@ override_dh_auto_install:
 
 	@# Install the DKMS source.
 	@# We only want the files needed to build the modules
-	mkdir -p '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)'
+	mkdir -p '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/scripts'
+	cp '$(CURDIR)/scripts/enum-extract.pl' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/scripts'
 	$(foreach file,$(DKMSFILES),mv '$(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/$(file)' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)' || exit 1;)
 	@# Hellish awk line:
 	@#  * Deletes from configure.ac the parts not needed for building the kernel module
@@ -141,7 +143,7 @@ override_dh_auto_clean:
 	dh_auto_clean
 	debconf-updatepo
 	@if test -e META.orig; then mv META.orig META; fi
-	sed "s/@LINUX_COMPAT@/linux-libc-dev \(< $(shell debian/get_next.sh)\)/" debian/control.in > debian/control
+	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(shell debian/get_next.sh)\)/" debian/control.in > debian/control
 ifeq ($(BUILD_UDEB), true)
 	cat debian/control.udeb.in >> debian/control
 endif

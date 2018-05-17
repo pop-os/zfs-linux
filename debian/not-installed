@@ -1,3 +1,4 @@
+usr/share/zfs/enum-extract.pl
 usr/share/zfs/zfs-helpers.sh
 etc/init.d
 etc/sudoers.d

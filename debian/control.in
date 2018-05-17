@@ -91,8 +91,7 @@ Architecture: all
 Pre-Depends: spl-dkms (<<${source:Upstream-Version}.),
              spl-dkms (>= ${source:Upstream-Version})
 Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}
-Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}),
-              @LINUX_COMPAT@
+Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), @LINUX_COMPAT@
 Provides: zfs-modules
 Description: OpenZFS filesystem kernel modules for Linux
  The Z file system is a pooled filesystem designed for maximum data
@@ -140,7 +139,7 @@ Breaks: zfs-dkms (<< ${binary:Version}), zfs-dkms (>> ${binary:Version})
 Suggests: nfs-kernel-server,
           samba-common-bin (>= 3.0.23),
           zfs-initramfs | zfs-dracut
-Conflicts: zfs, zfs-fuse, zutils
+Conflicts: zfs, zfs-fuse
 Provides: zfsutils
 Description: command-line tools to manage OpenZFS filesystems
  The Z file system is a pooled filesystem designed for maximum data
@@ -183,6 +182,7 @@ Depends: acl,
          ${shlibs:Depends}
 Breaks: zfsutils-linux (<= 0.6.5.11-1)
 Replaces: zfsutils-linux (<= 0.6.5.11-1)
+Conflicts: zutils
 Description: OpenZFS test infrastructure an support scripts
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data

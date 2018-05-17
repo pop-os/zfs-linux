@@ -6,7 +6,7 @@ set -e
 
 kernelbits=unknown
 if [ -r /proc/kallsyms ]; then
-	addrlen=$(head -1 /proc/kallsyms|awk '{print $1}'|wc -c)
+	addrlen=$(head -1 /proc/kallsyms| grep -o '^ *[^ ]*' |wc -c)
 	if [ $addrlen = 17 ]; then
 		kernelbits=64
 	elif [ $addrlen = 9 ]; then

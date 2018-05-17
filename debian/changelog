@@ -1,3 +1,18 @@
+zfs-linux (0.7.9-2) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * Move more zfs test tools to zfs-test package (Closes: #868653)
+  * New upstream version 0.7.9
+  * d/rules: add --enable-systemd
+  * Fix lintian obsolete-relation-form-in-source
+  * Bump supported linux version to 4.16
+
+  [ Antonio Russo ]
+  * Install enum-extract.pl with dkms
+  * Handle /proc/kallsym obfuscation (Closes: #891936)
+
+ -- Aron Xu <aron@debian.org>  Thu, 17 May 2018 23:47:29 +0800
+
 zfs-linux (0.7.6-1) unstable; urgency=medium
 
   [ Lev Lamberov ]
