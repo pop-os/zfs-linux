@@ -1,7 +1,7 @@
 Source: zfs-linux
 Section: contrib/kernel
 Priority: extra
-Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@lists.alioth.debian.org>
+Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.debian.net>
 Build-Depends: autoconf,
                autogen,
                automake,
