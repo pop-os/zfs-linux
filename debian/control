@@ -1,7 +1,7 @@
 Source: zfs-linux
 Section: contrib/kernel
 Priority: optional
-Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@lists.alioth.debian.org>
+Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.debian.net>
 Uploaders: Aron Xu <aron@debian.org>,
            Petter Reinholdtsen <pere@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>
@@ -180,8 +180,8 @@ Depends: acl,
          zfsutils-linux (>=${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
-Breaks: zfsutils-linux (<= 0.6.5.11-1)
-Replaces: zfsutils-linux (<= 0.6.5.11-1)
+Breaks: zfsutils-linux (<= 0.7.9-2)
+Replaces: zfsutils-linux (<= 0.7.9-2)
 Conflicts: zutils
 Description: OpenZFS test infrastructure an support scripts
  The Z file system is a pooled filesystem designed for maximum data
