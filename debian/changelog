@@ -1,3 +1,13 @@
+zfs-linux (0.7.9-3) unstable; urgency=medium
+
+  [ Antonio Russo ]
+  * Expand zfs-test and add Breaks/Conflicts (Closes: #899047)
+
+  [ Aron Xu ]
+  * d/control: migrate to alioth-lists (Closes: #899756)
+
+ -- Aron Xu <aron@debian.org>  Mon, 28 May 2018 18:22:02 +0800
+
 zfs-linux (0.7.9-2) unstable; urgency=medium
 
   [ Aron Xu ]
