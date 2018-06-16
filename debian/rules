@@ -91,7 +91,8 @@ override_dh_auto_install:
 	@# Install the DKMS source.
 	@# We only want the files needed to build the modules
 	install -D -t '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/scripts' \
-		'$(CURDIR)/scripts/enum-extract.pl'
+		'$(CURDIR)/scripts/enum-extract.pl' \
+		'$(CURDIR)/scripts/dkms.postbuild'
 	$(foreach file,$(DKMSFILES),mv '$(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/$(file)' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)' || exit 1;)
 	@# Hellish awk line:
 	@#  * Deletes from configure.ac the parts not needed for building the kernel module
@@ -110,11 +111,6 @@ override_dh_auto_install:
 	cd '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)'; ./autogen.sh
 	rm -fr '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/autom4te.cache'
 
-	@# This shunt allows DKMS to install the Module.symvers and zfs_config.h
-	@# files to the ${dkms_tree} area through the POST_INSTALL directive.
-	printf '#!/bin/sh\ncp "$$@"\n' > '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/cp'
-	chmod 755 '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/cp'
-
 	mkdir -p $(CURDIR)/debian/tmp/usr/lib
 	for i in `ls $(CURDIR)/debian/tmp/lib/*.so`; do \
 		ln -s /lib/`readlink $${i}` $(CURDIR)/debian/tmp/usr/lib/`basename $${i}`; \
@@ -126,7 +122,9 @@ override_dh_auto_install:
 	chmod a-x '$(CURDIR)/debian/tmp/usr/share/bash-completion/completions/zfs'
 
 override_dh_dkms:
-	dh_dkms -V $(DEB_VERSION_UPSTREAM)
+	'$(CURDIR)/scripts/dkms.mkconf' -n $(NAME) -v $(DEB_VERSION_UPSTREAM) -f '$(CURDIR)/scripts/zfs-dkms.dkms'
+	dh_dkms
+	rm -f '$(CURDIR)/scripts/zfs-dkms.dkms'
 
 override_dh_makeshlibs:
 	dh_makeshlibs -a -V
