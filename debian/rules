@@ -56,6 +56,7 @@ endif
 	  --enable-systemd \
 	  --with-systemdunitdir=/lib/systemd/system \
 	  --with-systemdpresetdir=/lib/systemd/system-preset \
+	  --with-systemdgeneratordir=/lib/systemd/system-generators \
 	  --with-config=user
 
 override_dh_auto_build:
