@@ -91,7 +91,7 @@ Package: zfs-dkms
 Architecture: all
 Pre-Depends: spl-dkms (<<${source:Upstream-Version}.),
              spl-dkms (>= ${source:Upstream-Version})
-Depends: dkms (>> 2.1.1.2-5), dpkg-dev, lsb-release, ${misc:Depends}
+Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}
 Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), @LINUX_COMPAT@
 Provides: zfs-modules
 Description: OpenZFS filesystem kernel modules for Linux
