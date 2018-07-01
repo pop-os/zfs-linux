@@ -34,14 +34,17 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 %:
 	dh $@ --with autoreconf,dkms,python3,systemd --parallel
 
+override_dh_autoreconf:
+	@# Embed the downstream version in the module.
+	@sed -e 's/^Version:.*/Version:      $(DEB_VERSION_UPSTREAM)/' -i.orig META
+
+	dh_autoreconf
+
 override_dh_auto_configure:
 	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(LINUX_NEXT)~\)/" debian/control.in > debian/control
 ifeq ($(BUILD_UDEB), true)
 	cat debian/control.udeb.in >> debian/control
 endif
-
-	@# Embed the downstream version in the module.
-	@sed -e 's/^Version:.*/Version:      $(DEB_VERSION_UPSTREAM)/' -i.orig META
 
 	@# Build the userland, but don't build the kernel modules.
 	dh_auto_configure -- \
