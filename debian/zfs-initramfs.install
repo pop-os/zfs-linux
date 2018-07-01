@@ -1,2 +1,2 @@
-debian/zfs usr/share/initramfs-tools/conf.d/
+../tree/zfs-initramfs/* /
 usr/share/initramfs-tools/*
