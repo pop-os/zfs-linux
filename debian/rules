@@ -57,6 +57,14 @@ endif
 	  --with-systemdpresetdir=/lib/systemd/system-preset \
 	  --with-config=user
 
+override_dh_auto_build:
+	@# Get a bare copy of the source code for DKMS.
+	@# This creates the $(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/ tree, which does not
+	@# contain the userland sources. NB: Remove-userland-dist-rules.patch
+	$(MAKE) distdir
+
+	dh_auto_build
+
 override_dh_auto_test:
 	# The dh_auto_test rule is disabled because
 	# `make check` cannot run in an unprivileged build environment.
@@ -80,11 +88,6 @@ override_dh_auto_install:
 	@# Zed has dependencies outside of the system root.
 	$(INSTALL) -d '$(CURDIR)/debian/tmp/usr/sbin/'
 	mv '$(CURDIR)/debian/tmp/sbin/zed' '$(CURDIR)/debian/tmp/usr/sbin/zed'
-
-	@# Get a bare copy of the source code for DKMS.
-	@# This creates the $(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/ tree, which does not
-	@# contain the userland sources. NB: Remove-userland-dist-rules.patch
-	$(MAKE) distdir
 
 	@# Install the DKMS source.
 	@# We only want the files needed to build the modules
