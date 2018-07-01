@@ -23,6 +23,7 @@ usr/lib/zfs-linux/zpool.d/
 usr/sbin/arc_summary
 usr/sbin/arcstat
 usr/sbin/dbufstat
+usr/share/bash-completion/completions
 usr/share/man/man1/zhack.1
 usr/share/man/man5/
 usr/share/man/man8/fsck.zfs.8
