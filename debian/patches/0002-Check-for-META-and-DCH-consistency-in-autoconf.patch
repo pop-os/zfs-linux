@@ -31,8 +31,7 @@ Index: zfs/config/zfs-meta.m4
  
 +		if test -n "${_dpkg_parsechangelog}"; then
 +			_dpkg_version=$(echo "${_dpkg_parsechangelog}" \
-+				| $AWK '$[]1 == "Version:" { print $[]2; }' \
-+				| cut -d- -f1)
++				| $AWK '$[]1 == "Version:" { print $[]2; }')
 +			if test "${_dpkg_version}" != "$ZFS_META_VERSION"; then
 +				AC_MSG_ERROR([
 +	*** Version $ZFS_META_VERSION in the META file is different than
