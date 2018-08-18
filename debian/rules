@@ -10,6 +10,8 @@ LINUX_NEXT := $(shell awk -F'[ .]' '/Linux-Maximum:/{print $$2 "." $$3+1}' META)
 DKMSFILES := module include config zfs.release.in autogen.sh META AUTHORS \
 		COPYRIGHT LICENSE README.md
 
+SPHINX_BUILD = $(shell dpkg -L python3-sphinx | grep "sphinx-build$$")
+
 ifndef BUILD_UDEB
 BUILD_UDEB=false
 endif
@@ -25,7 +27,7 @@ pmodules = $(PACKAGE)-modules-$(non_epoch_version)
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --with autoreconf,dkms,python3,systemd --parallel
+	dh $@ --with autoreconf,dkms,python3,systemd,sphinxdoc --parallel
 
 override_dh_autoreconf:
 	@# Embed the downstream version in the module.
@@ -47,6 +49,7 @@ endif
 	  --with-udevdir=/lib/udev \
 	  --with-zfsexecdir=/usr/lib/zfs-linux \
 	  --enable-systemd \
+	  --enable-pyzfs \
 	  --with-systemdunitdir=/lib/systemd/system \
 	  --with-systemdpresetdir=/lib/systemd/system-preset \
 	  --with-systemdgeneratordir=/lib/systemd/system-generators \
@@ -116,6 +119,9 @@ override_dh_auto_install:
 	chmod a-x '$(CURDIR)/debian/tmp/etc/default/zfs'
 	chmod a-x '$(CURDIR)/debian/tmp/usr/share/bash-completion/completions/zfs'
 
+override_dh_python3:
+	dh_python3 -p python3-pyzfs
+
 override_dh_dkms:
 	'$(CURDIR)/scripts/dkms.mkconf' -n $(NAME) -v $(DEB_VERSION) -f '$(CURDIR)/scripts/zfs-dkms.dkms'
 	dh_dkms
@@ -163,6 +169,12 @@ override_dh_installinit:
 	dh_installinit -R --name zfs-zed
 	mkdir -p debian/zfsutils-linux/lib/systemd/system
 	ln -sr /dev/null debian/zfsutils-linux/lib/systemd/system/zfs-import.service
+
+override_dh_installdocs:
+	dh_installdocs
+ifeq (,$(findstring nodoc, $(DEB_BUILD_OPTIONS)))
+	http_proxy='127.0.0.1:9' $(SPHINX_BUILD) -N -bhtml "$(CURDIR)/contrib/pyzfs/docs/source/" debian/pyzfs-doc/usr/share/doc/pyzfs-doc/html/
+endif
 
 # ------------
 

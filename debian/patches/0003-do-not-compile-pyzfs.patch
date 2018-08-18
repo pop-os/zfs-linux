@@ -1,0 +1,15 @@
+Index: zfs/contrib/pyzfs/Makefile.am
+===================================================================
+--- zfs.orig/contrib/pyzfs/Makefile.am
++++ zfs/contrib/pyzfs/Makefile.am
+@@ -26,8 +26,9 @@ all-local:
+ install-exec-local:
+ 	$(PYTHON) $(srcdir)/setup.py install \
+ 	--prefix $(prefix) \
++	--no-compile \
++	--install-layout=deb \
+ 	--root $(DESTDIR)/ \
+-	--install-lib $(pythondir) \
+ 	--single-version-externally-managed \
+ 	--verbose
+ 
