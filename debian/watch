@@ -1,2 +1,2 @@
 version=3
-http://zfsonlinux.org/ .*zfs-([\d\.]+)\.tar\.gz$
+https://zfsonlinux.org/ .*zfs-([\d\.]+)\.tar\.gz$
