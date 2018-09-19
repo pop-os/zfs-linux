@@ -46,7 +46,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-aio-fsync.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
-	$(top_srcdir)/config/kernel-bdev-block-device-operations.m4 \
 	$(top_srcdir)/config/kernel-bdev-logical-size.m4 \
 	$(top_srcdir)/config/kernel-bdev-physical-size.m4 \
 	$(top_srcdir)/config/kernel-bdi.m4 \
@@ -65,7 +64,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-blk-queue-unplug.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get-by-path.m4 \
 	$(top_srcdir)/config/kernel-blkdev-get.m4 \
-	$(top_srcdir)/config/kernel-block-device-operations-release-void.m4 \
+	$(top_srcdir)/config/kernel-block-device-operations.m4 \
 	$(top_srcdir)/config/kernel-clear-inode.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-create-nameidata.m4 \
@@ -160,9 +159,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libspl_la_DEPENDENCIES =
-am__objects_1 = getexecname.lo gethrtime.lo gethrestime.lo \
-	getmntany.lo list.lo mkdirp.lo page.lo strlcat.lo strlcpy.lo \
-	strnlen.lo timestamp.lo zone.lo
+am__objects_1 = getexecname.lo getmntany.lo list.lo mkdirp.lo page.lo \
+	strlcat.lo strlcpy.lo strnlen.lo timestamp.lo zone.lo
 am__objects_2 = atomic.lo
 am__objects_3 =
 nodist_libspl_la_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -486,8 +484,6 @@ AM_CCASFLAGS = \
 noinst_LTLIBRARIES = libspl.la
 USER_C = \
 	getexecname.c \
-	gethrtime.c \
-	gethrestime.c \
 	getmntany.c \
 	list.c \
 	mkdirp.c \
@@ -563,8 +559,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atomic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getexecname.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gethrestime.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gethrtime.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getmntany.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mkdirp.Plo@am__quote@

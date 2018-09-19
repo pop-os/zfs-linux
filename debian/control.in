@@ -4,7 +4,8 @@ Priority: optional
 Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.debian.net>
 Uploaders: Aron Xu <aron@debian.org>,
            Petter Reinholdtsen <pere@debian.org>,
-           Carlos Alberto Lopez Perez <clopez@igalia.com>
+           Carlos Alberto Lopez Perez <clopez@igalia.com>,
+           Mo Zhou <cdluminate@gmail.com>,
 Build-Depends: autotools-dev,
                debhelper (>= 10.2),
                dh-autoreconf,
@@ -21,7 +22,7 @@ Build-Depends: autotools-dev,
                zlib1g-dev
 Standards-Version: 4.1.2
 Homepage: http://www.zfsonlinux.org/
-Vcs-Git: git@salsa.debian.org:zfsonlinux-team/zfs.git
+Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
 
 Package: libnvpair1linux
@@ -90,7 +91,7 @@ Package: zfs-dkms
 Architecture: all
 Pre-Depends: spl-dkms (<<${source:Upstream-Version}.),
              spl-dkms (>= ${source:Upstream-Version})
-Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}
+Depends: dkms (>> 2.1.1.2-5), dpkg-dev, lsb-release, ${misc:Depends}
 Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), @LINUX_COMPAT@
 Provides: zfs-modules
 Description: OpenZFS filesystem kernel modules for Linux

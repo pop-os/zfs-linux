@@ -1,3 +1,21 @@
+zfs-linux (0.7.11-1) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * Add dpkg-dev to Depends of zfs-dkms (Closes: #900714)
+
+  [ Nicolas Braud-Santoni ]
+  * Use canonical HTTPS format URL for Vcs-Git (Closes: #895873)
+
+  [ Mo Zhou ]
+  * New upstream version 0.7.11 (Closes: #908290)
+  * Bump linux_compat to 4.18 .
+  * Replace get_next.sh with one-liner awk script in rules.
+  * Append myself to Uploaders and refresh auto-generated control.
+  * Use HTTPS format URI in watch file.
+  * Recommends linux-libc-dev (<< LINUX_NEXT~) instead of (<< LINUX_NEXT).
+
+ -- Mo Zhou <cdluminate@gmail.com>  Wed, 19 Sep 2018 08:45:18 +0000
+
 zfs-linux (0.7.9-3) unstable; urgency=medium
 
   [ Antonio Russo ]
