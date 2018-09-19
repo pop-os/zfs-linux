@@ -4,7 +4,8 @@ Priority: optional
 Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.debian.net>
 Uploaders: Aron Xu <aron@debian.org>,
            Petter Reinholdtsen <pere@debian.org>,
-           Carlos Alberto Lopez Perez <clopez@igalia.com>
+           Carlos Alberto Lopez Perez <clopez@igalia.com>,
+           Mo Zhou <cdluminate@gmail.com>,
 Build-Depends: autotools-dev,
                debhelper (>= 10.2),
                dh-autoreconf,
@@ -91,7 +92,7 @@ Architecture: all
 Pre-Depends: spl-dkms (<<${source:Upstream-Version}.),
              spl-dkms (>= ${source:Upstream-Version})
 Depends: dkms (>> 2.1.1.2-5), dpkg-dev, lsb-release, ${misc:Depends}
-Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), linux-libc-dev (<< 4.16)
+Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), linux-libc-dev (<< 4.19)
 Provides: zfs-modules
 Description: OpenZFS filesystem kernel modules for Linux
  The Z file system is a pooled filesystem designed for maximum data
