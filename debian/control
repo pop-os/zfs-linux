@@ -21,7 +21,7 @@ Build-Depends: autotools-dev,
                zlib1g-dev
 Standards-Version: 4.1.2
 Homepage: http://www.zfsonlinux.org/
-Vcs-Git: git@salsa.debian.org:zfsonlinux-team/zfs.git
+Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
 
 Package: libnvpair1linux
