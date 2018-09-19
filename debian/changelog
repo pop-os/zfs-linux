@@ -12,8 +12,9 @@ zfs-linux (0.7.11-1) UNRELEASED; urgency=medium
   * Replace get_next.sh with one-liner awk script in rules.
   * Append myself to Uploaders and refresh auto-generated control.
   * Use HTTPS format URI in watch file.
+  * Recommends linux-libc-dev (<< LINUX_NEXT~) instead of (<< LINUX_NEXT).
 
- -- Mo Zhou <cdluminate@gmail.com>  Wed, 19 Sep 2018 04:29:50 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Wed, 19 Sep 2018 04:49:03 +0000
 
 zfs-linux (0.7.9-3) unstable; urgency=medium
 
