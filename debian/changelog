@@ -1,4 +1,4 @@
-zfs-linux (0.7.11-1) UNRELEASED; urgency=medium
+zfs-linux (0.7.11-1) unstable; urgency=medium
 
   [ Aron Xu ]
   * Add dpkg-dev to Depends of zfs-dkms (Closes: #900714)
@@ -14,7 +14,7 @@ zfs-linux (0.7.11-1) UNRELEASED; urgency=medium
   * Use HTTPS format URI in watch file.
   * Recommends linux-libc-dev (<< LINUX_NEXT~) instead of (<< LINUX_NEXT).
 
- -- Mo Zhou <cdluminate@gmail.com>  Wed, 19 Sep 2018 04:49:03 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Wed, 19 Sep 2018 08:45:18 +0000
 
 zfs-linux (0.7.9-3) unstable; urgency=medium
 
