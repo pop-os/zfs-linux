@@ -1,3 +1,16 @@
+zfs-linux (0.7.11-2) unstable; urgency=medium
+
+  * Support Devuan in dkms script. (Closes: #900089)
+    Thanks to Chris Dos <chris@chrisdos.com>
+  * Install init scripts to support non-systemd setups. (Closes: #826994)
+    Thanks to Chris Dos <chris@chrisdos.com>
+  * Override init.d-script-does-not-source-init-functions for
+    zfsutils-linux and zfs-zed.
+  * Patch upstream init scripts to make them work for Debian+OpenRC setup.
+  * Patch upstream init script to fix missing dependency on local_fs.
+
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 26 Oct 2018 09:32:06 +0000
+
 zfs-linux (0.7.11-1) unstable; urgency=medium
 
   [ Aron Xu ]

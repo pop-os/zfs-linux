@@ -7,7 +7,7 @@ PRE_BUILD="configure
   --with-config=kernel
   --with-linux=$(
     case `lsb_release -is` in
-      (Debian)
+      (Debian|Devuan)
         if [[ -e ${kernel_source_dir/%build/source} ]]
         then
           echo ${kernel_source_dir/%build/source}

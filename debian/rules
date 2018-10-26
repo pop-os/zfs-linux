@@ -153,6 +153,14 @@ override_dh_install:
 	find . -name lib*.la -delete
 	dh_install --fail-missing
 
+override_dh_installinit:
+	dh_installinit -r --no-start --name zfs-import
+	dh_installinit -r --no-start --name zfs-mount
+	dh_installinit -r --no-start --name zfs-share
+	dh_installinit -R --no-start --name zfs-zed
+	ln -sr /dev/null \
+		debian/zfsutils-linux/lib/systemd/system/zfs-import.service
+
 # ------------
 
 override_dh_prep-deb-files:
