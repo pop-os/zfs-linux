@@ -1,6 +1,7 @@
 Description: Make these scripts work for Debian+OpenRC setup.
 Author: Mo Zhou <lumin@debian.org>
 Last-update: 20181026
+Forward: https://github.com/zfsonlinux/zfs/issues/8063
 
 diff --git a/etc/init.d/zfs-import.in b/etc/init.d/zfs-import.in
 index fea661bb..404af82d 100644
