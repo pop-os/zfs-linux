@@ -10,10 +10,14 @@ zfs-linux (0.7.11-3) UNRELEASED; urgency=medium
   * Use upstream's dkms.mkconf script to produce dkms.conf
   * Ship initramfs zdev hook in zfs-initramfs (Closes: #902052)
 
+  [ Nicolas Braud-Santoni ]
+  * Update debian/copyright, removing unused wildcards.
+
   [ Mo Zhou ]
   * Fix FTBFS on architecture=all . (Closes: #911937)
+  * really breaks/replaces upstream deb
 
- -- Mo Zhou <cdluminate@gmail.com>  Fri, 26 Oct 2018 12:47:46 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 26 Oct 2018 13:27:09 +0000
 
 zfs-linux (0.7.11-2) unstable; urgency=medium
 
