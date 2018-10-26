@@ -29,6 +29,8 @@ Package: libnvpair1linux
 Section: contrib/libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
+Breaks: libnvpair1
+Replaces: libnvpair1
 Description: Solaris name-value library for Linux
  This library provides routines for packing and unpacking nv pairs for
  transporting data across process boundaries, transporting between
@@ -38,6 +40,8 @@ Package: libuutil1linux
 Section: contrib/libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
+Breaks: libuutil1
+Replaces: libuutil1
 Description: Solaris userland utility library for Linux
  This library provides a variety of glue functions for ZFS on Linux:
   * libspl: The Solaris Porting Layer userland library, which provides APIs
@@ -69,6 +73,8 @@ Package: libzfs2linux
 Section: contrib/libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
+Breaks: libzfs2
+Replaces: libzfs2
 Description: OpenZFS filesystem library for Linux
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
@@ -80,6 +86,8 @@ Package: libzpool2linux
 Section: contrib/libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
+Breaks: libzpool2
+Replaces: libzpool2
 Description: OpenZFS pool library for Linux
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
