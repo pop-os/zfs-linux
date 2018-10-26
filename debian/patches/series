@@ -9,3 +9,4 @@ enable-zed.patch
 0010-fix-install-path-of-zpool.d-scripts.patch
 2000-increase-default-zcmd-allocation-to-256K.patch
 init-debian-openrc-workaround.patch
+init-start-stop-dep-on-local-fs.patch
