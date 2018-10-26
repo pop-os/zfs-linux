@@ -2,7 +2,7 @@ zfs-linux (0.7.11-3) UNRELEASED; urgency=medium
 
   [ Antonio Russo ]
   + https://salsa.debian.org/zfsonlinux-team/zfs/merge_requests/9
-  * Break/Replace upstream .deb pacakges (Closes: #839921)
+  * Break/Replace upstream .deb packages (Closes: #839921)
   * Install bash completion file from upstream.
   * Modify META before autoreconf
   * Make dkms distdir before build
@@ -12,12 +12,12 @@ zfs-linux (0.7.11-3) UNRELEASED; urgency=medium
 
   [ Nicolas Braud-Santoni ]
   * Update debian/copyright, removing unused wildcards.
+  * Change -dbg package's priority from extra to optional.
 
   [ Mo Zhou ]
   * Fix FTBFS on architecture=all . (Closes: #911937)
-  * really breaks/replaces upstream deb
 
- -- Mo Zhou <cdluminate@gmail.com>  Fri, 26 Oct 2018 13:27:09 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 26 Oct 2018 13:38:33 +0000
 
 zfs-linux (0.7.11-2) unstable; urgency=medium
 
