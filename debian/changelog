@@ -1,15 +1,19 @@
 zfs-linux (0.7.11-3) UNRELEASED; urgency=medium
 
   [ Antonio Russo ]
-  * Break/Replace upstream .deb pacakges to allow smooth transition.
+  + https://salsa.debian.org/zfsonlinux-team/zfs/merge_requests/9
+  * Break/Replace upstream .deb pacakges (Closes: #839921)
   * Install bash completion file from upstream.
   * Modify META before autoreconf
   * Make dkms distdir before build
   * Remove ZFS_AC_PACKAGE macros from DKMS sources (getting rid of dpkg-dev)
   * Use upstream's dkms.mkconf script to produce dkms.conf
-  * Ship initramfs zdev hook in zfs-initramfs
+  * Ship initramfs zdev hook in zfs-initramfs (Closes: #902052)
 
- -- Mo Zhou <cdluminate@gmail.com>  Fri, 26 Oct 2018 12:44:44 +0000
+  [ Mo Zhou ]
+  * Fix FTBFS on architecture=all . (Closes: #911937)
+
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 26 Oct 2018 12:47:46 +0000
 
 zfs-linux (0.7.11-2) unstable; urgency=medium
 
