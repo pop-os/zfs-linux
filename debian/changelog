@@ -1,3 +1,16 @@
+zfs-linux (0.7.11-3) UNRELEASED; urgency=medium
+
+  [ Antonio Russo ]
+  * Break/Replace upstream .deb pacakges to allow smooth transition.
+  * Install bash completion file from upstream.
+  * Modify META before autoreconf
+  * Make dkms distdir before build
+  * Remove ZFS_AC_PACKAGE macros from DKMS sources (getting rid of dpkg-dev)
+  * Use upstream's dkms.mkconf script to produce dkms.conf
+  * Ship initramfs zdev hook in zfs-initramfs
+
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 26 Oct 2018 12:44:44 +0000
+
 zfs-linux (0.7.11-2) unstable; urgency=medium
 
   * Support Devuan in dkms script. (Closes: #900089)
