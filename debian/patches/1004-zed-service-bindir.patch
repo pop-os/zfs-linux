@@ -5,7 +5,9 @@ Description: Fix the path to the zed binary on the systemd unit.
  zfs-zed unit.
 Author: Carlos Alberto Lopez <clopez@igalia.com>
 Author: Fabian Grünbichler <f.gruenbichler@proxmox.com>
+Author: Chris Dos <chris@chrisdos.com>
 Bug-Debian: https://bugs.debian.org/849813
+Bug-Debian: https://bugs.debian.org/826994
 Forwarded: no
 --- a/etc/systemd/system/zfs-zed.service.in
 +++ b/etc/systemd/system/zfs-zed.service.in
@@ -18,3 +20,13 @@ Forwarded: no
  Restart=on-abort
  
  [Install]
+--- a/etc/init.d/zfs-functions.in
++++ b/etc/init.d/zfs-functions.in
+@@ -89,7 +89,7 @@
+
+ # Paths to what we need
+ ZFS="@sbindir@/zfs"
+-ZED="@sbindir@/zed"
++ZED="/usr/sbin/zed"
+ ZPOOL="@sbindir@/zpool"
+ ZPOOL_CACHE="@sysconfdir@/zfs/zpool.cache"
