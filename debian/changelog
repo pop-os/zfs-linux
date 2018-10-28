@@ -1,3 +1,29 @@
+zfs-linux (0.7.11-3) unstable; urgency=medium
+
+  [ Antonio Russo ]
+  + https://salsa.debian.org/zfsonlinux-team/zfs/merge_requests/9
+  * Break/Replace upstream .deb packages (Closes: #839921)
+  * Install upstream bash completion file instead of embedded one.
+  * Modify META before autoreconf.
+  * Make dkms distdir before build to avoid including build artifacts.
+  * Remove ZFS_AC_PACKAGE macros from DKMS sources.
+    This removes dpkg-dev dependency from zfs-dkms package.
+  * Use upstream's dkms.mkconf script to produce dkms.conf .
+  * Ship initramfs zdev hook in zfs-initramfs (Closes: #902052)
+
+  [ Nicolas Braud-Santoni ]
+  * Update debian/copyright, removing unused wildcards.
+
+  [ Nicholas D Steeves ]
+  * Change -dbg package's priority from extra to optional.
+
+  [ Mo Zhou ]
+  * Fix FTBFS on architecture=all due to FileNotFound. (Closes: #911937)
+  * Add isolation-machine restriction to autopkgtest because the tests
+    needs to interact with the kernel, i.e. loading kernel module.
+
+ -- Mo Zhou <cdluminate@gmail.com>  Sun, 28 Oct 2018 10:28:52 +0000
+
 zfs-linux (0.7.11-2) unstable; urgency=medium
 
   * Support Devuan in dkms script. (Closes: #900089)

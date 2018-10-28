@@ -8,9 +8,6 @@ usr/share/man/man1/zpios.1
 usr/share/man/man1/ztest.1
 usr/share/man/man8/zinject.8
 usr/share/zfs/common.sh
-usr/share/zfs/common.sh
-usr/share/zfs/common.sh
-usr/share/zfs/common.sh
 usr/share/zfs/runfiles/
 usr/share/zfs/smb.sh
 usr/share/zfs/test-runner
