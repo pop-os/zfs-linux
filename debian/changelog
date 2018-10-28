@@ -1,4 +1,4 @@
-zfs-linux (0.7.11-3) UNRELEASED; urgency=medium
+zfs-linux (0.7.11-3) unstable; urgency=medium
 
   [ Antonio Russo ]
   + https://salsa.debian.org/zfsonlinux-team/zfs/merge_requests/9
@@ -22,7 +22,7 @@ zfs-linux (0.7.11-3) UNRELEASED; urgency=medium
   * Add isolation-machine restriction to autopkgtest because the tests
     needs to interact with the kernel, i.e. loading kernel module.
 
- -- Mo Zhou <cdluminate@gmail.com>  Sun, 28 Oct 2018 05:00:56 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Sun, 28 Oct 2018 10:28:52 +0000
 
 zfs-linux (0.7.11-2) unstable; urgency=medium
 
