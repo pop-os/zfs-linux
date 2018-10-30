@@ -117,6 +117,8 @@ Depends: busybox-initramfs | busybox-static | busybox,
          zfs-modules | zfs-dkms,
          zfsutils-linux (>= ${binary:Version}),
          ${misc:Depends}
+Breaks: zfsutils-linux (<= 0.7.11-2)
+Replaces: zfsutils-linux (<= 0.7.11-2)
 Description: OpenZFS root filesystem capabilities for Linux - initramfs
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
