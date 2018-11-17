@@ -1189,7 +1189,7 @@ ztest_spa_prop_set_uint64(zpool_prop_t prop, uint64_t value)
  */
 typedef struct {
 	list_node_t z_lnode;
-	refcount_t z_refcnt;
+	zfs_refcount_t z_refcnt;
 	uint64_t z_object;
 	zfs_rlock_t z_range_lock;
 } ztest_znode_t;
@@ -1205,7 +1205,7 @@ ztest_znode_init(uint64_t object)
 	ztest_znode_t *zp = umem_alloc(sizeof (*zp), UMEM_NOFAIL);
 
 	list_link_init(&zp->z_lnode);
-	refcount_create(&zp->z_refcnt);
+	zfs_refcount_create(&zp->z_refcnt);
 	zp->z_object = object;
 	zfs_rlock_init(&zp->z_range_lock);
 
@@ -1215,10 +1215,10 @@ ztest_znode_init(uint64_t object)
 static void
 ztest_znode_fini(ztest_znode_t *zp)
 {
-	ASSERT(refcount_is_zero(&zp->z_refcnt));
+	ASSERT(zfs_refcount_is_zero(&zp->z_refcnt));
 	zfs_rlock_destroy(&zp->z_range_lock);
 	zp->z_object = 0;
-	refcount_destroy(&zp->z_refcnt);
+	zfs_refcount_destroy(&zp->z_refcnt);
 	list_link_init(&zp->z_lnode);
 	umem_free(zp, sizeof (*zp));
 }
@@ -1248,13 +1248,13 @@ ztest_znode_get(ztest_ds_t *zd, uint64_t object)
 	for (zp = list_head(&zll->z_list); (zp);
 	    zp = list_next(&zll->z_list, zp)) {
 		if (zp->z_object == object) {
-			refcount_add(&zp->z_refcnt, RL_TAG);
+			zfs_refcount_add(&zp->z_refcnt, RL_TAG);
 			break;
 		}
 	}
 	if (zp == NULL) {
 		zp = ztest_znode_init(object);
-		refcount_add(&zp->z_refcnt, RL_TAG);
+		zfs_refcount_add(&zp->z_refcnt, RL_TAG);
 		list_insert_head(&zll->z_list, zp);
 	}
 	mutex_exit(&zll->z_lock);
@@ -1268,8 +1268,8 @@ ztest_znode_put(ztest_ds_t *zd, ztest_znode_t *zp)
 	ASSERT3U(zp->z_object, !=, 0);
 	zll = &zd->zd_range_lock[zp->z_object & (ZTEST_OBJECT_LOCKS - 1)];
 	mutex_enter(&zll->z_lock);
-	refcount_remove(&zp->z_refcnt, RL_TAG);
-	if (refcount_is_zero(&zp->z_refcnt)) {
+	zfs_refcount_remove(&zp->z_refcnt, RL_TAG);
+	if (zfs_refcount_is_zero(&zp->z_refcnt)) {
 		list_remove(&zll->z_list, zp);
 		ztest_znode_fini(zp);
 	}
