@@ -1,3 +1,13 @@
+zfs-linux (0.7.12-1) UNRELEASED; urgency=medium
+
+  [ Stoiko Ivanov ]
+  * Add Breaks/Replaces to zfs-initramfs
+
+  [ Mo Zhou ]
+  * New upstream version 0.7.12
+
+ -- Mo Zhou <cdluminate@gmail.com>  Sat, 17 Nov 2018 23:48:01 +0000
+
 zfs-linux (0.7.11-3) unstable; urgency=medium
 
   [ Antonio Russo ]
