@@ -5,8 +5,11 @@ zfs-linux (0.7.12-1) UNRELEASED; urgency=medium
 
   [ Mo Zhou ]
   * New upstream version 0.7.12
+  * Drop unnecessary patch init-start-stop-dep-on-local-fs.patch .
+  * Override init.d-script-missing-dependency-on-local_fs for zfs-zed.
+  * Bump linux compatibility to 4.19 .
 
- -- Mo Zhou <cdluminate@gmail.com>  Sat, 17 Nov 2018 23:48:01 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Mon, 19 Nov 2018 11:32:44 +0000
 
 zfs-linux (0.7.11-3) unstable; urgency=medium
 
