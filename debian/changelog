@@ -1,4 +1,4 @@
-zfs-linux (0.7.12-1) UNRELEASED; urgency=medium
+zfs-linux (0.7.12-1) unstable; urgency=medium
 
   [ Stoiko Ivanov ]
   * Add Breaks/Replaces to zfs-initramfs
