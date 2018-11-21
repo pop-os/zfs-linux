@@ -1,3 +1,62 @@
+zfs-linux (0.8.0~rc3-1) UNRELEASED; urgency=medium
+
+  [ Antonio Russo ]
+  * Use zfsexecdir tunable to relocate scripts.
+  * Install systemd zfs-mount-generator
+  * SPL is now included in upstream ZFS packaging.
+    Build dummy spl and spl-dkms packages to ease upgrades.
+  * Track Debian version in module
+  * Remove patches included upstream.
+  * Refresh patches
+  * Include new scsi example scripts
+  * Use arc_summary3.py to provide arc_summary
+  * Reflect tests removed upstream
+  * Include zfs-program manual page
+  * Add ssl dependency.
+  * Track upstream python3 migration
+  * Build pyzfs python3 package
+  * Fix dh_strip build failure
+
+  [ Mo Zhou ]
+  * New upstream version 0.8.0~rc3
+  * Use Linux-{Maximum,Minimum} META info to specify linux compatibility.
+    Based on Antonio Russo <antonio.e.russo@gmail.com>'s patch.
+  * Update the Homepage URL to use https format URL.
+  * Remove duplicated "Priority" fields in control*.
+  * Update short and long descriptions for dummy packages: spl, spl-dkms.
+  * Let dummy packages depends on misc:Depends, to make lintian happy.
+  * Override false-postive lintian Error wrong-path-for-interpreter.
+  * Override more false-positive lintian Errors for zfsutils-linux.
+  * Drop zfs-dbg in favor of automatic -dbgsym packages.
+  * Overhaul copyright for the 0.8.X release.
+  * Remove 24 backported patches that are already applied in current version:
+     - 2301-zfs-promote-rename-.-recv-should-be-an-error.patch
+     - 2302-Fix-parsable-zfs-get-for-compressratios.patch
+     - 2303-Fix-zpool-events-scripted-mode-tab-separator.patch
+     - 2305-Allow-longer-SPA-names-in-stats.patch
+     - 2308-OpenZFS-8375-Kernel-memory-leak-in-nvpair-code.patch
+     - 2309-OpenZFS-7261-nvlist-code-should-enforce-name-length-.patch
+     - 2310-OpenZFS-5778-nvpair_type_is_array-does-not-recognize.patch
+     - 2313-Fix-printk-calls-missing-log-level.patch
+     - 2314-Fix-abdstats-kstat-on-32-bit-systems.patch
+     - 2316-Fix-coverity-defects-147480-147584.patch
+     - 2317-Fix-coverity-defects-CID-161388.patch
+     - 2318-Use-ashift-12-by-default-on-SSDSC2BW48-disks.patch
+     - 2319-OpenZFS-8558-8602-lwp_create-returns-EAGAIN.patch
+     - 2320-ZFS-send-fails-to-dump-objects-larger-than-128PiB.patch
+     - 2323-Fix-segfault-in-zpool-iostat-when-adding-VDEVs.patch
+     - 2328-Fix-fsanitize-address-memory-leak.patch
+     - 2331-OpenZFS-8897-zpool-online-e-fails-assertion-when-run.patch
+     - 2332-OpenZFS-8898-creating-fs-with-checksum-skein-on-the-.patch
+     - 2334-OpenZFS-8641-zpool-clear-and-zinject-don-t-work-on-s.patch
+     - 2336-OpenZFS-8972-zfs-holds-In-scripted-mode-do-not-pad-c.patch
+     - 2337-Revert-Remove-wrong-ASSERT-in-annotate_ecksum.patch
+     - 2338-OpenZFS-8731-ASSERT3U-nui64s-UINT16_MAX-fails-for-la.patch
+     - 2339-Prevent-zdb-8-from-occasionally-hanging-on-I-O.patch
+     - 2341-Change-movaps-to-movups-in-AES-NI-code.patch
+
+ -- Mo Zhou <cdluminate@gmail.com>  Mon, 04 Mar 2019 07:56:07 +0000
+
 zfs-linux (0.7.13-1) unstable; urgency=medium
 
   [ Mo Zhou ]
