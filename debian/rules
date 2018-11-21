@@ -4,7 +4,8 @@ include /usr/share/dpkg/default.mk
 
 LSB_DISTRIBUTOR := $(shell lsb_release -is)
 NAME := $(shell awk '$$1 == "Name:" { print $$2; }' META)
-LINUX_NEXT := $(shell awk -F. '{print $$1 "." $$2+1}' debian/linux_compat)
+LINUX_MIN  := $(shell awk '/Linux-Minimum:/{print $$2}' META)
+LINUX_NEXT := $(shell awk -F'[ .]' '/Linux-Maximum:/{print $$2 "." $$3+1}' META)
 
 DKMSFILES := module include config zfs.release.in autogen.sh META AUTHORS \
 		DISCLAIMER COPYRIGHT OPENSOLARIS.LICENSE README.markdown
@@ -36,12 +37,12 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 override_dh_autoreconf:
 	@# Embed the downstream version in the module.
-	@sed -e 's/^Version:.*/Version:      $(DEB_VERSION_UPSTREAM)/' -i.orig META
+	@sed -e 's/^Version:.*/Version:       $(DEB_VERSION_UPSTREAM)/' -i.orig META
 
 	dh_autoreconf
 
 override_dh_auto_configure:
-	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(LINUX_NEXT)~\)/" debian/control.in > debian/control
+	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(LINUX_NEXT)~\), linux-libc-dev \(>= $(LINUX_MIN)~\),/" debian/control.in > debian/control
 ifeq ($(BUILD_UDEB), true)
 	cat debian/control.udeb.in >> debian/control
 endif
@@ -154,7 +155,7 @@ override_dh_auto_clean:
 	dh_auto_clean
 	debconf-updatepo
 	@if test -e META.orig; then mv META.orig META; fi
-	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(LINUX_NEXT)~\)/" debian/control.in > debian/control
+	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(LINUX_NEXT)~\), linux-libc-dev \(>= $(LINUX_MIN)~\),/" debian/control.in > debian/control
 ifeq ($(BUILD_UDEB), true)
 	cat debian/control.udeb.in >> debian/control
 endif
