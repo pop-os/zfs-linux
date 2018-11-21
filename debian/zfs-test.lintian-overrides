@@ -1,1 +1,2 @@
 zfs-test: arch-dependent-file-in-usr-share
+zfs-test: wrong-path-for-interpreter usr/share/zfs/zfs-tests/tests/perf/regression/random_readwrite_fixed.ksh
