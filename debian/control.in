@@ -102,6 +102,8 @@ Pre-Depends: spl-dkms (<<${source:Upstream-Version}.),
              spl-dkms (>= ${source:Upstream-Version})
 Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}, ${perl:Depends},
 Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), @LINUX_COMPAT@
+Breaks: spl-dkms (<< 0.8.0~rc1),
+Replaces: spl-dkms,
 Provides: zfs-modules
 Description: OpenZFS filesystem kernel modules for Linux
  The Z file system is a pooled filesystem designed for maximum data
@@ -147,7 +149,9 @@ Section: contrib/admin
 Architecture: linux-any
 Depends: python3, ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}
 Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
-Breaks: zfs-dkms (<< ${binary:Version}), zfs-dkms (>> ${binary:Version})
+Breaks: spl-dkms (<< 0.8.0~rc1), spl (<< 0.7.9-2), zfs-dkms (<< ${binary:Version}),
+        zfs-dkms (>> ${binary:Version})
+Replaces: spl-dkms, spl (<< 0.7.9-2)
 Suggests: nfs-kernel-server,
           samba-common-bin (>= 3.0.23),
           zfs-initramfs | zfs-dracut
@@ -221,3 +225,16 @@ Description: Debugging symbols for OpenZFS userland libraries and tools
  .
  This package contains the debugging symbols for libzpool2linux, libzfs2linux,
  libnvpair1linux, libuutil1linux, zfs-zed and zfsutils-linux.
+
+Package: spl
+Architecture: all
+Suggests: zfs-test
+Description: transitional dummy package
+ This is a transitional dummy package. It can safely be removed.
+
+Package: spl-dkms
+Architecture: all
+Depends: zfs-dkms
+Section: contrib/admin
+Description: transitional dummy package
+ This is a transitional dummy package. It can safely be removed.

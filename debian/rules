@@ -8,7 +8,7 @@ LINUX_MIN  := $(shell awk '/Linux-Minimum:/{print $$2}' META)
 LINUX_NEXT := $(shell awk -F'[ .]' '/Linux-Maximum:/{print $$2 "." $$3+1}' META)
 
 DKMSFILES := module include config zfs.release.in autogen.sh META AUTHORS \
-		DISCLAIMER COPYRIGHT OPENSOLARIS.LICENSE README.markdown
+		COPYRIGHT LICENSE README.md
 
 ifndef BUILD_UDEB
 BUILD_UDEB=false
@@ -16,14 +16,6 @@ endif
 
 ifndef KVERS
 KVERS=$(shell uname -r)
-endif
-
-ifndef SPL
-SPL=/usr/src/spl-$(DEB_VERSION_UPSTREAM)
-endif
-
-ifndef SPLOBJ
-SPLOBJ=/var/lib/dkms/spl/$(DEB_VERSION_UPSTREAM)/$(KVERS)/$(DEB_TARGET_GNU_CPU)
 endif
 
 non_epoch_version=$(shell echo $(KVERS) | perl -pe 's/^\d+://')
@@ -188,9 +180,7 @@ override_dh_configure_modules_udeb_stamp:
 		--without-selinux \
 		--with-config=kernel \
 		--with-linux=$(KSRC) \
-		--with-linux-obj=$(KOBJ) \
-		--with-spl=$(SPL) \
-		--with-spl-obj=$(SPLOBJ)
+		--with-linux-obj=$(KOBJ)
 	touch override_dh_configure_modules_udeb_stamp
 
 override_dh_configure_modules: override_dh_configure_modules_stamp
@@ -198,9 +188,7 @@ override_dh_configure_modules_stamp:
 	./configure \
 		--with-config=kernel \
 		--with-linux=$(KSRC) \
-		--with-linux-obj=$(KOBJ) \
-		--with-spl=$(SPL) \
-		--with-spl-obj=$(SPLOBJ)
+		--with-linux-obj=$(KOBJ)
 	touch override_dh_configure_modules_stamp
 
 override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configure_modules_udeb
