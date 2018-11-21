@@ -1,2 +1,4 @@
 init.d-script-does-not-source-init-functions
 systemd-service-file-refers-to-unusual-wantedby-target
+service-file-is-not-a-file lib/systemd/system/zfs-import.service
+missing-systemd-service-for-init.d-rcS-script zfs-import
