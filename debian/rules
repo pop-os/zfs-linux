@@ -52,6 +52,7 @@ endif
 	  --sbindir=/sbin \
 	  --libdir=/lib \
 	  --with-udevdir=/lib/udev \
+	  --with-zfsexecdir=/usr/lib/zfs-linux \
 	  --enable-systemd \
 	  --with-systemdunitdir=/lib/systemd/system \
 	  --with-systemdpresetdir=/lib/systemd/system-preset \
