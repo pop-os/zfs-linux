@@ -22,7 +22,7 @@ Build-Depends: autotools-dev,
                uuid-dev,
                zlib1g-dev
 Standards-Version: 4.3.0
-Homepage: http://www.zfsonlinux.org/
+Homepage: https://zfsonlinux.org/
 Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
 XS-Autobuild: yes
