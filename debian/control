@@ -229,6 +229,7 @@ Description: Debugging symbols for OpenZFS userland libraries and tools
 
 Package: spl
 Architecture: all
+Depends: ${misc:Depends},
 Suggests: zfs-test
 Description: Solaris Porting Layer user-space utilities for Linux (dummy)
  The Solaris Porting Layer (SPL) is a Linux kernel module which provides
@@ -246,7 +247,7 @@ Description: Solaris Porting Layer user-space utilities for Linux (dummy)
 
 Package: spl-dkms
 Architecture: all
-Depends: zfs-dkms
+Depends: ${misc:Depends}, zfs-dkms
 Section: contrib/admin
 Description: Solaris Porting Layer kernel modules for Linux (dummy)
  The Solaris Porting Layer (SPL) is a Linux kernel module which provides
