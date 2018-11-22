@@ -34,4 +34,3 @@ Index: zfs/etc/init.d/zfs-functions.in
 +ZED="/usr/sbin/zed"
  ZPOOL="@sbindir@/zpool"
  ZPOOL_CACHE="@sysconfdir@/zfs/zpool.cache"
- 
