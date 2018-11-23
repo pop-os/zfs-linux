@@ -209,24 +209,6 @@ Description: OpenZFS test infrastructure an support scripts
  testing and validating a system using OpenZFS. It is entirely optional
  and should only be installed and used in test environments.
 
-Package: zfs-dbg
-Section: contrib/debug
-Architecture: linux-any
-Depends: libnvpair1linux (= ${binary:Version}),
-         libuutil1linux (= ${binary:Version}),
-         libzfs2linux (= ${binary:Version}),
-         libzpool2linux (= ${binary:Version}),
-         zfs-zed (= ${binary:Version}),
-         zfsutils-linux (= ${binary:Version}),
-         ${misc:Depends}
-Description: Debugging symbols for OpenZFS userland libraries and tools
- The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data
- checksums.
- .
- This package contains the debugging symbols for libzpool2linux, libzfs2linux,
- libnvpair1linux, libuutil1linux, zfs-zed and zfsutils-linux.
-
 Package: spl
 Architecture: all
 Depends: ${misc:Depends},
