@@ -24,6 +24,7 @@ Standards-Version: 4.1.2
 Homepage: http://www.zfsonlinux.org/
 Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
+XS-Autobuild: yes
 
 Package: libnvpair1linux
 Section: contrib/libs
