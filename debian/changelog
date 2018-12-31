@@ -10,6 +10,7 @@ zfs-linux (0.7.12-2) UNRELEASED; urgency=medium
   * Add d/gitlab-ci.yml to enable Salsa CI pipeline.
   * Change init script's behaviour during postinst to default.
   * Add ${perl:Depends} to zfs-dkms's Depends.
+  * Note: please don't co-install systemd-sysv and insserv!
 
  -- Mo Zhou <cdluminate@gmail.com>  Mon, 31 Dec 2018 09:02:36 +0000
 
