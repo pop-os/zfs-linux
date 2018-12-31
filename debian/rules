@@ -162,10 +162,10 @@ override_dh_install:
 	dh_install --fail-missing
 
 override_dh_installinit:
-	dh_installinit -r --no-start --name zfs-import
-	dh_installinit -r --no-start --name zfs-mount
-	dh_installinit -r --no-start --name zfs-share
-	dh_installinit -R --no-start --name zfs-zed
+	dh_installinit -R --name zfs-import
+	dh_installinit -R --name zfs-mount
+	dh_installinit -R --name zfs-share
+	dh_installinit -R --name zfs-zed
 	mkdir -p debian/zfsutils-linux/lib/systemd/system
 	ln -sr /dev/null debian/zfsutils-linux/lib/systemd/system/zfs-import.service
 
