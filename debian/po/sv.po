@@ -42,7 +42,7 @@ msgid ""
 msgstr ""
 "Det är inte omöjligt men att bygga i en 32-bitars-miljö är inte något som "
 "stöds och kommer troligen att leda till ostabilt system och det i sin tur kan "
-"elda till dataförlust. Att använda en 64-bitars kärna är starkt rekommenderat. "
+"leda till dataförlust. Att använda en 64-bitars kärna är starkt rekommenderat. "
 "Om du väljer att fortsätta med att använda ZFS på den här kärnan är det helt "
 "och hållet på din egen risk."
 
