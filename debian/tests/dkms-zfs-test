@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+kver=$(dpkg -s linux-headers-amd64 | grep Depends: | sed -e 's@.*linux-headers-\(.*-amd64\).*@\1@')
+zfsver=$(dpkg -s zfs-dkms | grep Version: | sed -e 's@Version: \(.*\)-.*@\1@')
+echo dkms build -k $kver zfs/$zfsver
+dkms build -k $kver zfs/$zfsver
