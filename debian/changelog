@@ -6,17 +6,18 @@ zfs-linux (0.7.12-2) UNRELEASED; urgency=medium
   [ Aron Xu ]
   * Add XS-Autobuild: yes to d/control
 
-  [ Mo Zhou ]
-  * Add d/gitlab-ci.yml to enable Salsa CI pipeline.
-  * Change init script's behaviour during postinst to default.
-  * Add ${perl:Depends} to zfs-dkms's Depends.
-  * Note: please don't co-install systemd-sysv and insserv!
-
   [ Martin Bagge / brother ]
   * Update Swedish strings for zfs-linux debconf (Closes: #918020)
     Thanks to Anders Jonsson for a typo fix.
 
- -- Mo Zhou <cdluminate@gmail.com>  Thu, 03 Jan 2019 01:43:04 +0000
+  [ Mo Zhou ]
+  * Add d/gitlab-ci.yml to enable Salsa CI pipeline.
+  * Change LSB init script's behaviour during postinst to default.
+  * Add the missing ${perl:Depends} to zfs-dkms's Depends.
+  * Add autopkgtest script to test zfs-dkms build.
+  * Please don't co-install systemd-sysv and insserv. (See: #915831)
+
+ -- Mo Zhou <cdluminate@gmail.com>  Sun, 06 Jan 2019 09:05:07 +0000
 
 zfs-linux (0.7.12-1) unstable; urgency=medium
 
