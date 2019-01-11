@@ -1,2 +1,2 @@
-# They sourced /etc/zfs/zfs-functions which sources init-functions
 init.d-script-does-not-source-init-functions
+systemd-service-file-refers-to-unusual-wantedby-target
