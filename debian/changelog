@@ -1,3 +1,26 @@
+zfs-linux (0.7.12-2) unstable; urgency=medium
+
+  [ Colin Ian King ]
+  * Only run autopkgtests for amd64, arm64, ppc64el and s390x (LP#1805627).
+
+  [ Martin Bagge / brother ]
+  * [INTL:sv] Swedish strings for zfs-linux debconf (Closes: #918020)
+
+  [ Anders Jonsson ]
+  * sv.po: typo fix
+
+  [ Mo Zhou ]
+  * Change init script's behaviour to default during postinst.
+  * Add ${perl:Depends} to zfs-dkms's Depends.
+  * Add autopkgtest script to test zfs-dkms build.
+  * autopkgtest: minor fix
+
+  [ Aron Xu ]
+  * Add XS-Autobuild: yes to d/control
+  * Conflicts with insserv << 1.18 (Closes: #915831)
+
+ -- Aron Xu <aron@debian.org>  Fri, 11 Jan 2019 21:32:06 +0800
+
 zfs-linux (0.7.12-1) unstable; urgency=medium
 
   [ Stoiko Ivanov ]

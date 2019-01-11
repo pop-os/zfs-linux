@@ -1,0 +1,14 @@
+#!/bin/sh
+set -xe
+DEB_HOST_ARCH=$(dpkg --print-architecture)
+kver=$(apt-cache show linux-headers-$DEB_HOST_ARCH | grep Depends: | sed -e 's@.*linux-headers-\(.*\)\w*@\1@')
+zfsver=$(apt-cache show zfs-dkms | grep Version: | head -n1 | sed -e 's@Version: \(.*\)-.*@\1@')
+
+if ! (echo "amd64 arm64 ppc64el s390x" | grep -o $DEB_HOST_ARCH); then
+	exit 0
+fi
+
+echo Building ZFS/$zfsver for Linux/$kver
+apt-get install linux-headers-$DEB_HOST_ARCH -y
+dkms build -k $kver spl/$zfsver
+dkms build -k $kver zfs/$zfsver
