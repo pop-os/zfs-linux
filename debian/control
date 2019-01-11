@@ -148,11 +148,10 @@ Architecture: linux-any
 Depends: python3, ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}
 Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
 Breaks: zfs-dkms (<< ${binary:Version}), zfs-dkms (>> ${binary:Version})
-Conflicts: insserv (<< 1.18)
 Suggests: nfs-kernel-server,
           samba-common-bin (>= 3.0.23),
           zfs-initramfs | zfs-dracut
-Conflicts: zfs, zfs-fuse
+Conflicts: zfs, zfs-fuse, insserv (<< 1.18)
 Provides: zfsutils
 Description: command-line tools to manage OpenZFS filesystems
  The Z file system is a pooled filesystem designed for maximum data
