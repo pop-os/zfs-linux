@@ -112,7 +112,7 @@ Description: OpenZFS filesystem kernel modules for Linux
  OpenZFS.
 
 Package: zfs-initramfs
-Architecture: amd64 arm64 ppc64el s390x
+Architecture: all
 Depends: busybox-initramfs | busybox-static | busybox,
          initramfs-tools,
          zfs-modules | zfs-dkms,
@@ -129,7 +129,7 @@ Description: OpenZFS root filesystem capabilities for Linux - initramfs
  for the initramfs-tools infrastructure.
 
 Package: zfs-dracut
-Architecture: amd64 arm64 ppc64el s390x
+Architecture: all
 Depends: dracut,
          zfs-modules | zfs-dkms,
          zfsutils-linux (>= ${binary:Version}),
