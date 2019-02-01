@@ -1,0 +1,26 @@
+Add 4.20 timespec compat fix
+
+This adds a compat fix for zpios-ctl.h to cater for the new 64 bit
+times.
+ 
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+
+Index: zfs-linux-0.7.12/include/zpios-ctl.h
+===================================================================
+--- zfs-linux-0.7.12.orig/include/zpios-ctl.h
++++ zfs-linux-0.7.12/include/zpios-ctl.h
+@@ -181,9 +181,13 @@ zpios_timespec_t
+ zpios_timespec_now(void)
+ {
+ 	zpios_timespec_t zts_now;
+-	struct timespec ts_now;
++	inode_timespec_t ts_now;
+ 
++#if defined(HAVE_INODE_TIMESPEC64_TIMES)
++	ts_now = current_kernel_time64();
++#else
+ 	ts_now = current_kernel_time();
++#endif
+ 	zts_now.ts_sec  = ts_now.tv_sec;
+ 	zts_now.ts_nsec = ts_now.tv_nsec;
+ 

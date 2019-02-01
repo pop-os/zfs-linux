@@ -1,0 +1,55 @@
+check if totamram-pages is a function
+
+Linux 5.0 totalram_pages is now a function, so check for this
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+
+---
+
+Index: zfs-linux-0.7.12/config/kernel-totalram-pages.m4
+===================================================================
+--- /dev/null
++++ zfs-linux-0.7.12/config/kernel-totalram-pages.m4
+@@ -0,0 +1,20 @@
++dnl #
++dnl # 5.0 API change
++dnl # check if totalram_pages is a function
++dnl #
++AC_DEFUN([ZFS_AC_KERNEL_TOTALRAM_PAGES_FUNCTION], [
++	AC_MSG_CHECKING([whether totalram_pages is a function])
++	ZFS_LINUX_TRY_COMPILE([
++		#include <linux/mm.h>
++	],[
++		unsigned long t;
++
++		t = totalram_pages();
++	],[
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_TOTALRAM_PAGES_FUNCTION, 1,
++		    [totalram_pages is a function])
++	],[
++		AC_MSG_RESULT(no)
++	])
++])
+Index: zfs-linux-0.7.12/module/zfs/arc.c
+===================================================================
+--- zfs-linux-0.7.12.orig/module/zfs/arc.c
++++ zfs-linux-0.7.12/module/zfs/arc.c
+@@ -4004,9 +4004,17 @@ arc_all_memory(void)
+ {
+ #ifdef _KERNEL
+ #ifdef CONFIG_HIGHMEM
++#ifdef HAVE_TOTALRAM_PAGES_FUNCTION
++	return (ptob(totalram_pages() - totalhigh_pages));
++#else
+ 	return (ptob(totalram_pages - totalhigh_pages));
++#endif /* HAVE_TOTALRAM_PAGES_FUNCTION */
++#else
++#ifdef HAVE_TOTALRAM_PAGES_FUNCTION
++	return (ptob(totalram_pages()));
+ #else
+ 	return (ptob(totalram_pages));
++#endif /* HAVE_TOTALRAM_PAGES_FUNCTION */
+ #endif /* CONFIG_HIGHMEM */
+ #else
+ 	return (ptob(physmem) / 2);

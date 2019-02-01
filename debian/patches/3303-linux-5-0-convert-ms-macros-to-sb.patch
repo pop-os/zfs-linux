@@ -1,0 +1,110 @@
+Linux 5.0: Convert MS_* macros to SB_*
+
+In the 5.0 kernel, only the mount namespace code should use the MS_*
+macos. Filesystems should use the SB_* ones.
+
+https://patchwork.kernel.org/patch/10552493/
+
+Signed-off-by: Tony Hutter <hutter2@llnl.gov>
+Closes zfsonlinux#8264
+(cherry picked from commit https://github.com/tonyhutter/zfs/commit/bdb806d742d90805bf23f19b9092d03e74ec6cc7)
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+
+---
+
+Index: zfs-linux-0.7.12/module/zfs/vdev_disk.c
+===================================================================
+--- zfs-linux-0.7.12.orig/module/zfs/vdev_disk.c
++++ zfs-linux-0.7.12/module/zfs/vdev_disk.c
+@@ -35,6 +35,7 @@
+ #include <sys/zio.h>
+ #include <sys/sunldi.h>
+ #include <linux/mod_compat.h>
++#include <linux/vfs_compat.h>
+ 
+ char *zfs_vdev_scheduler = VDEV_SCHEDULER;
+ static void *zfs_vdev_holder = VDEV_HOLDER;
+@@ -76,7 +77,7 @@ vdev_bdev_mode(int smode)
+ 	ASSERT3S(smode & (FREAD | FWRITE), !=, 0);
+ 
+ 	if ((smode & FREAD) && !(smode & FWRITE))
+-		mode = MS_RDONLY;
++		mode = SB_RDONLY;
+ 
+ 	return (mode);
+ }
+Index: zfs-linux-0.7.12/module/zfs/zfs_vfsops.c
+===================================================================
+--- zfs-linux-0.7.12.orig/module/zfs/zfs_vfsops.c
++++ zfs-linux-0.7.12/module/zfs/zfs_vfsops.c
+@@ -66,6 +66,7 @@
+ #include <sys/dmu_objset.h>
+ #include <sys/spa_boot.h>
+ #include <sys/zpl.h>
++#include <linux/vfs_compat.h>
+ #include "zfs_comutil.h"
+ 
+ enum {
+@@ -259,7 +260,7 @@ zfsvfs_parse_options(char *mntopts, vfs_
+ boolean_t
+ zfs_is_readonly(zfsvfs_t *zfsvfs)
+ {
+-	return (!!(zfsvfs->z_sb->s_flags & MS_RDONLY));
++	return (!!(zfsvfs->z_sb->s_flags & SB_RDONLY));
+ }
+ 
+ /*ARGSUSED*/
+@@ -353,15 +354,15 @@ acltype_changed_cb(void *arg, uint64_t n
+ 	switch (newval) {
+ 	case ZFS_ACLTYPE_OFF:
+ 		zfsvfs->z_acl_type = ZFS_ACLTYPE_OFF;
+-		zfsvfs->z_sb->s_flags &= ~MS_POSIXACL;
++		zfsvfs->z_sb->s_flags &= ~SB_POSIXACL;
+ 		break;
+ 	case ZFS_ACLTYPE_POSIXACL:
+ #ifdef CONFIG_FS_POSIX_ACL
+ 		zfsvfs->z_acl_type = ZFS_ACLTYPE_POSIXACL;
+-		zfsvfs->z_sb->s_flags |= MS_POSIXACL;
++		zfsvfs->z_sb->s_flags |= SB_POSIXACL;
+ #else
+ 		zfsvfs->z_acl_type = ZFS_ACLTYPE_OFF;
+-		zfsvfs->z_sb->s_flags &= ~MS_POSIXACL;
++		zfsvfs->z_sb->s_flags &= ~SB_POSIXACL;
+ #endif /* CONFIG_FS_POSIX_ACL */
+ 		break;
+ 	default:
+@@ -390,9 +391,9 @@ readonly_changed_cb(void *arg, uint64_t
+ 		return;
+ 
+ 	if (newval)
+-		sb->s_flags |= MS_RDONLY;
++		sb->s_flags |= SB_RDONLY;
+ 	else
+-		sb->s_flags &= ~MS_RDONLY;
++		sb->s_flags &= ~SB_RDONLY;
+ }
+ 
+ static void
+@@ -420,9 +421,9 @@ nbmand_changed_cb(void *arg, uint64_t ne
+ 		return;
+ 
+ 	if (newval == TRUE)
+-		sb->s_flags |= MS_MANDLOCK;
++		sb->s_flags |= SB_MANDLOCK;
+ 	else
+-		sb->s_flags &= ~MS_MANDLOCK;
++		sb->s_flags &= ~SB_MANDLOCK;
+ }
+ 
+ static void
+@@ -1763,8 +1764,8 @@ zfs_remount(struct super_block *sb, int
+ 	int error;
+ 
+ 	if ((issnap || !spa_writeable(dmu_objset_spa(zfsvfs->z_os))) &&
+-	    !(*flags & MS_RDONLY)) {
+-		*flags |= MS_RDONLY;
++	    !(*flags & SB_RDONLY)) {
++		*flags |= SB_RDONLY;
+ 		return (EROFS);
+ 	}
+ 
