@@ -1,0 +1,166 @@
+From 4ceb8dd6fdfdde3b6ac55cf52132858973fce9d0 Mon Sep 17 00:00:00 2001
+From: LOLi <loli10K@users.noreply.github.com>
+Date: Tue, 8 May 2018 06:11:59 +0200
+Subject: [PATCH] Fix 'zpool create -t <tempname>'
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Creating a pool with a temporary name fails when we also specify custom
+dataset properties: this is because we mistakenly call
+zfs_set_prop_nvlist() on the "real" pool name which, as expected,
+cannot be found because the SPA is present in the namespace with the
+temporary name.
+
+Fix this by specifying the correct pool name when setting the dataset
+properties.
+
+Reviewed-by: Prakash Surya <prakash.surya@delphix.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: loli10K <ezomori.nozomu@gmail.com>
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+Closes #7502
+Closes #7509
+
+Index: zfs-linux-0.7.9/module/zfs/zfs_ioctl.c
+===================================================================
+--- zfs-linux-0.7.9.orig/module/zfs/zfs_ioctl.c
++++ zfs-linux-0.7.9/module/zfs/zfs_ioctl.c
+@@ -1474,6 +1474,7 @@ zfs_ioc_pool_create(zfs_cmd_t *zc)
+ 	nvlist_t *config, *props = NULL;
+ 	nvlist_t *rootprops = NULL;
+ 	nvlist_t *zplprops = NULL;
++	char *spa_name = zc->zc_name;
+ 
+ 	if ((error = get_nvlist(zc->zc_nvlist_conf, zc->zc_nvlist_conf_size,
+ 	    zc->zc_iflags, &config)))
+@@ -1489,6 +1490,7 @@ zfs_ioc_pool_create(zfs_cmd_t *zc)
+ 	if (props) {
+ 		nvlist_t *nvl = NULL;
+ 		uint64_t version = SPA_VERSION;
++		char *tname;
+ 
+ 		(void) nvlist_lookup_uint64(props,
+ 		    zpool_prop_to_name(ZPOOL_PROP_VERSION), &version);
+@@ -1511,6 +1513,10 @@ zfs_ioc_pool_create(zfs_cmd_t *zc)
+ 		    zplprops, NULL);
+ 		if (error != 0)
+ 			goto pool_props_bad;
++
++		if (nvlist_lookup_string(props,
++		    zpool_prop_to_name(ZPOOL_PROP_TNAME), &tname) == 0)
++			spa_name = tname;
+ 	}
+ 
+ 	error = spa_create(zc->zc_name, config, props, zplprops);
+@@ -1518,9 +1524,9 @@ zfs_ioc_pool_create(zfs_cmd_t *zc)
+ 	/*
+ 	 * Set the remaining root properties
+ 	 */
+-	if (!error && (error = zfs_set_prop_nvlist(zc->zc_name,
++	if (!error && (error = zfs_set_prop_nvlist(spa_name,
+ 	    ZPROP_SRC_LOCAL, rootprops, NULL)) != 0)
+-		(void) spa_destroy(zc->zc_name);
++		(void) spa_destroy(spa_name);
+ 
+ pool_props_bad:
+ 	nvlist_free(rootprops);
+Index: zfs-linux-0.7.9/tests/runfiles/linux.run
+===================================================================
+--- zfs-linux-0.7.9.orig/tests/runfiles/linux.run
++++ zfs-linux-0.7.9/tests/runfiles/linux.run
+@@ -253,7 +253,7 @@ tests = ['zpool_create_001_pos', 'zpool_
+     'zpool_create_features_001_pos', 'zpool_create_features_002_pos',
+     'zpool_create_features_003_pos', 'zpool_create_features_004_neg',
+     'zpool_create_features_005_pos',
+-    'create-o_ashift']
++    'create-o_ashift', 'zpool_create_tempname']
+ tags = ['functional', 'cli_root', 'zpool_create']
+ 
+ [tests/functional/cli_root/zpool_destroy]
+Index: zfs-linux-0.7.9/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
+===================================================================
+--- zfs-linux-0.7.9.orig/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
++++ zfs-linux-0.7.9/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
+@@ -30,7 +30,8 @@ dist_pkgdata_SCRIPTS = \
+ 	zpool_create_features_003_pos.ksh \
+ 	zpool_create_features_004_neg.ksh \
+ 	zpool_create_features_005_pos.ksh \
+-	create-o_ashift.ksh
++	create-o_ashift.ksh \
++	zpool_create_tempname.ksh
+ 
+ dist_pkgdata_DATA = \
+ 	zpool_create.cfg \
+Index: zfs-linux-0.7.9/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_tempname.ksh
+===================================================================
+--- /dev/null
++++ zfs-linux-0.7.9/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_tempname.ksh
+@@ -0,0 +1,68 @@
++#!/bin/ksh -p
++#
++# This file and its contents are supplied under the terms of the
++# Common Development and Distribution License ("CDDL"), version 1.0.
++# You may only use this file in accordance with the terms of version
++# 1.0 of the CDDL.
++#
++# A full copy of the text of the CDDL should have accompanied this
++# source.  A copy of the CDDL is also available via the Internet at
++# http://www.illumos.org/license/CDDL.
++#
++
++#
++# Copyright 2018, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
++#
++
++. $STF_SUITE/include/libtest.shlib
++
++#
++# DESCRIPTION:
++# 'zpool create -t <tempname>' can create a pool with the specified temporary
++# name. The pool should be present in the namespace as <tempname> until exported
++#
++# STRATEGY:
++# 1. Create a pool with '-t' option
++# 2. Verify the pool is created with the specified temporary name
++#
++
++verify_runnable "global"
++
++function cleanup
++{
++	destroy_pool $TESTPOOL
++	destroy_pool $TEMPPOOL
++
++}
++
++log_assert "'zpool create -t <tempname>' can create a pool with the specified" \
++	" temporary name."
++log_onexit cleanup
++
++TEMPPOOL="tempname.$$"
++typeset poolprops=('comment=text' 'ashift=12' 'listsnapshots=on' 'autoexpand=on'
++    'autoreplace=on' 'delegation=off' 'failmode=continue')
++typeset fsprops=('canmount=off' 'mountpoint=none' 'utf8only=on'
++    'casesensitivity=mixed' 'version=1' 'normalization=formKD')
++
++for poolprop in "${poolprops[@]}"; do
++	for fsprop in "${fsprops[@]}"; do
++		# 1. Create a pool with '-t' option
++		log_must zpool create $TESTPOOL -t $TEMPPOOL \
++			-O $fsprop -o $poolprop $DISKS
++		# 2. Verify the pool is created with the specified temporary name
++		log_must poolexists $TEMPPOOL
++		log_mustnot poolexists $TESTPOOL
++		propname="$(awk -F= '{print $1}' <<< $fsprop)"
++		propval="$(awk -F= '{print $2}' <<< $fsprop)"
++		log_must test "$(get_prop $propname $TEMPPOOL)" == "$propval"
++		propname="$(awk -F= '{print $1}' <<< $poolprop)"
++		propval="$(awk -F= '{print $2}' <<< $poolprop)"
++		log_must test "$(get_pool_prop $propname $TEMPPOOL)" == "$propval"
++		# Cleanup
++		destroy_pool $TEMPPOOL
++	done
++done
++
++log_pass "'zpool create -t <tempname>' successfully creates pools with" \
++	" temporary names"

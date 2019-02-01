@@ -1,0 +1,40 @@
+From 24ded86e8dd528b056d73630ff33e526f9540dbc Mon Sep 17 00:00:00 2001
+From: Matthew Ahrens <mahrens@delphix.com>
+Date: Thu, 4 Aug 2016 16:16:29 -0700
+Subject: [PATCH] OpenZFS 7261 - nvlist code should enforce name length limit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Authored by: Matthew Ahrens <mahrens@delphix.com>
+Reviewed by: Sebastien Roy <sebastien.roy@delphix.com>
+Reviewed by: George Wilson <george.wilson@delphix.com>
+Reviewed by: Robert Mustacchi <rm@joyent.com>
+Approved by: Dan McDonald <danmcd@omniti.com>
+Reviewed-by: Don Brady <dev.fs.zfs@gmail.com>
+Reviewed-by: George Melikov <mail@gmelikov.ru>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Ported-by: Giuseppe Di Natale <dinatale2@llnl.gov>
+
+OpenZFS-issue: https://www.illumos.org/issues/7261
+OpenZFS-commit: https://github.com/openzfs/openzfs/commit/48dd5e6
+Closes #6579
+---
+ module/nvpair/nvpair.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/module/nvpair/nvpair.c b/module/nvpair/nvpair.c
+index 8e654053c..dffb226a2 100644
+--- a/module/nvpair/nvpair.c
++++ b/module/nvpair/nvpair.c
+@@ -916,6 +916,8 @@ nvlist_add_common(nvlist_t *nvl, const char *name,
+ 
+ 	/* calculate sizes of the nvpair elements and the nvpair itself */
+ 	name_sz = strlen(name) + 1;
++	if (name_sz >= 1ULL << (sizeof (nvp->nvp_name_sz) * NBBY - 1))
++		return (EINVAL);
+ 
+ 	nvp_sz = NVP_SIZE_CALC(name_sz, value_sz);
+ 
+-- 
+2.15.1
+

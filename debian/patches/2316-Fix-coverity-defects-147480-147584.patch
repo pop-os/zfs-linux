@@ -1,0 +1,67 @@
+From ced28193b06b3d93f404a5d67713c124731a2a0d Mon Sep 17 00:00:00 2001
+From: Tobin Harding <me@tobin.cc>
+Date: Tue, 17 Oct 2017 09:32:48 +1100
+Subject: [PATCH] Fix coverity defects: 147480, 147584
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+CID 147480: Logically dead code (DEADCODE)
+
+Remove non-null check and subsequent function call. Add ASSERT to future
+proof the code.
+
+usage label is only jumped to before `zhp` is initialized.
+
+CID 147584: Out-of-bounds access (OVERRUN)
+
+Subtract length of current string from buffer length for `size` argument
+to `snprintf`.
+
+Starting address for the write is the start of the buffer + the current
+string length. We need to subtract this string length else risk a buffer
+overflow.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Tobin C. Harding <me@tobin.cc>
+Closes #6745
+---
+ cmd/zdb/zdb.c      | 8 ++++----
+ cmd/zfs/zfs_main.c | 3 +--
+ 2 files changed, 5 insertions(+), 6 deletions(-)
+
+Index: zfs-linux-0.7.5/cmd/zdb/zdb.c
+===================================================================
+--- zfs-linux-0.7.5.orig/cmd/zdb/zdb.c
++++ zfs-linux-0.7.5/cmd/zdb/zdb.c
+@@ -1982,13 +1982,13 @@ dump_object(objset_t *os, uint64_t objec
+ 	aux[0] = '\0';
+ 
+ 	if (doi.doi_checksum != ZIO_CHECKSUM_INHERIT || verbosity >= 6) {
+-		(void) snprintf(aux + strlen(aux), sizeof (aux), " (K=%s)",
+-		    ZDB_CHECKSUM_NAME(doi.doi_checksum));
++		(void) snprintf(aux + strlen(aux), sizeof (aux) - strlen(aux),
++		    " (K=%s)", ZDB_CHECKSUM_NAME(doi.doi_checksum));
+ 	}
+ 
+ 	if (doi.doi_compress != ZIO_COMPRESS_INHERIT || verbosity >= 6) {
+-		(void) snprintf(aux + strlen(aux), sizeof (aux), " (Z=%s)",
+-		    ZDB_COMPRESS_NAME(doi.doi_compress));
++		(void) snprintf(aux + strlen(aux), sizeof (aux) - strlen(aux),
++		    " (Z=%s)", ZDB_COMPRESS_NAME(doi.doi_compress));
+ 	}
+ 
+ 	(void) printf("%10lld  %3u  %5s  %5s  %5s  %6s  %5s  %6s  %s%s\n",
+Index: zfs-linux-0.7.5/cmd/zfs/zfs_main.c
+===================================================================
+--- zfs-linux-0.7.5.orig/cmd/zfs/zfs_main.c
++++ zfs-linux-0.7.5/cmd/zfs/zfs_main.c
+@@ -764,8 +764,7 @@ zfs_do_clone(int argc, char **argv)
+ 	return (!!ret);
+ 
+ usage:
+-	if (zhp)
+-		zfs_close(zhp);
++	ASSERT3P(zhp, ==, NULL);
+ 	nvlist_free(props);
+ 	usage(B_FALSE);
+ 	return (-1);

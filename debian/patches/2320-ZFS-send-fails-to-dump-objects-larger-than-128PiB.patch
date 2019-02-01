@@ -1,0 +1,258 @@
+From ee45fbd89465f12b39e97173a088175d4b712b5f Mon Sep 17 00:00:00 2001
+From: LOLi <loli10K@users.noreply.github.com>
+Date: Fri, 27 Oct 2017 01:58:38 +0200
+Subject: [PATCH] ZFS send fails to dump objects larger than 128PiB
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+When dumping objects larger than 128PiB it's possible for do_dump() to
+miscalculate the FREE_RECORD offset due to an integer overflow
+condition: this prevents the receiving end from correctly restoring
+the dumped object.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Fabian Grünbichler <f.gruenbichler@proxmox.com>
+Signed-off-by: loli10K <ezomori.nozomu@gmail.com>
+Closes #6760
+---
+
+Index: zfs-linux-0.7.11/module/zfs/bpobj.c
+===================================================================
+--- zfs-linux-0.7.11.orig/module/zfs/bpobj.c
++++ zfs-linux-0.7.11/module/zfs/bpobj.c
+@@ -261,7 +261,7 @@ bpobj_iterate_impl(bpobj_t *bpo, bpobj_i
+ 	}
+ 	if (free) {
+ 		VERIFY3U(0, ==, dmu_free_range(bpo->bpo_os, bpo->bpo_object,
+-		    (i + 1) * sizeof (blkptr_t), -1ULL, tx));
++		    (i + 1) * sizeof (blkptr_t), DMU_OBJECT_END, tx));
+ 	}
+ 	if (err || !bpo->bpo_havesubobj || bpo->bpo_phys->bpo_subobjs == 0)
+ 		goto out;
+@@ -339,7 +339,7 @@ bpobj_iterate_impl(bpobj_t *bpo, bpobj_i
+ 	if (free) {
+ 		VERIFY3U(0, ==, dmu_free_range(bpo->bpo_os,
+ 		    bpo->bpo_phys->bpo_subobjs,
+-		    (i + 1) * sizeof (uint64_t), -1ULL, tx));
++		    (i + 1) * sizeof (uint64_t), DMU_OBJECT_END, tx));
+ 	}
+ 
+ out:
+Index: zfs-linux-0.7.11/module/zfs/dmu.c
+===================================================================
+--- zfs-linux-0.7.11.orig/module/zfs/dmu.c
++++ zfs-linux-0.7.11/module/zfs/dmu.c
+@@ -887,7 +887,7 @@ dmu_free_range(objset_t *os, uint64_t ob
+ 	if (err)
+ 		return (err);
+ 	ASSERT(offset < UINT64_MAX);
+-	ASSERT(size == -1ULL || size <= UINT64_MAX - offset);
++	ASSERT(size == DMU_OBJECT_END || size <= UINT64_MAX - offset);
+ 	dnode_free_range(dn, offset, size, tx);
+ 	dnode_rele(dn, FTAG);
+ 	return (0);
+Index: zfs-linux-0.7.11/module/zfs/dmu_send.c
+===================================================================
+--- zfs-linux-0.7.11.orig/module/zfs/dmu_send.c
++++ zfs-linux-0.7.11/module/zfs/dmu_send.c
+@@ -224,9 +224,6 @@ dump_free(dmu_sendarg_t *dsp, uint64_t o
+ 	    (object == dsp->dsa_last_data_object &&
+ 	    offset > dsp->dsa_last_data_offset));
+ 
+-	if (length != -1ULL && offset + length < offset)
+-		length = -1ULL;
+-
+ 	/*
+ 	 * If there is a pending op, but it's not PENDING_FREE, push it out,
+ 	 * since free block aggregation can only be done for blocks of the
+@@ -243,19 +240,22 @@ dump_free(dmu_sendarg_t *dsp, uint64_t o
+ 
+ 	if (dsp->dsa_pending_op == PENDING_FREE) {
+ 		/*
+-		 * There should never be a PENDING_FREE if length is -1
+-		 * (because dump_dnode is the only place where this
+-		 * function is called with a -1, and only after flushing
+-		 * any pending record).
++		 * There should never be a PENDING_FREE if length is
++		 * DMU_OBJECT_END (because dump_dnode is the only place where
++		 * this function is called with a DMU_OBJECT_END, and only after
++		 * flushing any pending record).
+ 		 */
+-		ASSERT(length != -1ULL);
++		ASSERT(length != DMU_OBJECT_END);
+ 		/*
+ 		 * Check to see whether this free block can be aggregated
+ 		 * with pending one.
+ 		 */
+ 		if (drrf->drr_object == object && drrf->drr_offset +
+ 		    drrf->drr_length == offset) {
+-			drrf->drr_length += length;
++			if (offset + length < offset)
++				drrf->drr_length = DMU_OBJECT_END;
++			else
++				drrf->drr_length += length;
+ 			return (0);
+ 		} else {
+ 			/* not a continuation.  Push out pending record */
+@@ -269,9 +269,12 @@ dump_free(dmu_sendarg_t *dsp, uint64_t o
+ 	dsp->dsa_drr->drr_type = DRR_FREE;
+ 	drrf->drr_object = object;
+ 	drrf->drr_offset = offset;
+-	drrf->drr_length = length;
++	if (offset + length < offset)
++		drrf->drr_length = DMU_OBJECT_END;
++	else
++		drrf->drr_length = length;
+ 	drrf->drr_toguid = dsp->dsa_toguid;
+-	if (length == -1ULL) {
++	if (length == DMU_OBJECT_END) {
+ 		if (dump_record(dsp, NULL, 0) != 0)
+ 			return (SET_ERROR(EINTR));
+ 	} else {
+@@ -530,7 +533,7 @@ dump_dnode(dmu_sendarg_t *dsp, uint64_t
+ 
+ 	/* Free anything past the end of the file. */
+ 	if (dump_free(dsp, object, (dnp->dn_maxblkid + 1) *
+-	    (dnp->dn_datablkszsec << SPA_MINBLOCKSHIFT), -1ULL) != 0)
++	    (dnp->dn_datablkszsec << SPA_MINBLOCKSHIFT), DMU_OBJECT_END) != 0)
+ 		return (SET_ERROR(EINTR));
+ 	if (dsp->dsa_err != 0)
+ 		return (SET_ERROR(EINTR));
+@@ -666,7 +669,9 @@ do_dump(dmu_sendarg_t *dsa, struct send_
+ 	} else if (BP_IS_HOLE(bp)) {
+ 		uint64_t span = BP_SPAN(dblkszsec, indblkshift, zb->zb_level);
+ 		uint64_t offset = zb->zb_blkid * span;
+-		err = dump_free(dsa, zb->zb_object, offset, span);
++		/* Don't dump free records for offsets > DMU_OBJECT_END */
++		if (zb->zb_blkid == 0 || span <= DMU_OBJECT_END / zb->zb_blkid)
++			err = dump_free(dsa, zb->zb_object, offset, span);
+ 	} else if (zb->zb_level > 0 || type == DMU_OT_OBJSET) {
+ 		return (0);
+ 	} else if (type == DMU_OT_DNODE) {
+@@ -2562,7 +2567,7 @@ receive_free(struct receive_writer_arg *
+ {
+ 	int err;
+ 
+-	if (drrf->drr_length != -1ULL &&
++	if (drrf->drr_length != DMU_OBJECT_END &&
+ 	    drrf->drr_offset + drrf->drr_length < drrf->drr_offset)
+ 		return (SET_ERROR(EINVAL));
+ 
+Index: zfs-linux-0.7.11/tests/runfiles/linux.run
+===================================================================
+--- zfs-linux-0.7.11.orig/tests/runfiles/linux.run
++++ zfs-linux-0.7.11/tests/runfiles/linux.run
+@@ -172,7 +172,7 @@ tags = ['functional', 'cli_root', 'zfs_r
+ [tests/functional/cli_root/zfs_send]
+ tests = ['zfs_send_001_pos', 'zfs_send_002_pos', 'zfs_send_003_pos',
+     'zfs_send_004_neg', 'zfs_send_005_pos', 'zfs_send_006_pos',
+-    'zfs_send_007_pos']
++    'zfs_send_007_pos', 'zfs_send_sparse']
+ tags = ['functional', 'cli_root', 'zfs_send']
+ 
+ [tests/functional/cli_root/zfs_set]
+Index: zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_sparse.ksh
+===================================================================
+--- /dev/null
++++ zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_sparse.ksh
+@@ -0,0 +1,83 @@
++#!/bin/ksh -p
++#
++# This file and its contents are supplied under the terms of the
++# Common Development and Distribution License ("CDDL"), version 1.0.
++# You may only use this file in accordance with the terms of version
++# 1.0 of the CDDL.
++#
++# A full copy of the text of the CDDL should have accompanied this
++# source.  A copy of the CDDL is also available via the Internet at
++# http://www.illumos.org/license/CDDL.
++#
++
++#
++# Copyright 2017, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
++#
++
++. $STF_SUITE/include/libtest.shlib
++
++#
++# DESCRIPTION:
++# 'zfs send' should be able to send (big) sparse files correctly.
++#
++# STRATEGY:
++# 1. Create sparse files of various size
++# 2. Snapshot and send these sparse files
++# 3. Verify these files are received correctly and we don't trigger any issue
++#    like the one described in https://github.com/zfsonlinux/zfs/pull/6760
++#
++
++verify_runnable "both"
++
++function cleanup
++{
++        datasetexists $SENDFS && log_must zfs destroy -r $SENDFS
++        datasetexists $RECVFS && log_must zfs destroy -r $RECVFS
++}
++
++#
++# Write 1 random byte at $offset of "source" file in $sendfs dataset
++# Snapshot and send $sendfs dataset to $recvfs
++# Compare the received file with its source
++#
++function write_compare_files # <sendfs> <recvfs> <offset>
++{
++	typeset sendfs="$1"
++	typeset recvfs="$2"
++	typeset offset="$3"
++
++	# create source filesystem
++	log_must zfs create $sendfs
++	# write sparse file
++	sendfile="$(get_prop mountpoint $sendfs)/data.bin"
++	log_must dd if=/dev/urandom of=$sendfile bs=1 count=1 seek=$offset
++	# send/receive the file
++	log_must zfs snapshot $sendfs@snap
++	log_must eval "zfs send $sendfs@snap | zfs receive $recvfs"
++	# compare sparse files
++	recvfile="$(get_prop mountpoint $recvfs)/data.bin"
++	log_must cmp $sendfile $recvfile $offset $offset
++	sendsz=$(stat -c '%s' $sendfile)
++	recvsz=$(stat -c '%s' $recvfile)
++	if [[ $sendsz -ne $recvsz ]]; then
++		log_fail "$sendfile ($sendsz) and $recvfile ($recvsz) differ."
++	fi
++	# cleanup
++	log_must zfs destroy -r $sendfs
++	log_must zfs destroy -r $recvfs
++}
++
++log_assert "'zfs send' should be able to send (big) sparse files correctly."
++log_onexit cleanup
++
++SENDFS="$TESTPOOL/sendfs"
++RECVFS="$TESTPOOL/recvfs"
++OFF_T_MAX="$(echo '2 ^ 40 * 8 - 1' | bc)"
++
++for i in {1..60}; do
++	offset=$(echo "2 ^ $i" | bc)
++	[[ is_32bit ]] && [[ $offset -ge $OFF_T_MAX ]] && continue;
++	write_compare_files $SENDFS $RECVFS $offset
++done
++
++log_pass "'zfs send' sends (big) sparse files correctly."
+Index: zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_send/Makefile.am
+===================================================================
+--- zfs-linux-0.7.11.orig/tests/zfs-tests/tests/functional/cli_root/zfs_send/Makefile.am
++++ zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_send/Makefile.am
+@@ -8,7 +8,8 @@ dist_pkgdata_SCRIPTS = \
+ 	zfs_send_004_neg.ksh \
+ 	zfs_send_005_pos.ksh \
+ 	zfs_send_006_pos.ksh \
+-	zfs_send_007_pos.ksh
++	zfs_send_007_pos.ksh \
++	zfs_send_sparse.ksh
+ 
+ dist_pkgdata_DATA = \
+ 	zfs_send.cfg

@@ -1,0 +1,50 @@
+From 6bc4a2376c694f813d2ee78af3d749aa2684f391 Mon Sep 17 00:00:00 2001
+From: Allan Jude <allanjude@freebsd.org>
+Date: Tue, 31 Oct 2017 21:41:46 -0400
+Subject: [PATCH] OpenZFS 8972 - zfs holds: In scripted mode, do not pad
+ columns with spaces
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Authored by: Allan Jude <allanjude@freebsd.org>
+Approved by: Dan McDonald <danmcd@joyent.com>
+Reviewed by: Matthew Ahrens <mahrens@delphix.com>
+Reviewed by: George Melikov <mail@gmelikov.ru>
+Ported-by: Brian Behlendorf <behlendorf1@llnl.gov>
+
+OpenZFS-issue: https://www.illumos.org/issues/8972
+OpenZFS-commit: https://github.com/openzfs/openzfs/commit/3aace5c077
+Closes #7063
+---
+ cmd/zfs/zfs_main.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+Index: zfs-linux-0.7.5/cmd/zfs/zfs_main.c
+===================================================================
+--- zfs-linux-0.7.5.orig/cmd/zfs/zfs_main.c
++++ zfs-linux-0.7.5/cmd/zfs/zfs_main.c
+@@ -5720,8 +5720,6 @@ print_holds(boolean_t scripted, int nwid
+ 			uint64_t val = 0;
+ 			time_t time;
+ 			struct tm t;
+-			char sep = scripted ? '\t' : ' ';
+-			int sepnum = scripted ? 1 : 2;
+ 
+ 			(void) nvpair_value_uint64(nvp2, &val);
+ 			time = (time_t)val;
+@@ -5729,8 +5727,13 @@ print_holds(boolean_t scripted, int nwid
+ 			(void) strftime(tsbuf, DATETIME_BUF_LEN,
+ 			    gettext(STRFTIME_FMT_STR), &t);
+ 
+-			(void) printf("%-*s%*c%-*s%*c%s\n", nwidth, zname,
+-			    sepnum, sep, tagwidth, tagname, sepnum, sep, tsbuf);
++			if (scripted) {
++				(void) printf("%s\t%s\t%s\n", zname,
++				    tagname, tsbuf);
++			} else {
++				(void) printf("%-*s  %-*s  %s\n", nwidth,
++				    zname, tagwidth, tagname, tsbuf);
++			}
+ 		}
+ 	}
+ }

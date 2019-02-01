@@ -1,0 +1,43 @@
+From c721ba435fc7d2fb61a6e586c5cc11c27f67b480 Mon Sep 17 00:00:00 2001
+From: Tobin Harding <me@tobin.cc>
+Date: Wed, 18 Oct 2017 03:37:50 +1100
+Subject: [PATCH] Fix coverity defects: CID 161388
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+CID 161388: Resource Leak (REASOURCE_LEAK)
+
+Jump to errout so that file descriptor gets closed before returning
+from function.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Tobin C. Harding <me@tobin.cc>
+Closes #6755
+---
+ cmd/zpool/zpool_main.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+Index: zfs-linux-0.7.5/cmd/zpool/zpool_main.c
+===================================================================
+--- zfs-linux-0.7.5.orig/cmd/zpool/zpool_main.c
++++ zfs-linux-0.7.5/cmd/zpool/zpool_main.c
+@@ -895,7 +895,8 @@ zpool_do_labelclear(int argc, char **arg
+ 	if (zpool_read_label(fd, &config, NULL) != 0 || config == NULL) {
+ 		(void) fprintf(stderr,
+ 		    gettext("failed to check state for %s\n"), vdev);
+-		return (1);
++		ret = 1;
++		goto errout;
+ 	}
+ 	nvlist_free(config);
+ 
+@@ -903,7 +904,8 @@ zpool_do_labelclear(int argc, char **arg
+ 	if (ret != 0) {
+ 		(void) fprintf(stderr,
+ 		    gettext("failed to check state for %s\n"), vdev);
+-		return (1);
++		ret = 1;
++		goto errout;
+ 	}
+ 
+ 	if (!inuse)
