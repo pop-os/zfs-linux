@@ -37,13 +37,11 @@ zfs-linux (0.7.12-3) UNRELEASED; urgency=medium
      + 3303-linux-5-0-convert-ms-macros-to-sb.patch
      + 3304-linux-5-0-fix-bio-set-dev.patch
 
-  [ Adam Conrad ]
-  * Only build zfs-dracut and zfs-initramfs on 64-bit arches.
-
   [ Mo Zhou ]
   * Update init-debian-openrc-workaround.patch
+  * Remove duplicated Priority field from control.
 
- -- Mo Zhou <cdluminate@gmail.com>  Fri, 01 Feb 2019 03:28:48 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 01 Feb 2019 07:41:15 +0000
 
 zfs-linux (0.7.12-2) unstable; urgency=medium
 
