@@ -1,8 +1,6 @@
-zfs-linux (0.7.12-3) UNRELEASED; urgency=medium
+zfs-linux (0.7.12-3) unstable; urgency=medium
 
-  * Sync from Ubuntu diff 0.7.12-1ubuntu5
-
-  [ Colin Ian King ]
+  [ Colin Ian King (Ubuntu diff 0.7.12-1ubuntu5) ]
   * Cherry-pick upstream patches:
      + 2301-zfs-promote-rename-.-recv-should-be-an-error.patch
      + 2302-Fix-parsable-zfs-get-for-compressratios.patch
@@ -37,11 +35,15 @@ zfs-linux (0.7.12-3) UNRELEASED; urgency=medium
      + 3303-linux-5-0-convert-ms-macros-to-sb.patch
      + 3304-linux-5-0-fix-bio-set-dev.patch
 
+  [ Aron Xu ]
+  * Bump linux_compat to 5.0
+
   [ Mo Zhou ]
   * Update init-debian-openrc-workaround.patch
   * Remove duplicated Priority field from control.
+  * Amend autopkgtest script dkms-zfs-test. (Closes: #921383)
 
- -- Mo Zhou <cdluminate@gmail.com>  Fri, 01 Feb 2019 07:41:15 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Tue, 19 Feb 2019 04:41:10 +0000
 
 zfs-linux (0.7.12-2) unstable; urgency=medium
 
