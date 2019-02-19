@@ -3,119 +3,57 @@ Author: Mo Zhou <lumin@debian.org>
 Last-update: 20181026
 Forward: https://github.com/zfsonlinux/zfs/issues/8063
 
-diff --git a/etc/init.d/zfs-import.in b/etc/init.d/zfs-import.in
-index fea661bb..404af82d 100644
---- a/etc/init.d/zfs-import.in
-+++ b/etc/init.d/zfs-import.in
-@@ -1,4 +1,4 @@
--#!@SHELL@
-+#!/bin/sh
- #
- # zfs-import    This script will import ZFS pools
- #
-@@ -308,8 +308,6 @@ do_start()
+Index: zfs/etc/init.d/zfs-import.in
+===================================================================
+--- zfs.orig/etc/init.d/zfs-import.in
++++ zfs/etc/init.d/zfs-import.in
+@@ -308,8 +308,7 @@ do_start()
  
  # ----------------------------------------------------
  
 -if [ ! -e /sbin/openrc-run ]
 -then
++if ! (echo @SHELL@ | grep openrc 1>/dev/null 2>/dev/null); then
  	case "$1" in
  		start)
  			do_start
-@@ -331,9 +329,3 @@ then
- 	esac
- 
- 	exit $?
--else
--	# Create wrapper functions since Gentoo don't use the case part.
--	depend() { do_depend; }
--	start() { do_start; }
--	status() { do_status; }
--fi
-diff --git a/etc/init.d/zfs-mount.in b/etc/init.d/zfs-mount.in
-index fa954e09..b6a3de9b 100644
---- a/etc/init.d/zfs-mount.in
-+++ b/etc/init.d/zfs-mount.in
-@@ -1,4 +1,4 @@
--#!@SHELL@
-+#!/bin/sh
- #
- # zfs-mount     This script will mount/umount the zfs filesystems.
- #
-@@ -199,8 +199,6 @@ do_stop()
+Index: zfs/etc/init.d/zfs-mount.in
+===================================================================
+--- zfs.orig/etc/init.d/zfs-mount.in
++++ zfs/etc/init.d/zfs-mount.in
+@@ -199,8 +199,7 @@ do_stop()
  
  # ----------------------------------------------------
  
 -if [ ! -e /sbin/openrc-run ]
 -then
++if ! (echo @SHELL@ | grep openrc 1>/dev/null 2>/dev/null); then
  	case "$1" in
  		start)
  			do_start
-@@ -219,9 +217,3 @@ then
- 	esac
- 
- 	exit $?
--else
--	# Create wrapper functions since Gentoo don't use the case part.
--	depend() { do_depend; }
--	start() { do_start; }
--	stop() { do_stop; }
--fi
-diff --git a/etc/init.d/zfs-share.in b/etc/init.d/zfs-share.in
-index ce3cc1cc..0b14f481 100644
---- a/etc/init.d/zfs-share.in
-+++ b/etc/init.d/zfs-share.in
-@@ -1,4 +1,4 @@
--#!@SHELL@
-+#!/bin/sh
- #
- # zfs-share     This script will network share zfs filesystems and volumes.
- #
-@@ -58,7 +58,6 @@ do_stop()
+Index: zfs/etc/init.d/zfs-share.in
+===================================================================
+--- zfs.orig/etc/init.d/zfs-share.in
++++ zfs/etc/init.d/zfs-share.in
+@@ -58,7 +58,7 @@ do_stop()
  
  # ----------------------------------------------------
  
 -if [ ! -e /sbin/openrc-run ]; then
++if ! (echo @SHELL@ | grep openrc 1>/dev/null 2>/dev/null); then
  	case "$1" in
  		start)
  			do_start
-@@ -77,9 +76,3 @@ if [ ! -e /sbin/openrc-run ]; then
- 	esac
- 
- 	exit $?
--else
--	# Create wrapper functions since Gentoo don't use the case part.
--	depend() { do_depend; }
--	start() { do_start; }
--	stop() { do_stop; }
--fi
-diff --git a/etc/init.d/zfs-zed.in b/etc/init.d/zfs-zed.in
-index d0086eef..4798105d 100644
---- a/etc/init.d/zfs-zed.in
-+++ b/etc/init.d/zfs-zed.in
-@@ -1,4 +1,4 @@
--#!@SHELL@
-+#!/bin/sh
- #
- # zfs-zed
- #
-@@ -98,7 +98,6 @@ do_reload()
+Index: zfs/etc/init.d/zfs-zed.in
+===================================================================
+--- zfs.orig/etc/init.d/zfs-zed.in
++++ zfs/etc/init.d/zfs-zed.in
+@@ -98,7 +98,7 @@ do_reload()
  
  # ----------------------------------------------------
  
 -if [ ! -e /sbin/openrc-run ]; then
++if ! (echo @SHELL@ | grep openrc 1>/dev/null 2>/dev/null); then
  	case "$1" in
  		start)
  			do_start
-@@ -124,11 +123,3 @@ if [ ! -e /sbin/openrc-run ]; then
- 	esac
- 
- 	exit $?
--else
--	# Create wrapper functions since Gentoo don't use the case part.
--	depend() { do_depend; }
--	start() { do_start; }
--	stop() { do_stop; }
--	status() { do_status; }
--	reload() { do_reload; }
--fi

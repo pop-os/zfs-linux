@@ -1,0 +1,116 @@
+Linux 5.0: Fix bio_set_dev()
+
+The Linux 5.0 kernel updated the bio_set_dev() macro so it calls the
+GPL-only bio_associate_blkg() symbol thus inadvertently converting
+the entire macro.  Provide a minimal version which always assigns the
+request queue's root_blkg to the bio.
+
+[Colin Ian King]
+Fix check, include linux/module.h and set MODULE_LICENSE macro
+correctly.
+
+Signed-off-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Closes: zfsonlinux#8287
+(based on commit https://github.com/tonyhutter/zfs/commit/b94a2e437c24c26d4725fa7159fd0525ff0889e1)
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+
+---
+
+Index: zfs-linux-0.7.12/config/kernel-bio_set_dev.m4
+===================================================================
+--- zfs-linux-0.7.12.orig/config/kernel-bio_set_dev.m4
++++ zfs-linux-0.7.12/config/kernel-bio_set_dev.m4
+@@ -1,10 +1,10 @@
+ dnl #
+ dnl # Linux 4.14 API,
+ dnl #
+-dnl # The bio_set_dev() helper was introduced as part of the transition
++dnl # The bio_set_dev() helper macro was introduced as part of the transition
+ dnl # to have struct gendisk in struct bio. 
+ dnl #
+-AC_DEFUN([ZFS_AC_KERNEL_BIO_SET_DEV], [
++AC_DEFUN([ZFS_AC_KERNEL_BIO_SET_DEV_MACRO], [
+ 	AC_MSG_CHECKING([whether bio_set_dev() exists])
+ 	ZFS_LINUX_TRY_COMPILE([
+ 		#include <linux/bio.h>
+@@ -20,3 +20,35 @@ AC_DEFUN([ZFS_AC_KERNEL_BIO_SET_DEV], [
+ 		AC_MSG_RESULT(no)
+ 	])
+ ])
++
++dnl #
++dnl # Linux 5.0 API,
++dnl #
++dnl # The bio_set_dev() helper macro was updated to internally depend on
++dnl # bio_associate_blkg() symbol which is exported GPL-only.
++dnl #
++AC_DEFUN([ZFS_AC_KERNEL_BIO_SET_DEV_GPL_ONLY], [
++	AC_MSG_CHECKING([whether bio_set_dev() is GPL-only])
++	ZFS_LINUX_TRY_COMPILE([
++		#include <linux/module.h>
++		#include <linux/bio.h>
++		#include <linux/fs.h>
++
++		MODULE_LICENSE("$ZFS_META_LICENSE");
++	],[
++		struct block_device *bdev = NULL;
++		struct bio *bio = NULL;
++		bio_set_dev(bio, bdev);
++	],[
++		AC_MSG_RESULT(no)
++	],[
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_BIO_SET_DEV_GPL_ONLY, 1,
++		    [bio_set_dev() GPL-only])
++	])
++])
++
++AC_DEFUN([ZFS_AC_KERNEL_BIO_SET_DEV], [
++	ZFS_AC_KERNEL_BIO_SET_DEV_MACRO
++	ZFS_AC_KERNEL_BIO_SET_DEV_GPL_ONLY
++])
+Index: zfs-linux-0.7.12/module/zfs/vdev_disk.c
+===================================================================
+--- zfs-linux-0.7.12.orig/module/zfs/vdev_disk.c
++++ zfs-linux-0.7.12/module/zfs/vdev_disk.c
+@@ -502,13 +502,38 @@ vdev_submit_bio_impl(struct bio *bio)
+ #endif
+ }
+ 
+-#ifndef HAVE_BIO_SET_DEV
++#ifdef HAVE_BIO_SET_DEV
++#if defined(CONFIG_BLK_CGROUP) && defined(HAVE_BIO_SET_DEV_GPL_ONLY)
++/*
++ * The Linux 5.0 kernel updated the bio_set_dev() macro so it calls the
++ * GPL-only bio_associate_blkg() symbol thus inadvertently converting
++ * the entire macro.  Provide a minimal version which always assigns the
++ * request queue's root_blkg to the bio.
++ */
++static inline void
++vdev_bio_associate_blkg(struct bio *bio)
++{
++	struct request_queue *q = bio->bi_disk->queue;
++
++	ASSERT3P(q, !=, NULL);
++	ASSERT3P(q->root_blkg, !=, NULL);
++	ASSERT3P(bio->bi_blkg, ==, NULL);
++
++	if (blkg_tryget(q->root_blkg))
++		bio->bi_blkg = q->root_blkg;
++}
++#define	bio_associate_blkg vdev_bio_associate_blkg
++#endif
++#else
++/*
++ * Provide a bio_set_dev() helper macro for pre-Linux 4.14 kernels.
++ */
+ static inline void
+ bio_set_dev(struct bio *bio, struct block_device *bdev)
+ {
+ 	bio->bi_bdev = bdev;
+ }
+-#endif /* !HAVE_BIO_SET_DEV */
++#endif /* HAVE_BIO_SET_DEV */
+ 
+ static inline void
+ vdev_submit_bio(struct bio *bio)

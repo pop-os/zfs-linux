@@ -1,0 +1,274 @@
+From a032ac4b3819408b2e17085224290b6a762de79a Mon Sep 17 00:00:00 2001
+From: Brian Behlendorf <behlendorf1@llnl.gov>
+Date: Thu, 26 Oct 2017 12:57:53 -0700
+Subject: [PATCH] OpenZFS 8558, 8602 - lwp_create() returns EAGAIN
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+8558 lwp_create() returns EAGAIN on system with more than 80K ZFS filesystems
+
+On a system with more than 80K ZFS filesystems, we've seen cases
+where lwp_create() will start to fail by returning EAGAIN. The
+problem being, for each of those 80K ZFS filesystems, a taskq will
+be created for each dataset as part of the ZIL for each dataset.
+
+Porting Notes:
+- The new nomem taskq kstat was dropped.
+- Added module options and documentation for new tunings
+  zfs_zil_clean_taskq_nthr_pct, zfs_zil_clean_taskq_minalloc,
+  zfs_zil_clean_taskq_maxalloc, and zfs_sync_taskq_batch_pct.
+
+Reviewed by: George Wilson <george.wilson@delphix.com>
+Reviewed by: Sebastien Roy <sebastien.roy@delphix.com>
+Approved by: Robert Mustacchi <rm@joyent.com>
+Authored by: Prakash Surya <prakash.surya@delphix.com>
+Reviewed-by: George Melikov <mail@gmelikov.ru>
+Reviewed-by: Chris Dunlop <chris@onthe.net.au>
+Ported-by: Brian Behlendorf <behlendorf1@llnl.gov>
+
+OpenZFS-issue: https://www.illumos.org/issues/8558
+OpenZFS-commit: https://github.com/openzfs/openzfs/commit/216d772
+
+8602 remove unused "dp_early_sync_tasks" field from "dsl_pool" structure
+
+Reviewed by: Serapheim Dimitropoulos <serapheim@delphix.com>
+Reviewed by: Matthew Ahrens <mahrens@delphix.com>
+Approved by: Robert Mustacchi <rm@joyent.com>
+Authored by: Prakash Surya <prakash.surya@delphix.com>
+Reviewed-by: George Melikov <mail@gmelikov.ru>
+Reviewed-by: Chris Dunlop <chris@onthe.net.au>
+Ported-by: Brian Behlendorf <behlendorf1@llnl.gov>
+
+OpenZFS-issue: https://www.illumos.org/issues/8602
+OpenZFS-commit: https://github.com/openzfs/openzfs/commit/2bcb545
+Closes #6779
+---
+ include/sys/dsl_pool.h           |  1 +
+ include/sys/zil_impl.h           |  1 -
+ man/man5/zfs-module-parameters.5 | 48 ++++++++++++++++++++++++++++++
+ module/zfs/dsl_pool.c            | 50 ++++++++++++++++++++++++++++++++
+ module/zfs/zil.c                 | 15 ++++------
+ 5 files changed, 105 insertions(+), 10 deletions(-)
+
+Index: zfs-linux-0.7.11/include/sys/dsl_pool.h
+===================================================================
+--- zfs-linux-0.7.11.orig/include/sys/dsl_pool.h
++++ zfs-linux-0.7.11/include/sys/dsl_pool.h
+@@ -126,6 +126,7 @@ typedef struct dsl_pool {
+ 	txg_list_t dp_dirty_dirs;
+ 	txg_list_t dp_sync_tasks;
+ 	taskq_t *dp_sync_taskq;
++	taskq_t *dp_zil_clean_taskq;
+ 
+ 	/*
+ 	 * Protects administrative changes (properties, namespace)
+Index: zfs-linux-0.7.11/include/sys/zil_impl.h
+===================================================================
+--- zfs-linux-0.7.11.orig/include/sys/zil_impl.h
++++ zfs-linux-0.7.11/include/sys/zil_impl.h
+@@ -124,7 +124,6 @@ struct zilog {
+ 	list_t		zl_lwb_list;	/* in-flight log write list */
+ 	kmutex_t	zl_vdev_lock;	/* protects zl_vdev_tree */
+ 	avl_tree_t	zl_vdev_tree;	/* vdevs to flush in zil_commit() */
+-	taskq_t		*zl_clean_taskq; /* runs lwb and itx clean tasks */
+ 	avl_tree_t	zl_bp_tree;	/* track bps during log parse */
+ 	clock_t		zl_replay_time;	/* lbolt of when replay started */
+ 	uint64_t	zl_replay_blks;	/* number of log blocks replayed */
+Index: zfs-linux-0.7.11/man/man5/zfs-module-parameters.5
+===================================================================
+--- zfs-linux-0.7.11.orig/man/man5/zfs-module-parameters.5
++++ zfs-linux-0.7.11/man/man5/zfs-module-parameters.5
+@@ -1802,6 +1802,18 @@ Default value: \fB2\fR.
+ .sp
+ .ne 2
+ .na
++\fBzfs_sync_taskq_batch_pct\fR (int)
++.ad
++.RS 12n
++This controls the number of threads used by the dp_sync_taskq.  The default
++value of 75% will create a maximum of one thread per cpu.
++.sp
++Default value: \fB75\fR.
++.RE
++
++.sp
++.ne 2
++.na
+ \fBzfs_sync_pass_dont_compress\fR (int)
+ .ad
+ .RS 12n
+@@ -2077,6 +2089,42 @@ Default value: \fB0\fR.
+ .RE
+ 
+ .sp
++.ne 2
++.na
++\fBzfs_zil_clean_taskq_maxalloc\fR (int)
++.ad
++.RS 12n
++The maximum number of taskq entries that are allowed to be cached.  When this
++limit is exceeded itx's will be cleaned synchronously.
++.sp
++Default value: \fB1048576\fR.
++.RE
++
++.sp
++.ne 2
++.na
++\fBzfs_zil_clean_taskq_minalloc\fR (int)
++.ad
++.RS 12n
++The number of taskq entries that are pre-populated when the taskq is first
++created and are immediately available for use.
++.sp
++Default value: \fB1024\fR.
++.RE
++
++.sp
++.ne 2
++.na
++\fBzfs_zil_clean_taskq_nthr_pct\fR (int)
++.ad
++.RS 12n
++This controls the number of threads used by the dp_zil_clean_taskq.  The default
++value of 100% will create a maximum of one thread per cpu.
++.sp
++Default value: \fB100\fR.
++.RE
++
++.sp
+ .ne 2
+ .na
+ \fBzil_replay_disable\fR (int)
+Index: zfs-linux-0.7.11/module/zfs/dsl_pool.c
+===================================================================
+--- zfs-linux-0.7.11.orig/module/zfs/dsl_pool.c
++++ zfs-linux-0.7.11/module/zfs/dsl_pool.c
+@@ -135,6 +135,36 @@ unsigned long zfs_delay_scale = 1000 * 1
+  */
+ int zfs_sync_taskq_batch_pct = 75;
+ 
++/*
++ * These tunables determine the behavior of how zil_itxg_clean() is
++ * called via zil_clean() in the context of spa_sync(). When an itxg
++ * list needs to be cleaned, TQ_NOSLEEP will be used when dispatching.
++ * If the dispatch fails, the call to zil_itxg_clean() will occur
++ * synchronously in the context of spa_sync(), which can negatively
++ * impact the performance of spa_sync() (e.g. in the case of the itxg
++ * list having a large number of itxs that needs to be cleaned).
++ *
++ * Thus, these tunables can be used to manipulate the behavior of the
++ * taskq used by zil_clean(); they determine the number of taskq entries
++ * that are pre-populated when the taskq is first created (via the
++ * "zfs_zil_clean_taskq_minalloc" tunable) and the maximum number of
++ * taskq entries that are cached after an on-demand allocation (via the
++ * "zfs_zil_clean_taskq_maxalloc").
++ *
++ * The idea being, we want to try reasonably hard to ensure there will
++ * already be a taskq entry pre-allocated by the time that it is needed
++ * by zil_clean(). This way, we can avoid the possibility of an
++ * on-demand allocation of a new taskq entry from failing, which would
++ * result in zil_itxg_clean() being called synchronously from zil_clean()
++ * (which can adversely affect performance of spa_sync()).
++ *
++ * Additionally, the number of threads used by the taskq can be
++ * configured via the "zfs_zil_clean_taskq_nthr_pct" tunable.
++ */
++int zfs_zil_clean_taskq_nthr_pct = 100;
++int zfs_zil_clean_taskq_minalloc = 1024;
++int zfs_zil_clean_taskq_maxalloc = 1024 * 1024;
++
+ int
+ dsl_pool_open_special_dir(dsl_pool_t *dp, const char *name, dsl_dir_t **ddp)
+ {
+@@ -176,6 +206,12 @@ dsl_pool_open_impl(spa_t *spa, uint64_t
+ 	    zfs_sync_taskq_batch_pct, minclsyspri, 1, INT_MAX,
+ 	    TASKQ_THREADS_CPU_PCT);
+ 
++	dp->dp_zil_clean_taskq = taskq_create("dp_zil_clean_taskq",
++	    zfs_zil_clean_taskq_nthr_pct, minclsyspri,
++	    zfs_zil_clean_taskq_minalloc,
++	    zfs_zil_clean_taskq_maxalloc,
++	    TASKQ_PREPOPULATE | TASKQ_THREADS_CPU_PCT);
++
+ 	mutex_init(&dp->dp_lock, NULL, MUTEX_DEFAULT, NULL);
+ 	cv_init(&dp->dp_spaceavail_cv, NULL, CV_DEFAULT, NULL);
+ 
+@@ -334,6 +370,7 @@ dsl_pool_close(dsl_pool_t *dp)
+ 	txg_list_destroy(&dp->dp_sync_tasks);
+ 	txg_list_destroy(&dp->dp_dirty_dirs);
+ 
++	taskq_destroy(dp->dp_zil_clean_taskq);
+ 	taskq_destroy(dp->dp_sync_taskq);
+ 
+ 	/*
+@@ -1142,5 +1179,18 @@ MODULE_PARM_DESC(zfs_delay_scale, "how q
+ module_param(zfs_sync_taskq_batch_pct, int, 0644);
+ MODULE_PARM_DESC(zfs_sync_taskq_batch_pct,
+ 	"max percent of CPUs that are used to sync dirty data");
++
++module_param(zfs_zil_clean_taskq_nthr_pct, int, 0644);
++MODULE_PARM_DESC(zfs_zil_clean_taskq_nthr_pct,
++	"max percent of CPUs that are used per dp_sync_taskq");
++
++module_param(zfs_zil_clean_taskq_minalloc, int, 0644);
++MODULE_PARM_DESC(zfs_zil_clean_taskq_minalloc,
++	"number of taskq entries that are pre-populated");
++
++module_param(zfs_zil_clean_taskq_maxalloc, int, 0644);
++MODULE_PARM_DESC(zfs_zil_clean_taskq_maxalloc,
++	"max number of taskq entries that are cached");
++
+ /* END CSTYLED */
+ #endif
+Index: zfs-linux-0.7.11/module/zfs/zil.c
+===================================================================
+--- zfs-linux-0.7.11.orig/module/zfs/zil.c
++++ zfs-linux-0.7.11/module/zfs/zil.c
+@@ -1442,8 +1442,7 @@ zil_clean(zilog_t *zilog, uint64_t synce
+ 		return;
+ 	}
+ 	ASSERT3U(itxg->itxg_txg, <=, synced_txg);
+-	ASSERT(itxg->itxg_txg != 0);
+-	ASSERT(zilog->zl_clean_taskq != NULL);
++	ASSERT3U(itxg->itxg_txg, !=, 0);
+ 	clean_me = itxg->itxg_itxs;
+ 	itxg->itxg_itxs = NULL;
+ 	itxg->itxg_txg = 0;
+@@ -1454,8 +1453,11 @@ zil_clean(zilog_t *zilog, uint64_t synce
+ 	 * free it in-line. This should be rare. Note, using TQ_SLEEP
+ 	 * created a bad performance problem.
+ 	 */
+-	if (taskq_dispatch(zilog->zl_clean_taskq,
+-	    (void (*)(void *))zil_itxg_clean, clean_me, TQ_NOSLEEP) == 0)
++	ASSERT3P(zilog->zl_dmu_pool, !=, NULL);
++	ASSERT3P(zilog->zl_dmu_pool->dp_zil_clean_taskq, !=, NULL);
++	taskqid_t id = taskq_dispatch(zilog->zl_dmu_pool->dp_zil_clean_taskq,
++	    (void (*)(void *))zil_itxg_clean, clean_me, TQ_NOSLEEP);
++	if (id == TASKQID_INVALID)
+ 		zil_itxg_clean(clean_me);
+ }
+ 
+@@ -1928,13 +1930,10 @@ zil_open(objset_t *os, zil_get_data_t *g
+ {
+ 	zilog_t *zilog = dmu_objset_zil(os);
+ 
+-	ASSERT(zilog->zl_clean_taskq == NULL);
+ 	ASSERT(zilog->zl_get_data == NULL);
+ 	ASSERT(list_is_empty(&zilog->zl_lwb_list));
+ 
+ 	zilog->zl_get_data = get_data;
+-	zilog->zl_clean_taskq = taskq_create("zil_clean", 1, defclsyspri,
+-	    2, 2, TASKQ_PREPOPULATE);
+ 
+ 	return (zilog);
+ }
+@@ -1969,8 +1968,6 @@ zil_close(zilog_t *zilog)
+ 	if (txg < spa_freeze_txg(zilog->zl_spa))
+ 		VERIFY(!zilog_is_dirty(zilog));
+ 
+-	taskq_destroy(zilog->zl_clean_taskq);
+-	zilog->zl_clean_taskq = NULL;
+ 	zilog->zl_get_data = NULL;
+ 
+ 	/*

@@ -1,0 +1,66 @@
+From 674b89342e43bd83659285d730b5b6a98f8b4b48 Mon Sep 17 00:00:00 2001
+From: Tony Hutter <hutter2@llnl.gov>
+Date: Wed, 6 Dec 2017 11:43:07 -0800
+Subject: [PATCH] Fix segfault in zpool iostat when adding VDEVs
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Fix a segfault when running 'zpool iostat -v 1' while adding
+a VDEV.
+
+Reviewed-by: George Melikov <mail@gmelikov.ru>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Tony Hutter <hutter2@llnl.gov>
+Closes #6748
+Closes #6872
+---
+ cmd/zpool/zpool_main.c | 22 +++++++++++++++-------
+ 1 file changed, 15 insertions(+), 7 deletions(-)
+
+Index: zfs-linux-0.7.9/cmd/zpool/zpool_main.c
+===================================================================
+--- zfs-linux-0.7.9.orig/cmd/zpool/zpool_main.c
++++ zfs-linux-0.7.9/cmd/zpool/zpool_main.c
+@@ -3624,7 +3624,7 @@ print_vdev_stats(zpool_handle_t *zhp, co
+     nvlist_t *newnv, iostat_cbdata_t *cb, int depth)
+ {
+ 	nvlist_t **oldchild, **newchild;
+-	uint_t c, children;
++	uint_t c, children, oldchildren;
+ 	vdev_stat_t *oldvs, *newvs, *calcvs;
+ 	vdev_stat_t zerovs = { 0 };
+ 	char *vname;
+@@ -3736,9 +3736,13 @@ children:
+ 	    &newchild, &children) != 0)
+ 		return (ret);
+ 
+-	if (oldnv && nvlist_lookup_nvlist_array(oldnv, ZPOOL_CONFIG_CHILDREN,
+-	    &oldchild, &c) != 0)
+-		return (ret);
++	if (oldnv) {
++		if (nvlist_lookup_nvlist_array(oldnv, ZPOOL_CONFIG_CHILDREN,
++		    &oldchild, &oldchildren) != 0)
++			return (ret);
++
++		children = MIN(oldchildren, children);
++	}
+ 
+ 	for (c = 0; c < children; c++) {
+ 		uint64_t ishole = B_FALSE, islog = B_FALSE;
+@@ -3794,9 +3798,13 @@ children:
+ 	    &newchild, &children) != 0)
+ 		return (ret);
+ 
+-	if (oldnv && nvlist_lookup_nvlist_array(oldnv, ZPOOL_CONFIG_L2CACHE,
+-	    &oldchild, &c) != 0)
+-		return (ret);
++	if (oldnv) {
++		if (nvlist_lookup_nvlist_array(oldnv, ZPOOL_CONFIG_L2CACHE,
++		    &oldchild, &oldchildren) != 0)
++			return (ret);
++
++		children = MIN(oldchildren, children);
++	}
+ 
+ 	if (children > 0) {
+ 		if ((!(cb->cb_flags & IOS_ANYHISTO_M)) && !cb->cb_scripted &&

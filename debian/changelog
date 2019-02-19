@@ -1,3 +1,50 @@
+zfs-linux (0.7.12-3) unstable; urgency=medium
+
+  [ Colin Ian King (Ubuntu diff 0.7.12-1ubuntu5) ]
+  * Cherry-pick upstream patches:
+     + 2301-zfs-promote-rename-.-recv-should-be-an-error.patch
+     + 2302-Fix-parsable-zfs-get-for-compressratios.patch
+     + 2303-Fix-zpool-events-scripted-mode-tab-separator.patch
+     + 2305-Allow-longer-SPA-names-in-stats.patch
+     + 2308-OpenZFS-8375-Kernel-memory-leak-in-nvpair-code.patch
+     + 2309-OpenZFS-7261-nvlist-code-should-enforce-name-length-.patch
+     + 2310-OpenZFS-5778-nvpair_type_is_array-does-not-recognize.patch
+     + 2313-Fix-printk-calls-missing-log-level.patch
+     + 2314-Fix-abdstats-kstat-on-32-bit-systems.patch
+     + 2316-Fix-coverity-defects-147480-147584.patch
+     + 2317-Fix-coverity-defects-CID-161388.patch
+     + 2318-Use-ashift-12-by-default-on-SSDSC2BW48-disks.patch
+     + 2319-OpenZFS-8558-8602-lwp_create-returns-EAGAIN.patch
+     + 2320-ZFS-send-fails-to-dump-objects-larger-than-128PiB.patch
+     + 2323-Fix-segfault-in-zpool-iostat-when-adding-VDEVs.patch
+     + 2328-Fix-fsanitize-address-memory-leak.patch
+     + 2331-OpenZFS-8897-zpool-online-e-fails-assertion-when-run.patch
+     + 2332-OpenZFS-8898-creating-fs-with-checksum-skein-on-the-.patch
+     + 2334-OpenZFS-8641-zpool-clear-and-zinject-don-t-work-on-s.patch
+     + 2336-OpenZFS-8972-zfs-holds-In-scripted-mode-do-not-pad-c.patch
+     + 2337-Revert-Remove-wrong-ASSERT-in-annotate_ecksum.patch
+     + 2338-OpenZFS-8731-ASSERT3U-nui64s-UINT16_MAX-fails-for-la.patch
+     + 2339-Prevent-zdb-8-from-occasionally-hanging-on-I-O.patch
+     + 2341-Change-movaps-to-movups-in-AES-NI-code.patch
+     + 3203-Fix-zpool-create-t-tempname.patch
+  * Add Linux 4.20 and 5.0 compat fixes. (0.7.12-1ubuntu{3,4,5})
+     + 3204-Add-4.20-timespec-compat-fix.patch
+     + 3300-Add-check-for-totalram-pages.patch
+     + 3301-Add-check-for-ktime_get_coarse_real_ts64.patch
+     + 3302-linux-5-0-disable-vector-instructions-on-5-0-kernels.patch
+     + 3303-linux-5-0-convert-ms-macros-to-sb.patch
+     + 3304-linux-5-0-fix-bio-set-dev.patch
+
+  [ Aron Xu ]
+  * Bump linux_compat to 5.0
+
+  [ Mo Zhou ]
+  * Update init-debian-openrc-workaround.patch
+  * Remove duplicated Priority field from control.
+  * Amend autopkgtest script dkms-zfs-test. (Closes: #921383)
+
+ -- Mo Zhou <cdluminate@gmail.com>  Tue, 19 Feb 2019 04:41:10 +0000
+
 zfs-linux (0.7.12-2) unstable; urgency=medium
 
   [ Colin Ian King ]

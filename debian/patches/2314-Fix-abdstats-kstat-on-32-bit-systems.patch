@@ -1,0 +1,42 @@
+From 57f4ef2e819670f8b28760b32745e0729f8d80d7 Mon Sep 17 00:00:00 2001
+From: Brian Behlendorf <behlendorf1@llnl.gov>
+Date: Fri, 6 Oct 2017 11:23:12 -0700
+Subject: [PATCH] Fix abdstats kstat on 32-bit systems
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+When decrementing the struct_size and scatter_chunk_waste kstats
+the value needs to be cast to an int on 32-bit systems.
+
+Reviewed-by: George Melikov <mail@gmelikov.ru>
+Signed-off-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Closes #6721
+---
+ module/zfs/abd.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/module/zfs/abd.c b/module/zfs/abd.c
+index 765ac7fb7..3c7893dcd 100644
+--- a/module/zfs/abd.c
++++ b/module/zfs/abd.c
+@@ -571,7 +571,7 @@ static inline void
+ abd_free_struct(abd_t *abd)
+ {
+ 	kmem_cache_free(abd_cache, abd);
+-	ABDSTAT_INCR(abdstat_struct_size, -sizeof (abd_t));
++	ABDSTAT_INCR(abdstat_struct_size, -(int)sizeof (abd_t));
+ }
+ 
+ /*
+@@ -618,7 +618,7 @@ abd_free_scatter(abd_t *abd)
+ 	ABDSTAT_BUMPDOWN(abdstat_scatter_cnt);
+ 	ABDSTAT_INCR(abdstat_scatter_data_size, -(int)abd->abd_size);
+ 	ABDSTAT_INCR(abdstat_scatter_chunk_waste,
+-	    abd->abd_size - P2ROUNDUP(abd->abd_size, PAGESIZE));
++	    (int)abd->abd_size - (int)P2ROUNDUP(abd->abd_size, PAGESIZE));
+ 
+ 	abd_free_struct(abd);
+ }
+-- 
+2.15.1
+

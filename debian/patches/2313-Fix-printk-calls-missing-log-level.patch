@@ -1,0 +1,29 @@
+From 7e98073379353a05498ac5a2f1a5df2a2257d6b0 Mon Sep 17 00:00:00 2001
+From: DeHackEd <DeHackEd@users.noreply.github.com>
+Date: Mon, 25 Sep 2017 13:38:27 -0400
+Subject: [PATCH] Fix printk() calls missing log level
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Reviewed-by: George Melikov <mail@gmelikov.ru>
+Reviewed-by: Giuseppe Di Natale <dinatale2@llnl.gov>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: DHE <git@dehacked.net>
+Closes #6672
+---
+ module/zfs/vdev_disk.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+Index: zfs-linux-0.7.11/module/zfs/vdev_disk.c
+===================================================================
+--- zfs-linux-0.7.11.orig/module/zfs/vdev_disk.c
++++ zfs-linux-0.7.11/module/zfs/vdev_disk.c
+@@ -99,7 +99,7 @@ static void
+ vdev_disk_error(zio_t *zio)
+ {
+ #ifdef ZFS_DEBUG
+-	printk("ZFS: zio error=%d type=%d offset=%llu size=%llu "
++	printk(KERN_WARNING "ZFS: zio error=%d type=%d offset=%llu size=%llu "
+ 	    "flags=%x\n", zio->io_error, zio->io_type,
+ 	    (u_longlong_t)zio->io_offset, (u_longlong_t)zio->io_size,
+ 	    zio->io_flags);

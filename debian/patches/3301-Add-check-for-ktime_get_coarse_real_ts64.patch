@@ -1,0 +1,49 @@
+check if ktime_get_coarse_real_ts64 is supported
+
+Linux 5.0 now uses ktime_get_coarse_real_ts64 check and use this
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+
+---
+
+Index: zfs-linux-0.7.12/config/kernel-ktime.m4
+===================================================================
+--- /dev/null
++++ zfs-linux-0.7.12/config/kernel-ktime.m4
+@@ -0,0 +1,20 @@
++dnl #
++dnl # 5.0 API change
++dnl # current_kernel_time64 to ktime_get_coarse_real_ts64 timespec64
++dnl #
++AC_DEFUN([ZFS_AC_KERNEL_KTIME_GET_COARSE_REAL_TS64], [
++	AC_MSG_CHECKING([whether ktime_get_coarse_real_ts64 exists])
++	ZFS_LINUX_TRY_COMPILE([
++		#include <linux/ktime.h>
++	],[
++		struct timespec64 ts;
++
++		ktime_get_coarse_real_ts64(&ts);
++	],[
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_KTIME_GET_COARSE_REAL_TS64, 1,
++		    [ktime_get_coarse_real_ts64 is provided])
++	],[
++		AC_MSG_RESULT(no)
++	])
++])
+Index: zfs-linux-0.7.12/include/zpios-ctl.h
+===================================================================
+--- zfs-linux-0.7.12.orig/include/zpios-ctl.h
++++ zfs-linux-0.7.12/include/zpios-ctl.h
+@@ -184,7 +184,11 @@ zpios_timespec_now(void)
+ 	inode_timespec_t ts_now;
+ 
+ #if defined(HAVE_INODE_TIMESPEC64_TIMES)
++#if defined(HAVE_KTIME_GET_COARSE_REAL_TS64)
++	ktime_get_coarse_real_ts64(&ts_now);
++#else
+ 	ts_now = current_kernel_time64();
++#endif
+ #else
+ 	ts_now = current_kernel_time();
+ #endif
