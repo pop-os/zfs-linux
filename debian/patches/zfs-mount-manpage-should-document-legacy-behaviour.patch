@@ -15,11 +15,11 @@ Date:   Tue Feb 19 11:10:57 2019 -0800
     Closes #2900
     Closes #8414
 
-diff --git a/man/man8/zfs.8 b/man/man8/zfs.8
-index 551089609..c4c172155 100644
---- a/man/man8/zfs.8
-+++ b/man/man8/zfs.8
-@@ -3304,16 +3304,24 @@ Displays all ZFS file systems currently mounted.
+Index: zfs/man/man8/zfs.8
+===================================================================
+--- zfs.orig/man/man8/zfs.8
++++ zfs/man/man8/zfs.8
+@@ -2796,16 +2796,24 @@ Displays all ZFS file systems currently
  .Op Fl o Ar options
  .Fl a | Ar filesystem
  .Xc

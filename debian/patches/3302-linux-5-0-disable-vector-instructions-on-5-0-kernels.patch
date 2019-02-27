@@ -11,10 +11,10 @@ Signed-off-by: Colin Ian King <colin.king@canonical.com>
 
 ---
 
-Index: zfs-linux-0.7.12/config/kernel-fpu.m4
+Index: zfs/config/kernel-fpu.m4
 ===================================================================
---- zfs-linux-0.7.12.orig/config/kernel-fpu.m4
-+++ zfs-linux-0.7.12/config/kernel-fpu.m4
+--- zfs.orig/config/kernel-fpu.m4
++++ zfs/config/kernel-fpu.m4
 @@ -1,18 +1,44 @@
  dnl #
 +dnl # Handle differences in kernel FPU code.
@@ -64,10 +64,10 @@ Index: zfs-linux-0.7.12/config/kernel-fpu.m4
 +		])
  	])
  ])
-Index: zfs-linux-0.7.12/include/linux/simd_x86.h
+Index: zfs/include/linux/simd_x86.h
 ===================================================================
---- zfs-linux-0.7.12.orig/include/linux/simd_x86.h
-+++ zfs-linux-0.7.12/include/linux/simd_x86.h
+--- zfs.orig/include/linux/simd_x86.h
++++ zfs/include/linux/simd_x86.h
 @@ -81,7 +81,7 @@
  #endif
  

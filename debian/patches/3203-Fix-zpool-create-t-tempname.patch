@@ -21,10 +21,10 @@ Signed-off-by: Colin Ian King <colin.king@canonical.com>
 Closes #7502
 Closes #7509
 
-Index: zfs-linux-0.7.9/module/zfs/zfs_ioctl.c
+Index: zfs/module/zfs/zfs_ioctl.c
 ===================================================================
---- zfs-linux-0.7.9.orig/module/zfs/zfs_ioctl.c
-+++ zfs-linux-0.7.9/module/zfs/zfs_ioctl.c
+--- zfs.orig/module/zfs/zfs_ioctl.c
++++ zfs/module/zfs/zfs_ioctl.c
 @@ -1474,6 +1474,7 @@ zfs_ioc_pool_create(zfs_cmd_t *zc)
  	nvlist_t *config, *props = NULL;
  	nvlist_t *rootprops = NULL;
@@ -64,10 +64,10 @@ Index: zfs-linux-0.7.9/module/zfs/zfs_ioctl.c
  
  pool_props_bad:
  	nvlist_free(rootprops);
-Index: zfs-linux-0.7.9/tests/runfiles/linux.run
+Index: zfs/tests/runfiles/linux.run
 ===================================================================
---- zfs-linux-0.7.9.orig/tests/runfiles/linux.run
-+++ zfs-linux-0.7.9/tests/runfiles/linux.run
+--- zfs.orig/tests/runfiles/linux.run
++++ zfs/tests/runfiles/linux.run
 @@ -253,7 +253,7 @@ tests = ['zpool_create_001_pos', 'zpool_
      'zpool_create_features_001_pos', 'zpool_create_features_002_pos',
      'zpool_create_features_003_pos', 'zpool_create_features_004_neg',
@@ -77,10 +77,10 @@ Index: zfs-linux-0.7.9/tests/runfiles/linux.run
  tags = ['functional', 'cli_root', 'zpool_create']
  
  [tests/functional/cli_root/zpool_destroy]
-Index: zfs-linux-0.7.9/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
+Index: zfs/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
 ===================================================================
---- zfs-linux-0.7.9.orig/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
-+++ zfs-linux-0.7.9/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
+--- zfs.orig/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
++++ zfs/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
 @@ -30,7 +30,8 @@ dist_pkgdata_SCRIPTS = \
  	zpool_create_features_003_pos.ksh \
  	zpool_create_features_004_neg.ksh \
@@ -91,10 +91,10 @@ Index: zfs-linux-0.7.9/tests/zfs-tests/tests/functional/cli_root/zpool_create/Ma
  
  dist_pkgdata_DATA = \
  	zpool_create.cfg \
-Index: zfs-linux-0.7.9/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_tempname.ksh
+Index: zfs/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_tempname.ksh
 ===================================================================
 --- /dev/null
-+++ zfs-linux-0.7.9/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_tempname.ksh
++++ zfs/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_tempname.ksh
 @@ -0,0 +1,68 @@
 +#!/bin/ksh -p
 +#

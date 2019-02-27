@@ -9,8 +9,10 @@ Author: Chris Dos <chris@chrisdos.com>
 Bug-Debian: https://bugs.debian.org/849813
 Bug-Debian: https://bugs.debian.org/826994
 Forwarded: no
---- a/etc/systemd/system/zfs-zed.service.in
-+++ b/etc/systemd/system/zfs-zed.service.in
+Index: zfs/etc/systemd/system/zfs-zed.service.in
+===================================================================
+--- zfs.orig/etc/systemd/system/zfs-zed.service.in
++++ zfs/etc/systemd/system/zfs-zed.service.in
 @@ -5,7 +5,7 @@ After=zfs-import-cache.service
  After=zfs-import-scan.service
  
@@ -20,13 +22,16 @@ Forwarded: no
  Restart=on-abort
  
  [Install]
---- a/etc/init.d/zfs-functions.in
-+++ b/etc/init.d/zfs-functions.in
-@@ -89,7 +89,7 @@
-
+Index: zfs/etc/init.d/zfs-functions.in
+===================================================================
+--- zfs.orig/etc/init.d/zfs-functions.in
++++ zfs/etc/init.d/zfs-functions.in
+@@ -89,7 +89,7 @@ fi
+ 
  # Paths to what we need
  ZFS="@sbindir@/zfs"
 -ZED="@sbindir@/zed"
 +ZED="/usr/sbin/zed"
  ZPOOL="@sbindir@/zpool"
  ZPOOL_CACHE="@sysconfdir@/zfs/zpool.cache"
+ 

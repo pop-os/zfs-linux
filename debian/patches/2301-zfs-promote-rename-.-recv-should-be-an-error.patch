@@ -27,10 +27,10 @@ Closes #6339
  .../cli_root/zfs_rename/zfs_rename_004_neg.ksh     |  4 +--
  7 files changed, 70 insertions(+), 9 deletions(-)
 
-Index: zfs-linux-0.7.11/lib/libzfs/libzfs_dataset.c
+Index: zfs/lib/libzfs/libzfs_dataset.c
 ===================================================================
---- zfs-linux-0.7.11.orig/lib/libzfs/libzfs_dataset.c
-+++ zfs-linux-0.7.11/lib/libzfs/libzfs_dataset.c
+--- zfs.orig/lib/libzfs/libzfs_dataset.c
++++ zfs/lib/libzfs/libzfs_dataset.c
 @@ -3761,6 +3761,9 @@ zfs_promote(zfs_handle_t *zhp)
  		return (zfs_error(hdl, EZFS_BADTYPE, errbuf));
  	}
@@ -52,10 +52,10 @@ Index: zfs-linux-0.7.11/lib/libzfs/libzfs_dataset.c
  	/*
  	 * Make sure the target name is valid
  	 */
-Index: zfs-linux-0.7.11/module/zfs/zfs_ioctl.c
+Index: zfs/module/zfs/zfs_ioctl.c
 ===================================================================
---- zfs-linux-0.7.11.orig/module/zfs/zfs_ioctl.c
-+++ zfs-linux-0.7.11/module/zfs/zfs_ioctl.c
+--- zfs.orig/module/zfs/zfs_ioctl.c
++++ zfs/module/zfs/zfs_ioctl.c
 @@ -3738,9 +3738,12 @@ zfs_ioc_rename(zfs_cmd_t *zc)
  	boolean_t recursive = zc->zc_cookie & 1;
  	char *at;
@@ -83,10 +83,10 @@ Index: zfs-linux-0.7.11/module/zfs/zfs_ioctl.c
  	error = dsl_pool_hold(zc->zc_name, FTAG, &dp);
  	if (error != 0)
  		return (error);
-Index: zfs-linux-0.7.11/tests/zfs-tests/include/libtest.shlib
+Index: zfs/tests/zfs-tests/include/libtest.shlib
 ===================================================================
---- zfs-linux-0.7.11.orig/tests/zfs-tests/include/libtest.shlib
-+++ zfs-linux-0.7.11/tests/zfs-tests/include/libtest.shlib
+--- zfs.orig/tests/zfs-tests/include/libtest.shlib
++++ zfs/tests/zfs-tests/include/libtest.shlib
 @@ -351,6 +351,41 @@ function create_bookmark
  	log_must zfs bookmark $fs_vol@$snap $fs_vol#$bkmark
  }
@@ -129,10 +129,10 @@ Index: zfs-linux-0.7.11/tests/zfs-tests/include/libtest.shlib
  function default_mirror_setup
  {
  	default_mirror_setup_noexit $1 $2 $3
-Index: zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_promote/zfs_promote_006_neg.ksh
+Index: zfs/tests/zfs-tests/tests/functional/cli_root/zfs_promote/zfs_promote_006_neg.ksh
 ===================================================================
---- zfs-linux-0.7.11.orig/tests/zfs-tests/tests/functional/cli_root/zfs_promote/zfs_promote_006_neg.ksh
-+++ zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_promote/zfs_promote_006_neg.ksh
+--- zfs.orig/tests/zfs-tests/tests/functional/cli_root/zfs_promote/zfs_promote_006_neg.ksh
++++ zfs/tests/zfs-tests/tests/functional/cli_root/zfs_promote/zfs_promote_006_neg.ksh
 @@ -40,6 +40,7 @@
  #		pool, fs, snapshot,volume
  #	(4) too many arguments.
@@ -180,19 +180,19 @@ Index: zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_promote/zf
  
  typeset -i i=0
  while (( i < ${#args[*]} )); do
-Index: zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.cfg
+Index: zfs/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.cfg
 ===================================================================
---- zfs-linux-0.7.11.orig/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.cfg
-+++ zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.cfg
+--- zfs.orig/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.cfg
++++ zfs/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.cfg
 @@ -36,3 +36,4 @@ export BS=512
  export CNT=2048
  export VOL_R_PATH=$ZVOL_RDEVDIR/$TESTPOOL/$TESTVOL
  export VOLDATA=$TESTDIR2/voldata.rename
 +export RECVFS=recvfs
-Index: zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.kshlib
+Index: zfs/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.kshlib
 ===================================================================
---- zfs-linux-0.7.11.orig/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.kshlib
-+++ zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.kshlib
+--- zfs.orig/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.kshlib
++++ zfs/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename.kshlib
 @@ -63,6 +63,8 @@ function additional_setup
  		log_must cp $DATA $(get_prop mountpoint $TESTPOOL/$TESTVOL)/$TESTFILE0
  	fi
@@ -212,10 +212,10 @@ Index: zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs
  }
  
  function cmp_data #<$1 src data, $2 tgt data>
-Index: zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename_004_neg.ksh
+Index: zfs/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename_004_neg.ksh
 ===================================================================
---- zfs-linux-0.7.11.orig/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename_004_neg.ksh
-+++ zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename_004_neg.ksh
+--- zfs.orig/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename_004_neg.ksh
++++ zfs/tests/zfs-tests/tests/functional/cli_root/zfs_rename/zfs_rename_004_neg.ksh
 @@ -77,8 +77,8 @@ set -A bad_dataset $TESTPOOL/$TESTFS1 $T
  	$TESTPOOL/$TESTFS1 $TESTPOOL/${TESTFS1}%x \
  	$TESTPOOL/$TESTFS1 $TESTPOOL/${TESTFS1}%p \

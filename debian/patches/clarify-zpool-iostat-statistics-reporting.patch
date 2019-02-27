@@ -14,11 +14,11 @@ Date:   Thu Feb 21 14:00:48 2019 -0800
     Closes #2888
     Closes #8417
 
-diff --git a/man/man8/zpool.8 b/man/man8/zpool.8
-index 800ada566..6dbd6c556 100644
---- a/man/man8/zpool.8
-+++ b/man/man8/zpool.8
-@@ -1635,10 +1635,15 @@ with no flags on the relevant target devices.
+Index: zfs/man/man8/zpool.8
+===================================================================
+--- zfs.orig/man/man8/zpool.8
++++ zfs/man/man8/zpool.8
+@@ -1431,10 +1431,15 @@ Will also set -o cachefile=none when not
  .Oo Oo Ar pool Ns ... Oc Ns | Ns Oo Ar pool vdev Ns ... Oc Ns | Ns Oo Ar vdev Ns ... Oc Oc
  .Op Ar interval Op Ar count
  .Xc

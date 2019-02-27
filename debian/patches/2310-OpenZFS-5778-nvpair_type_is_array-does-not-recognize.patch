@@ -22,10 +22,10 @@ Closes #6580
  module/nvpair/nvpair.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/module/nvpair/nvpair.c b/module/nvpair/nvpair.c
-index dffb226a2..24ef61e93 100644
---- a/module/nvpair/nvpair.c
-+++ b/module/nvpair/nvpair.c
+Index: zfs/module/nvpair/nvpair.c
+===================================================================
+--- zfs.orig/module/nvpair/nvpair.c
++++ zfs/module/nvpair/nvpair.c
 @@ -1244,6 +1244,7 @@ nvpair_type_is_array(nvpair_t *nvp)
  	data_type_t type = NVP_TYPE(nvp);
  
@@ -34,6 +34,3 @@ index dffb226a2..24ef61e93 100644
  	    (type == DATA_TYPE_UINT8_ARRAY) ||
  	    (type == DATA_TYPE_INT16_ARRAY) ||
  	    (type == DATA_TYPE_UINT16_ARRAY) ||
--- 
-2.15.1
-

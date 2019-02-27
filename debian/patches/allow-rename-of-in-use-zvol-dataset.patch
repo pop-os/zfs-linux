@@ -47,11 +47,11 @@ Date:   Sat Feb 23 00:38:42 2019 +0100
     Closes #6263
     Closes #8371
 
-diff --git a/module/zfs/zvol.c b/module/zfs/zvol.c
-index 5ca4f4670..9fd689fbd 100644
---- a/module/zfs/zvol.c
-+++ b/module/zfs/zvol.c
-@@ -2262,12 +2262,6 @@ zvol_rename_minors_impl(const char *oldname, const char *newname)
+Index: zfs/module/zfs/zvol.c
+===================================================================
+--- zfs.orig/module/zfs/zvol.c
++++ zfs/module/zfs/zvol.c
+@@ -2236,12 +2236,6 @@ zvol_rename_minors_impl(const char *oldn
  
  		mutex_enter(&zv->zv_state_lock);
  

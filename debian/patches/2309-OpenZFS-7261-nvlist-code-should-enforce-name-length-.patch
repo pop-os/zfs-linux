@@ -22,11 +22,11 @@ Closes #6579
  module/nvpair/nvpair.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/module/nvpair/nvpair.c b/module/nvpair/nvpair.c
-index 8e654053c..dffb226a2 100644
---- a/module/nvpair/nvpair.c
-+++ b/module/nvpair/nvpair.c
-@@ -916,6 +916,8 @@ nvlist_add_common(nvlist_t *nvl, const char *name,
+Index: zfs/module/nvpair/nvpair.c
+===================================================================
+--- zfs.orig/module/nvpair/nvpair.c
++++ zfs/module/nvpair/nvpair.c
+@@ -916,6 +916,8 @@ nvlist_add_common(nvlist_t *nvl, const c
  
  	/* calculate sizes of the nvpair elements and the nvpair itself */
  	name_sz = strlen(name) + 1;
@@ -35,6 +35,3 @@ index 8e654053c..dffb226a2 100644
  
  	nvp_sz = NVP_SIZE_CALC(name_sz, value_sz);
  
--- 
-2.15.1
-

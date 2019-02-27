@@ -14,10 +14,10 @@ Issue #6941
  module/zfs/spa.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-Index: zfs-linux-0.7.9/module/zfs/spa.c
+Index: zfs/module/zfs/spa.c
 ===================================================================
---- zfs-linux-0.7.9.orig/module/zfs/spa.c
-+++ zfs-linux-0.7.9/module/zfs/spa.c
+--- zfs.orig/module/zfs/spa.c
++++ zfs/module/zfs/spa.c
 @@ -1574,7 +1574,7 @@ spa_load_spares(spa_t *spa)
  static void
  spa_load_l2cache(spa_t *spa)

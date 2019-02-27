@@ -20,10 +20,10 @@ Closes #7030
  lib/libzfs/libzfs_pool.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-Index: zfs-linux-0.7.11/lib/libzfs/libzfs_pool.c
+Index: zfs/lib/libzfs/libzfs_pool.c
 ===================================================================
---- zfs-linux-0.7.11.orig/lib/libzfs/libzfs_pool.c
-+++ zfs-linux-0.7.11/lib/libzfs/libzfs_pool.c
+--- zfs.orig/lib/libzfs/libzfs_pool.c
++++ zfs/lib/libzfs/libzfs_pool.c
 @@ -2510,6 +2510,7 @@ zpool_vdev_online(zpool_handle_t *zhp, c
  {
  	zfs_cmd_t zc = {"\0"};

@@ -10,10 +10,10 @@ Signed-off-by: Fabian Grünbichler <f.gruenbichler@proxmox.com>
  cmd/zpool/Makefile.am | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/cmd/zpool/Makefile.am b/cmd/zpool/Makefile.am
-index 6eff1d1..872a223 100644
---- a/cmd/zpool/Makefile.am
-+++ b/cmd/zpool/Makefile.am
+Index: zfs/cmd/zpool/Makefile.am
+===================================================================
+--- zfs.orig/cmd/zpool/Makefile.am
++++ zfs/cmd/zpool/Makefile.am
 @@ -22,11 +22,11 @@ zpool_LDADD = \
  	-lm $(LIBBLKID)
  
@@ -28,7 +28,7 @@ index 6eff1d1..872a223 100644
  	zpool.d/enc \
  	zpool.d/encdev \
  	zpool.d/fault_led \
-@@ -107,5 +107,5 @@ install-data-hook:
+@@ -119,5 +119,5 @@ install-data-hook:
  	for f in $(zpoolconfdefaults); do \
  	  test -f "$(DESTDIR)$(zpoolconfdir)/$${f}" -o \
  	       -L "$(DESTDIR)$(zpoolconfdir)/$${f}" || \

@@ -12,11 +12,11 @@ Date:   Tue Feb 19 22:15:22 2019 +0300
     Signed-off-by: Igor Kozhukhov <igor@dilos.org>
     Closes #8402
 
-diff --git a/lib/libzpool/util.c b/lib/libzpool/util.c
-index 87772bcb7..ad05d2239 100644
---- a/lib/libzpool/util.c
-+++ b/lib/libzpool/util.c
-@@ -105,7 +105,7 @@ show_vdev_stats(const char *desc, const char *ctype, nvlist_t *nv, int indent)
+Index: zfs/lib/libzpool/util.c
+===================================================================
+--- zfs.orig/lib/libzpool/util.c
++++ zfs/lib/libzpool/util.c
+@@ -118,7 +118,7 @@ show_vdev_stats(const char *desc, const
  		    vs->vs_space ? 6 : 0, vs->vs_space ? avail : "",
  		    rops, wops, rbytes, wbytes, rerr, werr, cerr);
  	}
@@ -25,7 +25,7 @@ index 87772bcb7..ad05d2239 100644
  
  	if (nvlist_lookup_nvlist_array(nv, ctype, &child, &children) != 0)
  		return;
-@@ -124,7 +124,7 @@ show_vdev_stats(const char *desc, const char *ctype, nvlist_t *nv, int indent)
+@@ -137,7 +137,7 @@ show_vdev_stats(const char *desc, const
  		if (nvlist_lookup_uint64(cnv, ZPOOL_CONFIG_NPARITY, &np) == 0)
  			tname[strlen(tname)] = '0' + np;
  		show_vdev_stats(tname, ctype, cnv, indent + 2);

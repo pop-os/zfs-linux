@@ -16,10 +16,10 @@ Signed-off-by: Colin Ian King <colin.king@canonical.com>
 
 ---
 
-Index: zfs-linux-0.7.12/config/kernel-bio_set_dev.m4
+Index: zfs/config/kernel-bio_set_dev.m4
 ===================================================================
---- zfs-linux-0.7.12.orig/config/kernel-bio_set_dev.m4
-+++ zfs-linux-0.7.12/config/kernel-bio_set_dev.m4
+--- zfs.orig/config/kernel-bio_set_dev.m4
++++ zfs/config/kernel-bio_set_dev.m4
 @@ -1,10 +1,10 @@
  dnl #
  dnl # Linux 4.14 API,
@@ -69,10 +69,10 @@ Index: zfs-linux-0.7.12/config/kernel-bio_set_dev.m4
 +	ZFS_AC_KERNEL_BIO_SET_DEV_MACRO
 +	ZFS_AC_KERNEL_BIO_SET_DEV_GPL_ONLY
 +])
-Index: zfs-linux-0.7.12/module/zfs/vdev_disk.c
+Index: zfs/module/zfs/vdev_disk.c
 ===================================================================
---- zfs-linux-0.7.12.orig/module/zfs/vdev_disk.c
-+++ zfs-linux-0.7.12/module/zfs/vdev_disk.c
+--- zfs.orig/module/zfs/vdev_disk.c
++++ zfs/module/zfs/vdev_disk.c
 @@ -502,13 +502,38 @@ vdev_submit_bio_impl(struct bio *bio)
  #endif
  }

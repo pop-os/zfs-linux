@@ -5,10 +5,10 @@ times.
  
 Signed-off-by: Colin Ian King <colin.king@canonical.com>
 
-Index: zfs-linux-0.7.12/include/zpios-ctl.h
+Index: zfs/include/zpios-ctl.h
 ===================================================================
---- zfs-linux-0.7.12.orig/include/zpios-ctl.h
-+++ zfs-linux-0.7.12/include/zpios-ctl.h
+--- zfs.orig/include/zpios-ctl.h
++++ zfs/include/zpios-ctl.h
 @@ -181,9 +181,13 @@ zpios_timespec_t
  zpios_timespec_now(void)
  {

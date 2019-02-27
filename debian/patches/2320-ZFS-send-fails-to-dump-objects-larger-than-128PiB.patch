@@ -19,10 +19,10 @@ Signed-off-by: loli10K <ezomori.nozomu@gmail.com>
 Closes #6760
 ---
 
-Index: zfs-linux-0.7.11/module/zfs/bpobj.c
+Index: zfs/module/zfs/bpobj.c
 ===================================================================
---- zfs-linux-0.7.11.orig/module/zfs/bpobj.c
-+++ zfs-linux-0.7.11/module/zfs/bpobj.c
+--- zfs.orig/module/zfs/bpobj.c
++++ zfs/module/zfs/bpobj.c
 @@ -261,7 +261,7 @@ bpobj_iterate_impl(bpobj_t *bpo, bpobj_i
  	}
  	if (free) {
@@ -41,10 +41,10 @@ Index: zfs-linux-0.7.11/module/zfs/bpobj.c
  	}
  
  out:
-Index: zfs-linux-0.7.11/module/zfs/dmu.c
+Index: zfs/module/zfs/dmu.c
 ===================================================================
---- zfs-linux-0.7.11.orig/module/zfs/dmu.c
-+++ zfs-linux-0.7.11/module/zfs/dmu.c
+--- zfs.orig/module/zfs/dmu.c
++++ zfs/module/zfs/dmu.c
 @@ -887,7 +887,7 @@ dmu_free_range(objset_t *os, uint64_t ob
  	if (err)
  		return (err);
@@ -54,10 +54,10 @@ Index: zfs-linux-0.7.11/module/zfs/dmu.c
  	dnode_free_range(dn, offset, size, tx);
  	dnode_rele(dn, FTAG);
  	return (0);
-Index: zfs-linux-0.7.11/module/zfs/dmu_send.c
+Index: zfs/module/zfs/dmu_send.c
 ===================================================================
---- zfs-linux-0.7.11.orig/module/zfs/dmu_send.c
-+++ zfs-linux-0.7.11/module/zfs/dmu_send.c
+--- zfs.orig/module/zfs/dmu_send.c
++++ zfs/module/zfs/dmu_send.c
 @@ -224,9 +224,6 @@ dump_free(dmu_sendarg_t *dsp, uint64_t o
  	    (object == dsp->dsa_last_data_object &&
  	    offset > dsp->dsa_last_data_offset));
@@ -141,10 +141,10 @@ Index: zfs-linux-0.7.11/module/zfs/dmu_send.c
  	    drrf->drr_offset + drrf->drr_length < drrf->drr_offset)
  		return (SET_ERROR(EINVAL));
  
-Index: zfs-linux-0.7.11/tests/runfiles/linux.run
+Index: zfs/tests/runfiles/linux.run
 ===================================================================
---- zfs-linux-0.7.11.orig/tests/runfiles/linux.run
-+++ zfs-linux-0.7.11/tests/runfiles/linux.run
+--- zfs.orig/tests/runfiles/linux.run
++++ zfs/tests/runfiles/linux.run
 @@ -172,7 +172,7 @@ tags = ['functional', 'cli_root', 'zfs_r
  [tests/functional/cli_root/zfs_send]
  tests = ['zfs_send_001_pos', 'zfs_send_002_pos', 'zfs_send_003_pos',
@@ -154,10 +154,10 @@ Index: zfs-linux-0.7.11/tests/runfiles/linux.run
  tags = ['functional', 'cli_root', 'zfs_send']
  
  [tests/functional/cli_root/zfs_set]
-Index: zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_sparse.ksh
+Index: zfs/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_sparse.ksh
 ===================================================================
 --- /dev/null
-+++ zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_sparse.ksh
++++ zfs/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_sparse.ksh
 @@ -0,0 +1,83 @@
 +#!/bin/ksh -p
 +#
@@ -242,10 +242,10 @@ Index: zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_s
 +done
 +
 +log_pass "'zfs send' sends (big) sparse files correctly."
-Index: zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_send/Makefile.am
+Index: zfs/tests/zfs-tests/tests/functional/cli_root/zfs_send/Makefile.am
 ===================================================================
---- zfs-linux-0.7.11.orig/tests/zfs-tests/tests/functional/cli_root/zfs_send/Makefile.am
-+++ zfs-linux-0.7.11/tests/zfs-tests/tests/functional/cli_root/zfs_send/Makefile.am
+--- zfs.orig/tests/zfs-tests/tests/functional/cli_root/zfs_send/Makefile.am
++++ zfs/tests/zfs-tests/tests/functional/cli_root/zfs_send/Makefile.am
 @@ -8,7 +8,8 @@ dist_pkgdata_SCRIPTS = \
  	zfs_send_004_neg.ksh \
  	zfs_send_005_pos.ksh \

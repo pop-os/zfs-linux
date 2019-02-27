@@ -6,10 +6,10 @@ Signed-off-by: Colin Ian King <colin.king@canonical.com>
 
 ---
 
-Index: zfs-linux-0.7.12/config/kernel-totalram-pages.m4
+Index: zfs/config/kernel-totalram-pages.m4
 ===================================================================
 --- /dev/null
-+++ zfs-linux-0.7.12/config/kernel-totalram-pages.m4
++++ zfs/config/kernel-totalram-pages.m4
 @@ -0,0 +1,20 @@
 +dnl #
 +dnl # 5.0 API change
@@ -31,10 +31,10 @@ Index: zfs-linux-0.7.12/config/kernel-totalram-pages.m4
 +		AC_MSG_RESULT(no)
 +	])
 +])
-Index: zfs-linux-0.7.12/module/zfs/arc.c
+Index: zfs/module/zfs/arc.c
 ===================================================================
---- zfs-linux-0.7.12.orig/module/zfs/arc.c
-+++ zfs-linux-0.7.12/module/zfs/arc.c
+--- zfs.orig/module/zfs/arc.c
++++ zfs/module/zfs/arc.c
 @@ -4004,9 +4004,17 @@ arc_all_memory(void)
  {
  #ifdef _KERNEL

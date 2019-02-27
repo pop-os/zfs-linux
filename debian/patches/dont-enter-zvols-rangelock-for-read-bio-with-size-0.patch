@@ -36,11 +36,11 @@ Date:   Thu Feb 21 03:14:36 2019 +0900
     Closes #8379
     Closes #8401
 
-diff --git a/module/zfs/zvol.c b/module/zfs/zvol.c
-index cc0f1d1e0..5ca4f4670 100644
---- a/module/zfs/zvol.c
-+++ b/module/zfs/zvol.c
-@@ -1008,6 +1008,16 @@ zvol_request(struct request_queue *q, struct bio *bio)
+Index: zfs/module/zfs/zvol.c
+===================================================================
+--- zfs.orig/module/zfs/zvol.c
++++ zfs/module/zfs/zvol.c
+@@ -984,6 +984,16 @@ zvol_request(struct request_queue *q, st
  				zvol_write(zvr);
  		}
  	} else {

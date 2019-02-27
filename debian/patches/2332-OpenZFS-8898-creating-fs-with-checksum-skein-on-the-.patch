@@ -18,10 +18,10 @@ OpenZFS-commit: https://github.com/openzfs/openzfs/commit/9fa2266d9a
 Closes #7031
 ---
 
-Index: zfs-linux-0.7.11/lib/libzfs/libzfs_dataset.c
+Index: zfs/lib/libzfs/libzfs_dataset.c
 ===================================================================
---- zfs-linux-0.7.11.orig/lib/libzfs/libzfs_dataset.c
-+++ zfs-linux-0.7.11/lib/libzfs/libzfs_dataset.c
+--- zfs.orig/lib/libzfs/libzfs_dataset.c
++++ zfs/lib/libzfs/libzfs_dataset.c
 @@ -27,7 +27,7 @@
   * Copyright (c) 2012 Pawel Jakub Dawidek <pawel@dawidek.net>.
   * Copyright (c) 2013 Martin Matuska. All rights reserved.
@@ -43,10 +43,10 @@ Index: zfs-linux-0.7.11/lib/libzfs/libzfs_dataset.c
  #ifdef _ILP32
  		case EOVERFLOW:
  			/*
-Index: zfs-linux-0.7.11/man/man8/zfs.8
+Index: zfs/man/man8/zfs.8
 ===================================================================
---- zfs-linux-0.7.11.orig/man/man8/zfs.8
-+++ zfs-linux-0.7.11/man/man8/zfs.8
+--- zfs.orig/man/man8/zfs.8
++++ zfs/man/man8/zfs.8
 @@ -29,7 +29,7 @@
  .\" Copyright 2016 Nexenta Systems, Inc.
  .\" Copyright 2016 Richard Laager. All rights reserved.

@@ -25,10 +25,10 @@ Closes #7065
 Closes #7108
 ---
 
-Index: zfs-linux-0.7.5/module/icp/asm-x86_64/aes/aes_intel.S
+Index: zfs/module/icp/asm-x86_64/aes/aes_intel.S
 ===================================================================
---- zfs-linux-0.7.5.orig/module/icp/asm-x86_64/aes/aes_intel.S
-+++ zfs-linux-0.7.5/module/icp/asm-x86_64/aes/aes_intel.S
+--- zfs.orig/module/icp/asm-x86_64/aes/aes_intel.S
++++ zfs/module/icp/asm-x86_64/aes/aes_intel.S
 @@ -207,7 +207,7 @@ _key_expansion_256a_local:
  	shufps	$0b10001100, %xmm0, %xmm4
  	pxor	%xmm4, %xmm0
@@ -264,10 +264,10 @@ Index: zfs-linux-0.7.5/module/icp/asm-x86_64/aes/aes_intel.S
  	aesdeclast	%KEY, %STATE		// last round
  	movups	%STATE, (%OUTP)			// output
  
-Index: zfs-linux-0.7.5/module/icp/asm-x86_64/modes/gcm_intel.S
+Index: zfs/module/icp/asm-x86_64/modes/gcm_intel.S
 ===================================================================
---- zfs-linux-0.7.5.orig/module/icp/asm-x86_64/modes/gcm_intel.S
-+++ zfs-linux-0.7.5/module/icp/asm-x86_64/modes/gcm_intel.S
+--- zfs.orig/module/icp/asm-x86_64/modes/gcm_intel.S
++++ zfs/module/icp/asm-x86_64/modes/gcm_intel.S
 @@ -150,7 +150,7 @@ ENTRY_NP(gcm_mul_pclmulqdq)
  	// Byte swap 16-byte input
  	//

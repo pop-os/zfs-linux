@@ -17,10 +17,10 @@ Closes #6872
  cmd/zpool/zpool_main.c | 22 +++++++++++++++-------
  1 file changed, 15 insertions(+), 7 deletions(-)
 
-Index: zfs-linux-0.7.9/cmd/zpool/zpool_main.c
+Index: zfs/cmd/zpool/zpool_main.c
 ===================================================================
---- zfs-linux-0.7.9.orig/cmd/zpool/zpool_main.c
-+++ zfs-linux-0.7.9/cmd/zpool/zpool_main.c
+--- zfs.orig/cmd/zpool/zpool_main.c
++++ zfs/cmd/zpool/zpool_main.c
 @@ -3624,7 +3624,7 @@ print_vdev_stats(zpool_handle_t *zhp, co
      nvlist_t *newnv, iostat_cbdata_t *cb, int depth)
  {

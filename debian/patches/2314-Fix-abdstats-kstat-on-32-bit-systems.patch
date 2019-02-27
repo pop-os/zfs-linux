@@ -15,10 +15,10 @@ Closes #6721
  module/zfs/abd.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/module/zfs/abd.c b/module/zfs/abd.c
-index 765ac7fb7..3c7893dcd 100644
---- a/module/zfs/abd.c
-+++ b/module/zfs/abd.c
+Index: zfs/module/zfs/abd.c
+===================================================================
+--- zfs.orig/module/zfs/abd.c
++++ zfs/module/zfs/abd.c
 @@ -571,7 +571,7 @@ static inline void
  abd_free_struct(abd_t *abd)
  {
@@ -37,6 +37,3 @@ index 765ac7fb7..3c7893dcd 100644
  
  	abd_free_struct(abd);
  }
--- 
-2.15.1
-
