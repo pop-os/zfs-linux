@@ -47,5 +47,4 @@ fix-zdb-crash.patch
 #prevent-user-accounting-on-readonly-pool.patch
 zfs-mount-manpage-should-document-legacy-behaviour.patch
 zfs-mounted-nfsv3-shares-fail-lock-reclaims.patch
-#zvols-should-not-be-allowed-to-have-children.patch
 #allow-rename-of-in-use-zvol-dataset.patch
