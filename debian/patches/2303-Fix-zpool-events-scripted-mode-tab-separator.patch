@@ -16,10 +16,10 @@ Closes #6445
  cmd/zpool/zpool_main.c | 9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
 
-Index: zfs-linux-0.7.11/cmd/zpool/zpool_main.c
+Index: zfs/cmd/zpool/zpool_main.c
 ===================================================================
---- zfs-linux-0.7.11.orig/cmd/zpool/zpool_main.c
-+++ zfs-linux-0.7.11/cmd/zpool/zpool_main.c
+--- zfs.orig/cmd/zpool/zpool_main.c
++++ zfs/cmd/zpool/zpool_main.c
 @@ -7358,7 +7358,7 @@ typedef struct ev_opts {
  } ev_opts_t;
  

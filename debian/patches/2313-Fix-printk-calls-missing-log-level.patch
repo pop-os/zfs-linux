@@ -14,10 +14,10 @@ Closes #6672
  module/zfs/vdev_disk.c | 7 ++++---
  1 file changed, 4 insertions(+), 3 deletions(-)
 
-Index: zfs-linux-0.7.11/module/zfs/vdev_disk.c
+Index: zfs/module/zfs/vdev_disk.c
 ===================================================================
---- zfs-linux-0.7.11.orig/module/zfs/vdev_disk.c
-+++ zfs-linux-0.7.11/module/zfs/vdev_disk.c
+--- zfs.orig/module/zfs/vdev_disk.c
++++ zfs/module/zfs/vdev_disk.c
 @@ -99,7 +99,7 @@ static void
  vdev_disk_error(zio_t *zio)
  {

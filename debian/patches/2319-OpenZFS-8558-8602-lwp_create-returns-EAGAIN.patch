@@ -50,10 +50,10 @@ Closes #6779
  module/zfs/zil.c                 | 15 ++++------
  5 files changed, 105 insertions(+), 10 deletions(-)
 
-Index: zfs-linux-0.7.11/include/sys/dsl_pool.h
+Index: zfs/include/sys/dsl_pool.h
 ===================================================================
---- zfs-linux-0.7.11.orig/include/sys/dsl_pool.h
-+++ zfs-linux-0.7.11/include/sys/dsl_pool.h
+--- zfs.orig/include/sys/dsl_pool.h
++++ zfs/include/sys/dsl_pool.h
 @@ -126,6 +126,7 @@ typedef struct dsl_pool {
  	txg_list_t dp_dirty_dirs;
  	txg_list_t dp_sync_tasks;
@@ -62,10 +62,10 @@ Index: zfs-linux-0.7.11/include/sys/dsl_pool.h
  
  	/*
  	 * Protects administrative changes (properties, namespace)
-Index: zfs-linux-0.7.11/include/sys/zil_impl.h
+Index: zfs/include/sys/zil_impl.h
 ===================================================================
---- zfs-linux-0.7.11.orig/include/sys/zil_impl.h
-+++ zfs-linux-0.7.11/include/sys/zil_impl.h
+--- zfs.orig/include/sys/zil_impl.h
++++ zfs/include/sys/zil_impl.h
 @@ -124,7 +124,6 @@ struct zilog {
  	list_t		zl_lwb_list;	/* in-flight log write list */
  	kmutex_t	zl_vdev_lock;	/* protects zl_vdev_tree */
@@ -74,10 +74,10 @@ Index: zfs-linux-0.7.11/include/sys/zil_impl.h
  	avl_tree_t	zl_bp_tree;	/* track bps during log parse */
  	clock_t		zl_replay_time;	/* lbolt of when replay started */
  	uint64_t	zl_replay_blks;	/* number of log blocks replayed */
-Index: zfs-linux-0.7.11/man/man5/zfs-module-parameters.5
+Index: zfs/man/man5/zfs-module-parameters.5
 ===================================================================
---- zfs-linux-0.7.11.orig/man/man5/zfs-module-parameters.5
-+++ zfs-linux-0.7.11/man/man5/zfs-module-parameters.5
+--- zfs.orig/man/man5/zfs-module-parameters.5
++++ zfs/man/man5/zfs-module-parameters.5
 @@ -1802,6 +1802,18 @@ Default value: \fB2\fR.
  .sp
  .ne 2
@@ -140,10 +140,10 @@ Index: zfs-linux-0.7.11/man/man5/zfs-module-parameters.5
  .ne 2
  .na
  \fBzil_replay_disable\fR (int)
-Index: zfs-linux-0.7.11/module/zfs/dsl_pool.c
+Index: zfs/module/zfs/dsl_pool.c
 ===================================================================
---- zfs-linux-0.7.11.orig/module/zfs/dsl_pool.c
-+++ zfs-linux-0.7.11/module/zfs/dsl_pool.c
+--- zfs.orig/module/zfs/dsl_pool.c
++++ zfs/module/zfs/dsl_pool.c
 @@ -135,6 +135,36 @@ unsigned long zfs_delay_scale = 1000 * 1
   */
  int zfs_sync_taskq_batch_pct = 75;
@@ -221,10 +221,10 @@ Index: zfs-linux-0.7.11/module/zfs/dsl_pool.c
 +
  /* END CSTYLED */
  #endif
-Index: zfs-linux-0.7.11/module/zfs/zil.c
+Index: zfs/module/zfs/zil.c
 ===================================================================
---- zfs-linux-0.7.11.orig/module/zfs/zil.c
-+++ zfs-linux-0.7.11/module/zfs/zil.c
+--- zfs.orig/module/zfs/zil.c
++++ zfs/module/zfs/zil.c
 @@ -1442,8 +1442,7 @@ zil_clean(zilog_t *zilog, uint64_t synce
  		return;
  	}

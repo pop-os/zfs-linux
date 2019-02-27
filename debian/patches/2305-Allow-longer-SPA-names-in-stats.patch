@@ -21,10 +21,10 @@ Closes #6481
  module/zfs/spa_stats.c         | 25 +++++++++++++++----------
  3 files changed, 22 insertions(+), 16 deletions(-)
 
-Index: zfs-linux-0.7.11/lib/libspl/include/sys/kstat.h
+Index: zfs/lib/libspl/include/sys/kstat.h
 ===================================================================
---- zfs-linux-0.7.11.orig/lib/libspl/include/sys/kstat.h
-+++ zfs-linux-0.7.11/lib/libspl/include/sys/kstat.h
+--- zfs.orig/lib/libspl/include/sys/kstat.h
++++ zfs/lib/libspl/include/sys/kstat.h
 @@ -59,7 +59,7 @@ typedef int	kid_t;		/* unique kstat id *
   *	kcid = ioctl(kd, KSTAT_IOC_WRITE, kstat_t *);
   */
@@ -34,10 +34,10 @@ Index: zfs-linux-0.7.11/lib/libspl/include/sys/kstat.h
  
  /*
   * The generic kstat header
-Index: zfs-linux-0.7.11/module/icp/spi/kcf_spi.c
+Index: zfs/module/icp/spi/kcf_spi.c
 ===================================================================
---- zfs-linux-0.7.11.orig/module/icp/spi/kcf_spi.c
-+++ zfs-linux-0.7.11/module/icp/spi/kcf_spi.c
+--- zfs.orig/module/icp/spi/kcf_spi.c
++++ zfs/module/icp/spi/kcf_spi.c
 @@ -111,7 +111,7 @@ int
  crypto_register_provider(crypto_provider_info_t *info,
      crypto_kcf_provider_handle_t *handle)
@@ -72,10 +72,10 @@ Index: zfs-linux-0.7.11/module/icp/spi/kcf_spi.c
  	}
  
  	if (prov_desc->pd_prov_type == CRYPTO_HW_PROVIDER)
-Index: zfs-linux-0.7.11/module/zfs/spa_stats.c
+Index: zfs/module/zfs/spa_stats.c
 ===================================================================
---- zfs-linux-0.7.11.orig/module/zfs/spa_stats.c
-+++ zfs-linux-0.7.11/module/zfs/spa_stats.c
+--- zfs.orig/module/zfs/spa_stats.c
++++ zfs/module/zfs/spa_stats.c
 @@ -144,7 +144,7 @@ static void
  spa_read_history_init(spa_t *spa)
  {

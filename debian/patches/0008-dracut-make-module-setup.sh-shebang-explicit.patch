@@ -20,20 +20,20 @@ Closes #6491
  contrib/dracut/90zfs/module-setup.sh.in                | 2 +-
  2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/contrib/dracut/02zfsexpandknowledge/module-setup.sh.in b/contrib/dracut/02zfsexpandknowledge/module-setup.sh.in
-index 981beb3..c22141f 100755
---- a/contrib/dracut/02zfsexpandknowledge/module-setup.sh.in
-+++ b/contrib/dracut/02zfsexpandknowledge/module-setup.sh.in
+Index: zfs/contrib/dracut/02zfsexpandknowledge/module-setup.sh.in
+===================================================================
+--- zfs.orig/contrib/dracut/02zfsexpandknowledge/module-setup.sh.in
++++ zfs/contrib/dracut/02zfsexpandknowledge/module-setup.sh.in
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/bin/bash
  
  get_devtype() {
    local typ
-diff --git a/contrib/dracut/90zfs/module-setup.sh.in b/contrib/dracut/90zfs/module-setup.sh.in
-index 9bbee0e..7632cbc 100755
---- a/contrib/dracut/90zfs/module-setup.sh.in
-+++ b/contrib/dracut/90zfs/module-setup.sh.in
+Index: zfs/contrib/dracut/90zfs/module-setup.sh.in
+===================================================================
+--- zfs.orig/contrib/dracut/90zfs/module-setup.sh.in
++++ zfs/contrib/dracut/90zfs/module-setup.sh.in
 @@ -1,4 +1,4 @@
 -#!/bin/sh
 +#!/bin/bash

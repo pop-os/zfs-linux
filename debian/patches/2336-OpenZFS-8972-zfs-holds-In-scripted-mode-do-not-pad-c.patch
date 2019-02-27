@@ -19,10 +19,10 @@ Closes #7063
  cmd/zfs/zfs_main.c | 11 +++++++----
  1 file changed, 7 insertions(+), 4 deletions(-)
 
-Index: zfs-linux-0.7.5/cmd/zfs/zfs_main.c
+Index: zfs/cmd/zfs/zfs_main.c
 ===================================================================
---- zfs-linux-0.7.5.orig/cmd/zfs/zfs_main.c
-+++ zfs-linux-0.7.5/cmd/zfs/zfs_main.c
+--- zfs.orig/cmd/zfs/zfs_main.c
++++ zfs/cmd/zfs/zfs_main.c
 @@ -5720,8 +5720,6 @@ print_holds(boolean_t scripted, int nwid
  			uint64_t val = 0;
  			time_t time;

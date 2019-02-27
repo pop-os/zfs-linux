@@ -21,10 +21,10 @@ Closes #7079
  module/zfs/zfs_fm.c | 12 ++++++------
  1 file changed, 6 insertions(+), 6 deletions(-)
 
-Index: zfs-linux-0.7.5/module/zfs/zfs_fm.c
+Index: zfs/module/zfs/zfs_fm.c
 ===================================================================
---- zfs-linux-0.7.5.orig/module/zfs/zfs_fm.c
-+++ zfs-linux-0.7.5/module/zfs/zfs_fm.c
+--- zfs.orig/module/zfs/zfs_fm.c
++++ zfs/module/zfs/zfs_fm.c
 @@ -455,8 +455,8 @@ zfs_ereport_start(nvlist_t **ereport_out
  
  typedef struct zfs_ecksum_info {

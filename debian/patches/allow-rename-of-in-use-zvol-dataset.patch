@@ -1,0 +1,66 @@
+commit c44a3ec0596d574f2eb7f57ff97720cd63c4a61e
+Author: loli10K <loli10K@users.noreply.github.com>
+Date:   Sat Feb 23 00:38:42 2019 +0100
+
+    zvol: allow rename of in use ZVOL dataset
+    
+    While ZFS allow renaming of in use ZVOLs at the DSL level without issues
+    the ZVOL layer does not correctly update the renamed dataset if the
+    device node is open (zv->zv_open_count > 0): trying to access the stale
+    dataset name, for instance during a zfs receive, will cause the
+    following failure:
+    
+    VERIFY3(zv->zv_objset->os_dsl_dataset->ds_owner == zv) failed ((null) == ffff8800dbb6fc00)
+    PANIC at zvol.c:1255:zvol_resume()
+    Showing stack for process 1390
+    CPU: 0 PID: 1390 Comm: zfs Tainted: P           O  3.16.0-4-amd64 #1 Debian 3.16.51-3
+    Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
+     0000000000000000 ffffffff8151ea00 ffffffffa0758a80 ffff88028aefba30
+     ffffffffa0417219 ffff880037179220 ffffffff00000030 ffff88028aefba40
+     ffff88028aefb9e0 2833594649524556 6f5f767a3e2d767a 6f3e2d7465736a62
+    Call Trace:
+     [<0>] ? dump_stack+0x5d/0x78
+     [<0>] ? spl_panic+0xc9/0x110 [spl]
+     [<0>] ? mutex_lock+0xe/0x2a
+     [<0>] ? zfs_refcount_remove_many+0x1ad/0x250 [zfs]
+     [<0>] ? rrw_exit+0xc8/0x2e0 [zfs]
+     [<0>] ? mutex_lock+0xe/0x2a
+     [<0>] ? dmu_objset_from_ds+0x9a/0x250 [zfs]
+     [<0>] ? dmu_objset_hold_flags+0x71/0xc0 [zfs]
+     [<0>] ? zvol_resume+0x178/0x280 [zfs]
+     [<0>] ? zfs_ioc_recv_impl+0x88b/0xf80 [zfs]
+     [<0>] ? zfs_refcount_remove_many+0x1ad/0x250 [zfs]
+     [<0>] ? zfs_ioc_recv+0x1c2/0x2a0 [zfs]
+     [<0>] ? dmu_buf_get_user+0x13/0x20 [zfs]
+     [<0>] ? __alloc_pages_nodemask+0x166/0xb50
+     [<0>] ? zfsdev_ioctl+0x896/0x9c0 [zfs]
+     [<0>] ? handle_mm_fault+0x464/0x1140
+     [<0>] ? do_vfs_ioctl+0x2cf/0x4b0
+     [<0>] ? __do_page_fault+0x177/0x410
+     [<0>] ? SyS_ioctl+0x81/0xa0
+     [<0>] ? async_page_fault+0x28/0x30
+     [<0>] ? system_call_fast_compare_end+0x10/0x15
+    
+    Reviewed by: Tom Caputi <tcaputi@datto.com>
+    Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+    Signed-off-by: loli10K <ezomori.nozomu@gmail.com>
+    Closes #6263
+    Closes #8371
+
+Index: zfs/module/zfs/zvol.c
+===================================================================
+--- zfs.orig/module/zfs/zvol.c
++++ zfs/module/zfs/zvol.c
+@@ -2236,12 +2236,6 @@ zvol_rename_minors_impl(const char *oldn
+ 
+ 		mutex_enter(&zv->zv_state_lock);
+ 
+-		/* If in use, leave alone */
+-		if (zv->zv_open_count > 0) {
+-			mutex_exit(&zv->zv_state_lock);
+-			continue;
+-		}
+-
+ 		if (strcmp(zv->zv_name, oldname) == 0) {
+ 			zvol_rename_minor(zv, newname);
+ 		} else if (strncmp(zv->zv_name, oldname, oldnamelen) == 0 &&

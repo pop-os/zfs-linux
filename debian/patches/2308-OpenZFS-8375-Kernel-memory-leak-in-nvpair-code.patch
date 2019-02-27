@@ -23,10 +23,10 @@ Closes #6578
  module/nvpair/nvpair.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/module/nvpair/nvpair.c b/module/nvpair/nvpair.c
-index 2e3820981..8e654053c 100644
---- a/module/nvpair/nvpair.c
-+++ b/module/nvpair/nvpair.c
+Index: zfs/module/nvpair/nvpair.c
+===================================================================
+--- zfs.orig/module/nvpair/nvpair.c
++++ zfs/module/nvpair/nvpair.c
 @@ -21,7 +21,7 @@
  
  /*
@@ -36,7 +36,7 @@ index 2e3820981..8e654053c 100644
   */
  
  #include <sys/stropts.h>
-@@ -2200,8 +2200,10 @@ nvs_embedded(nvstream_t *nvs, nvlist_t *embedded)
+@@ -2200,8 +2200,10 @@ nvs_embedded(nvstream_t *nvs, nvlist_t *
  
  		nvlist_init(embedded, embedded->nvl_nvflag, priv);
  
@@ -48,6 +48,3 @@ index 2e3820981..8e654053c 100644
  		nvs->nvs_recursion++;
  		if ((err = nvs_operation(nvs, embedded, NULL)) != 0)
  			nvlist_free(embedded);
--- 
-2.15.1
-

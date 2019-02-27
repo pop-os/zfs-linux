@@ -5,10 +5,10 @@ Description: Enable zed emails
 Author: Richard Laager <rlaager@wiktel.com>
 Forwarded: no
 
-Index: zfs-linux-0.6.5.3/cmd/zed/zed.d/zed.rc
+Index: zfs/cmd/zed/zed.d/zed.rc
 ===================================================================
---- zfs-linux-0.6.5.3.orig/cmd/zed/zed.d/zed.rc	2015-10-27 15:22:37.000000000 -0500
-+++ zfs-linux-0.6.5.3/cmd/zed/zed.d/zed.rc	2016-01-31 23:13:49.826489152 -0600
+--- zfs.orig/cmd/zed/zed.d/zed.rc
++++ zfs/cmd/zed/zed.d/zed.rc
 @@ -15,7 +15,7 @@
  # Email will only be sent if ZED_EMAIL_ADDR is defined.
  # Disabled by default; uncomment to enable.

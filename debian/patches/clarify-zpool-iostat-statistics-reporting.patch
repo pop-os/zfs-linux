@@ -1,0 +1,40 @@
+commit f8bb2a7e0c889d6c5cf7655d698869b3a32c2bb0
+Author: kpande <github@tripleback.net>
+Date:   Thu Feb 21 14:00:48 2019 -0800
+
+    Clarify zpool iostat statistics reporting
+    
+    Document expected behavior for  zpool iostat statistics reporting.
+    
+    Reviewed by: Matt Ahrens <mahrens@delphix.com>
+    Reviewed-by: Alek Pinchuk <apinchuk@datto.com>
+    Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+    Reviewed by: Allan Jude <allanjude@freebsd.org>
+    Signed-off-by: Kash Pande <kash@tripleback.net>
+    Closes #2888
+    Closes #8417
+
+Index: zfs/man/man8/zpool.8
+===================================================================
+--- zfs.orig/man/man8/zpool.8
++++ zfs/man/man8/zpool.8
+@@ -1431,10 +1431,15 @@ Will also set -o cachefile=none when not
+ .Oo Oo Ar pool Ns ... Oc Ns | Ns Oo Ar pool vdev Ns ... Oc Ns | Ns Oo Ar vdev Ns ... Oc Oc
+ .Op Ar interval Op Ar count
+ .Xc
+-Displays I/O statistics for the given pools/vdevs. You can pass in a
+-list of pools, a pool and list of vdevs in that pool, or a list of any
+-vdevs from any pool. If no items are specified, statistics for every
+-pool in the system are shown.
++Displays logical I/O statistics for the given pools/vdevs. Physical I/Os may
++be observed via
++.Xr iostat 1 .
++If writes are located nearby, they may be merged into a single
++larger operation. Additional I/O may be generated depending on the level of
++vdev redundancy.
++To filter output, you may pass in a list of pools, a pool and list of vdevs
++in that pool, or a list of any vdevs from any pool. If no items are specified,
++statistics for every pool in the system are shown.
+ When given an
+ .Ar interval ,
+ the statistics are printed every

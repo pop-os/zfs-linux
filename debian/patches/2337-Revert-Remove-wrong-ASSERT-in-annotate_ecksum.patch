@@ -16,10 +16,10 @@ Closes #7079
  module/zfs/zfs_fm.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-Index: zfs-linux-0.7.5/module/zfs/zfs_fm.c
+Index: zfs/module/zfs/zfs_fm.c
 ===================================================================
---- zfs-linux-0.7.5.orig/module/zfs/zfs_fm.c
-+++ zfs-linux-0.7.5/module/zfs/zfs_fm.c
+--- zfs.orig/module/zfs/zfs_fm.c
++++ zfs/module/zfs/zfs_fm.c
 @@ -490,8 +490,7 @@ update_histogram(uint64_t value_arg, uin
  	/* We store the bits in big-endian (largest-first) order */
  	for (i = 0; i < 64; i++) {

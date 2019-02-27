@@ -17,10 +17,10 @@ Closes #6449
  lib/libzfs/libzfs_dataset.c | 11 ++++++++---
  1 file changed, 8 insertions(+), 3 deletions(-)
 
-Index: zfs-linux-0.7.9/lib/libzfs/libzfs_dataset.c
+Index: zfs/lib/libzfs/libzfs_dataset.c
 ===================================================================
---- zfs-linux-0.7.9.orig/lib/libzfs/libzfs_dataset.c
-+++ zfs-linux-0.7.9/lib/libzfs/libzfs_dataset.c
+--- zfs.orig/lib/libzfs/libzfs_dataset.c
++++ zfs/lib/libzfs/libzfs_dataset.c
 @@ -2611,9 +2611,14 @@ zfs_prop_get(zfs_handle_t *zhp, zfs_prop
  	case ZFS_PROP_COMPRESSRATIO:
  		if (get_numeric_property(zhp, prop, src, &source, &val) != 0)

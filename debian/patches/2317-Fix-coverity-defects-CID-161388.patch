@@ -17,10 +17,10 @@ Closes #6755
  cmd/zpool/zpool_main.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-Index: zfs-linux-0.7.5/cmd/zpool/zpool_main.c
+Index: zfs/cmd/zpool/zpool_main.c
 ===================================================================
---- zfs-linux-0.7.5.orig/cmd/zpool/zpool_main.c
-+++ zfs-linux-0.7.5/cmd/zpool/zpool_main.c
+--- zfs.orig/cmd/zpool/zpool_main.c
++++ zfs/cmd/zpool/zpool_main.c
 @@ -895,7 +895,8 @@ zpool_do_labelclear(int argc, char **arg
  	if (zpool_read_label(fd, &config, NULL) != 0 || config == NULL) {
  		(void) fprintf(stderr,

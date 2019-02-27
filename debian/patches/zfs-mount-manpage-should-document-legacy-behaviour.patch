@@ -1,0 +1,49 @@
+commit 11f6127aba6b9aa54bc86e70581aebeb7d160db4
+Author: kpande <github@tripleback.net>
+Date:   Tue Feb 19 11:10:57 2019 -0800
+
+    zfs mount man page should document legacy behaviour
+    
+    Document legacy mount behavior.
+    
+    Reviewed by: Allan Jude <allanjude@freebsd.org>
+    Reviewed by: Matt Ahrens <mahrens@delphix.com>
+    Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+    Reviewed-by: bunder2015 <omfgbunder@gmail.com>
+    Reviewed-by: loli10K <ezomori.nozomu@gmail.com>
+    Signed-off-by: Kash Pande <kash@tripleback.net>
+    Closes #2900
+    Closes #8414
+
+Index: zfs/man/man8/zfs.8
+===================================================================
+--- zfs.orig/man/man8/zfs.8
++++ zfs/man/man8/zfs.8
+@@ -2796,16 +2796,24 @@ Displays all ZFS file systems currently
+ .Op Fl o Ar options
+ .Fl a | Ar filesystem
+ .Xc
+-Mounts ZFS file systems.
++Mount ZFS filesystem on a path described by its
++.Sy mountpoint
++property, if the path exists and is empty. If
++.Sy mountpoint
++is set to
++.Em legacy ,
++the filesystem should be instead mounted using
++.Xr mount 8 .
+ .Bl -tag -width "-O"
+ .It Fl O
+-Perform an overlay mount.
++Perform an overlay mount. Allows mounting in non-empty
++.Sy mountpoint .
+ See
+ .Xr mount 8
+ for more information.
+ .It Fl a
+ Mount all available ZFS file systems.
+-Invoked automatically as part of the boot process.
++Invoked automatically as part of the boot process if configured.
+ .It Ar filesystem
+ Mount the specified filesystem.
+ .It Fl o Ar options

@@ -16,11 +16,11 @@ Closes #6774
  cmd/zpool/zpool_vdev.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/cmd/zpool/zpool_vdev.c b/cmd/zpool/zpool_vdev.c
-index 4c3793d6e..04a2611f9 100644
---- a/cmd/zpool/zpool_vdev.c
-+++ b/cmd/zpool/zpool_vdev.c
-@@ -188,6 +188,7 @@ static vdev_disk_db_entry_t vdev_disk_database[] = {
+Index: zfs/cmd/zpool/zpool_vdev.c
+===================================================================
+--- zfs.orig/cmd/zpool/zpool_vdev.c
++++ zfs/cmd/zpool/zpool_vdev.c
+@@ -188,6 +188,7 @@ static vdev_disk_db_entry_t vdev_disk_da
  	{"ATA     INTEL SSDSC2BB60", 4096},
  	{"ATA     INTEL SSDSC2BB80", 4096},
  	{"ATA     INTEL SSDSC2BW24", 4096},
@@ -28,6 +28,3 @@ index 4c3793d6e..04a2611f9 100644
  	{"ATA     INTEL SSDSC2BP24", 4096},
  	{"ATA     INTEL SSDSC2BP48", 4096},
  	{"NA      SmrtStorSDLKAE9W", 4096},
--- 
-2.15.1
-

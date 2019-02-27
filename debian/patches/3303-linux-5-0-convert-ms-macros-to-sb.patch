@@ -12,10 +12,10 @@ Signed-off-by: Colin Ian King <colin.king@canonical.com>
 
 ---
 
-Index: zfs-linux-0.7.12/module/zfs/vdev_disk.c
+Index: zfs/module/zfs/vdev_disk.c
 ===================================================================
---- zfs-linux-0.7.12.orig/module/zfs/vdev_disk.c
-+++ zfs-linux-0.7.12/module/zfs/vdev_disk.c
+--- zfs.orig/module/zfs/vdev_disk.c
++++ zfs/module/zfs/vdev_disk.c
 @@ -35,6 +35,7 @@
  #include <sys/zio.h>
  #include <sys/sunldi.h>
@@ -33,10 +33,10 @@ Index: zfs-linux-0.7.12/module/zfs/vdev_disk.c
  
  	return (mode);
  }
-Index: zfs-linux-0.7.12/module/zfs/zfs_vfsops.c
+Index: zfs/module/zfs/zfs_vfsops.c
 ===================================================================
---- zfs-linux-0.7.12.orig/module/zfs/zfs_vfsops.c
-+++ zfs-linux-0.7.12/module/zfs/zfs_vfsops.c
+--- zfs.orig/module/zfs/zfs_vfsops.c
++++ zfs/module/zfs/zfs_vfsops.c
 @@ -66,6 +66,7 @@
  #include <sys/dmu_objset.h>
  #include <sys/spa_boot.h>

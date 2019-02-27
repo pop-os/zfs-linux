@@ -6,10 +6,10 @@ Signed-off-by: Colin Ian King <colin.king@canonical.com>
 
 ---
 
-Index: zfs-linux-0.7.12/config/kernel-ktime.m4
+Index: zfs/config/kernel-ktime.m4
 ===================================================================
 --- /dev/null
-+++ zfs-linux-0.7.12/config/kernel-ktime.m4
++++ zfs/config/kernel-ktime.m4
 @@ -0,0 +1,20 @@
 +dnl #
 +dnl # 5.0 API change
@@ -31,10 +31,10 @@ Index: zfs-linux-0.7.12/config/kernel-ktime.m4
 +		AC_MSG_RESULT(no)
 +	])
 +])
-Index: zfs-linux-0.7.12/include/zpios-ctl.h
+Index: zfs/include/zpios-ctl.h
 ===================================================================
---- zfs-linux-0.7.12.orig/include/zpios-ctl.h
-+++ zfs-linux-0.7.12/include/zpios-ctl.h
+--- zfs.orig/include/zpios-ctl.h
++++ zfs/include/zpios-ctl.h
 @@ -184,7 +184,11 @@ zpios_timespec_now(void)
  	inode_timespec_t ts_now;
  

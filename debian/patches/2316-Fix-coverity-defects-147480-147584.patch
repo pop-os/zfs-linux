@@ -29,10 +29,10 @@ Closes #6745
  cmd/zfs/zfs_main.c | 3 +--
  2 files changed, 5 insertions(+), 6 deletions(-)
 
-Index: zfs-linux-0.7.5/cmd/zdb/zdb.c
+Index: zfs/cmd/zdb/zdb.c
 ===================================================================
---- zfs-linux-0.7.5.orig/cmd/zdb/zdb.c
-+++ zfs-linux-0.7.5/cmd/zdb/zdb.c
+--- zfs.orig/cmd/zdb/zdb.c
++++ zfs/cmd/zdb/zdb.c
 @@ -1982,13 +1982,13 @@ dump_object(objset_t *os, uint64_t objec
  	aux[0] = '\0';
  
@@ -51,10 +51,10 @@ Index: zfs-linux-0.7.5/cmd/zdb/zdb.c
  	}
  
  	(void) printf("%10lld  %3u  %5s  %5s  %5s  %6s  %5s  %6s  %s%s\n",
-Index: zfs-linux-0.7.5/cmd/zfs/zfs_main.c
+Index: zfs/cmd/zfs/zfs_main.c
 ===================================================================
---- zfs-linux-0.7.5.orig/cmd/zfs/zfs_main.c
-+++ zfs-linux-0.7.5/cmd/zfs/zfs_main.c
+--- zfs.orig/cmd/zfs/zfs_main.c
++++ zfs/cmd/zfs/zfs_main.c
 @@ -764,8 +764,7 @@ zfs_do_clone(int argc, char **argv)
  	return (!!ret);
  
