@@ -13,15 +13,15 @@ Date:   Fri Feb 15 15:40:16 2019 -0700
     Signed-off-by: Don Brady <don.brady@delphix.com>
     Closes #8398
 
-diff --git a/etc/systemd/system/zfs-share.service.in b/etc/systemd/system/zfs-share.service.in
-index 312547c26..75ff6e946 100644
---- a/etc/systemd/system/zfs-share.service.in
-+++ b/etc/systemd/system/zfs-share.service.in
+Index: zfs/etc/systemd/system/zfs-share.service.in
+===================================================================
+--- zfs.orig/etc/systemd/system/zfs-share.service.in
++++ zfs/etc/systemd/system/zfs-share.service.in
 @@ -3,6 +3,7 @@ Description=ZFS file system shares
  Documentation=man:zfs(8)
  After=nfs-server.service nfs-kernel-server.service
  After=smb.service
 +Before=rpc-statd-notify.service
- Wants=zfs-mount.service
+ After=zfs-mount.service
  PartOf=nfs-server.service nfs-kernel-server.service
  PartOf=smb.service
