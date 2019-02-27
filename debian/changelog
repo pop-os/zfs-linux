@@ -1,3 +1,13 @@
+zfs-linux (0.7.12-4) UNRELEASED; urgency=medium
+
+  [ Salsa Pipeline ]
+  * Update salsa CI pipeline
+
+  [ Mo Zhou ]
+  * Rewrite dkms-zfs-test. (Close: #921383)
+
+ -- Mo Zhou <cdluminate@gmail.com>  Wed, 27 Feb 2019 07:52:09 +0000
+
 zfs-linux (0.7.12-3) unstable; urgency=medium
 
   [ Colin Ian King (Ubuntu diff 0.7.12-1ubuntu5) ]
