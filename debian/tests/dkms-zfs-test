@@ -1,5 +1,6 @@
 #!/bin/sh
 set -xe
+apt-get update -y
 zfsver=$(apt-cache show zfs-dkms | grep Version: | head -n1 | sed -e 's@Version: \(.*\)-.*@\1@')
 
 if ! (echo "amd64 arm64 ppc64el s390x" | grep -o $DEB_HOST_ARCH); then
