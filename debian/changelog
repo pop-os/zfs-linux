@@ -1,10 +1,10 @@
-zfs-linux (0.7.12-4) UNRELEASED; urgency=medium
+zfs-linux (0.7.12-4) unstable; urgency=medium
 
   [ Salsa Pipeline ]
   * Update salsa CI pipeline
 
   [ Mo Zhou ]
-  * Rewrite dkms-zfs-test. (Close: #921383)
+  * Rewrite autopkgtest script dkms-zfs-test. (Closes: #921383)
   * Cherry-pick some upstream commits and refresh patches:
     + clarify-zpool-iostat-statistics-reporting.patch
     + delay-injection-can-cause-indefinitely-hung-zios.patch
@@ -14,7 +14,7 @@ zfs-linux (0.7.12-4) UNRELEASED; urgency=medium
     + zfs-mounted-nfsv3-shares-fail-lock-reclaims.patch
     + allow-rename-of-in-use-zvol-dataset.patch
 
- -- Mo Zhou <cdluminate@gmail.com>  Wed, 27 Feb 2019 09:44:19 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Wed, 27 Feb 2019 10:36:59 +0000
 
 zfs-linux (0.7.12-3) unstable; urgency=medium
 
