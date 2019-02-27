@@ -5,8 +5,16 @@ zfs-linux (0.7.12-4) UNRELEASED; urgency=medium
 
   [ Mo Zhou ]
   * Rewrite dkms-zfs-test. (Close: #921383)
+  * Cherry-pick some upstream commits and refresh patches:
+    + clarify-zpool-iostat-statistics-reporting.patch
+    + delay-injection-can-cause-indefinitely-hung-zios.patch
+    + dont-enter-zvols-rangelock-for-read-bio-with-size-0.patch
+    + fix-zdb-crash.patch
+    + zfs-mount-manpage-should-document-legacy-behaviour.patch
+    + zfs-mounted-nfsv3-shares-fail-lock-reclaims.patch
+    + allow-rename-of-in-use-zvol-dataset.patch
 
- -- Mo Zhou <cdluminate@gmail.com>  Wed, 27 Feb 2019 07:52:09 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Wed, 27 Feb 2019 09:44:19 +0000
 
 zfs-linux (0.7.12-3) unstable; urgency=medium
 
