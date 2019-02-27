@@ -1,0 +1,27 @@
+commit a28c1a58fef803a63fdfe0390ac529b7c4a18685
+Author: Don Brady <don.brady@delphix.com>
+Date:   Fri Feb 15 15:40:16 2019 -0700
+
+    ZFS mounted NFSv3 shares fail lock reclaims
+    
+    ZFS NFS shares mounted on a client with NFSv3 and with open
+    locks will fail to reclaim those locks after a server reboot.
+    
+    Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+    Reviewed-by: George Wilson <george.wilson@delphix.com>
+    Reviewed-by: George Melikov <mail@gmelikov.ru>
+    Signed-off-by: Don Brady <don.brady@delphix.com>
+    Closes #8398
+
+diff --git a/etc/systemd/system/zfs-share.service.in b/etc/systemd/system/zfs-share.service.in
+index 312547c26..75ff6e946 100644
+--- a/etc/systemd/system/zfs-share.service.in
++++ b/etc/systemd/system/zfs-share.service.in
+@@ -3,6 +3,7 @@ Description=ZFS file system shares
+ Documentation=man:zfs(8)
+ After=nfs-server.service nfs-kernel-server.service
+ After=smb.service
++Before=rpc-statd-notify.service
+ Wants=zfs-mount.service
+ PartOf=nfs-server.service nfs-kernel-server.service
+ PartOf=smb.service

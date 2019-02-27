@@ -1,0 +1,1225 @@
+commit d8d418ff0cc90776182534bce10b01e9487b63e4
+Author: loli10K <loli10K@users.noreply.github.com>
+Date:   Sat Feb 9 00:44:15 2019 +0100
+
+    ZVOLs should not be allowed to have children
+    
+    zfs create, receive and rename can bypass this hierarchy rule. Update
+    both userland and kernel module to prevent this issue and use pyzfs
+    unit tests to exercise the ioctls directly.
+    
+    Note: this commit slightly changes zfs_ioc_create() ABI. This allow to
+    differentiate a generic error (EINVAL) from the specific case where we
+    tried to create a dataset below a ZVOL (ZFS_ERR_WRONG_PARENT).
+    
+    Reviewed-by: Paul Dagnelie <pcd@delphix.com>
+    Reviewed-by: Matt Ahrens <mahrens@delphix.com>
+    Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+    Reviewed-by: Tom Caputi <tcaputi@datto.com>
+    Signed-off-by: loli10K <ezomori.nozomu@gmail.com>
+
+diff --git a/contrib/pyzfs/libzfs_core/_constants.py b/contrib/pyzfs/libzfs_core/_constants.py
+index 917feee01..55de55d42 100644
+--- a/contrib/pyzfs/libzfs_core/_constants.py
++++ b/contrib/pyzfs/libzfs_core/_constants.py
+@@ -65,6 +65,7 @@ ZFS_ERR_DISCARDING_CHECKPOINT = 1025
+ ZFS_ERR_NO_CHECKPOINT = 1026
+ ZFS_ERR_DEVRM_IN_PROGRESS = 1027
+ ZFS_ERR_VDEV_TOO_BIG = 1028
++ZFS_ERR_WRONG_PARENT = 1033
+ 
+ 
+ # vim: softtabstop=4 tabstop=4 expandtab shiftwidth=4
+diff --git a/contrib/pyzfs/libzfs_core/_error_translation.py b/contrib/pyzfs/libzfs_core/_error_translation.py
+index b5f4bebce..b888fd725 100644
+--- a/contrib/pyzfs/libzfs_core/_error_translation.py
++++ b/contrib/pyzfs/libzfs_core/_error_translation.py
+@@ -38,7 +38,8 @@ from ._constants import (
+     ZFS_ERR_DISCARDING_CHECKPOINT,
+     ZFS_ERR_NO_CHECKPOINT,
+     ZFS_ERR_DEVRM_IN_PROGRESS,
+-    ZFS_ERR_VDEV_TOO_BIG
++    ZFS_ERR_VDEV_TOO_BIG,
++    ZFS_ERR_WRONG_PARENT
+ )
+ 
+ 
+@@ -46,13 +47,14 @@ def lzc_create_translate_error(ret, name, ds_type, props):
+     if ret == 0:
+         return
+     if ret == errno.EINVAL:
+-        # XXX: should raise lzc_exc.WrongParent if parent is ZVOL
+         _validate_fs_name(name)
+         raise lzc_exc.PropertyInvalid(name)
+     if ret == errno.EEXIST:
+         raise lzc_exc.FilesystemExists(name)
+     if ret == errno.ENOENT:
+         raise lzc_exc.ParentNotFound(name)
++    if ret == ZFS_ERR_WRONG_PARENT:
++        raise lzc_exc.WrongParent(_fs_name(name))
+     raise _generic_exception(ret, name, "Failed to create filesystem")
+ 
+ 
+@@ -444,6 +446,8 @@ def lzc_receive_translate_errors(
+         raise lzc_exc.SuspendedPool(_pool_name(snapname))
+     if ret == errno.EBADE:  # ECKSUM
+         raise lzc_exc.BadStream()
++    if ret == ZFS_ERR_WRONG_PARENT:
++        raise lzc_exc.WrongParent(_fs_name(snapname))
+ 
+     raise lzc_exc.StreamIOError(ret)
+ 
+@@ -596,6 +600,8 @@ def lzc_rename_translate_error(ret, source, target):
+         raise lzc_exc.FilesystemExists(target)
+     if ret == errno.ENOENT:
+         raise lzc_exc.FilesystemNotFound(source)
++    if ret == ZFS_ERR_WRONG_PARENT:
++        raise lzc_exc.WrongParent(target)
+     raise _generic_exception(ret, source, "Failed to rename dataset")
+ 
+ 
+diff --git a/contrib/pyzfs/libzfs_core/_libzfs_core.py b/contrib/pyzfs/libzfs_core/_libzfs_core.py
+index 589926ba8..5c8a1f5e6 100644
+--- a/contrib/pyzfs/libzfs_core/_libzfs_core.py
++++ b/contrib/pyzfs/libzfs_core/_libzfs_core.py
+@@ -754,6 +754,8 @@ def lzc_receive(snapname, fd, force=False, raw=False, origin=None, props=None):
+         supported on this side.
+     :raises NameInvalid: if the name of either snapshot is invalid.
+     :raises NameTooLong: if the name of either snapshot is too long.
++    :raises WrongParent: if the parent dataset of the received destination is
++        not a filesystem (e.g. ZVOL)
+ 
+     .. note::
+         The ``origin`` is ignored if the actual stream is an incremental stream
+@@ -1621,6 +1623,8 @@ def lzc_rename(source, target):
+     :raises FilesystemNotFound: if the target's parent does not exist.
+     :raises FilesystemExists: if the target already exists.
+     :raises PoolsDiffer: if the source and target belong to different pools.
++    :raises WrongParent: if the "new" parent dataset is not a filesystem
++        (e.g. ZVOL)
+     '''
+     ret = _lib.lzc_rename(source, target)
+     errors.lzc_rename_translate_error(ret, source, target)
+diff --git a/contrib/pyzfs/libzfs_core/exceptions.py b/contrib/pyzfs/libzfs_core/exceptions.py
+index c54459ec8..f465cd3d9 100644
+--- a/contrib/pyzfs/libzfs_core/exceptions.py
++++ b/contrib/pyzfs/libzfs_core/exceptions.py
+@@ -25,7 +25,8 @@ from ._constants import (
+     ZFS_ERR_DISCARDING_CHECKPOINT,
+     ZFS_ERR_NO_CHECKPOINT,
+     ZFS_ERR_DEVRM_IN_PROGRESS,
+-    ZFS_ERR_VDEV_TOO_BIG
++    ZFS_ERR_VDEV_TOO_BIG,
++    ZFS_ERR_WRONG_PARENT
+ )
+ 
+ 
+@@ -140,7 +141,7 @@ class ParentNotFound(ZFSError):
+ 
+ 
+ class WrongParent(ZFSError):
+-    errno = errno.EINVAL
++    errno = ZFS_ERR_WRONG_PARENT
+     message = "Parent dataset is not a filesystem"
+ 
+     def __init__(self, name):
+diff --git a/contrib/pyzfs/libzfs_core/test/test_libzfs_core.py b/contrib/pyzfs/libzfs_core/test/test_libzfs_core.py
+index 97fd36ce7..25f20a4ae 100644
+--- a/contrib/pyzfs/libzfs_core/test/test_libzfs_core.py
++++ b/contrib/pyzfs/libzfs_core/test/test_libzfs_core.py
+@@ -193,11 +193,11 @@ def make_snapshots(fs, before, modified, after):
+ @contextlib.contextmanager
+ def streams(fs, first, second):
+     (filename, snaps) = make_snapshots(fs, None, first, second)
+-    with tempfile.TemporaryFile(suffix='.ztream') as full:
++    with tempfile.TemporaryFile(suffix='.zstream') as full:
+         lzc.lzc_send(snaps[1], None, full.fileno())
+         full.seek(0)
+         if snaps[2] is not None:
+-            with tempfile.TemporaryFile(suffix='.ztream') as incremental:
++            with tempfile.TemporaryFile(suffix='.zstream') as incremental:
+                 lzc.lzc_send(snaps[2], snaps[1], incremental.fileno())
+                 incremental.seek(0)
+                 yield (filename, (full, incremental))
+@@ -357,8 +357,6 @@ class ZFSTest(unittest.TestCase):
+         with self.assertRaises(lzc_exc.DatasetTypeInvalid):
+             lzc.lzc_create(name, ds_type='wrong')
+ 
+-    # XXX: we should have a way to raise lzc_exc.WrongParent from lzc_create()
+-    @unittest.expectedFailure
+     def test_create_fs_below_zvol(self):
+         name = ZFSTest.pool.makeName(b"fs1/fs/zvol")
+         props = {b"volsize": 1024 * 1024}
+@@ -367,6 +365,14 @@ class ZFSTest(unittest.TestCase):
+         with self.assertRaises(lzc_exc.WrongParent):
+             lzc.lzc_create(name + b'/fs')
+ 
++    def test_create_zvol_below_zvol(self):
++        name = ZFSTest.pool.makeName(b"fs1/fs/zvol")
++        props = {b"volsize": 1024 * 1024}
++
++        lzc.lzc_create(name, ds_type='zvol', props=props)
++        with self.assertRaises(lzc_exc.WrongParent):
++            lzc.lzc_create(name + b'/zvol', ds_type='zvol', props=props)
++
+     def test_create_fs_duplicate(self):
+         name = ZFSTest.pool.makeName(b"fs1/fs/test6")
+ 
+@@ -1590,7 +1596,7 @@ class ZFSTest(unittest.TestCase):
+                 f.flush()
+                 lzc.lzc_snapshot([snap])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             estimate = lzc.lzc_send_space(snap)
+ 
+             fd = output.fileno()
+@@ -1611,7 +1617,7 @@ class ZFSTest(unittest.TestCase):
+                 f.flush()
+                 lzc.lzc_snapshot([snap2])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             estimate = lzc.lzc_send_space(snap2, snap1)
+ 
+             fd = output.fileno()
+@@ -1640,7 +1646,7 @@ class ZFSTest(unittest.TestCase):
+     def test_send_same_snap(self):
+         snap1 = ZFSTest.pool.makeName(b"fs1@snap1")
+         lzc.lzc_snapshot([snap1])
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             fd = output.fileno()
+             with self.assertRaises(lzc_exc.SnapshotMismatch):
+                 lzc.lzc_send(snap1, snap1, fd)
+@@ -1652,7 +1658,7 @@ class ZFSTest(unittest.TestCase):
+         lzc.lzc_snapshot([snap1])
+         lzc.lzc_snapshot([snap2])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             fd = output.fileno()
+             with self.assertRaises(lzc_exc.SnapshotMismatch):
+                 lzc.lzc_send(snap1, snap2, fd)
+@@ -1664,7 +1670,7 @@ class ZFSTest(unittest.TestCase):
+         lzc.lzc_snapshot([snap1])
+         lzc.lzc_snapshot([snap2])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             fd = output.fileno()
+             with self.assertRaises(lzc_exc.SnapshotMismatch):
+                 lzc.lzc_send(snap1, snap2, fd)
+@@ -1676,7 +1682,7 @@ class ZFSTest(unittest.TestCase):
+         lzc.lzc_snapshot([snap1])
+         lzc.lzc_snapshot([snap2])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             fd = output.fileno()
+             with self.assertRaises(lzc_exc.PoolsDiffer):
+                 lzc.lzc_send(snap1, snap2, fd)
+@@ -1687,7 +1693,7 @@ class ZFSTest(unittest.TestCase):
+ 
+         lzc.lzc_snapshot([snap1])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             fd = output.fileno()
+             with self.assertRaises(lzc_exc.SnapshotNotFound) as ctx:
+                 lzc.lzc_send(snap1, snap2, fd)
+@@ -1707,7 +1713,7 @@ class ZFSTest(unittest.TestCase):
+ 
+         lzc.lzc_snapshot([snap1])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             fd = output.fileno()
+             with self.assertRaises(lzc_exc.NameInvalid) as ctx:
+                 lzc.lzc_send(snap2, snap1, fd)
+@@ -1729,7 +1735,7 @@ class ZFSTest(unittest.TestCase):
+ 
+         lzc.lzc_snapshot([snap])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             fd = output.fileno()
+             lzc.lzc_send(fs, snap, fd)
+             lzc.lzc_send(fs, None, fd)
+@@ -1740,7 +1746,7 @@ class ZFSTest(unittest.TestCase):
+ 
+         lzc.lzc_snapshot([snap])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             fd = output.fileno()
+             with self.assertRaises(lzc_exc.NameInvalid):
+                 lzc.lzc_send(snap, fs, fd)
+@@ -1756,7 +1762,7 @@ class ZFSTest(unittest.TestCase):
+         lzc.lzc_bookmark({bmark: snap2})
+         lzc.lzc_destroy_snaps([snap2], defer=False)
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             fd = output.fileno()
+             with self.assertRaises(lzc_exc.NameInvalid):
+                 lzc.lzc_send(bmark, snap1, fd)
+@@ -1774,7 +1780,7 @@ class ZFSTest(unittest.TestCase):
+         lzc.lzc_bookmark({bmark: snap1})
+         lzc.lzc_destroy_snaps([snap1], defer=False)
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as output:
++        with tempfile.TemporaryFile(suffix='.zstream') as output:
+             fd = output.fileno()
+             lzc.lzc_send(snap2, bmark, fd)
+ 
+@@ -1854,7 +1860,7 @@ class ZFSTest(unittest.TestCase):
+         lzc.lzc_snapshot([snap])
+ 
+         with tempfile.NamedTemporaryFile(
+-                suffix='.ztream', delete=False) as output:
++                suffix='.zstream', delete=False) as output:
+             # tempfile always opens a temporary file in read-write mode
+             # regardless of the specified mode, so we have to open it again.
+             os.chmod(output.name, stat.S_IRUSR)
+@@ -1871,7 +1877,7 @@ class ZFSTest(unittest.TestCase):
+         with temp_file_in_fs(ZFSTest.pool.makeName(b"fs1")) as name:
+             lzc.lzc_snapshot([src])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(dst, stream.fileno())
+@@ -1892,11 +1898,11 @@ class ZFSTest(unittest.TestCase):
+         with temp_file_in_fs(ZFSTest.pool.makeName(b"fs1")) as name:
+             lzc.lzc_snapshot([src2])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src1, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(dst1, stream.fileno())
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src2, src1, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(dst2, stream.fileno())
+@@ -1933,14 +1939,14 @@ class ZFSTest(unittest.TestCase):
+         clone_dst = ZFSTest.pool.makeName(b"fs1/fs/recv-clone@snap")
+ 
+         lzc.lzc_snapshot([orig_src])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(orig_src, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(orig_dst, stream.fileno())
+ 
+         lzc.lzc_clone(clone, orig_src)
+         lzc.lzc_snapshot([clone_snap])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(clone_snap, orig_src, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(clone_dst, stream.fileno(), origin=orig_dst)
+@@ -1953,7 +1959,7 @@ class ZFSTest(unittest.TestCase):
+         with temp_file_in_fs(ZFSTest.pool.makeName(b"fs1")):
+             lzc.lzc_snapshot([src])
+         lzc.lzc_create(dstfs)
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises((
+@@ -1992,7 +1998,7 @@ class ZFSTest(unittest.TestCase):
+             lzc.lzc_snapshot([src])
+         lzc.lzc_create(dstfs)
+         with temp_file_in_fs(dstfs):
+-            with tempfile.TemporaryFile(suffix='.ztream') as stream:
++            with tempfile.TemporaryFile(suffix='.zstream') as stream:
+                 lzc.lzc_send(src, None, stream.fileno())
+                 stream.seek(0)
+                 with self.assertRaises((
+@@ -2008,7 +2014,7 @@ class ZFSTest(unittest.TestCase):
+             lzc.lzc_snapshot([src])
+         lzc.lzc_create(dstfs)
+         lzc.lzc_snapshot([dstfs + b"@snap1"])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises((
+@@ -2024,7 +2030,7 @@ class ZFSTest(unittest.TestCase):
+             lzc.lzc_snapshot([src])
+         lzc.lzc_create(dstfs)
+         lzc.lzc_snapshot([dst])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises(lzc_exc.DatasetExists):
+@@ -2036,7 +2042,7 @@ class ZFSTest(unittest.TestCase):
+ 
+         with temp_file_in_fs(ZFSTest.pool.makeName(b"fs1")):
+             lzc.lzc_snapshot([src])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises(lzc_exc.DatasetNotFound):
+@@ -2251,14 +2257,14 @@ class ZFSTest(unittest.TestCase):
+         clone_dst = ZFSTest.pool.makeName(b"fs1/fs/recv-clone-2@snap")
+ 
+         lzc.lzc_snapshot([orig_src])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(orig_src, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(orig_dst, stream.fileno())
+ 
+         lzc.lzc_clone(clone, orig_src)
+         lzc.lzc_snapshot([clone_snap])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(clone_snap, orig_src, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises(lzc_exc.BadStream):
+@@ -2272,14 +2278,14 @@ class ZFSTest(unittest.TestCase):
+         clone_dst = ZFSTest.pool.makeName(b"fs1/fs/recv-clone-3@snap")
+ 
+         lzc.lzc_snapshot([orig_src])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(orig_src, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(orig_dst, stream.fileno())
+ 
+         lzc.lzc_clone(clone, orig_src)
+         lzc.lzc_snapshot([clone_snap])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(clone_snap, orig_src, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises(lzc_exc.NameInvalid):
+@@ -2296,7 +2302,7 @@ class ZFSTest(unittest.TestCase):
+         wrong_origin = ZFSTest.pool.makeName(b"fs1/fs@snap")
+ 
+         lzc.lzc_snapshot([orig_src])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(orig_src, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(orig_dst, stream.fileno())
+@@ -2304,7 +2310,7 @@ class ZFSTest(unittest.TestCase):
+         lzc.lzc_clone(clone, orig_src)
+         lzc.lzc_snapshot([clone_snap])
+         lzc.lzc_snapshot([wrong_origin])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(clone_snap, orig_src, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises(lzc_exc.StreamMismatch):
+@@ -2320,14 +2326,14 @@ class ZFSTest(unittest.TestCase):
+         wrong_origin = ZFSTest.pool.makeName(b"fs1/fs@snap")
+ 
+         lzc.lzc_snapshot([orig_src])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(orig_src, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(orig_dst, stream.fileno())
+ 
+         lzc.lzc_clone(clone, orig_src)
+         lzc.lzc_snapshot([clone_snap])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(clone_snap, orig_src, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises(lzc_exc.DatasetNotFound):
+@@ -2346,7 +2352,7 @@ class ZFSTest(unittest.TestCase):
+         with temp_file_in_fs(dstfs):
+             pass  # enough to taint the fs
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(dst, stream.fileno(), force=True)
+@@ -2361,7 +2367,7 @@ class ZFSTest(unittest.TestCase):
+ 
+         lzc.lzc_create(dstfs)
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+             with zfs_mount(dstfs) as mntdir:
+@@ -2391,7 +2397,7 @@ class ZFSTest(unittest.TestCase):
+             pass  # enough to taint the fs
+         lzc.lzc_snapshot([dstfs + b"@snap1"])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(dst, stream.fileno(), force=True)
+@@ -2409,7 +2415,7 @@ class ZFSTest(unittest.TestCase):
+             pass  # enough to taint the fs
+         lzc.lzc_snapshot([dst])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises(lzc_exc.DatasetExists):
+@@ -2421,7 +2427,7 @@ class ZFSTest(unittest.TestCase):
+ 
+         with temp_file_in_fs(ZFSTest.pool.makeName(b"fs1")):
+             lzc.lzc_snapshot([src])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises(lzc_exc.DatasetNotFound):
+@@ -2569,7 +2575,7 @@ class ZFSTest(unittest.TestCase):
+         with temp_file_in_fs(ZFSTest.pool.makeName(b"fs1")) as name:
+             lzc.lzc_snapshot([src])
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+ 
+@@ -2585,6 +2591,50 @@ class ZFSTest(unittest.TestCase):
+                 filecmp.cmp(
+                     os.path.join(mnt1, name), os.path.join(mnt2, name), False))
+ 
++    def test_recv_fs_below_zvol(self):
++        send = ZFSTest.pool.makeName(b"fs1@snap")
++        zvol = ZFSTest.pool.makeName(b"fs1/zvol")
++        dest = zvol + b"/fs@snap"
++        props = {b"volsize": 1024 * 1024}
++
++        lzc.lzc_snapshot([send])
++        lzc.lzc_create(zvol, ds_type='zvol', props=props)
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
++            lzc.lzc_send(send, None, stream.fileno())
++            stream.seek(0)
++            with self.assertRaises(lzc_exc.WrongParent):
++                lzc.lzc_receive(dest, stream.fileno())
++
++    def test_recv_zvol_over_fs_with_children(self):
++        parent = ZFSTest.pool.makeName(b"fs1")
++        child = parent + b"subfs"
++        zvol = ZFSTest.pool.makeName(b"fs1/zvol")
++        send = zvol + b"@snap"
++        props = {b"volsize": 1024 * 1024}
++
++        lzc.lzc_create(child)
++        lzc.lzc_create(zvol, ds_type='zvol', props=props)
++        lzc.lzc_snapshot([send])
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
++            lzc.lzc_send(send, None, stream.fileno())
++            stream.seek(0)
++            with self.assertRaises(lzc_exc.WrongParent):
++                lzc.lzc_receive(parent + b"@snap", stream.fileno(), force=True)
++
++    def test_recv_zvol_overwrite_rootds(self):
++        zvol = ZFSTest.pool.makeName(b"fs1/zvol")
++        snap = zvol + b"@snap"
++        rootds = ZFSTest.pool.getRoot().getName()
++        props = {b"volsize": 1024 * 1024}
++
++        lzc.lzc_create(zvol, ds_type='zvol', props=props)
++        lzc.lzc_snapshot([snap])
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
++            lzc.lzc_send(snap, None, stream.fileno())
++            stream.seek(0)
++            with self.assertRaises(lzc_exc.WrongParent):
++                lzc.lzc_receive(rootds + b"@snap", stream.fileno(), force=True)
++
+     def test_send_full_across_clone_branch_point(self):
+         origfs = ZFSTest.pool.makeName(b"fs2")
+ 
+@@ -2596,7 +2646,7 @@ class ZFSTest(unittest.TestCase):
+ 
+         (_, (_, tosnap, _)) = make_snapshots(clonefs, None, b"snap", None)
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(tosnap, None, stream.fileno())
+ 
+     def test_send_incr_across_clone_branch_point(self):
+@@ -2610,7 +2660,7 @@ class ZFSTest(unittest.TestCase):
+ 
+         (_, (_, tosnap, _)) = make_snapshots(clonefs, None, b"snap", None)
+ 
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(tosnap, fromsnap, stream.fileno())
+ 
+     def test_send_resume_token_full(self):
+@@ -2625,7 +2675,7 @@ class ZFSTest(unittest.TestCase):
+                     f.flush()
+         lzc.lzc_snapshot([src])
+ 
+-        with tempfile.NamedTemporaryFile(suffix='.ztream') as stream:
++        with tempfile.NamedTemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(src, None, stream.fileno())
+             stream.seek(0)
+             stream.truncate(1024 * 3)
+@@ -2656,7 +2706,7 @@ class ZFSTest(unittest.TestCase):
+             resume_values = packed_nvlist_out(payload, packed_size)
+             resumeobj = resume_values.get(b'object')
+             resumeoff = resume_values.get(b'offset')
+-            with tempfile.NamedTemporaryFile(suffix='.ztream') as rstream:
++            with tempfile.NamedTemporaryFile(suffix='.zstream') as rstream:
+                 lzc.lzc_send_resume(
+                     src, None, rstream.fileno(), None, resumeobj, resumeoff)
+                 rstream.seek(0)
+@@ -2670,7 +2720,7 @@ class ZFSTest(unittest.TestCase):
+         dst2 = dstfs.getSnap()
+ 
+         lzc.lzc_snapshot([snap1])
+-        with tempfile.NamedTemporaryFile(suffix='.ztream') as stream:
++        with tempfile.NamedTemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(snap1, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(dst1, stream.fileno())
+@@ -2682,7 +2732,7 @@ class ZFSTest(unittest.TestCase):
+                     f.flush()
+         lzc.lzc_snapshot([snap2])
+ 
+-        with tempfile.NamedTemporaryFile(suffix='.ztream') as stream:
++        with tempfile.NamedTemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(snap2, snap1, stream.fileno())
+             stream.seek(0)
+             stream.truncate(1024 * 3)
+@@ -2712,7 +2762,7 @@ class ZFSTest(unittest.TestCase):
+             resume_values = packed_nvlist_out(payload, packed_size)
+             resumeobj = resume_values.get(b'object')
+             resumeoff = resume_values.get(b'offset')
+-            with tempfile.NamedTemporaryFile(suffix='.ztream') as rstream:
++            with tempfile.NamedTemporaryFile(suffix='.zstream') as rstream:
+                 lzc.lzc_send_resume(
+                     snap2, snap1, rstream.fileno(), None, resumeobj, resumeoff)
+                 rstream.seek(0)
+@@ -2731,7 +2781,7 @@ class ZFSTest(unittest.TestCase):
+ 
+         recvfs = ZFSTest.pool.makeName(b"fs1/recv-clone-30")
+         recvsnap = recvfs + b"@snap"
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(tosnap, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(recvsnap, stream.fileno())
+@@ -2741,7 +2791,7 @@ class ZFSTest(unittest.TestCase):
+         tosnap = ZFSTest.pool.makeName(b"recv@snap1")
+ 
+         lzc.lzc_snapshot([fromsnap])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(fromsnap, None, stream.fileno())
+             stream.seek(0)
+             (header, c_header) = lzc.receive_header(stream.fileno())
+@@ -2752,7 +2802,7 @@ class ZFSTest(unittest.TestCase):
+         tosnap = ZFSTest.pool.makeName(b"recv@snap1")
+ 
+         lzc.lzc_snapshot([fromsnap])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(fromsnap, None, stream.fileno())
+             size = os.fstat(stream.fileno()).st_size
+             stream.seek(0)
+@@ -2770,7 +2820,7 @@ class ZFSTest(unittest.TestCase):
+         }
+ 
+         lzc.lzc_snapshot([fromsnap])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(fromsnap, None, stream.fileno())
+             stream.seek(0)
+             (header, c_header) = lzc.receive_header(stream.fileno())
+@@ -2789,7 +2839,7 @@ class ZFSTest(unittest.TestCase):
+         }
+ 
+         lzc.lzc_snapshot([fromsnap])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(fromsnap, None, stream.fileno())
+             stream.seek(0)
+             (header, c_header) = lzc.receive_header(stream.fileno())
+@@ -2813,7 +2863,7 @@ class ZFSTest(unittest.TestCase):
+         }
+ 
+         lzc.lzc_snapshot([fromsnap])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(fromsnap, None, stream.fileno())
+             stream.seek(0)
+             (header, c_header) = lzc.receive_header(stream.fileno())
+@@ -2840,7 +2890,7 @@ class ZFSTest(unittest.TestCase):
+         }
+ 
+         lzc.lzc_snapshot([fromsnap])
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(fromsnap, None, stream.fileno())
+             stream.seek(0)
+             (header, c_header) = lzc.receive_header(stream.fileno())
+@@ -2869,11 +2919,11 @@ class ZFSTest(unittest.TestCase):
+         recvfs = ZFSTest.pool.makeName(b"fs1/recv-clone-32")
+         recvsnap1 = recvfs + b"@snap1"
+         recvsnap2 = recvfs + b"@snap2"
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(fromsnap, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(recvsnap1, stream.fileno())
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(tosnap, fromsnap, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises(lzc_exc.BadStream):
+@@ -2893,11 +2943,11 @@ class ZFSTest(unittest.TestCase):
+         recvfs = ZFSTest.pool.makeName(b"fs1/recv-clone-31")
+         recvsnap1 = recvfs + b"@snap1"
+         recvsnap2 = recvfs + b"@snap2"
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(fromsnap, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(recvsnap1, stream.fileno())
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(tosnap, fromsnap, stream.fileno())
+             stream.seek(0)
+             with self.assertRaises(lzc_exc.BadStream):
+@@ -2918,11 +2968,11 @@ class ZFSTest(unittest.TestCase):
+         recvsnap1 = recvfs1 + b"@snap"
+         recvfs2 = ZFSTest.pool.makeName(b"fs1/recv-clone-33_2")
+         recvsnap2 = recvfs2 + b"@snap"
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(fromsnap, None, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(recvsnap1, stream.fileno())
+-        with tempfile.TemporaryFile(suffix='.ztream') as stream:
++        with tempfile.TemporaryFile(suffix='.zstream') as stream:
+             lzc.lzc_send(tosnap, fromsnap, stream.fileno())
+             stream.seek(0)
+             lzc.lzc_receive(recvsnap2, stream.fileno(), origin=recvsnap1)
+@@ -3856,6 +3906,18 @@ zfs.sync.snapshot('""" + pool + b"""@zcp')
+         with self.assertRaises(lzc_exc.FilesystemNotFound):
+             lzc.lzc_rename(src, tgt)
+ 
++    @needs_support(lzc.lzc_rename)
++    def test_rename_parent_is_zvol(self):
++        src = ZFSTest.pool.makeName(b"source")
++        zvol = ZFSTest.pool.makeName(b"parent")
++        tgt = zvol + b"/target"
++        props = {b"volsize": 1024 * 1024}
++
++        lzc.lzc_create(src)
++        lzc.lzc_create(zvol, ds_type='zvol', props=props)
++        with self.assertRaises(lzc_exc.WrongParent):
++            lzc.lzc_rename(src, tgt)
++
+     @needs_support(lzc.lzc_destroy)
+     def test_destroy(self):
+         fs = ZFSTest.pool.makeName(b"test-fs")
+diff --git a/include/libzfs.h b/include/libzfs.h
+index 85b0bc0dd..72d956b41 100644
+--- a/include/libzfs.h
++++ b/include/libzfs.h
+@@ -142,6 +142,7 @@ typedef enum zfs_error {
+ 	EZFS_TOOMANY,		/* argument list too long */
+ 	EZFS_INITIALIZING,	/* currently initializing */
+ 	EZFS_NO_INITIALIZE,	/* no active initialize */
++	EZFS_WRONG_PARENT,	/* invalid parent dataset (e.g ZVOL) */
+ 	EZFS_UNKNOWN
+ } zfs_error_t;
+ 
+diff --git a/include/sys/fs/zfs.h b/include/sys/fs/zfs.h
+index 945853739..395d2e27f 100644
+--- a/include/sys/fs/zfs.h
++++ b/include/sys/fs/zfs.h
+@@ -1256,6 +1256,7 @@ typedef enum {
+ 	ZFS_ERR_IOC_ARG_UNAVAIL,
+ 	ZFS_ERR_IOC_ARG_REQUIRED,
+ 	ZFS_ERR_IOC_ARG_BADTYPE,
++	ZFS_ERR_WRONG_PARENT,
+ } zfs_errno_t;
+ 
+ /*
+diff --git a/lib/libzfs/libzfs_dataset.c b/lib/libzfs/libzfs_dataset.c
+index 6445c9d7a..be86e5692 100644
+--- a/lib/libzfs/libzfs_dataset.c
++++ b/lib/libzfs/libzfs_dataset.c
+@@ -3809,11 +3809,6 @@ zfs_create(libzfs_handle_t *hdl, const char *path, zfs_type_t type,
+ 			    "no such parent '%s'"), parent);
+ 			return (zfs_error(hdl, EZFS_NOENT, errbuf));
+ 
+-		case EINVAL:
+-			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+-			    "parent '%s' is not a filesystem"), parent);
+-			return (zfs_error(hdl, EZFS_BADTYPE, errbuf));
+-
+ 		case ENOTSUP:
+ 			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+ 			    "pool must be upgraded to set this "
+diff --git a/lib/libzfs/libzfs_sendrecv.c b/lib/libzfs/libzfs_sendrecv.c
+index ae24454d7..1d8292101 100644
+--- a/lib/libzfs/libzfs_sendrecv.c
++++ b/lib/libzfs/libzfs_sendrecv.c
+@@ -28,7 +28,7 @@
+  * Copyright (c) 2013 Steven Hartland. All rights reserved.
+  * Copyright 2015, OmniTI Computer Consulting, Inc. All rights reserved.
+  * Copyright 2016 Igor Kozhukhov <ikozhukhov@gmail.com>
+- * Copyright (c) 2017, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
++ * Copyright (c) 2018, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
+  */
+ 
+ #include <assert.h>
+@@ -3912,6 +3912,7 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
+ 		 *  - we are resuming a failed receive.
+ 		 */
+ 		if (stream_wantsnewfs) {
++			boolean_t is_volume = drrb->drr_type == DMU_OST_ZVOL;
+ 			if (!flags->force) {
+ 				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+ 				    "destination '%s' exists\n"
+@@ -3928,6 +3929,24 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
+ 				err = zfs_error(hdl, EZFS_EXISTS, errbuf);
+ 				goto out;
+ 			}
++			if (is_volume && strrchr(name, '/') == NULL) {
++				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
++				    "destination %s is the root dataset\n"
++				    "cannot overwrite with a ZVOL"),
++				    name);
++				err = zfs_error(hdl, EZFS_EXISTS, errbuf);
++				goto out;
++			}
++			if (is_volume &&
++			    ioctl(hdl->libzfs_fd, ZFS_IOC_DATASET_LIST_NEXT,
++			    &zc) == 0) {
++				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
++				    "destination has children (eg. %s)\n"
++				    "cannot overwrite with a ZVOL"),
++				    zc.zc_name);
++				err = zfs_error(hdl, EZFS_WRONG_PARENT, errbuf);
++				goto out;
++			}
+ 		}
+ 
+ 		if ((zhp = zfs_open(hdl, name,
+@@ -4051,6 +4070,20 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
+ 			goto out;
+ 		}
+ 
++		/* validate parent */
++		zhp = zfs_open(hdl, name, ZFS_TYPE_DATASET);
++		if (zhp == NULL) {
++			err = zfs_error(hdl, EZFS_BADRESTORE, errbuf);
++			goto out;
++		}
++		if (zfs_get_type(zhp) != ZFS_TYPE_FILESYSTEM) {
++			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
++			    "parent '%s' is not a filesystem"), name);
++			err = zfs_error(hdl, EZFS_WRONG_PARENT, errbuf);
++			zfs_close(zhp);
++			goto out;
++		}
++
+ 		/*
+ 		 * It is invalid to receive a properties stream that was
+ 		 * unencrypted on the send side as a child of an encrypted
+@@ -4068,23 +4101,18 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
+ 		    zfs_prop_to_name(ZFS_PROP_ENCRYPTION))) {
+ 			uint64_t crypt;
+ 
+-			zhp = zfs_open(hdl, name, ZFS_TYPE_DATASET);
+-			if (zhp == NULL) {
+-				err = zfs_error(hdl, EZFS_BADRESTORE, errbuf);
+-				goto out;
+-			}
+-
+ 			crypt = zfs_prop_get_int(zhp, ZFS_PROP_ENCRYPTION);
+-			zfs_close(zhp);
+ 
+ 			if (crypt != ZIO_CRYPT_OFF) {
+ 				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+ 				    "parent '%s' must not be encrypted to "
+ 				    "receive unenecrypted property"), name);
+ 				err = zfs_error(hdl, EZFS_BADPROP, errbuf);
++				zfs_close(zhp);
+ 				goto out;
+ 			}
+ 		}
++		zfs_close(zhp);
+ 
+ 		newfs = B_TRUE;
+ 		*cp = '/';
+diff --git a/lib/libzfs/libzfs_util.c b/lib/libzfs/libzfs_util.c
+index d7401cdf4..4ed885880 100644
+--- a/lib/libzfs/libzfs_util.c
++++ b/lib/libzfs/libzfs_util.c
+@@ -290,6 +290,8 @@ libzfs_error_description(libzfs_handle_t *hdl)
+ 	case EZFS_NO_INITIALIZE:
+ 		return (dgettext(TEXT_DOMAIN, "there is no active "
+ 		    "initialization"));
++	case EZFS_WRONG_PARENT:
++		return (dgettext(TEXT_DOMAIN, "invalid parent dataset"));
+ 	case EZFS_UNKNOWN:
+ 		return (dgettext(TEXT_DOMAIN, "unknown error"));
+ 	default:
+@@ -471,6 +473,9 @@ zfs_standard_error_fmt(libzfs_handle_t *hdl, int error, const char *fmt, ...)
+ 	case ZFS_ERR_IOC_ARG_BADTYPE:
+ 		zfs_verror(hdl, EZFS_IOC_NOTSUPPORTED, fmt, ap);
+ 		break;
++	case ZFS_ERR_WRONG_PARENT:
++		zfs_verror(hdl, EZFS_WRONG_PARENT, fmt, ap);
++		break;
+ 	default:
+ 		zfs_error_aux(hdl, strerror(error));
+ 		zfs_verror(hdl, EZFS_UNKNOWN, fmt, ap);
+diff --git a/module/zfs/dmu_objset.c b/module/zfs/dmu_objset.c
+index a8304c18d..fa80e3a61 100644
+--- a/module/zfs/dmu_objset.c
++++ b/module/zfs/dmu_objset.c
+@@ -29,6 +29,7 @@
+  * Copyright (c) 2016 Actifio, Inc. All rights reserved.
+  * Copyright 2017 Nexenta Systems, Inc.
+  * Copyright (c) 2017 Open-E, Inc. All Rights Reserved.
++ * Copyright (c) 2018, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
+  */
+ 
+ /* Portions Copyright 2010 Robert Milkowski */
+@@ -1118,6 +1119,8 @@ dmu_objset_create_check(void *arg, dmu_tx_t *tx)
+ 	dmu_objset_create_arg_t *doca = arg;
+ 	dsl_pool_t *dp = dmu_tx_pool(tx);
+ 	dsl_dir_t *pdd;
++	dsl_dataset_t *parentds;
++	objset_t *parentos;
+ 	const char *tail;
+ 	int error;
+ 
+@@ -1146,7 +1149,30 @@ dmu_objset_create_check(void *arg, dmu_tx_t *tx)
+ 
+ 	error = dsl_fs_ss_limit_check(pdd, 1, ZFS_PROP_FILESYSTEM_LIMIT, NULL,
+ 	    doca->doca_cred);
++	if (error != 0) {
++		dsl_dir_rele(pdd, FTAG);
++		return (error);
++	}
+ 
++	/* can't create below anything but filesystems (eg. no ZVOLs) */
++	error = dsl_dataset_hold_obj(pdd->dd_pool,
++	    dsl_dir_phys(pdd)->dd_head_dataset_obj, FTAG, &parentds);
++	if (error != 0) {
++		dsl_dir_rele(pdd, FTAG);
++		return (error);
++	}
++	error = dmu_objset_from_ds(parentds, &parentos);
++	if (error != 0) {
++		dsl_dataset_rele(parentds, FTAG);
++		dsl_dir_rele(pdd, FTAG);
++		return (error);
++	}
++	if (dmu_objset_type(parentos) != DMU_OST_ZFS) {
++		dsl_dataset_rele(parentds, FTAG);
++		dsl_dir_rele(pdd, FTAG);
++		return (SET_ERROR(ZFS_ERR_WRONG_PARENT));
++	}
++	dsl_dataset_rele(parentds, FTAG);
+ 	dsl_dir_rele(pdd, FTAG);
+ 
+ 	return (error);
+diff --git a/module/zfs/dmu_recv.c b/module/zfs/dmu_recv.c
+index 4ac6f2f17..e05b5ad82 100644
+--- a/module/zfs/dmu_recv.c
++++ b/module/zfs/dmu_recv.c
+@@ -26,6 +26,7 @@
+  * Copyright 2014 HybridCluster. All rights reserved.
+  * Copyright 2016 RackTop Systems.
+  * Copyright (c) 2016 Actifio, Inc. All rights reserved.
++ * Copyright (c) 2018, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
+  */
+ 
+ #include <sys/dmu.h>
+@@ -79,6 +80,7 @@ recv_begin_check_existing_impl(dmu_recv_begin_arg_t *drba, dsl_dataset_t *ds,
+     uint64_t fromguid, uint64_t featureflags)
+ {
+ 	uint64_t val;
++	uint64_t children;
+ 	int error;
+ 	dsl_pool_t *dp = ds->ds_dir->dd_pool;
+ 	boolean_t encrypted = ds->ds_dir->dd_crypto_obj != 0;
+@@ -99,6 +101,15 @@ recv_begin_check_existing_impl(dmu_recv_begin_arg_t *drba, dsl_dataset_t *ds,
+ 	if (error != ENOENT)
+ 		return (error == 0 ? EEXIST : error);
+ 
++	/* must not have children if receiving a ZVOL */
++	error = zap_count(dp->dp_meta_objset,
++	    dsl_dir_phys(ds->ds_dir)->dd_child_dir_zapobj, &children);
++	if (error != 0)
++		return (error);
++	if (drba->drba_cookie->drc_drrb->drr_type != DMU_OST_ZFS &&
++	    children > 0)
++		return (SET_ERROR(ZFS_ERR_WRONG_PARENT));
++
+ 	/*
+ 	 * Check snapshot limit before receiving. We'll recheck again at the
+ 	 * end, but might as well abort before receiving if we're already over
+@@ -283,6 +294,7 @@ dmu_recv_begin_check(void *arg, dmu_tx_t *tx)
+ 	} else if (error == ENOENT) {
+ 		/* target fs does not exist; must be a full backup or clone */
+ 		char buf[ZFS_MAX_DATASET_NAME_LEN];
++		objset_t *os;
+ 
+ 		/*
+ 		 * If it's a non-clone incremental, we are missing the
+@@ -352,6 +364,17 @@ dmu_recv_begin_check(void *arg, dmu_tx_t *tx)
+ 			return (error);
+ 		}
+ 
++		/* can't recv below anything but filesystems (eg. no ZVOLs) */
++		error = dmu_objset_from_ds(ds, &os);
++		if (error != 0) {
++			dsl_dataset_rele_flags(ds, dsflags, FTAG);
++			return (error);
++		}
++		if (dmu_objset_type(os) != DMU_OST_ZFS) {
++			dsl_dataset_rele_flags(ds, dsflags, FTAG);
++			return (SET_ERROR(ZFS_ERR_WRONG_PARENT));
++		}
++
+ 		if (drba->drba_origin != NULL) {
+ 			dsl_dataset_t *origin;
+ 
+@@ -381,6 +404,7 @@ dmu_recv_begin_check(void *arg, dmu_tx_t *tx)
+ 			dsl_dataset_rele_flags(origin,
+ 			    dsflags, FTAG);
+ 		}
++
+ 		dsl_dataset_rele_flags(ds, dsflags, FTAG);
+ 		error = 0;
+ 	}
+diff --git a/module/zfs/dsl_dir.c b/module/zfs/dsl_dir.c
+index 5b6ce0420..b3b677fb8 100644
+--- a/module/zfs/dsl_dir.c
++++ b/module/zfs/dsl_dir.c
+@@ -25,6 +25,7 @@
+  * Copyright (c) 2014 Joyent, Inc. All rights reserved.
+  * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
+  * Copyright (c) 2016 Actifio, Inc. All rights reserved.
++ * Copyright (c) 2018, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
+  */
+ 
+ #include <sys/dmu.h>
+@@ -1888,6 +1889,8 @@ dsl_dir_rename_check(void *arg, dmu_tx_t *tx)
+ 	dsl_pool_t *dp = dmu_tx_pool(tx);
+ 	dsl_dir_t *dd, *newparent;
+ 	dsl_valid_rename_arg_t dvra;
++	dsl_dataset_t *parentds;
++	objset_t *parentos;
+ 	const char *mynewname;
+ 	int error;
+ 
+@@ -1918,6 +1921,29 @@ dsl_dir_rename_check(void *arg, dmu_tx_t *tx)
+ 		return (SET_ERROR(EEXIST));
+ 	}
+ 
++	/* can't rename below anything but filesystems (eg. no ZVOLs) */
++	error = dsl_dataset_hold_obj(newparent->dd_pool,
++	    dsl_dir_phys(newparent)->dd_head_dataset_obj, FTAG, &parentds);
++	if (error != 0) {
++		dsl_dir_rele(newparent, FTAG);
++		dsl_dir_rele(dd, FTAG);
++		return (error);
++	}
++	error = dmu_objset_from_ds(parentds, &parentos);
++	if (error != 0) {
++		dsl_dataset_rele(parentds, FTAG);
++		dsl_dir_rele(newparent, FTAG);
++		dsl_dir_rele(dd, FTAG);
++		return (error);
++	}
++	if (dmu_objset_type(parentos) != DMU_OST_ZFS) {
++		dsl_dataset_rele(parentds, FTAG);
++		dsl_dir_rele(newparent, FTAG);
++		dsl_dir_rele(dd, FTAG);
++		return (SET_ERROR(ZFS_ERR_WRONG_PARENT));
++	}
++	dsl_dataset_rele(parentds, FTAG);
++
+ 	ASSERT3U(strnlen(ddra->ddra_newname, ZFS_MAX_DATASET_NAME_LEN),
+ 	    <, ZFS_MAX_DATASET_NAME_LEN);
+ 	ASSERT3U(strnlen(ddra->ddra_oldname, ZFS_MAX_DATASET_NAME_LEN),
+diff --git a/module/zfs/zfs_ioctl.c b/module/zfs/zfs_ioctl.c
+index 0dfa01684..f4aea57d4 100644
+--- a/module/zfs/zfs_ioctl.c
++++ b/module/zfs/zfs_ioctl.c
+@@ -33,7 +33,7 @@
+  * Copyright (c) 2014 Integros [integros.com]
+  * Copyright 2016 Toomas Soome <tsoome@me.com>
+  * Copyright (c) 2016 Actifio, Inc. All rights reserved.
+- * Copyright (c) 2017, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
++ * Copyright (c) 2018, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
+  * Copyright (c) 2017 Datto Inc. All rights reserved.
+  * Copyright 2017 RackTop Systems.
+  * Copyright (c) 2017 Open-E, Inc. All Rights Reserved.
+@@ -3082,8 +3082,9 @@ zfs_fill_zplprops_impl(objset_t *os, uint64_t zplver,
+ 
+ 	ASSERT(zplprops != NULL);
+ 
++	/* parent dataset must be a filesystem */
+ 	if (os != NULL && os->os_phys->os_type != DMU_OST_ZFS)
+-		return (SET_ERROR(EINVAL));
++		return (SET_ERROR(ZFS_ERR_WRONG_PARENT));
+ 
+ 	/*
+ 	 * Pull out creator prop choices, if any.
+@@ -3162,15 +3163,11 @@ zfs_fill_zplprops(const char *dataset, nvlist_t *createprops,
+ 	uint64_t zplver = ZPL_VERSION;
+ 	objset_t *os = NULL;
+ 	char parentname[ZFS_MAX_DATASET_NAME_LEN];
+-	char *cp;
+ 	spa_t *spa;
+ 	uint64_t spa_vers;
+ 	int error;
+ 
+-	(void) strlcpy(parentname, dataset, sizeof (parentname));
+-	cp = strrchr(parentname, '/');
+-	ASSERT(cp != NULL);
+-	cp[0] = '\0';
++	zfs_get_parent(dataset, parentname, sizeof (parentname));
+ 
+ 	if ((error = spa_open(dataset, &spa, FTAG)) != 0)
+ 		return (error);
+diff --git a/tests/runfiles/linux.run b/tests/runfiles/linux.run
+index d3ecf6274..8ab5e7033 100644
+--- a/tests/runfiles/linux.run
++++ b/tests/runfiles/linux.run
+@@ -887,7 +887,8 @@ tags = ['functional', 'zvol', 'zvol_cli']
+ [tests/functional/zvol/zvol_misc]
+ tests = ['zvol_misc_001_neg', 'zvol_misc_002_pos', 'zvol_misc_003_neg',
+     'zvol_misc_004_pos', 'zvol_misc_005_neg', 'zvol_misc_006_pos',
+-    'zvol_misc_snapdev', 'zvol_misc_volmode', 'zvol_misc_zil']
++    'zvol_misc_hierarchy', 'zvol_misc_snapdev', 'zvol_misc_volmode',
++    'zvol_misc_zil']
+ tags = ['functional', 'zvol', 'zvol_misc']
+ 
+ [tests/functional/zvol/zvol_swap]
+diff --git a/tests/zfs-tests/tests/functional/zvol/zvol_misc/Makefile.am b/tests/zfs-tests/tests/functional/zvol/zvol_misc/Makefile.am
+index a2c95a3eb..57ffbd565 100644
+--- a/tests/zfs-tests/tests/functional/zvol/zvol_misc/Makefile.am
++++ b/tests/zfs-tests/tests/functional/zvol/zvol_misc/Makefile.am
+@@ -8,6 +8,7 @@ dist_pkgdata_SCRIPTS = \
+ 	zvol_misc_004_pos.ksh \
+ 	zvol_misc_005_neg.ksh \
+ 	zvol_misc_006_pos.ksh \
++	zvol_misc_hierarchy.ksh \
+ 	zvol_misc_snapdev.ksh \
+ 	zvol_misc_volmode.ksh \
+ 	zvol_misc_zil.ksh
+diff --git a/tests/zfs-tests/tests/functional/zvol/zvol_misc/zvol_misc_hierarchy.ksh b/tests/zfs-tests/tests/functional/zvol/zvol_misc/zvol_misc_hierarchy.ksh
+new file mode 100755
+index 000000000..1431f0b1f
+--- /dev/null
++++ b/tests/zfs-tests/tests/functional/zvol/zvol_misc/zvol_misc_hierarchy.ksh
+@@ -0,0 +1,93 @@
++#!/bin/ksh -p
++#
++# CDDL HEADER START
++#
++# This file and its contents are supplied under the terms of the
++# Common Development and Distribution License ("CDDL"), version 1.0.
++# You may only use this file in accordance with the terms of version
++# 1.0 of the CDDL.
++#
++# A full copy of the text of the CDDL should have accompanied this
++# source.  A copy of the CDDL is also available via the Internet at
++# http://www.illumos.org/license/CDDL.
++#
++# CDDL HEADER END
++#
++
++#
++# Copyright 2018, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
++#
++
++. $STF_SUITE/include/libtest.shlib
++
++#
++# DESCRIPTION:
++# ZVOLs cannot have children datasets: verify zfs commands respect this
++# hierarchy rule.
++#
++# STRATEGY:
++# 1. Create a filesystem and a ZVOL
++# 2. Verify 'zfs recv' will not (force-)receive a ZVOL over the root dataset
++# 3. Verify 'zfs recv' cannot receive a ZVOL overwriting datasets with children
++# 4. Verify 'zfs recv' cannot receive datasets below a ZVOL
++# 5. Verify 'zfs create' cannot create datasets under a ZVOL
++# 6. Verify 'zfs rename' cannot move datasets under a ZVOL
++#
++
++verify_runnable "both"
++
++function cleanup
++{
++	destroy_pool "$poolname"
++	log_must rm -f "$vdevfile" "$streamfile_fs" "$streamfile_zvol"
++}
++
++log_assert "ZVOLs cannot have children datasets: verify zfs commands respect "\
++	"this hierarchy rule"
++log_onexit cleanup
++
++poolname="$TESTPOOL-zvol_hierarchy"
++vdevfile="$TEST_BASE_DIR/vdevfile.$$"
++streamfile_fs="$TEST_BASE_DIR/streamfile_fs.$$"
++streamfile_zvol="$TEST_BASE_DIR/streamfile_zvol.$$"
++
++# 1. Create filesystems and ZVOLs
++# NOTE: set "mountpoint=none" just to speed up the test process
++log_must truncate -s $MINVDEVSIZE "$vdevfile"
++log_must zpool create -O mountpoint=none "$poolname" "$vdevfile"
++log_must zfs create "$poolname/sendfs"
++log_must zfs create -V 1M -s "$poolname/sendvol"
++log_must zfs snapshot "$poolname/sendfs@snap"
++log_must zfs snapshot "$poolname/sendvol@snap"
++log_must eval "zfs send $poolname/sendfs@snap > $streamfile_fs"
++log_must eval "zfs send $poolname/sendvol@snap > $streamfile_zvol"
++
++# 2. Verify 'zfs recv' will not (force-)receive a ZVOL over the root dataset
++log_mustnot eval "zfs receive -F $poolname < $streamfile_zvol"
++
++# 3. Verify 'zfs recv' cannot receive a ZVOL overwriting datasets with children
++log_must zfs create "$poolname/fs"
++log_must zfs create "$poolname/fs/subfs"
++log_mustnot eval "zfs receive -F $poolname/fs < $streamfile_zvol"
++log_must zfs destroy "$poolname/fs/subfs"
++log_must eval "zfs receive -F $poolname/fs < $streamfile_zvol"
++
++# 4. Verify 'zfs recv' cannot receive datasets below a ZVOL
++log_must zfs create -V 1M -s "$poolname/volume"
++log_mustnot eval "zfs receive $poolname/volume/subfs < $streamfile_fs"
++log_mustnot eval "zfs receive $poolname/volume/subvol < $streamfile_zvol"
++
++# 5. Verify 'zfs create' cannot create datasets under a ZVOL
++log_must zfs create -V 1M -s "$poolname/createvol"
++log_mustnot zfs create "$poolname/createvol/fs"
++log_mustnot zfs create -V 1M -s "$poolname/createvol/vol"
++
++# 6. Verify 'zfs rename' cannot move datasets under a ZVOL
++log_must zfs create "$poolname/movefs"
++log_must zfs create -V 1M -s "$poolname/movevol"
++log_must zfs create -V 1M -s "$poolname/renamevol"
++log_mustnot zfs rename "$poolname/fs" "$poolname/renamevol/fs"
++log_mustnot zfs rename "$poolname/vol" "$poolname/renamevol/vol"
++
++log_pass "ZVOLs cannot have children datasets and zfs commands enforce this "\
++	"rule"

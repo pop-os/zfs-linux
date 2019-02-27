@@ -40,3 +40,13 @@ init-debian-openrc-workaround.patch
 3302-linux-5-0-disable-vector-instructions-on-5-0-kernels.patch
 3303-linux-5-0-convert-ms-macros-to-sb.patch
 3304-linux-5-0-fix-bio-set-dev.patch
+clarify-zpool-iostat-statistics-reporting.patch
+delay-injection-can-cause-indefinitely-hung-zios.patch
+dont-enter-zvols-rangelock-for-read-bio-with-size-0.patch
+fix-zdb-crash.patch
+#linux-4.20-compat-fix-verify-rw-read-held-blah.patch
+#prevent-user-accounting-on-readonly-pool.patch
+zfs-mount-manpage-should-document-legacy-behaviour.patch
+#zfs-mounted-nfsv3-shares-fail-lock-reclaims.patch
+#zvols-should-not-be-allowed-to-have-children.patch
+#allow-rename-of-in-use-zvol-dataset.patch
