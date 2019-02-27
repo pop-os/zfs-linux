@@ -1,7 +1,5 @@
 #!/bin/sh
 set -xe
-DEB_HOST_ARCH=$(dpkg --print-architecture)
-kvers=$(apt-cache show linux-headers-$DEB_HOST_ARCH | grep Depends: | sed -e 's@.*linux-headers-\(.*\)\w*@\1@')
 zfsver=$(apt-cache show zfs-dkms | grep Version: | head -n1 | sed -e 's@Version: \(.*\)-.*@\1@')
 
 if ! (echo "amd64 arm64 ppc64el s390x" | grep -o $DEB_HOST_ARCH); then
@@ -9,9 +7,7 @@ if ! (echo "amd64 arm64 ppc64el s390x" | grep -o $DEB_HOST_ARCH); then
 fi
 
 # In case there are two linux versions in apt's cache #921383
-for kver in $kvers; do
-	echo Building ZFS/$zfsver for Linux/$kver
-	apt-get install linux-headers-$DEB_HOST_ARCH -y
-	dkms build -k $kver spl/$zfsver
-	dkms build -k $kver zfs/$zfsver
-done
+apt-get install spl-dkms -y
+dkms build spl/$zfsver
+apt-get install zfsutils-linux -y
+dkms build zfs/$zfsver
