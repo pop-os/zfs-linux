@@ -1,14 +1,17 @@
 #!/bin/sh
 set -xe
 apt-get update -y
+DEB_HOST_ARCH=$(dpkg --print-architecture)
 zfsver=$(apt-cache show zfs-dkms | grep Version: | head -n1 | sed -e 's@Version: \(.*\)-.*@\1@')
 
 if ! (echo "amd64 arm64 ppc64el s390x" | grep -o $DEB_HOST_ARCH); then
 	exit 0
 fi
 
-# In case there are two linux versions in apt's cache #921383
 apt-get install spl-dkms -y
-dkms build spl/$zfsver
-apt-get install zfsutils-linux -y
-dkms build zfs/$zfsver
+apt-get install zfs-dkms -y
+
+for kver in $(ls /lib/modules); do
+dkms build spl/$zfsver -k $kver
+dkms build zfs/$zfsver -k $kver
+done
