@@ -1,3 +1,10 @@
+zfs-linux (0.7.12-5) unstable; urgency=medium
+
+  * Prevent autopkgtest::dkms-zfs-test from installing zfsutils-linux
+    which would cause test failure.
+
+ -- Mo Zhou <cdluminate@gmail.com>  Thu, 28 Feb 2019 13:21:53 +0000
+
 zfs-linux (0.7.12-4) unstable; urgency=medium
 
   [ Salsa Pipeline ]
