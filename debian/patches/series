@@ -4,16 +4,6 @@ enable-zed.patch
 1004-zed-service-bindir.patch
 2000-increase-default-zcmd-allocation-to-256K.patch
 init-debian-openrc-workaround.patch
-2323-Fix-segfault-in-zpool-iostat-when-adding-VDEVs.patch
-2328-Fix-fsanitize-address-memory-leak.patch
-2331-OpenZFS-8897-zpool-online-e-fails-assertion-when-run.patch
-2332-OpenZFS-8898-creating-fs-with-checksum-skein-on-the-.patch
-2334-OpenZFS-8641-zpool-clear-and-zinject-don-t-work-on-s.patch
-2336-OpenZFS-8972-zfs-holds-In-scripted-mode-do-not-pad-c.patch
-2337-Revert-Remove-wrong-ASSERT-in-annotate_ecksum.patch
-2338-OpenZFS-8731-ASSERT3U-nui64s-UINT16_MAX-fails-for-la.patch
-2339-Prevent-zdb-8-from-occasionally-hanging-on-I-O.patch
-2341-Change-movaps-to-movups-in-AES-NI-code.patch
 3203-Fix-zpool-create-t-tempname.patch
 clarify-zpool-iostat-statistics-reporting.patch
 delay-injection-can-cause-indefinitely-hung-zios.patch
