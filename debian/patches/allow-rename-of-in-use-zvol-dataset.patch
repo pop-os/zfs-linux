@@ -51,7 +51,7 @@ Index: zfs/module/zfs/zvol.c
 ===================================================================
 --- zfs.orig/module/zfs/zvol.c
 +++ zfs/module/zfs/zvol.c
-@@ -2236,12 +2236,6 @@ zvol_rename_minors_impl(const char *oldn
+@@ -2262,12 +2262,6 @@ zvol_rename_minors_impl(const char *oldn
  
  		mutex_enter(&zv->zv_state_lock);
  

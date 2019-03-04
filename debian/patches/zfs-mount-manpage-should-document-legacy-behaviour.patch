@@ -19,7 +19,7 @@ Index: zfs/man/man8/zfs.8
 ===================================================================
 --- zfs.orig/man/man8/zfs.8
 +++ zfs/man/man8/zfs.8
-@@ -2796,16 +2796,24 @@ Displays all ZFS file systems currently
+@@ -3315,16 +3315,24 @@ Displays all ZFS file systems currently
  .Op Fl o Ar options
  .Fl a | Ar filesystem
  .Xc

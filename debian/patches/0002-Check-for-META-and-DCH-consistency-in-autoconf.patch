@@ -25,7 +25,7 @@ Index: zfs/config/zfs-meta.m4
  
  		ZFS_META_NAME=_ZFS_AC_META_GETVAL([(Name|Project|Package)]);
  		if test -n "$ZFS_META_NAME"; then
-@@ -66,8 +68,30 @@ AC_DEFUN([ZFS_AC_META], [
+@@ -69,8 +71,29 @@ AC_DEFUN([ZFS_AC_META], [
  			AC_SUBST([ZFS_META_VERSION])
  		fi
  

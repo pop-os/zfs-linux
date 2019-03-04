@@ -40,7 +40,7 @@ Index: zfs/module/zfs/zvol.c
 ===================================================================
 --- zfs.orig/module/zfs/zvol.c
 +++ zfs/module/zfs/zvol.c
-@@ -984,6 +984,16 @@ zvol_request(struct request_queue *q, st
+@@ -1008,6 +1008,16 @@ zvol_request(struct request_queue *q, st
  				zvol_write(zvr);
  		}
  	} else {

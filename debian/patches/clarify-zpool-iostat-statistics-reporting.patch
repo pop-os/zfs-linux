@@ -18,7 +18,7 @@ Index: zfs/man/man8/zpool.8
 ===================================================================
 --- zfs.orig/man/man8/zpool.8
 +++ zfs/man/man8/zpool.8
-@@ -1431,10 +1431,15 @@ Will also set -o cachefile=none when not
+@@ -1635,10 +1635,15 @@ with no flags on the relevant target dev
  .Oo Oo Ar pool Ns ... Oc Ns | Ns Oo Ar pool vdev Ns ... Oc Ns | Ns Oo Ar vdev Ns ... Oc Oc
  .Op Ar interval Op Ar count
  .Xc
