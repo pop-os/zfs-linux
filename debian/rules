@@ -27,7 +27,7 @@ pmodules = $(PACKAGE)-modules-$(non_epoch_version)
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --with autoreconf,dkms,python3,systemd,sphinxdoc --parallel
+	dh $@ --with autoreconf,dkms,python3,systemd,sphinxdoc
 
 override_dh_autoreconf:
 	@# Embed the downstream version in the module.
