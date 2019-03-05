@@ -106,7 +106,7 @@ Architecture: linux-any
 Depends: ${misc:Depends},
          ${python3:Depends},
          python3-cffi,
-         zfsutils-linux (>= ${binary:Version})
+         zfsutils-linux (= ${binary:Version})
 Description: A wrapper for libzfs_core C library
  libzfs_core is intended to be a stable interface for programmatic
  administration of ZFS. This wrapper provides one-to-one wrappers for
