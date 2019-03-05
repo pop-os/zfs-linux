@@ -20,7 +20,7 @@ Build-Depends: autotools-dev,
                python3,
                uuid-dev,
                zlib1g-dev
-Standards-Version: 4.1.2
+Standards-Version: 4.3.0
 Homepage: http://www.zfsonlinux.org/
 Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
