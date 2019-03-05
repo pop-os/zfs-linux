@@ -1,3 +1,17 @@
+zfs-linux (0.7.13-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.7.13
+  * Rebase 2332-OpenZFS-8898-creating-fs-with-checksum-skein-on-the-.patch.
+  * Remove linux 4.20 and 5.0 compat fixes (supported by upstream).
+    - 3204-Add-4.20-timespec-compat-fix.patch
+    - 3300-Add-check-for-totalram-pages.patch
+    - 3301-Add-check-for-ktime_get_coarse_real_ts64.patch
+    - 3302-linux-5-0-disable-vector-instructions-on-5-0-kernels.patch
+    - 3303-linux-5-0-convert-ms-macros-to-sb.patch
+    - 3304-linux-5-0-fix-bio-set-dev.patch
+
+ -- Mo Zhou <cdluminate@gmail.com>  Tue, 05 Mar 2019 06:28:55 +0000
+
 zfs-linux (0.7.12-5) unstable; urgency=medium
 
   * Prevent autopkgtest::dkms-zfs-test from installing zfsutils-linux
