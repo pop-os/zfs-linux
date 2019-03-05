@@ -147,10 +147,8 @@ Description: A wrapper for libzfs_core C library
 
 Package: zfs-dkms
 Architecture: all
-Pre-Depends: spl-dkms (<<${source:Upstream-Version}.),
-             spl-dkms (>= ${source:Upstream-Version})
 Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}, ${perl:Depends},
-Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), linux-libc-dev (<< 5.1~)
+Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), linux-libc-dev (<< 4.21~), linux-libc-dev (>= 2.6.32~),
 Breaks: spl-dkms (<< 0.8.0~rc1),
 Replaces: spl-dkms,
 Provides: zfs-modules
