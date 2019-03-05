@@ -34,12 +34,6 @@ init-debian-openrc-workaround.patch
 2339-Prevent-zdb-8-from-occasionally-hanging-on-I-O.patch
 2341-Change-movaps-to-movups-in-AES-NI-code.patch
 3203-Fix-zpool-create-t-tempname.patch
-3204-Add-4.20-timespec-compat-fix.patch
-3300-Add-check-for-totalram-pages.patch
-3301-Add-check-for-ktime_get_coarse_real_ts64.patch
-3302-linux-5-0-disable-vector-instructions-on-5-0-kernels.patch
-3303-linux-5-0-convert-ms-macros-to-sb.patch
-3304-linux-5-0-fix-bio-set-dev.patch
 clarify-zpool-iostat-statistics-reporting.patch
 delay-injection-can-cause-indefinitely-hung-zios.patch
 dont-enter-zvols-rangelock-for-read-bio-with-size-0.patch
