@@ -9,8 +9,9 @@ zfs-linux (0.7.13-1) UNRELEASED; urgency=medium
     - 3302-linux-5-0-disable-vector-instructions-on-5-0-kernels.patch
     - 3303-linux-5-0-convert-ms-macros-to-sb.patch
     - 3304-linux-5-0-fix-bio-set-dev.patch
+  * Bump Standards-Version to 4.3.0 (no change).
 
- -- Mo Zhou <cdluminate@gmail.com>  Tue, 05 Mar 2019 06:28:55 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Tue, 05 Mar 2019 06:34:43 +0000
 
 zfs-linux (0.7.12-5) unstable; urgency=medium
 
