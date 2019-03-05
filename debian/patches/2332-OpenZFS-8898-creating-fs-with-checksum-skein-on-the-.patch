@@ -47,15 +47,6 @@ Index: zfs/man/man8/zfs.8
 ===================================================================
 --- zfs.orig/man/man8/zfs.8
 +++ zfs/man/man8/zfs.8
-@@ -29,7 +29,7 @@
- .\" Copyright 2016 Nexenta Systems, Inc.
- .\" Copyright 2016 Richard Laager. All rights reserved.
- .\"
--.Dd July 13, 2018
-+.Dd January 10, 2018
- .Dt ZFS 8 SMM
- .Os Linux
- .Sh NAME
 @@ -1057,6 +1057,10 @@ Please see
  for more information on these algorithms.
  .Pp
