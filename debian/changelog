@@ -1,5 +1,6 @@
-zfs-linux (0.7.13-1) UNRELEASED; urgency=medium
+zfs-linux (0.7.13-1) unstable; urgency=medium
 
+  [ Mo Zhou ]
   * New upstream version 0.7.13
   * Rebase 2332-OpenZFS-8898-creating-fs-with-checksum-skein-on-the-.patch.
   * Remove linux 4.20 and 5.0 compat fixes (supported by upstream).
@@ -11,7 +12,10 @@ zfs-linux (0.7.13-1) UNRELEASED; urgency=medium
     - 3304-linux-5-0-fix-bio-set-dev.patch
   * Bump Standards-Version to 4.3.0 (no change).
 
- -- Mo Zhou <cdluminate@gmail.com>  Tue, 05 Mar 2019 06:34:43 +0000
+  [ Antonio Russo ]
+  * Include new example scripts
+
+ -- Mo Zhou <cdluminate@gmail.com>  Tue, 05 Mar 2019 07:12:33 +0000
 
 zfs-linux (0.7.12-5) unstable; urgency=medium
 
