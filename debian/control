@@ -257,6 +257,7 @@ Description: OpenZFS test infrastructure an support scripts
  and should only be installed and used in test environments.
 
 Package: spl
+Section: contrib/metapackages
 Architecture: all
 Depends: ${misc:Depends},
 Suggests: zfs-test
@@ -275,9 +276,9 @@ Description: Solaris Porting Layer user-space utilities for Linux (dummy)
  This is a transitional dummy package. It can safely be removed.
 
 Package: spl-dkms
+Section: contrib/metapackages
 Architecture: all
 Depends: ${misc:Depends}, zfs-dkms
-Section: contrib/admin
 Description: Solaris Porting Layer kernel modules for Linux (dummy)
  The Solaris Porting Layer (SPL) is a Linux kernel module which provides
  many of the Solaris kernel APIs. This shim layer makes it possible to
@@ -291,3 +292,4 @@ Description: Solaris Porting Layer kernel modules for Linux (dummy)
  to Linux primitives.
  .
  This is a transitional dummy package. It can safely be removed.
+ SPL dkms files had been merged into zfs-dkms as of ZFS 0.8.X series.
