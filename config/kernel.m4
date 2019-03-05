@@ -5,7 +5,9 @@ AC_DEFUN([ZFS_AC_CONFIG_KERNEL], [
 	ZFS_AC_KERNEL
 	ZFS_AC_SPL
 	ZFS_AC_QAT
+	ZFS_AC_KERNEL_ACCESS_OK_TYPE
 	ZFS_AC_TEST_MODULE
+	ZFS_AC_KERNEL_MISC_MINOR
 	ZFS_AC_KERNEL_OBJTOOL
 	ZFS_AC_KERNEL_CONFIG
 	ZFS_AC_KERNEL_DECLARE_EVENT_CLASS
@@ -255,7 +257,7 @@ AC_DEFUN([ZFS_AC_KERNEL], [
 	AS_IF([test "$utsrelease"], [
 		kernsrcver=`(echo "#include <$utsrelease>";
 		             echo "kernsrcver=UTS_RELEASE") |
-		             cpp -I $kernelbuild/include |
+		             ${CPP} -I $kernelbuild/include - |
 		             grep "^kernsrcver=" | cut -d \" -f 2`
 
 		AS_IF([test -z "$kernsrcver"], [

@@ -44,6 +44,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/always-no-bool-compare.m4 \
 	$(top_srcdir)/config/always-no-unused-but-set-variable.m4 \
 	$(top_srcdir)/config/ax_code_coverage.m4 \
+	$(top_srcdir)/config/kernel-access-ok-type.m4 \
 	$(top_srcdir)/config/kernel-acl-refcount.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-aio-fsync.m4 \
@@ -109,6 +110,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-lookup-bdev.m4 \
 	$(top_srcdir)/config/kernel-lookup-nameidata.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
+	$(top_srcdir)/config/kernel-misc-minor.m4 \
 	$(top_srcdir)/config/kernel-mk-request-fn.m4 \
 	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
 	$(top_srcdir)/config/kernel-mod-param.m4 \
@@ -403,6 +405,8 @@ runstatedir = @runstatedir@
 #
 # Ignore the prefix for the mount helper.  It must be installed in /sbin/
 # because this path is hardcoded in the mount(8) for security reasons.
+# However, if needed, the configure option --with-mounthelperdir= can be used
+# to override the default install location.
 #
 sbindir = $(mounthelperdir)
 sharedstatedir = @sharedstatedir@

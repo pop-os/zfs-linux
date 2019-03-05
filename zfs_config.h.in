@@ -33,6 +33,9 @@
 /* security_inode_init_security wants 6 args */
 #undef HAVE_6ARGS_SECURITY_INODE_INIT_SECURITY
 
+/* kernel has access_ok with 'type' parameter */
+#undef HAVE_ACCESS_OK_TYPE
+
 /* posix_acl has refcount_t */
 #undef HAVE_ACL_REFCOUNT
 
@@ -98,6 +101,9 @@
 
 /* bio_set_dev() exists */
 #undef HAVE_BIO_SET_DEV
+
+/* bio_set_dev() GPL-only */
+#undef HAVE_BIO_SET_DEV_GPL_ONLY
 
 /* bio_set_op_attrs is available */
 #undef HAVE_BIO_SET_OP_ATTRS
@@ -240,9 +246,6 @@
 /* iops->follow_link() nameidata */
 #undef HAVE_FOLLOW_LINK_NAMEIDATA
 
-/* kernel has <asm/fpu/api.h> interface */
-#undef HAVE_FPU_API_H
-
 /* sops->free_cached_objects() exists */
 #undef HAVE_FREE_CACHED_OBJECTS
 
@@ -317,6 +320,9 @@
 
 /* is_owner_or_cap() exists */
 #undef HAVE_IS_OWNER_OR_CAP
+
+/* kernel has kernel_fpu_* functions */
+#undef HAVE_KERNEL_FPU
 
 /* uncached_acl_sentinel() exists */
 #undef HAVE_KERNEL_GET_ACL_HANDLE_CACHE
@@ -516,6 +522,9 @@
 /* truncate_setsize() is available */
 #undef HAVE_TRUNCATE_SETSIZE
 
+/* kernel has __kernel_fpu_* functions */
+#undef HAVE_UNDERSCORE_KERNEL_FPU
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
@@ -579,6 +588,9 @@
 /* __posix_acl_chmod() exists */
 #undef HAVE___POSIX_ACL_CHMOD
 
+/* kernel exports FPU functions */
+#undef KERNEL_EXPORTS_X86_FPU
+
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
@@ -621,6 +633,9 @@
 
 /* zfs debugging enabled */
 #undef ZFS_DEBUG
+
+/* /dev/zfs minor */
+#undef ZFS_DEVICE_MINOR
 
 /* enum node_stat_item contains NR_FILE_PAGES */
 #undef ZFS_ENUM_NODE_STAT_ITEM_NR_FILE_PAGES
