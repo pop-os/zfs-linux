@@ -28,22 +28,19 @@
 
 #include <sys/debug.h>
 #include <sys/types.h>
-#include "qat_compress.h"
+#include <sys/strings.h>
+#include "qat.h"
 
 #ifdef _KERNEL
 
-#include <sys/systm.h>
 #include <sys/zmod.h>
-
 typedef size_t zlen_t;
 #define	compress_func	z_compress_level
 #define	uncompress_func	z_uncompress
 
 #else /* _KERNEL */
 
-#include <strings.h>
 #include <zlib.h>
-
 typedef uLongf zlen_t;
 #define	compress_func	compress2
 #define	uncompress_func	uncompress
@@ -53,16 +50,25 @@ typedef uLongf zlen_t;
 size_t
 gzip_compress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 {
+	int ret;
 	zlen_t dstlen = d_len;
 
 	ASSERT(d_len <= s_len);
 
 	/* check if hardware accelerator can be used */
-	if (qat_use_accel(s_len)) {
-		if (qat_compress(QAT_COMPRESS, s_start,
-		    s_len, d_start, d_len, &dstlen) == CPA_STATUS_SUCCESS)
+	if (qat_dc_use_accel(s_len)) {
+		ret = qat_compress(QAT_COMPRESS, s_start, s_len, d_start,
+		    d_len, &dstlen);
+		if (ret == CPA_STATUS_SUCCESS) {
 			return ((size_t)dstlen);
-		/* if hardware compress fail, do it again with software */
+		} else if (ret == CPA_STATUS_INCOMPRESSIBLE) {
+			if (d_len != s_len)
+				return (s_len);
+
+			bcopy(s_start, d_start, s_len);
+			return (s_len);
+		}
+		/* if hardware compression fails, do it again with software */
 	}
 
 	if (compress_func(d_start, &dstlen, s_start, s_len, n) != Z_OK) {
@@ -85,7 +91,7 @@ gzip_decompress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 	ASSERT(d_len >= s_len);
 
 	/* check if hardware accelerator can be used */
-	if (qat_use_accel(d_len)) {
+	if (qat_dc_use_accel(d_len)) {
 		if (qat_compress(QAT_DECOMPRESS, s_start, s_len,
 		    d_start, d_len, &dstlen) == CPA_STATUS_SUCCESS)
 			return (0);

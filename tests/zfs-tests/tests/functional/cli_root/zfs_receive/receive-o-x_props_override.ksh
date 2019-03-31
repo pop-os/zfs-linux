@@ -41,107 +41,8 @@ function cleanup
 	log_must rm -f $streamfile_incr
 	log_must rm -f $streamfile_repl
 	log_must rm -f $streamfile_trun
-	log_must zfs destroy -r -f $orig
-	log_must zfs destroy -r -f $dest
-}
-
-#
-# Verify property $2 is set from source $4 on dataset $1 and has value $3.
-#
-# $1 checked dataset
-# $2 user property
-# $3 property value
-# $4 source
-#
-function check_prop_source
-{
-	typeset dataset="$1"
-	typeset prop="$2"
-	typeset value="$3"
-	typeset source="$4"
-	typeset chk_value=$(get_prop "$prop" "$dataset")
-	typeset chk_source=$(get_source "$prop" "$dataset")
-
-	if [[ "$chk_value" != "$value" || "$chk_source" != "$4" ]]
-	then
-		return 1
-	else
-		return 0
-	fi
-}
-
-#
-# Verify target dataset $1 inherit property $2 from dataset $3.
-#
-# $1 checked dataset
-# $2 property
-# $3 inherited dataset
-#
-function check_prop_inherit
-{
-	typeset checked_dtst="$1"
-	typeset prop="$2"
-	typeset inherited_dtst="$3"
-	typeset inherited_value=$(get_prop "$prop" "$inherited_dtst")
-	typeset value=$(get_prop "$prop" "$checked_dtst")
-	typeset source=$(get_source "$prop" "$checked_dtst")
-
-	if [[ "$value" != "$inherited_value" || \
-	    "$source" != "inherited from $inherited_dtst" ]]
-	then
-		return 1
-	else
-		return 0
-	fi
-}
-
-#
-# Verify property $2 received value on dataset $1 has value $3
-#
-# $1 checked dataset
-# $2 property name
-# $3 checked value
-#
-function check_prop_received
-{
-	typeset dataset="$1"
-	typeset prop="$2"
-	typeset value="$3"
-
-	received=$(zfs get -H -o received "$prop" "$dataset")
-	if (($? != 0)); then
-		log_fail "Unable to get $prop received value for dataset " \
-		    "$dataset"
-	fi
-	if [[ "$received" == "$value" ]]
-	then
-		return 0
-	else
-		return 1
-	fi
-}
-
-#
-# Verify user property $2 is not set on dataset $1
-#
-# $1 checked dataset
-# $2 property name
-#
-function check_prop_missing
-{
-	typeset dataset="$1"
-	typeset prop="$2"
-
-	value=$(zfs get -H -o value "$prop" "$dataset")
-	if (($? != 0)); then
-		log_fail "Unable to get $prop value for dataset $dataset"
-	fi
-	if [[ "-" == "$value" ]]
-	then
-		return 0
-	else
-		return 1
-	fi
+	destroy_dataset "$orig" "-rf"
+	destroy_dataset "$dest" "-rf"
 }
 
 log_assert "ZFS receive property override and exclude options work as expected."
@@ -367,7 +268,7 @@ log_must zfs snapshot $orig@snap1
 log_must eval "zfs send $orig@snap1 > $streamfile_full"
 log_mustnot eval "zfs receive -x atime $dest < $streamfile_full"
 log_mustnot eval "zfs receive -o atime=off $dest < $streamfile_full"
-log_must zfs destroy -r -f $orig
+log_must_busy zfs destroy -r -f $orig
 log_must zfs create $orig
 log_must zfs create -V 128K -s $origsub
 log_must zfs snapshot -r $orig@snap1
@@ -378,8 +279,9 @@ log_must eval "check_prop_source $dest atime off local"
 log_must eval "check_prop_source $destsub type volume -"
 log_must eval "check_prop_source $destsub atime - -"
 # Cleanup
-log_must zfs destroy -r -f $orig
-log_must zfs destroy -r -f $dest
+block_device_wait
+log_must_busy zfs destroy -r -f $orig
+log_must_busy zfs destroy -r -f $dest
 
 #
 # 3.8 Verify 'zfs recv -x|-o' works correctly when used in conjunction with -d

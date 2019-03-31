@@ -28,9 +28,7 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/systm.h>
 #include <sys/sysmacros.h>
-#include <sys/resource.h>
 #include <sys/vfs.h>
 #include <sys/vnode.h>
 #include <sys/file.h>
@@ -41,7 +39,6 @@
 #include <sys/cmn_err.h>
 #include <sys/errno.h>
 #include <sys/stat.h>
-#include <sys/unistd.h>
 #include <sys/sunddi.h>
 #include <sys/random.h>
 #include <sys/policy.h>
@@ -49,7 +46,6 @@
 #include <sys/zfs_acl.h>
 #include <sys/zfs_vnops.h>
 #include <sys/fs/zfs.h>
-#include "fs/fs_subr.h"
 #include <sys/zap.h>
 #include <sys/dmu.h>
 #include <sys/atomic.h>
@@ -57,8 +53,6 @@
 #include <sys/zfs_fuid.h>
 #include <sys/sa.h>
 #include <sys/zfs_sa.h>
-#include <sys/dnlc.h>
-#include <sys/extdirent.h>
 
 /*
  * zfs_match_find() is used by zfs_dirent_lock() to peform zap lookups
@@ -104,11 +98,6 @@ zfs_match_find(zfsvfs_t *zfsvfs, znode_t *dzp, char *name, matchtype_t mt,
 		*deflags = conflict ? ED_CASE_CONFLICT : 0;
 
 	*zoid = ZFS_DIRENT_OBJ(*zoid);
-
-#ifdef HAVE_DNLC
-	if (error == ENOENT && update)
-		dnlc_update(ZTOI(dzp), name, DNLC_NO_VNODE);
-#endif /* HAVE_DNLC */
 
 	return (error);
 }
@@ -157,9 +146,6 @@ zfs_dirent_lock(zfs_dirlock_t **dlpp, znode_t *dzp, char *name, znode_t **zpp,
 	boolean_t	update;
 	matchtype_t	mt = 0;
 	uint64_t	zoid;
-#ifdef HAVE_DNLC
-	vnode_t		*vp = NULL;
-#endif /* HAVE_DNLC */
 	int		error = 0;
 	int		cmpflags;
 
@@ -326,29 +312,8 @@ zfs_dirent_lock(zfs_dirlock_t **dlpp, znode_t *dzp, char *name, znode_t **zpp,
 		if (error == 0)
 			error = (zoid == 0 ? SET_ERROR(ENOENT) : 0);
 	} else {
-#ifdef HAVE_DNLC
-		if (update)
-			vp = dnlc_lookup(ZTOI(dzp), name);
-		if (vp == DNLC_NO_VNODE) {
-			iput(vp);
-			error = SET_ERROR(ENOENT);
-		} else if (vp) {
-			if (flag & ZNEW) {
-				zfs_dirent_unlock(dl);
-				iput(vp);
-				return (SET_ERROR(EEXIST));
-			}
-			*dlpp = dl;
-			*zpp = VTOZ(vp);
-			return (0);
-		} else {
-			error = zfs_match_find(zfsvfs, dzp, name, mt,
-			    update, direntflags, realpnp, &zoid);
-		}
-#else
 		error = zfs_match_find(zfsvfs, dzp, name, mt,
 		    update, direntflags, realpnp, &zoid);
-#endif /* HAVE_DNLC */
 	}
 	if (error) {
 		if (error != ENOENT || (flag & ZEXISTS)) {
@@ -365,10 +330,6 @@ zfs_dirent_lock(zfs_dirlock_t **dlpp, znode_t *dzp, char *name, znode_t **zpp,
 			zfs_dirent_unlock(dl);
 			return (error);
 		}
-#ifdef HAVE_DNLC
-		if (!(flag & ZXATTR) && update)
-			dnlc_update(ZTOI(dzp), name, ZTOI(*zpp));
-#endif /* HAVE_DNLC */
 	}
 
 	*dlpp = dl;
@@ -907,10 +868,6 @@ zfs_link_destroy(zfs_dirlock_t *dl, znode_t *zp, dmu_tx_t *tx, int flag,
 	int count = 0;
 	int error;
 
-#ifdef HAVE_DNLC
-	dnlc_remove(ZTOI(dzp), dl->dl_name);
-#endif /* HAVE_DNLC */
-
 	if (!(flag & ZRENAMING)) {
 		mutex_enter(&zp->z_lock);
 
@@ -1036,7 +993,7 @@ zfs_make_xattrdir(znode_t *zp, vattr_t *vap, struct inode **xipp, cred_t *cr)
 	if ((error = zfs_acl_ids_create(zp, IS_XATTR, vap, cr, NULL,
 	    &acl_ids)) != 0)
 		return (error);
-	if (zfs_acl_ids_overquota(zfsvfs, &acl_ids)) {
+	if (zfs_acl_ids_overquota(zfsvfs, &acl_ids, zp->z_projid)) {
 		zfs_acl_ids_free(&acl_ids);
 		return (SET_ERROR(EDQUOT));
 	}

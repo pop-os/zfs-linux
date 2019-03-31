@@ -571,7 +571,7 @@ static inline void
 abd_free_struct(abd_t *abd)
 {
 	kmem_cache_free(abd_cache, abd);
-	ABDSTAT_INCR(abdstat_struct_size, -sizeof (abd_t));
+	ABDSTAT_INCR(abdstat_struct_size, -(int)sizeof (abd_t));
 }
 
 /*
@@ -581,14 +581,12 @@ abd_free_struct(abd_t *abd)
 abd_t *
 abd_alloc(size_t size, boolean_t is_metadata)
 {
-	abd_t *abd;
-
 	if (!zfs_abd_scatter_enabled || size <= PAGESIZE)
 		return (abd_alloc_linear(size, is_metadata));
 
 	VERIFY3U(size, <=, SPA_MAXBLOCKSIZE);
 
-	abd = abd_alloc_struct();
+	abd_t *abd = abd_alloc_struct();
 	abd->abd_flags = ABD_FLAG_OWNER;
 	abd_alloc_pages(abd, size);
 
@@ -618,7 +616,7 @@ abd_free_scatter(abd_t *abd)
 	ABDSTAT_BUMPDOWN(abdstat_scatter_cnt);
 	ABDSTAT_INCR(abdstat_scatter_data_size, -(int)abd->abd_size);
 	ABDSTAT_INCR(abdstat_scatter_chunk_waste,
-	    abd->abd_size - P2ROUNDUP(abd->abd_size, PAGESIZE));
+	    (int)abd->abd_size - (int)P2ROUNDUP(abd->abd_size, PAGESIZE));
 
 	abd_free_struct(abd);
 }
@@ -1108,10 +1106,9 @@ abd_iterate_func(abd_t *abd, size_t off, size_t size,
 	abd_iter_advance(&aiter, off);
 
 	while (size > 0) {
-		size_t len;
 		abd_iter_map(&aiter);
 
-		len = MIN(aiter.iter_mapsize, size);
+		size_t len = MIN(aiter.iter_mapsize, size);
 		ASSERT3U(len, >, 0);
 
 		ret = func(aiter.iter_mapaddr, len, private);
@@ -1242,13 +1239,12 @@ abd_iterate_func2(abd_t *dabd, abd_t *sabd, size_t doff, size_t soff,
 	abd_iter_advance(&saiter, soff);
 
 	while (size > 0) {
-		size_t dlen, slen, len;
 		abd_iter_map(&daiter);
 		abd_iter_map(&saiter);
 
-		dlen = MIN(daiter.iter_mapsize, size);
-		slen = MIN(saiter.iter_mapsize, size);
-		len = MIN(dlen, slen);
+		size_t dlen = MIN(daiter.iter_mapsize, size);
+		size_t slen = MIN(saiter.iter_mapsize, size);
+		size_t len = MIN(dlen, slen);
 		ASSERT(dlen > 0 || slen > 0);
 
 		ret = func(daiter.iter_mapaddr, saiter.iter_mapaddr, len,
@@ -1470,7 +1466,7 @@ abd_raidz_rec_iterate(abd_t **cabds, abd_t **tabds,
 	local_irq_restore(flags);
 }
 
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 /*
  * bio_nr_pages for ABD.
  * @off is the offset in @abd

@@ -132,7 +132,8 @@ vdev_raidz_math_get_ops()
 	default:
 		ASSERT3U(impl, <, raidz_supp_impl_cnt);
 		ASSERT3U(raidz_supp_impl_cnt, >, 0);
-		ops = raidz_supp_impl[impl];
+		if (impl < ARRAY_SIZE(raidz_all_maths))
+			ops = raidz_supp_impl[impl];
 		break;
 	}
 
@@ -613,7 +614,7 @@ vdev_raidz_impl_set(const char *val)
 	return (err);
 }
 
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 #include <linux/mod_compat.h>
 
 static int

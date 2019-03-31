@@ -21,7 +21,8 @@
 
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2015 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2017 by Delphix. All rights reserved.
+ * Copyright (c) 2018 Datto Inc.
  */
 
 #ifndef	_LIBZFS_IMPL_H
@@ -38,20 +39,9 @@
 #include <libshare.h>
 #include <libzfs_core.h>
 
-#if defined(HAVE_LIBTOPO)
-#include <fm/libtopo.h>
-#endif /* HAVE_LIBTOPO */
-
 #ifdef	__cplusplus
 extern "C" {
 #endif
-
-typedef struct libzfs_fru {
-	char *zf_device;
-	char *zf_fru;
-	struct libzfs_fru *zf_chain;
-	struct libzfs_fru *zf_next;
-} libzfs_fru_t;
 
 struct libzfs_handle {
 	int libzfs_error;
@@ -70,14 +60,17 @@ struct libzfs_handle {
 	void *libzfs_sharehdl; /* libshare handle */
 	uint_t libzfs_shareflags;
 	boolean_t libzfs_mnttab_enable;
+	/*
+	 * We need a lock to handle the case where parallel mount
+	 * threads are populating the mnttab cache simultaneously. The
+	 * lock only protects the integrity of the avl tree, and does
+	 * not protect the contents of the mnttab entries themselves.
+	 */
+	pthread_mutex_t libzfs_mnttab_cache_lock;
 	avl_tree_t libzfs_mnttab_cache;
 	int libzfs_pool_iter;
-#if defined(HAVE_LIBTOPO)
-	topo_hdl_t *libzfs_topo_hdl;
-	libzfs_fru_t **libzfs_fru_hash;
-	libzfs_fru_t *libzfs_fru_list;
-#endif /* HAVE_LIBTOPO */
 	char libzfs_chassis_id[256];
+	boolean_t libzfs_prop_debug;
 };
 
 #define	ZFSSHARE_MISS	0x01	/* Didn't find entry in cache */
@@ -161,6 +154,10 @@ int zprop_expand_list(libzfs_handle_t *hdl, zprop_list_t **plp,
  * mounted.
  */
 #define	CL_GATHER_MOUNT_ALWAYS	1
+/*
+ * changelist_gather() flag to force it to iterate on mounted datasets only
+ */
+#define	CL_GATHER_ITER_MOUNTED	2
 
 typedef struct prop_changelist prop_changelist_t;
 
@@ -207,8 +204,6 @@ extern int zfs_parse_options(char *, zfs_share_proto_t);
 
 extern int zfs_unshare_proto(zfs_handle_t *,
     const char *, zfs_share_proto_t *);
-
-extern void libzfs_fru_clear(libzfs_handle_t *, boolean_t);
 
 #ifdef	__cplusplus
 }

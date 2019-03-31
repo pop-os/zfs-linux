@@ -21,11 +21,32 @@
 /* lookup_bdev() wants 2 args */
 #undef HAVE_2ARGS_LOOKUP_BDEV
 
+/* new shrinker callback wants 2 args */
+#undef HAVE_2ARGS_NEW_SHRINKER_CALLBACK
+
+/* old shrinker callback wants 2 args */
+#undef HAVE_2ARGS_OLD_SHRINKER_CALLBACK
+
+/* vfs_fsync() wants 2 args */
+#undef HAVE_2ARGS_VFS_FSYNC
+
+/* vfs_getattr wants 2 args */
+#undef HAVE_2ARGS_VFS_GETATTR
+
+/* zlib_deflate_workspacesize() wants 2 args */
+#undef HAVE_2ARGS_ZLIB_DEFLATE_WORKSPACESIZE
+
 /* bdi_setup_and_register() wants 3 args */
 #undef HAVE_3ARGS_BDI_SETUP_AND_REGISTER
 
-/* blkdev_get() wants 3 args */
-#undef HAVE_3ARG_BLKDEV_GET
+/* old shrinker callback wants 3 args */
+#undef HAVE_3ARGS_SHRINKER_CALLBACK
+
+/* vfs_getattr wants 3 args */
+#undef HAVE_3ARGS_VFS_GETATTR
+
+/* vfs_getattr wants 4 args */
+#undef HAVE_4ARGS_VFS_GETATTR
 
 /* sget() wants 5 args */
 #undef HAVE_5ARG_SGET
@@ -33,11 +54,11 @@
 /* security_inode_init_security wants 6 args */
 #undef HAVE_6ARGS_SECURITY_INODE_INIT_SECURITY
 
-/* kernel has access_ok with 'type' parameter */
-#undef HAVE_ACCESS_OK_TYPE
-
 /* posix_acl has refcount_t */
 #undef HAVE_ACL_REFCOUNT
+
+/* Define if host toolchain supports AES */
+#undef HAVE_AES
 
 /* dops->automount() exists */
 #undef HAVE_AUTOMOUNT
@@ -102,14 +123,14 @@
 /* bio_set_dev() exists */
 #undef HAVE_BIO_SET_DEV
 
-/* bio_set_dev() GPL-only */
-#undef HAVE_BIO_SET_DEV_GPL_ONLY
-
 /* bio_set_op_attrs is available */
 #undef HAVE_BIO_SET_OP_ATTRS
 
 /* blkdev_get_by_path() is available */
 #undef HAVE_BLKDEV_GET_BY_PATH
+
+/* blkdev_reread_part() is available */
+#undef HAVE_BLKDEV_REREAD_PART
 
 /* blk queue backing_dev_info is dynamic */
 #undef HAVE_BLK_QUEUE_BDI_DYNAMIC
@@ -176,6 +197,9 @@
 
 /* cred_t->user_ns exists */
 #undef HAVE_CRED_USER_NS
+
+/* struct ctl_table has ctl_name */
+#undef HAVE_CTL_NAME
 
 /* current->bio_list exists */
 #undef HAVE_CURRENT_BIO_LIST
@@ -246,6 +270,9 @@
 /* iops->follow_link() nameidata */
 #undef HAVE_FOLLOW_LINK_NAMEIDATA
 
+/* kernel has <asm/fpu/api.h> interface */
+#undef HAVE_FPU_API_H
+
 /* sops->free_cached_objects() exists */
 #undef HAVE_FREE_CACHED_OBJECTS
 
@@ -260,6 +287,9 @@
 
 /* fops->fsync() with dentry */
 #undef HAVE_FSYNC_WITH_DENTRY
+
+/* struct fs_struct uses spinlock_t */
+#undef HAVE_FS_STRUCT_SPINLOCK
 
 /* generic_start_io_acct()/generic_end_io_acct() available */
 #undef HAVE_GENERIC_IO_ACCT_3ARG
@@ -285,17 +315,20 @@
 /* blk_disk_ro() is available */
 #undef HAVE_GET_DISK_RO
 
-/* get_gendisk() is available */
-#undef HAVE_GET_GENDISK
-
 /* iops->get_link() cookie */
 #undef HAVE_GET_LINK_COOKIE
 
 /* iops->get_link() delayed */
 #undef HAVE_GET_LINK_DELAYED
 
+/* group_info->gid exists */
+#undef HAVE_GROUP_INFO_GID
+
 /* fops->fallocate() exists */
 #undef HAVE_INODE_FALLOCATE
+
+/* yes */
+#undef HAVE_INODE_LOCK_SHARED
 
 /* inode_owner_or_capable() exists */
 #undef HAVE_INODE_OWNER_OR_CAPABLE
@@ -305,6 +338,9 @@
 
 /* inode_set_iversion() exists */
 #undef HAVE_INODE_SET_IVERSION
+
+/* inode->i_*time's are timespec64 */
+#undef HAVE_INODE_TIMESPEC64_TIMES
 
 /* iops->truncate_range() exists */
 #undef HAVE_INODE_TRUNCATE_RANGE
@@ -318,17 +354,38 @@
 /* in_compat_syscall() is available */
 #undef HAVE_IN_COMPAT_SYSCALL
 
+/* yes */
+#undef HAVE_IO_SCHEDULE_TIMEOUT
+
 /* is_owner_or_cap() exists */
 #undef HAVE_IS_OWNER_OR_CAP
-
-/* kernel has kernel_fpu_* functions */
-#undef HAVE_KERNEL_FPU
 
 /* uncached_acl_sentinel() exists */
 #undef HAVE_KERNEL_GET_ACL_HANDLE_CACHE
 
 /* kernel does stack verification */
 #undef HAVE_KERNEL_OBJTOOL
+
+/* kernel_read() take loff_t pointer */
+#undef HAVE_KERNEL_READ_PPOS
+
+/* timer_list.function gets a timer_list */
+#undef HAVE_KERNEL_TIMER_FUNCTION_TIMER_LIST
+
+/* kernel_write() take loff_t pointer */
+#undef HAVE_KERNEL_WRITE_PPOS
+
+/* struct kmem_cache has allocflags */
+#undef HAVE_KMEM_CACHE_ALLOCFLAGS
+
+/* kmem_cache_create_usercopy() exists */
+#undef HAVE_KMEM_CACHE_CREATE_USERCOPY
+
+/* struct kmem_cache has gfpflags */
+#undef HAVE_KMEM_CACHE_GFPFLAGS
+
+/* kuid_t/kgid_t in use */
+#undef HAVE_KUIDGID_T
 
 /* kuid_has_mapping/kgid_has_mapping exist */
 #undef HAVE_KUID_HAS_MAPPING
@@ -344,6 +401,9 @@
 
 /* Define if you have libblkid */
 #undef HAVE_LIBBLKID
+
+/* Define if you have libssl */
+#undef HAVE_LIBSSL
 
 /* Define if you have libtirpc */
 #undef HAVE_LIBTIRPC
@@ -399,6 +459,12 @@
 /* iops->getattr() takes a path */
 #undef HAVE_PATH_IOPS_GETATTR
 
+/* Define if host toolchain supports PCLMULQDQ */
+#undef HAVE_PCLMULQDQ
+
+/* yes */
+#undef HAVE_PDE_DATA
+
 /* iops->permission() exists */
 #undef HAVE_PERMISSION
 
@@ -432,6 +498,9 @@
 /* iops->put_link() nameidata */
 #undef HAVE_PUT_LINK_NAMEIDATA
 
+/* If available, contains the Python version number currently in use. */
+#undef HAVE_PYTHON
+
 /* qat is enabled and existed */
 #undef HAVE_QAT
 
@@ -450,6 +519,18 @@
 /* REQ_OP_SECURE_ERASE is defined */
 #undef HAVE_REQ_OP_SECURE_ERASE
 
+/* struct rw_semaphore has member activity */
+#undef HAVE_RWSEM_ACTIVITY
+
+/* struct rw_semaphore has atomic_long_t member count */
+#undef HAVE_RWSEM_ATOMIC_LONG_COUNT
+
+/* linux/sched/rt.h exists */
+#undef HAVE_SCHED_RT_HEADER
+
+/* linux/sched/signal.h exists */
+#undef HAVE_SCHED_SIGNAL_HEADER
+
 /* setattr_prepare() is available */
 #undef HAVE_SETATTR_PREPARE
 
@@ -459,6 +540,9 @@
 /* posix_acl_release() is usable */
 #undef HAVE_SET_CACHED_ACL_USABLE
 
+/* set_fs_pwd() needs const path * */
+#undef HAVE_SET_FS_PWD_WITH_CONST
+
 /* set_nlink() is available */
 #undef HAVE_SET_NLINK
 
@@ -467,6 +551,12 @@
 
 /* struct super_block has s_shrink */
 #undef HAVE_SHRINK
+
+/* struct shrink_control exists */
+#undef HAVE_SHRINK_CONTROL_STRUCT
+
+/* ->count_objects exists */
+#undef HAVE_SPLIT_SHRINKER_CALLBACK
 
 /* Define if host toolchain supports SSE */
 #undef HAVE_SSE
@@ -486,6 +576,9 @@
 /* Define if host toolchain supports SSSE3 */
 #undef HAVE_SSSE3
 
+/* STACK_FRAME_NON_STANDARD is defined */
+#undef HAVE_STACK_FRAME_NON_STANDARD
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -497,6 +590,12 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strlcat' function. */
+#undef HAVE_STRLCAT
+
+/* Define to 1 if you have the `strlcpy' function. */
+#undef HAVE_STRLCPY
 
 /* super_setup_bdi_name() exits */
 #undef HAVE_SUPER_SETUP_BDI_NAME
@@ -522,14 +621,26 @@
 /* truncate_setsize() is available */
 #undef HAVE_TRUNCATE_SETSIZE
 
-/* kernel has __kernel_fpu_* functions */
-#undef HAVE_UNDERSCORE_KERNEL_FPU
-
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* usleep_range is available */
+#undef HAVE_USLEEP_RANGE
+
 /* iops->getattr() takes a vfsmount */
 #undef HAVE_VFSMOUNT_IOPS_GETATTR
+
+/* aops->direct_IO() uses iovec */
+#undef HAVE_VFS_DIRECT_IO_IOVEC
+
+/* aops->direct_IO() uses iov_iter without rw */
+#undef HAVE_VFS_DIRECT_IO_ITER
+
+/* aops->direct_IO() uses iov_iter with offset */
+#undef HAVE_VFS_DIRECT_IO_ITER_OFFSET
+
+/* aops->direct_IO() uses iov_iter with rw and offset */
+#undef HAVE_VFS_DIRECT_IO_ITER_RW_OFFSET
 
 /* fops->iterate() is available */
 #undef HAVE_VFS_ITERATE
@@ -542,6 +653,15 @@
 
 /* fops->read/write_iter() are available */
 #undef HAVE_VFS_RW_ITERATE
+
+/* yes */
+#undef HAVE_WAIT_ON_BIT_ACTION
+
+/* wait_queue_entry_t exists */
+#undef HAVE_WAIT_QUEUE_ENTRY_T
+
+/* wq_head->head and wq_entry->entry exist */
+#undef HAVE_WAIT_QUEUE_HEAD_ENTRY
 
 /* xattr_handler->get() wants dentry */
 #undef HAVE_XATTR_GET_DENTRY
@@ -588,11 +708,7 @@
 /* __posix_acl_chmod() exists */
 #undef HAVE___POSIX_ACL_CHMOD
 
-/* kernel exports FPU functions */
-#undef KERNEL_EXPORTS_X86_FPU
-
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* make_request_fn() returns blk_qc_t */
@@ -600,9 +716,6 @@
 
 /* hardened module_param_call */
 #undef MODULE_PARAM_CALL_CONST
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
@@ -619,11 +732,26 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* struct rw_semaphore member wait_lock is raw_spinlock_t */
+#undef RWSEM_SPINLOCK_IS_RAW
+
 /* struct shrink_control has nid */
 #undef SHRINK_CONTROL_HAS_NID
+
+/* Defined for legacy compatibility. */
+#undef SPL_META_ALIAS
+
+/* Defined for legacy compatibility. */
+#undef SPL_META_RELEASE
+
+/* Defined for legacy compatibility. */
+#undef SPL_META_VERSION
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

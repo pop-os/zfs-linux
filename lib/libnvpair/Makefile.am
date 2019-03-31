@@ -4,7 +4,11 @@ VPATH = \
 	$(top_srcdir)/module/nvpair \
 	$(top_srcdir)/lib/libnvpair
 
-AM_CFLAGS += $(DEBUG_STACKFLAGS) $(FRAME_LARGER_THAN) $(LIBTIRPC_CFLAGS)
+# Required CFLAGS for libtirpc
+AM_CFLAGS += $(LIBTIRPC_CFLAGS)
+
+# Includes kernel code, generate warnings for large stack frames
+AM_CFLAGS += $(FRAME_LARGER_THAN)
 
 DEFAULT_INCLUDES += \
 	-I$(top_srcdir)/include \
@@ -14,6 +18,7 @@ lib_LTLIBRARIES = libnvpair.la
 
 USER_C = \
 	libnvpair.c \
+	libnvpair_json.c \
 	nvpair_alloc_system.c
 
 KERNEL_C = \
@@ -25,9 +30,7 @@ nodist_libnvpair_la_SOURCES = \
 	$(USER_C) \
 	$(KERNEL_C)
 
-libnvpair_la_LIBADD = \
-	$(top_builddir)/lib/libuutil/libuutil.la \
-	$(LIBTIRPC)
+libnvpair_la_LIBADD = $(LIBTIRPC)
 libnvpair_la_LDFLAGS = -version-info 1:1:0
 
 EXTRA_DIST = $(USER_C)

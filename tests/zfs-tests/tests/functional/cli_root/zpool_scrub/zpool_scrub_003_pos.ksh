@@ -42,24 +42,19 @@
 #	2. Kick off a scrub
 #	2. Kick off a second scrub and verify it fails
 #
-# NOTES:
-#	A 10ms delay is added to the ZIOs in order to ensure that the
-#	scrub does not complete before it has a chance to be restarted.
-#	This can occur when testing with small pools or very fast hardware.
-#
 
 verify_runnable "global"
 
 function cleanup
 {
-	        log_must zinject -c all
+	log_must set_tunable32 zfs_scan_suspend_progress 0
 }
 
 log_onexit cleanup
 
 log_assert "Scrub command fails when there is already a scrub in progress"
 
-log_must zinject -d $DISK1 -D10:1 $TESTPOOL
+log_must set_tunable32 zfs_scan_suspend_progress 1
 log_must zpool scrub $TESTPOOL
 log_must is_pool_scrubbing $TESTPOOL true
 log_mustnot zpool scrub $TESTPOOL

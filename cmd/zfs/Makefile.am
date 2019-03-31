@@ -10,13 +10,12 @@ zfs_SOURCES = \
 	zfs_iter.c \
 	zfs_iter.h \
 	zfs_main.c \
-	zfs_util.h
+	zfs_util.h \
+	zfs_project.c \
+	zfs_projectutil.h
 
 zfs_LDADD = \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libuutil/libuutil.la \
-	$(top_builddir)/lib/libzpool/libzpool.la \
 	$(top_builddir)/lib/libzfs/libzfs.la \
 	$(top_builddir)/lib/libzfs_core/libzfs_core.la
-
-zfs_LDFLAGS = -pthread

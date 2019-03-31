@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2014 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2015 by Delphix. All rights reserved.
  * Copyright (c) 2013 by Saso Kiselkov. All rights reserved.
  * Copyright 2016, Joyent, Inc.
  */
@@ -33,14 +33,13 @@
 #include <sys/zfs_acl.h>
 #include <sys/zfs_ioctl.h>
 #include <sys/zfs_znode.h>
+#include <sys/dsl_crypt.h>
 
 #include "zfs_prop.h"
 #include "zfs_deleg.h"
 #include "zfs_fletcher.h"
 
-#if defined(_KERNEL)
-#include <sys/systm.h>
-#else
+#if !defined(_KERNEL)
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -57,7 +56,11 @@ const char *zfs_userquota_prop_prefixes[] = {
 	"userobjused@",
 	"userobjquota@",
 	"groupobjused@",
-	"groupobjquota@"
+	"groupobjquota@",
+	"projectused@",
+	"projectquota@",
+	"projectobjused@",
+	"projectobjquota@"
 };
 
 zprop_desc_t *
@@ -116,6 +119,26 @@ zfs_prop_init(void)
 		{ "gzip-9",	ZIO_COMPRESS_GZIP_9 },
 		{ "zle",	ZIO_COMPRESS_ZLE },
 		{ "lz4",	ZIO_COMPRESS_LZ4 },
+		{ NULL }
+	};
+
+	static zprop_index_t crypto_table[] = {
+		{ "on",			ZIO_CRYPT_ON },
+		{ "off",		ZIO_CRYPT_OFF },
+		{ "aes-128-ccm",	ZIO_CRYPT_AES_128_CCM },
+		{ "aes-192-ccm",	ZIO_CRYPT_AES_192_CCM },
+		{ "aes-256-ccm",	ZIO_CRYPT_AES_256_CCM },
+		{ "aes-128-gcm",	ZIO_CRYPT_AES_128_GCM },
+		{ "aes-192-gcm",	ZIO_CRYPT_AES_192_GCM },
+		{ "aes-256-gcm",	ZIO_CRYPT_AES_256_GCM },
+		{ NULL }
+	};
+
+	static zprop_index_t keyformat_table[] = {
+		{ "none",		ZFS_KEYFORMAT_NONE },
+		{ "raw",		ZFS_KEYFORMAT_RAW },
+		{ "hex",		ZFS_KEYFORMAT_HEX },
+		{ "passphrase",		ZFS_KEYFORMAT_PASSPHRASE },
 		{ NULL }
 	};
 
@@ -190,6 +213,13 @@ zfs_prop_init(void)
 	static zprop_index_t boolean_table[] = {
 		{ "off",	0 },
 		{ "on",		1 },
+		{ NULL }
+	};
+
+	static zprop_index_t keystatus_table[] = {
+		{ "none",		ZFS_KEYSTATUS_NONE},
+		{ "unavailable",	ZFS_KEYSTATUS_UNAVAILABLE},
+		{ "available",		ZFS_KEYSTATUS_AVAILABLE},
 		{ NULL }
 	};
 
@@ -351,12 +381,16 @@ zfs_prop_init(void)
 	    PROP_DEFAULT, ZFS_TYPE_FILESYSTEM, "on | off | noauto",
 	    "CANMOUNT", canmount_table);
 
-	/* readonly index (boolean) properties */
+	/* readonly index properties */
 	zprop_register_index(ZFS_PROP_MOUNTED, "mounted", 0, PROP_READONLY,
 	    ZFS_TYPE_FILESYSTEM, "yes | no", "MOUNTED", boolean_table);
 	zprop_register_index(ZFS_PROP_DEFER_DESTROY, "defer_destroy", 0,
 	    PROP_READONLY, ZFS_TYPE_SNAPSHOT, "yes | no", "DEFER_DESTROY",
 	    boolean_table);
+	zprop_register_index(ZFS_PROP_KEYSTATUS, "keystatus",
+	    ZFS_KEYSTATUS_NONE, PROP_READONLY, ZFS_TYPE_DATASET,
+	    "none | unavailable | available",
+	    "KEYSTATUS", keystatus_table);
 
 	/* set once index properties */
 	zprop_register_index(ZFS_PROP_NORMALIZE, "normalization", 0,
@@ -367,6 +401,15 @@ zfs_prop_init(void)
 	    ZFS_CASE_SENSITIVE, PROP_ONETIME, ZFS_TYPE_FILESYSTEM |
 	    ZFS_TYPE_SNAPSHOT,
 	    "sensitive | insensitive | mixed", "CASE", case_table);
+	zprop_register_index(ZFS_PROP_KEYFORMAT, "keyformat",
+	    ZFS_KEYFORMAT_NONE, PROP_ONETIME_DEFAULT,
+	    ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
+	    "none | raw | hex | passphrase", "KEYFORMAT", keyformat_table);
+	zprop_register_index(ZFS_PROP_ENCRYPTION, "encryption",
+	    ZIO_CRYPT_DEFAULT, PROP_ONETIME, ZFS_TYPE_DATASET,
+	    "on | off | aes-128-ccm | aes-192-ccm | aes-256-ccm | "
+	    "aes-128-gcm | aes-192-gcm | aes-256-gcm", "ENCRYPTION",
+	    crypto_table);
 
 	/* set once index (boolean) properties */
 	zprop_register_index(ZFS_PROP_UTF8ONLY, "utf8only", 0, PROP_ONETIME,
@@ -409,6 +452,12 @@ zfs_prop_init(void)
 	    "receive_resume_token",
 	    NULL, PROP_READONLY, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
 	    "<string token>", "RESUMETOK");
+	zprop_register_string(ZFS_PROP_ENCRYPTION_ROOT, "encryptionroot", NULL,
+	    PROP_READONLY, ZFS_TYPE_DATASET, "<filesystem | volume>",
+	    "ENCROOT");
+	zprop_register_string(ZFS_PROP_KEYLOCATION, "keylocation",
+	    "none", PROP_DEFAULT, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
+	    "prompt | <file URI>", "KEYLOCATION");
 
 	/* readonly number properties */
 	zprop_register_number(ZFS_PROP_USED, "used", 0, PROP_READONLY,
@@ -443,7 +492,8 @@ zfs_prop_init(void)
 	zprop_register_number(ZFS_PROP_WRITTEN, "written", 0, PROP_READONLY,
 	    ZFS_TYPE_DATASET, "<size>", "WRITTEN");
 	zprop_register_number(ZFS_PROP_LOGICALUSED, "logicalused", 0,
-	    PROP_READONLY, ZFS_TYPE_DATASET, "<size>", "LUSED");
+	    PROP_READONLY, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME, "<size>",
+	    "LUSED");
 	zprop_register_number(ZFS_PROP_LOGICALREFERENCED, "logicalreferenced",
 	    0, PROP_READONLY, ZFS_TYPE_DATASET, "<size>", "LREFER");
 	zprop_register_number(ZFS_PROP_FILESYSTEM_COUNT, "filesystem_count",
@@ -456,6 +506,13 @@ zfs_prop_init(void)
 	    ZFS_TYPE_DATASET | ZFS_TYPE_BOOKMARK, "<uint64>", "GUID");
 	zprop_register_number(ZFS_PROP_CREATETXG, "createtxg", 0, PROP_READONLY,
 	    ZFS_TYPE_DATASET | ZFS_TYPE_BOOKMARK, "<uint64>", "CREATETXG");
+	zprop_register_hidden(ZFS_PROP_REMAPTXG, "remaptxg", PROP_TYPE_NUMBER,
+	    PROP_READONLY, ZFS_TYPE_DATASET, "REMAPTXG");
+	zprop_register_number(ZFS_PROP_PBKDF2_ITERS, "pbkdf2iters",
+	    0, PROP_ONETIME_DEFAULT, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
+	    "<iters>", "PBKDF2ITERS");
+	zprop_register_number(ZFS_PROP_OBJSETID, "objsetid", 0,
+	    PROP_READONLY, ZFS_TYPE_DATASET, "<uint64>", "OBJSETID");
 
 	/* default number properties */
 	zprop_register_number(ZFS_PROP_QUOTA, "quota", 0, PROP_DEFAULT,
@@ -481,6 +538,9 @@ zfs_prop_init(void)
 	zprop_register_number(ZFS_PROP_RECORDSIZE, "recordsize",
 	    SPA_OLD_MAXBLOCKSIZE, PROP_INHERIT,
 	    ZFS_TYPE_FILESYSTEM, "512 to 1M, power of 2", "RECSIZE");
+	zprop_register_number(ZFS_PROP_SPECIAL_SMALL_BLOCKS,
+	    "special_small_blocks", 0, PROP_INHERIT, ZFS_TYPE_FILESYSTEM,
+	    "zero or 512 to 128K, power of 2", "SPECIAL_SMALL_BLOCKS");
 
 	/* hidden properties */
 	zprop_register_hidden(ZFS_PROP_NUMCLONES, "numclones", PROP_TYPE_NUMBER,
@@ -497,12 +557,15 @@ zfs_prop_init(void)
 	    "USERACCOUNTING");
 	zprop_register_hidden(ZFS_PROP_UNIQUE, "unique", PROP_TYPE_NUMBER,
 	    PROP_READONLY, ZFS_TYPE_DATASET, "UNIQUE");
-	zprop_register_hidden(ZFS_PROP_OBJSETID, "objsetid", PROP_TYPE_NUMBER,
-	    PROP_READONLY, ZFS_TYPE_DATASET, "OBJSETID");
 	zprop_register_hidden(ZFS_PROP_INCONSISTENT, "inconsistent",
 	    PROP_TYPE_NUMBER, PROP_READONLY, ZFS_TYPE_DATASET, "INCONSISTENT");
 	zprop_register_hidden(ZFS_PROP_PREV_SNAP, "prevsnap", PROP_TYPE_STRING,
 	    PROP_READONLY, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME, "PREVSNAP");
+	zprop_register_hidden(ZFS_PROP_PBKDF2_SALT, "pbkdf2salt",
+	    PROP_TYPE_NUMBER, PROP_ONETIME_DEFAULT,
+	    ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME, "PBKDF2SALT");
+	zprop_register_hidden(ZFS_PROP_KEY_GUID, "keyguid", PROP_TYPE_NUMBER,
+	    PROP_READONLY, ZFS_TYPE_DATASET, "KEYGUID");
 
 	/*
 	 * Property to be removed once libbe is integrated
@@ -650,7 +713,18 @@ boolean_t
 zfs_prop_readonly(zfs_prop_t prop)
 {
 	return (zfs_prop_table[prop].pd_attr == PROP_READONLY ||
-	    zfs_prop_table[prop].pd_attr == PROP_ONETIME);
+	    zfs_prop_table[prop].pd_attr == PROP_ONETIME ||
+	    zfs_prop_table[prop].pd_attr == PROP_ONETIME_DEFAULT);
+}
+
+/*
+ * Returns TRUE if the property is visible (not hidden).
+ */
+boolean_t
+zfs_prop_visible(zfs_prop_t prop)
+{
+	return (zfs_prop_table[prop].pd_visible &&
+	    zfs_prop_table[prop].pd_zfs_mod_supported);
 }
 
 /*
@@ -659,7 +733,8 @@ zfs_prop_readonly(zfs_prop_t prop)
 boolean_t
 zfs_prop_setonce(zfs_prop_t prop)
 {
-	return (zfs_prop_table[prop].pd_attr == PROP_ONETIME);
+	return (zfs_prop_table[prop].pd_attr == PROP_ONETIME ||
+	    zfs_prop_table[prop].pd_attr == PROP_ONETIME_DEFAULT);
 }
 
 const char *
@@ -693,6 +768,40 @@ zfs_prop_inheritable(zfs_prop_t prop)
 	return (zfs_prop_table[prop].pd_attr == PROP_INHERIT ||
 	    zfs_prop_table[prop].pd_attr == PROP_ONETIME);
 }
+
+/*
+ * Returns TRUE if property is one of the encryption properties that requires
+ * a loaded encryption key to modify.
+ */
+boolean_t
+zfs_prop_encryption_key_param(zfs_prop_t prop)
+{
+	/*
+	 * keylocation does not count as an encryption property. It can be
+	 * changed at will without needing the master keys.
+	 */
+	return (prop == ZFS_PROP_PBKDF2_SALT || prop == ZFS_PROP_PBKDF2_ITERS ||
+	    prop == ZFS_PROP_KEYFORMAT);
+}
+
+/*
+ * Helper function used by both kernelspace and userspace to check the
+ * keylocation property. If encrypted is set, the keylocation must be valid
+ * for an encrypted dataset.
+ */
+boolean_t
+zfs_prop_valid_keylocation(const char *str, boolean_t encrypted)
+{
+	if (strcmp("none", str) == 0)
+		return (!encrypted);
+	else if (strcmp("prompt", str) == 0)
+		return (B_TRUE);
+	else if (strlen(str) > 8 && strncmp("file:///", str, 8) == 0)
+		return (B_TRUE);
+
+	return (B_FALSE);
+}
+
 
 #ifndef _KERNEL
 
@@ -740,7 +849,7 @@ zfs_prop_align_right(zfs_prop_t prop)
 
 #endif
 
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 static int __init
 zcommon_init(void)
 {
@@ -768,12 +877,15 @@ EXPORT_SYMBOL(zfs_prop_init);
 EXPORT_SYMBOL(zfs_prop_get_type);
 EXPORT_SYMBOL(zfs_prop_get_table);
 EXPORT_SYMBOL(zfs_prop_delegatable);
+EXPORT_SYMBOL(zfs_prop_visible);
 
 /* Dataset property functions shared between libzfs and kernel. */
 EXPORT_SYMBOL(zfs_prop_default_string);
 EXPORT_SYMBOL(zfs_prop_default_numeric);
 EXPORT_SYMBOL(zfs_prop_readonly);
 EXPORT_SYMBOL(zfs_prop_inheritable);
+EXPORT_SYMBOL(zfs_prop_encryption_key_param);
+EXPORT_SYMBOL(zfs_prop_valid_keylocation);
 EXPORT_SYMBOL(zfs_prop_setonce);
 EXPORT_SYMBOL(zfs_prop_to_name);
 EXPORT_SYMBOL(zfs_name_to_prop);
@@ -782,5 +894,6 @@ EXPORT_SYMBOL(zfs_prop_userquota);
 EXPORT_SYMBOL(zfs_prop_index_to_string);
 EXPORT_SYMBOL(zfs_prop_string_to_index);
 EXPORT_SYMBOL(zfs_prop_valid_for_type);
+EXPORT_SYMBOL(zfs_prop_written);
 
 #endif

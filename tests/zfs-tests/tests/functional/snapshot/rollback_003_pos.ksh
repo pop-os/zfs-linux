@@ -48,9 +48,8 @@
 
 verify_runnable "both"
 
-# https://github.com/zfsonlinux/zfs/issues/6143
 if is_linux; then
-	log_unsupported "Test case occasionally fails"
+	log_unsupported "Test case is known to fail on Linux"
 fi
 
 function cleanup

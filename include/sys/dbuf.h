@@ -54,6 +54,7 @@ extern "C" {
 #define	DB_RF_NOPREFETCH	(1 << 3)
 #define	DB_RF_NEVERWAIT		(1 << 4)
 #define	DB_RF_CACHED		(1 << 5)
+#define	DB_RF_NO_DECRYPT	(1 << 6)
 
 /*
  * The simplified state transition diagram for dbufs looks like:
@@ -82,6 +83,13 @@ typedef enum dbuf_states {
 	DB_CACHED,
 	DB_EVICTING
 } dbuf_states_t;
+
+typedef enum dbuf_cached_state {
+	DB_NO_CACHE = -1,
+	DB_DBUF_CACHE,
+	DB_DBUF_METADATA_CACHE,
+	DB_CACHE_MAX
+} dbuf_cached_state_t;
 
 struct dnode;
 struct dmu_tx;
@@ -146,6 +154,16 @@ typedef struct dbuf_dirty_record {
 			override_states_t dr_override_state;
 			uint8_t dr_copies;
 			boolean_t dr_nopwrite;
+			boolean_t dr_has_raw_params;
+
+			/*
+			 * If dr_has_raw_params is set, the following crypt
+			 * params will be set on the BP that's written.
+			 */
+			boolean_t dr_byteorder;
+			uint8_t	dr_salt[ZIO_DATA_SALT_LEN];
+			uint8_t	dr_iv[ZIO_DATA_IV_LEN];
+			uint8_t	dr_mac[ZIO_DATA_MAC_LEN];
 		} dl;
 	} dt;
 } dbuf_dirty_record_t;
@@ -229,10 +247,11 @@ typedef struct dmu_buf_impl {
 	 */
 	avl_node_t db_link;
 
-	/*
-	 * Link in dbuf_cache.
-	 */
+	/* Link in dbuf_cache or dbuf_metadata_cache */
 	multilist_node_t db_cache_link;
+
+	/* Tells us which dbuf cache this dbuf is in, if any */
+	dbuf_cached_state_t db_caching_status;
 
 	/* Data which is unique to data (leaf) blocks: */
 
@@ -315,6 +334,8 @@ void dbuf_destroy(dmu_buf_impl_t *db);
 void dbuf_unoverride(dbuf_dirty_record_t *dr);
 void dbuf_sync_list(list_t *list, int level, dmu_tx_t *tx);
 void dbuf_release_bp(dmu_buf_impl_t *db);
+
+boolean_t dbuf_can_remap(const dmu_buf_impl_t *buf);
 
 void dbuf_free_range(struct dnode *dn, uint64_t start, uint64_t end,
     struct dmu_tx *);

@@ -3,16 +3,16 @@
 . /lib/dracut-lib.sh
 
 # Let the command line override our host id.
-spl_hostid=`getarg spl_hostid=`
+spl_hostid=$(getarg spl_hostid=)
 if [ -n "${spl_hostid}" ] ; then
 	info "ZFS: Using hostid from command line: ${spl_hostid}"
-	AA=`echo ${spl_hostid} | cut -b 1,2`
-	BB=`echo ${spl_hostid} | cut -b 3,4`
-	CC=`echo ${spl_hostid} | cut -b 5,6`
-	DD=`echo ${spl_hostid} | cut -b 7,8`
-	printf "\x${DD}\x${CC}\x${BB}\x${AA}" >/etc/hostid
+	AA=$(echo "${spl_hostid}" | cut -b 1,2)
+	BB=$(echo "${spl_hostid}" | cut -b 3,4)
+	CC=$(echo "${spl_hostid}" | cut -b 5,6)
+	DD=$(echo "${spl_hostid}" | cut -b 7,8)
+	echo -ne "\\x${DD}\\x${CC}\\x${BB}\\x${AA}" >/etc/hostid
 elif [ -f "/etc/hostid" ] ; then
-	info "ZFS: Using hostid from /etc/hostid: `hostid`"
+	info "ZFS: Using hostid from /etc/hostid: $(hostid)"
 else
 	warn "ZFS: No hostid found on kernel command line or /etc/hostid."
 	warn "ZFS: Pools may not import correctly."
@@ -39,11 +39,14 @@ case "${root}" in
 		# root=zfs:rpool/ROOT
 		# root=zfs:FILESYSTEM=rpool/ROOT
 		# root=FILESYSTEM=rpool/ROOT
+		# root=ZFS=pool+with+space/ROOT+WITH+SPACE (translates to root=ZFS=pool with space/ROOT WITH SPACE)
 
 		# Strip down to just the pool/fs
 		root="${root#zfs:}"
 		root="${root#FILESYSTEM=}"
 		root="zfs:${root#ZFS=}"
+		# switch + with spaces because kernel cmdline does not allow us to quote parameters
+		root=$(printf '%s\n' "$root" | sed "s/+/ /g")
 		rootok=1
 		wait_for_zfs=1
 

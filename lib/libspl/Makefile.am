@@ -4,8 +4,6 @@ VPATH = \
 	$(top_srcdir)/lib/libspl \
 	$(top_srcdir)/lib/libspl/$(TARGET_ASM_DIR)
 
-AM_CFLAGS += $(DEBUG_STACKFLAGS) $(FRAME_LARGER_THAN)
-
 SUBDIRS = include $(TARGET_ASM_DIR)
 DIST_SUBDIRS = include asm-generic asm-i386 asm-x86_64
 
@@ -19,13 +17,13 @@ noinst_LTLIBRARIES = libspl.la
 
 USER_C = \
 	getexecname.c \
+	gethostid.c \
 	getmntany.c \
 	list.c \
 	mkdirp.c \
 	page.c \
 	strlcat.c \
 	strlcpy.c \
-	strnlen.c \
 	timestamp.c \
 	zone.c \
 	include/sys/list.h \
@@ -33,12 +31,9 @@ USER_C = \
 
 USER_ASM = atomic.S
 
-KERNEL_C =
-
 nodist_libspl_la_SOURCES = \
 	$(USER_C) \
-	$(USER_ASM) \
-	$(KERNEL_C)
+	$(USER_ASM)
 
 libspl_la_LIBADD = -lrt
 
