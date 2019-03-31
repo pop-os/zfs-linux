@@ -119,13 +119,13 @@ function cleanup_pool
 	log_must rm -rf $BACKDIR/*
 
 	if is_global_zone ; then
-		log_must zfs destroy -Rf $pool
+		log_must_busy zfs destroy -Rf $pool
 	else
 		typeset list=$(zfs list -H -r -t all -o name $pool)
 		for ds in $list ; do
 			if [[ $ds != $pool ]] ; then
 				if datasetexists $ds ; then
-					log_must zfs destroy -Rf $ds
+					log_must_busy zfs destroy -Rf $ds
 				fi
 			fi
 		done
@@ -151,6 +151,20 @@ function cleanup_pools
 {
 	cleanup_pool $POOL2
 	destroy_pool $POOL3
+}
+
+function cmp_md5s {
+	typeset file1=$1
+	typeset file2=$2
+
+	eval md5sum $file1 | awk '{ print $1 }'	> $BACKDIR/md5_file1
+	eval md5sum $file2 | awk '{ print $1 }'	> $BACKDIR/md5_file2
+	diff $BACKDIR/md5_file1 $BACKDIR/md5_file2
+	typeset -i ret=$?
+
+	rm -f $BACKDIR/md5_file1 $BACKDIR/md5_file2
+
+	return $ret
 }
 
 #
@@ -296,23 +310,15 @@ function destroy_tree
 	typeset -i ret=0
 	typeset snap
 	for snap in "$@" ; do
-		zfs destroy $snap
-		ret=$?
+		log_must_busy zfs destroy $snap
 
 		typeset ds=${snap%%@*}
 		typeset type=$(get_prop "type" $ds)
 		if [[ $type == "filesystem" ]]; then
 			typeset mntpnt=$(get_prop mountpoint $ds)
-			((ret |= $?))
-
-			if ((ret != 0)); then
-				rm -r $mntpnt/$snap
-				((ret |= $?))
+			if [[ -n $mntpnt ]]; then
+				rm -rf $mntpnt/$snap
 			fi
-		fi
-
-		if ((ret != 0)); then
-			return $ret
 		fi
 	done
 
@@ -396,13 +402,36 @@ function mk_files
 	maxsize=$2
 	file_id_offset=$3
 	fs=$4
+	bs=512
 
 	for ((i=0; i<$nfiles; i=i+1)); do
-		dd if=/dev/urandom \
-		    of=/$fs/file-$maxsize-$((i+$file_id_offset)) \
-		    bs=$((($RANDOM * $RANDOM % ($maxsize - 1)) + 1)) \
-		    count=1 >/dev/null 2>&1 || log_fail \
-		    "Failed to create /$fs/file-$maxsize-$((i+$file_id_offset))"
+		file_name="/$fs/file-$maxsize-$((i+$file_id_offset))"
+		file_size=$((($RANDOM * $RANDOM % ($maxsize - 1)) + 1))
+
+		#
+		# Create an interesting mix of files which contain both
+		# data blocks and holes for more realistic test coverage.
+		# Half the files are created as sparse then partially filled,
+		# the other half is dense then a hole is punched in the file.
+		#
+		if [ $((RANDOM % 2)) -eq 0 ]; then
+			truncate -s $file_size $file_name || \
+			    log_fail "Failed to create $file_name"
+			dd if=/dev/urandom of=$file_name \
+			    bs=$bs count=$(($file_size / 2 / $bs)) \
+			    seek=$(($RANDOM % (($file_size / 2 / $bs) + 1))) \
+			    conv=notrunc >/dev/null 2>&1 || \
+			    log_fail "Failed to create $file_name"
+		else
+			dd if=/dev/urandom of=$file_name \
+			    bs=$file_size count=1 >/dev/null 2>&1 || \
+			    log_fail "Failed to create $file_name"
+			dd if=/dev/zero of=$file_name \
+			    bs=$bs count=$(($file_size / 2 / $bs)) \
+			    seek=$(($RANDOM % (($file_size / 2 / $bs) + 1))) \
+			    conv=notrunc >/dev/null 2>&1 || \
+			    log_fail "Failed to create $file_name"
+		fi
 	done
 	echo Created $nfiles files of random sizes up to $maxsize bytes
 }
@@ -517,9 +546,9 @@ function test_fs_setup
 	typeset sendpool=${sendfs%%/*}
 	typeset recvpool=${recvfs%%/*}
 
-	datasetexists $sendfs && log_must zfs destroy -r $sendpool
-	datasetexists $recvfs && log_must zfs destroy -r $recvpool
-	datasetexists $streamfs && log_must zfs destroy -r $streamfs
+	datasetexists $sendfs && log_must_busy zfs destroy -r $sendpool
+	datasetexists $recvfs && log_must_busy zfs destroy -r $recvpool
+	datasetexists $streamfs && log_must_busy zfs destroy -r $streamfs
 
 	if $(datasetexists $sendfs || zfs create -o compress=lz4 $sendfs); then
 		mk_files 1000 256 0 $sendfs &
@@ -608,7 +637,7 @@ function parse_dump
 	    if ($1 == "OBJECT") print $1" "$4
 	    if ($1 == "FREEOBJECTS") print $1" "$4" "$7
 	    if ($1 == "FREE") print $1" "$7" "$10
-	    if ($1 == "WRITE") print $1" "$15" "$18" "$21" "$24" "$27}'
+	    if ($1 == "WRITE") print $1" "$15" "$21" "$24" "$27" "$30}'
 }
 
 #
@@ -664,8 +693,8 @@ function resume_cleanup
 	typeset streamfs=$2
 	typeset sendpool=${sendfs%%/*}
 
-	datasetexists $sendfs && log_must zfs destroy -r $sendfs
-	datasetexists $streamfs && log_must zfs destroy -r $streamfs
+	datasetexists $sendfs && log_must_busy zfs destroy -r $sendfs
+	datasetexists $streamfs && log_must_busy zfs destroy -r $streamfs
 	cleanup_pool $POOL2
 	rm -f /$sendpool/initial.zsend /$sendpool/incremental.zsend
 }

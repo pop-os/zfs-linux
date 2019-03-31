@@ -21,6 +21,8 @@
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 by Delphix. All rights reserved.
+ * Copyright 2017 Jason King
+ * Copyright (c) 2017, Intel Corporation.
  */
 
 #include <assert.h>
@@ -32,38 +34,13 @@
 #include <sys/spa.h>
 #include <sys/fs/zfs.h>
 #include <sys/refcount.h>
+#include <sys/zfs_ioctl.h>
 #include <dlfcn.h>
+#include <libzutil.h>
 
 /*
  * Routines needed by more than one client of libzpool.
  */
-
-void
-nicenum(uint64_t num, char *buf)
-{
-	uint64_t n = num;
-	int index = 0;
-	char u;
-
-	while (n >= 1024) {
-		n = (n + (1024 / 2)) / 1024; /* Round up or down */
-		index++;
-	}
-
-	u = " KMGTPE"[index];
-
-	if (index == 0) {
-		(void) sprintf(buf, "%llu", (u_longlong_t)n);
-	} else if (n < 10 && (num & (num - 1)) != 0) {
-		(void) sprintf(buf, "%.2f%c",
-		    (double)num / (1ULL << 10 * index), u);
-	} else if (n < 100 && (num & (num - 1)) != 0) {
-		(void) sprintf(buf, "%.1f%c",
-		    (double)num / (1ULL << 10 * index), u);
-	} else {
-		(void) sprintf(buf, "%llu%c", (u_longlong_t)n, u);
-	}
-}
 
 static void
 show_vdev_stats(const char *desc, const char *ctype, nvlist_t *nv, int indent)
@@ -76,7 +53,6 @@ show_vdev_stats(const char *desc, const char *ctype, nvlist_t *nv, int indent)
 	uint_t c, children;
 	char used[6], avail[6];
 	char rops[6], wops[6], rbytes[6], wbytes[6], rerr[6], werr[6], cerr[6];
-	char *prefix = "";
 
 	v0 = umem_zalloc(sizeof (*v0), UMEM_NOFAIL);
 
@@ -88,32 +64,43 @@ show_vdev_stats(const char *desc, const char *ctype, nvlist_t *nv, int indent)
 	}
 
 	if (desc != NULL) {
+		char *suffix = "", *bias = NULL;
+		char bias_suffix[32];
+
 		(void) nvlist_lookup_uint64(nv, ZPOOL_CONFIG_IS_LOG, &is_log);
-
-		if (is_log)
-			prefix = "log ";
-
+		(void) nvlist_lookup_string(nv, ZPOOL_CONFIG_ALLOCATION_BIAS,
+		    &bias);
 		if (nvlist_lookup_uint64_array(nv, ZPOOL_CONFIG_VDEV_STATS,
 		    (uint64_t **)&vs, &c) != 0)
 			vs = v0;
 
+		if (bias != NULL) {
+			(void) snprintf(bias_suffix, sizeof (bias_suffix),
+			    " (%s)", bias);
+			suffix = bias_suffix;
+		} else if (is_log) {
+			suffix = " (log)";
+		}
+
 		sec = MAX(1, vs->vs_timestamp / NANOSEC);
 
-		nicenum(vs->vs_alloc, used);
-		nicenum(vs->vs_space - vs->vs_alloc, avail);
-		nicenum(vs->vs_ops[ZIO_TYPE_READ] / sec, rops);
-		nicenum(vs->vs_ops[ZIO_TYPE_WRITE] / sec, wops);
-		nicenum(vs->vs_bytes[ZIO_TYPE_READ] / sec, rbytes);
-		nicenum(vs->vs_bytes[ZIO_TYPE_WRITE] / sec, wbytes);
-		nicenum(vs->vs_read_errors, rerr);
-		nicenum(vs->vs_write_errors, werr);
-		nicenum(vs->vs_checksum_errors, cerr);
+		nicenum(vs->vs_alloc, used, sizeof (used));
+		nicenum(vs->vs_space - vs->vs_alloc, avail, sizeof (avail));
+		nicenum(vs->vs_ops[ZIO_TYPE_READ] / sec, rops, sizeof (rops));
+		nicenum(vs->vs_ops[ZIO_TYPE_WRITE] / sec, wops, sizeof (wops));
+		nicenum(vs->vs_bytes[ZIO_TYPE_READ] / sec, rbytes,
+		    sizeof (rbytes));
+		nicenum(vs->vs_bytes[ZIO_TYPE_WRITE] / sec, wbytes,
+		    sizeof (wbytes));
+		nicenum(vs->vs_read_errors, rerr, sizeof (rerr));
+		nicenum(vs->vs_write_errors, werr, sizeof (werr));
+		nicenum(vs->vs_checksum_errors, cerr, sizeof (cerr));
 
 		(void) printf("%*s%s%*s%*s%*s %5s %5s %5s %5s %5s %5s %5s\n",
 		    indent, "",
-		    prefix,
-		    (int)(indent+strlen(prefix)-25-(vs->vs_space ? 0 : 12)),
 		    desc,
+		    (int)(indent+strlen(desc)-25-(vs->vs_space ? 0 : 12)),
+		    suffix,
 		    vs->vs_space ? 6 : 0, vs->vs_space ? used : "",
 		    vs->vs_space ? 6 : 0, vs->vs_space ? avail : "",
 		    rops, wops, rbytes, wbytes, rerr, werr, cerr);
@@ -215,3 +202,56 @@ set_global_var(char *arg)
 
 	return (0);
 }
+
+static nvlist_t *
+refresh_config(void *unused, nvlist_t *tryconfig)
+{
+	return (spa_tryimport(tryconfig));
+}
+
+static int
+pool_active(void *unused, const char *name, uint64_t guid,
+    boolean_t *isactive)
+{
+	zfs_cmd_t *zcp;
+	nvlist_t *innvl;
+	char *packed = NULL;
+	size_t size = 0;
+	int fd, ret;
+
+	/*
+	 * Use ZFS_IOC_POOL_SYNC to confirm if a pool is active
+	 */
+
+	fd = open("/dev/zfs", O_RDWR);
+	if (fd < 0)
+		return (-1);
+
+	zcp = umem_zalloc(sizeof (zfs_cmd_t), UMEM_NOFAIL);
+
+	innvl = fnvlist_alloc();
+	fnvlist_add_boolean_value(innvl, "force", B_FALSE);
+
+	(void) strlcpy(zcp->zc_name, name, sizeof (zcp->zc_name));
+	packed = fnvlist_pack(innvl, &size);
+	zcp->zc_nvlist_src = (uint64_t)(uintptr_t)packed;
+	zcp->zc_nvlist_src_size = size;
+
+	ret = ioctl(fd, ZFS_IOC_POOL_SYNC, zcp);
+
+	fnvlist_pack_free(packed, size);
+	free((void *)(uintptr_t)zcp->zc_nvlist_dst);
+	nvlist_free(innvl);
+	umem_free(zcp, sizeof (zfs_cmd_t));
+
+	(void) close(fd);
+
+	*isactive = (ret == 0);
+
+	return (0);
+}
+
+const pool_config_ops_t libzpool_config_ops = {
+	.pco_refresh_config = refresh_config,
+	.pco_pool_active = pool_active,
+};

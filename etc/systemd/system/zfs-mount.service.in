@@ -1,5 +1,6 @@
 [Unit]
 Description=Mount ZFS filesystems
+Documentation=man:zfs(8)
 DefaultDependencies=no
 After=systemd-udev-settle.service
 After=zfs-import.target
@@ -12,5 +13,4 @@ RemainAfterExit=yes
 ExecStart=@sbindir@/zfs mount -a
 
 [Install]
-WantedBy=zfs-share.service
 WantedBy=zfs.target

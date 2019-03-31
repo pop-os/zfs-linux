@@ -21,12 +21,11 @@
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Cyril Plisko. All rights reserved.
- * Copyright (c) 2013, 2015 by Delphix. All rights reserved.
+ * Copyright (c) 2013, 2017 by Delphix. All rights reserved.
  */
 
 #include <sys/types.h>
 #include <sys/param.h>
-#include <sys/systm.h>
 #include <sys/sysmacros.h>
 #include <sys/cmn_err.h>
 #include <sys/kmem.h>
@@ -72,7 +71,7 @@ zfs_init_vattr(vattr_t *vap, uint64_t mask, uint64_t mode,
 
 /* ARGSUSED */
 static int
-zfs_replay_error(zfsvfs_t *zfsvfs, lr_t *lr, boolean_t byteswap)
+zfs_replay_error(void *arg1, void *arg2, boolean_t byteswap)
 {
 	return (SET_ERROR(ENOTSUP));
 }
@@ -128,14 +127,25 @@ zfs_replay_xvattr(lr_attr_t *lrattr, xvattr_t *xvap)
 		    ((*attrs & XAT0_AV_QUARANTINED) != 0);
 	if (XVA_ISSET_REQ(xvap, XAT_CREATETIME))
 		ZFS_TIME_DECODE(&xoap->xoa_createtime, crtime);
-	if (XVA_ISSET_REQ(xvap, XAT_AV_SCANSTAMP))
+	if (XVA_ISSET_REQ(xvap, XAT_AV_SCANSTAMP)) {
+		ASSERT(!XVA_ISSET_REQ(xvap, XAT_PROJID));
+
 		bcopy(scanstamp, xoap->xoa_av_scanstamp, AV_SCANSTAMP_SZ);
+	} else if (XVA_ISSET_REQ(xvap, XAT_PROJID)) {
+		/*
+		 * XAT_PROJID and XAT_AV_SCANSTAMP will never be valid
+		 * at the same time, so we can share the same space.
+		 */
+		bcopy(scanstamp, &xoap->xoa_projid, sizeof (uint64_t));
+	}
 	if (XVA_ISSET_REQ(xvap, XAT_REPARSE))
 		xoap->xoa_reparse = ((*attrs & XAT0_REPARSE) != 0);
 	if (XVA_ISSET_REQ(xvap, XAT_OFFLINE))
 		xoap->xoa_offline = ((*attrs & XAT0_OFFLINE) != 0);
 	if (XVA_ISSET_REQ(xvap, XAT_SPARSE))
 		xoap->xoa_sparse = ((*attrs & XAT0_SPARSE) != 0);
+	if (XVA_ISSET_REQ(xvap, XAT_PROJINHERIT))
+		xoap->xoa_projinherit = ((*attrs & XAT0_PROJINHERIT) != 0);
 }
 
 static int
@@ -265,9 +275,10 @@ zfs_replay_swap_attrs(lr_attr_t *lrattr)
  * as option FUID information.
  */
 static int
-zfs_replay_create_acl(zfsvfs_t *zfsvfs,
-    lr_acl_create_t *lracl, boolean_t byteswap)
+zfs_replay_create_acl(void *arg1, void *arg2, boolean_t byteswap)
 {
+	zfsvfs_t *zfsvfs = arg1;
+	lr_acl_create_t *lracl = arg2;
 	char *name = NULL;		/* location determined later */
 	lr_create_t *lr = (lr_create_t *)lracl;
 	znode_t *dzp;
@@ -413,8 +424,10 @@ bail:
 }
 
 static int
-zfs_replay_create(zfsvfs_t *zfsvfs, lr_create_t *lr, boolean_t byteswap)
+zfs_replay_create(void *arg1, void *arg2, boolean_t byteswap)
 {
+	zfsvfs_t *zfsvfs = arg1;
+	lr_create_t *lr = arg2;
 	char *name = NULL;		/* location determined later */
 	char *link;			/* symlink content follows name */
 	znode_t *dzp;
@@ -453,8 +466,8 @@ zfs_replay_create(zfsvfs_t *zfsvfs, lr_create_t *lr, boolean_t byteswap)
 	 * eventually end up in zfs_mknode(), which assigns the object's
 	 * creation time, generation number, and dnode slot count. The
 	 * generic zfs_create() has no concept of these attributes, so
-	 * we smuggle the values inside * the vattr's otherwise unused
-	 * va_ctime, va_nblocks, and va_nlink fields.
+	 * we smuggle the values inside the vattr's otherwise unused
+	 * va_ctime, va_nblocks, and va_fsid fields.
 	 */
 	ZFS_TIME_DECODE(&xva.xva_vattr.va_ctime, lr->lr_crtime);
 	xva.xva_vattr.va_nblocks = lr->lr_gen;
@@ -545,8 +558,10 @@ out:
 }
 
 static int
-zfs_replay_remove(zfsvfs_t *zfsvfs, lr_remove_t *lr, boolean_t byteswap)
+zfs_replay_remove(void *arg1, void *arg2, boolean_t byteswap)
 {
+	zfsvfs_t *zfsvfs = arg1;
+	lr_remove_t *lr = arg2;
 	char *name = (char *)(lr + 1);	/* name follows lr_remove_t */
 	znode_t *dzp;
 	int error;
@@ -578,8 +593,10 @@ zfs_replay_remove(zfsvfs_t *zfsvfs, lr_remove_t *lr, boolean_t byteswap)
 }
 
 static int
-zfs_replay_link(zfsvfs_t *zfsvfs, lr_link_t *lr, boolean_t byteswap)
+zfs_replay_link(void *arg1, void *arg2, boolean_t byteswap)
 {
+	zfsvfs_t *zfsvfs = arg1;
+	lr_link_t *lr = arg2;
 	char *name = (char *)(lr + 1);	/* name follows lr_link_t */
 	znode_t *dzp, *zp;
 	int error;
@@ -608,8 +625,10 @@ zfs_replay_link(zfsvfs_t *zfsvfs, lr_link_t *lr, boolean_t byteswap)
 }
 
 static int
-zfs_replay_rename(zfsvfs_t *zfsvfs, lr_rename_t *lr, boolean_t byteswap)
+zfs_replay_rename(void *arg1, void *arg2, boolean_t byteswap)
 {
+	zfsvfs_t *zfsvfs = arg1;
+	lr_rename_t *lr = arg2;
 	char *sname = (char *)(lr + 1);	/* sname and tname follow lr_rename_t */
 	char *tname = sname + strlen(sname) + 1;
 	znode_t *sdzp, *tdzp;
@@ -639,8 +658,10 @@ zfs_replay_rename(zfsvfs_t *zfsvfs, lr_rename_t *lr, boolean_t byteswap)
 }
 
 static int
-zfs_replay_write(zfsvfs_t *zfsvfs, lr_write_t *lr, boolean_t byteswap)
+zfs_replay_write(void *arg1, void *arg2, boolean_t byteswap)
 {
+	zfsvfs_t *zfsvfs = arg1;
+	lr_write_t *lr = arg2;
 	char *data = (char *)(lr + 1);	/* data follows lr_write_t */
 	znode_t	*zp;
 	int error, written;
@@ -708,8 +729,10 @@ zfs_replay_write(zfsvfs_t *zfsvfs, lr_write_t *lr, boolean_t byteswap)
  * the file is grown.
  */
 static int
-zfs_replay_write2(zfsvfs_t *zfsvfs, lr_write_t *lr, boolean_t byteswap)
+zfs_replay_write2(void *arg1, void *arg2, boolean_t byteswap)
 {
+	zfsvfs_t *zfsvfs = arg1;
+	lr_write_t *lr = arg2;
 	znode_t	*zp;
 	int error;
 	uint64_t end;
@@ -753,8 +776,10 @@ top:
 }
 
 static int
-zfs_replay_truncate(zfsvfs_t *zfsvfs, lr_truncate_t *lr, boolean_t byteswap)
+zfs_replay_truncate(void *arg1, void *arg2, boolean_t byteswap)
 {
+	zfsvfs_t *zfsvfs = arg1;
+	lr_truncate_t *lr = arg2;
 	znode_t *zp;
 	flock64_t fl;
 	int error;
@@ -780,8 +805,10 @@ zfs_replay_truncate(zfsvfs_t *zfsvfs, lr_truncate_t *lr, boolean_t byteswap)
 }
 
 static int
-zfs_replay_setattr(zfsvfs_t *zfsvfs, lr_setattr_t *lr, boolean_t byteswap)
+zfs_replay_setattr(void *arg1, void *arg2, boolean_t byteswap)
 {
+	zfsvfs_t *zfsvfs = arg1;
+	lr_setattr_t *lr = arg2;
 	znode_t *zp;
 	xvattr_t xva;
 	vattr_t *vap = &xva.xva_vattr;
@@ -834,8 +861,10 @@ zfs_replay_setattr(zfsvfs_t *zfsvfs, lr_setattr_t *lr, boolean_t byteswap)
 }
 
 static int
-zfs_replay_acl_v0(zfsvfs_t *zfsvfs, lr_acl_v0_t *lr, boolean_t byteswap)
+zfs_replay_acl_v0(void *arg1, void *arg2, boolean_t byteswap)
 {
+	zfsvfs_t *zfsvfs = arg1;
+	lr_acl_v0_t *lr = arg2;
 	ace_t *ace = (ace_t *)(lr + 1);	/* ace array follows lr_acl_t */
 	vsecattr_t vsa;
 	znode_t *zp;
@@ -878,8 +907,10 @@ zfs_replay_acl_v0(zfsvfs_t *zfsvfs, lr_acl_v0_t *lr, boolean_t byteswap)
  *
  */
 static int
-zfs_replay_acl(zfsvfs_t *zfsvfs, lr_acl_t *lr, boolean_t byteswap)
+zfs_replay_acl(void *arg1, void *arg2, boolean_t byteswap)
 {
+	zfsvfs_t *zfsvfs = arg1;
+	lr_acl_t *lr = arg2;
 	ace_t *ace = (ace_t *)(lr + 1);
 	vsecattr_t vsa;
 	znode_t *zp;
@@ -928,26 +959,26 @@ zfs_replay_acl(zfsvfs_t *zfsvfs, lr_acl_t *lr, boolean_t byteswap)
 /*
  * Callback vectors for replaying records
  */
-zil_replay_func_t zfs_replay_vector[TX_MAX_TYPE] = {
-	(zil_replay_func_t)zfs_replay_error,		/* no such type */
-	(zil_replay_func_t)zfs_replay_create,		/* TX_CREATE */
-	(zil_replay_func_t)zfs_replay_create,		/* TX_MKDIR */
-	(zil_replay_func_t)zfs_replay_create,		/* TX_MKXATTR */
-	(zil_replay_func_t)zfs_replay_create,		/* TX_SYMLINK */
-	(zil_replay_func_t)zfs_replay_remove,		/* TX_REMOVE */
-	(zil_replay_func_t)zfs_replay_remove,		/* TX_RMDIR */
-	(zil_replay_func_t)zfs_replay_link,		/* TX_LINK */
-	(zil_replay_func_t)zfs_replay_rename,		/* TX_RENAME */
-	(zil_replay_func_t)zfs_replay_write,		/* TX_WRITE */
-	(zil_replay_func_t)zfs_replay_truncate,		/* TX_TRUNCATE */
-	(zil_replay_func_t)zfs_replay_setattr,		/* TX_SETATTR */
-	(zil_replay_func_t)zfs_replay_acl_v0,		/* TX_ACL_V0 */
-	(zil_replay_func_t)zfs_replay_acl,		/* TX_ACL */
-	(zil_replay_func_t)zfs_replay_create_acl,	/* TX_CREATE_ACL */
-	(zil_replay_func_t)zfs_replay_create,		/* TX_CREATE_ATTR */
-	(zil_replay_func_t)zfs_replay_create_acl,	/* TX_CREATE_ACL_ATTR */
-	(zil_replay_func_t)zfs_replay_create_acl,	/* TX_MKDIR_ACL */
-	(zil_replay_func_t)zfs_replay_create,		/* TX_MKDIR_ATTR */
-	(zil_replay_func_t)zfs_replay_create_acl,	/* TX_MKDIR_ACL_ATTR */
-	(zil_replay_func_t)zfs_replay_write2,		/* TX_WRITE2 */
+zil_replay_func_t *zfs_replay_vector[TX_MAX_TYPE] = {
+	zfs_replay_error,	/* no such type */
+	zfs_replay_create,	/* TX_CREATE */
+	zfs_replay_create,	/* TX_MKDIR */
+	zfs_replay_create,	/* TX_MKXATTR */
+	zfs_replay_create,	/* TX_SYMLINK */
+	zfs_replay_remove,	/* TX_REMOVE */
+	zfs_replay_remove,	/* TX_RMDIR */
+	zfs_replay_link,	/* TX_LINK */
+	zfs_replay_rename,	/* TX_RENAME */
+	zfs_replay_write,	/* TX_WRITE */
+	zfs_replay_truncate,	/* TX_TRUNCATE */
+	zfs_replay_setattr,	/* TX_SETATTR */
+	zfs_replay_acl_v0,	/* TX_ACL_V0 */
+	zfs_replay_acl,		/* TX_ACL */
+	zfs_replay_create_acl,	/* TX_CREATE_ACL */
+	zfs_replay_create,	/* TX_CREATE_ATTR */
+	zfs_replay_create_acl,	/* TX_CREATE_ACL_ATTR */
+	zfs_replay_create_acl,	/* TX_MKDIR_ACL */
+	zfs_replay_create,	/* TX_MKDIR_ATTR */
+	zfs_replay_create_acl,	/* TX_MKDIR_ACL_ATTR */
+	zfs_replay_write2,	/* TX_WRITE2 */
 };

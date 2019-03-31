@@ -60,6 +60,13 @@ log_must zdb -d $TESTPOOL/
 log_must zdb -d $TESTPOOL/$TESTFS
 log_must zdb -d $TESTPOOL/$TESTFS@snap
 
+log_must zpool checkpoint $TESTPOOL
+log_must zdb -kd $TESTPOOL
+log_must zdb -kd $TESTPOOL/
+log_must zdb -kd $TESTPOOL/$TESTFS
+log_must zdb -kd $TESTPOOL/$TESTFS@snap
+log_must zpool checkpoint -d $TESTPOOL
+
 log_must zpool export $TESTPOOL
 
 log_must zdb -ed $TESTPOOL

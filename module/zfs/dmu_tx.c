@@ -37,7 +37,6 @@
 #include <sys/sa.h>
 #include <sys/sa_impl.h>
 #include <sys/zfs_context.h>
-#include <sys/varargs.h>
 #include <sys/trace_dmu.h>
 
 typedef void (*dmu_tx_hold_func_t)(dmu_tx_t *tx, struct dnode *dn,
@@ -54,6 +53,7 @@ dmu_tx_stats_t dmu_tx_stats = {
 	{ "dmu_tx_dirty_throttle",	KSTAT_DATA_UINT64 },
 	{ "dmu_tx_dirty_delay",		KSTAT_DATA_UINT64 },
 	{ "dmu_tx_dirty_over_max",	KSTAT_DATA_UINT64 },
+	{ "dmu_tx_dirty_frees_delay",	KSTAT_DATA_UINT64 },
 	{ "dmu_tx_quota",		KSTAT_DATA_UINT64 },
 };
 
@@ -87,7 +87,7 @@ dmu_tx_create_assigned(struct dsl_pool *dp, uint64_t txg)
 {
 	dmu_tx_t *tx = dmu_tx_create_dd(NULL);
 
-	txg_verify(dp->dp_spa, txg);
+	TXG_VERIFY(dp->dp_spa, txg);
 	tx->tx_pool = dp;
 	tx->tx_txg = txg;
 	tx->tx_anyobj = TRUE;
@@ -295,8 +295,8 @@ dmu_tx_count_write(dmu_tx_hold_t *txh, uint64_t off, uint64_t len)
 static void
 dmu_tx_count_dnode(dmu_tx_hold_t *txh)
 {
-	(void) zfs_refcount_add_many(&txh->txh_space_towrite, DNODE_MIN_SIZE,
-	    FTAG);
+	(void) zfs_refcount_add_many(&txh->txh_space_towrite,
+	    DNODE_MIN_SIZE, FTAG);
 }
 
 void
@@ -314,6 +314,23 @@ dmu_tx_hold_write(dmu_tx_t *tx, uint64_t object, uint64_t off, int len)
 		dmu_tx_count_write(txh, off, len);
 		dmu_tx_count_dnode(txh);
 	}
+}
+
+void
+dmu_tx_hold_remap_l1indirect(dmu_tx_t *tx, uint64_t object)
+{
+	dmu_tx_hold_t *txh;
+
+	ASSERT(tx->tx_txg == 0);
+	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset,
+	    object, THT_WRITE, 0, 0);
+	if (txh == NULL)
+		return;
+
+	dnode_t *dn = txh->txh_dnode;
+	(void) zfs_refcount_add_many(&txh->txh_space_towrite,
+	    1ULL << dn->dn_indblkshift, FTAG);
+	dmu_tx_count_dnode(txh);
 }
 
 void
@@ -393,7 +410,6 @@ dmu_tx_hold_free_impl(dmu_tx_hold_t *txh, uint64_t off, uint64_t len)
 		    SPA_BLKPTRSHIFT;
 		uint64_t start = off >> shift;
 		uint64_t end = (off + len) >> shift;
-		uint64_t i;
 
 		ASSERT(dn->dn_indblkshift != 0);
 
@@ -407,7 +423,7 @@ dmu_tx_hold_free_impl(dmu_tx_hold_t *txh, uint64_t off, uint64_t len)
 
 		zio_t *zio = zio_root(tx->tx_pool->dp_spa,
 		    NULL, NULL, ZIO_FLAG_CANFAIL);
-		for (i = start; i <= end; i++) {
+		for (uint64_t i = start; i <= end; i++) {
 			uint64_t ibyte = i << shift;
 			err = dnode_next_offset(dn, 0, &ibyte, 2, 1, 0);
 			i = ibyte >> shift;
@@ -568,9 +584,10 @@ dmu_tx_hold_space(dmu_tx_t *tx, uint64_t space)
 
 	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset,
 	    DMU_NEW_OBJECT, THT_SPACE, space, 0);
-	if (txh)
-		(void) zfs_refcount_add_many(&txh->txh_space_towrite, space,
-		    FTAG);
+	if (txh) {
+		(void) zfs_refcount_add_many(
+		    &txh->txh_space_towrite, space, FTAG);
+	}
 }
 
 #ifdef ZFS_DEBUG
@@ -890,7 +907,7 @@ dmu_tx_try_assign(dmu_tx_t *tx, uint64_t txg_how)
 	    dsl_pool_need_dirty_delay(tx->tx_pool)) {
 		tx->tx_wait_dirty = B_TRUE;
 		DMU_TX_STAT_BUMP(dmu_tx_dirty_delay);
-		return (ERESTART);
+		return (SET_ERROR(ERESTART));
 	}
 
 	tx->tx_txg = txg_hold_open(tx->tx_pool, &tx->tx_txgh);
@@ -1084,10 +1101,11 @@ dmu_tx_wait(dmu_tx_t *tx)
 		tx->tx_needassign_txh = NULL;
 	} else {
 		/*
-		 * A dnode is assigned to the quiescing txg.  Wait for its
-		 * transaction to complete.
+		 * If we have a lot of dirty data just wait until we sync
+		 * out a TXG at which point we'll hopefully have synced
+		 * a portion of the changes.
 		 */
-		txg_wait_open(tx->tx_pool, tx->tx_lasttried_txg + 1);
+		txg_wait_synced(dp, spa_last_synced_txg(spa) + 1);
 	}
 
 	spa_tx_assign_add_nsecs(spa, gethrtime() - before);
@@ -1119,15 +1137,13 @@ dmu_tx_destroy(dmu_tx_t *tx)
 void
 dmu_tx_commit(dmu_tx_t *tx)
 {
-	dmu_tx_hold_t *txh;
-
 	ASSERT(tx->tx_txg != 0);
 
 	/*
 	 * Go through the transaction's hold list and remove holds on
 	 * associated dnodes, notifying waiters if no holds remain.
 	 */
-	for (txh = list_head(&tx->tx_holds); txh != NULL;
+	for (dmu_tx_hold_t *txh = list_head(&tx->tx_holds); txh != NULL;
 	    txh = list_next(&tx->tx_holds, txh)) {
 		dnode_t *dn = txh->txh_dnode;
 
@@ -1360,7 +1376,7 @@ dmu_tx_fini(void)
 	}
 }
 
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 EXPORT_SYMBOL(dmu_tx_create);
 EXPORT_SYMBOL(dmu_tx_hold_write);
 EXPORT_SYMBOL(dmu_tx_hold_write_by_dnode);

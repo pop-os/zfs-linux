@@ -44,11 +44,6 @@
 
 verify_runnable "global"
 
-# See issue: https://github.com/zfsonlinux/zfs/issues/5444
-if is_32bit; then
-	log_unsupported "Test case fails on 32-bit systems"
-fi
-
 log_assert "When scrubbing, detach device should not break system."
 
 log_must zpool scrub $TESTPOOL
@@ -62,5 +57,9 @@ done
 log_must zpool scrub $TESTPOOL
 log_must zpool detach $TESTPOOL $DISK1
 log_must zpool attach $TESTPOOL $DISK2 $DISK1
+
+while ! is_pool_resilvered $TESTPOOL; do
+	sleep 1
+done
 
 log_pass "When scrubbing, detach device should not break system."

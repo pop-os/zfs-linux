@@ -26,7 +26,9 @@
 #
 
 . $STF_SUITE/include/libtest.shlib
+. $STF_SUITE/tests/functional/cli_root/zpool_scrub/zpool_scrub.cfg
 
 verify_runnable "global"
 
+log_must set_tunable32 zfs_scan_suspend_progress 0
 destroy_mirrors

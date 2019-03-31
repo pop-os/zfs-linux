@@ -45,24 +45,25 @@
 #	5. Resume the paused scrub and verify scrub is again being performed.
 #	6. Verify zpool scrub -s succeed when the system is scrubbing.
 #
-# NOTES:
-#	A 10ms delay is added to the ZIOs in order to ensure that the
-#	scrub does not complete before it has a chance to be cancelled.
-#	This can occur when testing with small pools or very fast hardware.
-#
 
 verify_runnable "global"
 
 function cleanup
 {
-	log_must zinject -c all
+	log_must set_tunable32 zfs_scan_suspend_progress 0
+	log_must rm -f $mntpnt/biggerfile
 }
 
 log_onexit cleanup
 
 log_assert "Verify scrub, scrub -p, and scrub -s show the right status."
 
-log_must zinject -d $DISK1 -D20:1 $TESTPOOL
+# Create 1G of additional data
+mntpnt=$(get_prop mountpoint $TESTPOOL/$TESTFS)
+log_must file_write -b 1048576 -c 1024 -o create -d 0 -f $mntpnt/biggerfile
+log_must sync
+
+log_must set_tunable32 zfs_scan_suspend_progress 1
 log_must zpool scrub $TESTPOOL
 log_must is_pool_scrubbing $TESTPOOL true
 log_must zpool scrub -p $TESTPOOL

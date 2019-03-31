@@ -90,9 +90,8 @@ name_to_bookmark(char *buf, zbookmark_phys_t *zb)
  * during spa_errlog_sync().
  */
 void
-spa_log_error(spa_t *spa, zio_t *zio)
+spa_log_error(spa_t *spa, const zbookmark_phys_t *zb)
 {
-	zbookmark_phys_t *zb = &zio->io_logical->io_bookmark;
 	spa_error_entry_t search;
 	spa_error_entry_t *new;
 	avl_tree_t *tree;
@@ -405,7 +404,7 @@ spa_errlog_sync(spa_t *spa, uint64_t txg)
 	mutex_exit(&spa->spa_errlog_lock);
 }
 
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 /* error handling */
 EXPORT_SYMBOL(spa_log_error);
 EXPORT_SYMBOL(spa_get_errlog_size);

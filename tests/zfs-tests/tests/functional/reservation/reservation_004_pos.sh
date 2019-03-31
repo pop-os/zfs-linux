@@ -56,7 +56,7 @@ verify_runnable "both"
 function cleanup {
 
 	for obj in $OBJ_LIST; do
-		datasetexists $obj && log_must zfs destroy -f $obj
+		datasetexists $obj && log_must_busy zfs destroy -f $obj
 	done
 }
 
@@ -112,11 +112,17 @@ for obj in $OBJ_LIST ; do
 		"($resv_size_set != $resv_size_get)"
 	fi
 
-	log_must zfs destroy -f $obj
+	log_must_busy zfs destroy -f $obj
 
 	new_space_avail=`get_prop available $TESTPOOL`
 	new_space_used=`get_prop used $TESTPOOL`
 
+	#
+	# Recent changes to metaslab logic have caused these tests to expand
+	# outside of their previous tolerance. If this is discovered to be a
+	# bug, rather than a side effect of some interactions, the reservation
+	# should be halved again.
+	#
 	log_must within_limits $space_used $new_space_used $RESV_TOLERANCE
 	log_must within_limits $space_avail $new_space_avail $RESV_TOLERANCE
 done

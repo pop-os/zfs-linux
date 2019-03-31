@@ -29,16 +29,11 @@
 
 function cleanup
 {
-	log_must zfs destroy -r $vol
+	log_must_busy zfs destroy -r $vol
 	cleanup_pool $POOL2
 }
 
 verify_runnable "both"
-
-# See issue: https://github.com/zfsonlinux/zfs/issues/6087
-if is_32bit; then
-	log_unsupported "Test case occasionally fails on 32-bit systems"
-fi
 
 log_assert "Verify compressed send works with volumes"
 log_onexit cleanup

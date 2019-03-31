@@ -21,23 +21,22 @@
 /*
  * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2010 Nexenta Systems, Inc. All rights reserved.
- * Copyright (c) 2013 by Delphix. All rights reserved.
+ * Copyright (c) 2013, 2015 by Delphix. All rights reserved.
  * Copyright 2016 Igor Kozhukhov <ikozhukhov@gmail.com>
  */
 
 #include <sys/zfs_context.h>
 
 #if defined(_KERNEL)
-#include <sys/systm.h>
 #include <sys/sunddi.h>
 #include <sys/ctype.h>
 #else
 #include <stdio.h>
 #include <unistd.h>
-#include <strings.h>
 #include <libnvpair.h>
 #include <ctype.h>
 #endif
+#include <sys/strings.h>
 #include <sys/dsl_deleg.h>
 #include "zfs_prop.h"
 #include "zfs_deleg.h"
@@ -53,6 +52,7 @@ zfs_deleg_perm_tab_t zfs_deleg_perm_tab[] = {
 	{ZFS_DELEG_PERM_MOUNT},
 	{ZFS_DELEG_PERM_PROMOTE},
 	{ZFS_DELEG_PERM_RECEIVE},
+	{ZFS_DELEG_PERM_REMAP},
 	{ZFS_DELEG_PERM_RENAME},
 	{ZFS_DELEG_PERM_ROLLBACK},
 	{ZFS_DELEG_PERM_SNAPSHOT},
@@ -69,6 +69,12 @@ zfs_deleg_perm_tab_t zfs_deleg_perm_tab[] = {
 	{ZFS_DELEG_PERM_GROUPOBJUSED},
 	{ZFS_DELEG_PERM_HOLD},
 	{ZFS_DELEG_PERM_RELEASE},
+	{ZFS_DELEG_PERM_LOAD_KEY},
+	{ZFS_DELEG_PERM_CHANGE_KEY},
+	{ZFS_DELEG_PERM_PROJECTUSED},
+	{ZFS_DELEG_PERM_PROJECTQUOTA},
+	{ZFS_DELEG_PERM_PROJECTOBJUSED},
+	{ZFS_DELEG_PERM_PROJECTOBJQUOTA},
 	{NULL}
 };
 
@@ -233,11 +239,11 @@ zfs_deleg_whokey(char *attr, zfs_deleg_who_type_t type,
 		    ZFS_DELEG_FIELD_SEP_CHR);
 		break;
 	default:
-		cmn_err(CE_PANIC, "bad zfs_deleg_who_type_t %d", type);
+		ASSERT(!"bad zfs_deleg_who_type_t");
 	}
 }
 
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 EXPORT_SYMBOL(zfs_deleg_verify_nvlist);
 EXPORT_SYMBOL(zfs_deleg_whokey);
 EXPORT_SYMBOL(zfs_deleg_canonicalize_perm);

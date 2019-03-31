@@ -27,11 +27,12 @@
 #ifdef CONFIG_COMPAT
 #include <linux/compat.h>
 #endif
+#include <sys/file.h>
 #include <sys/dmu_objset.h>
 #include <sys/zfs_vfsops.h>
 #include <sys/zfs_vnops.h>
 #include <sys/zfs_znode.h>
-#include <sys/zpl.h>
+#include <sys/zfs_project.h>
 
 
 static int
@@ -241,7 +242,6 @@ zpl_read_common_iovec(struct inode *ip, const struct iovec *iovp, size_t count,
 
 	read = count - uio.uio_resid;
 	*ppos += read;
-	task_io_account_read(read);
 
 	return (read);
 }
@@ -338,7 +338,6 @@ zpl_write_common_iovec(struct inode *ip, const struct iovec *iovp, size_t count,
 
 	wrote = count - uio.uio_resid;
 	*ppos += wrote;
-	task_io_account_write(wrote);
 
 	return (wrote);
 }
@@ -439,6 +438,57 @@ zpl_aio_write(struct kiocb *kiocb, const struct iovec *iovp,
 }
 #endif /* HAVE_VFS_RW_ITERATE */
 
+#if defined(HAVE_VFS_RW_ITERATE)
+static ssize_t
+zpl_direct_IO_impl(int rw, struct kiocb *kiocb, struct iov_iter *iter)
+{
+	if (rw == WRITE)
+		return (zpl_iter_write(kiocb, iter));
+	else
+		return (zpl_iter_read(kiocb, iter));
+}
+#if defined(HAVE_VFS_DIRECT_IO_ITER)
+static ssize_t
+zpl_direct_IO(struct kiocb *kiocb, struct iov_iter *iter)
+{
+	return (zpl_direct_IO_impl(iov_iter_rw(iter), kiocb, iter));
+}
+#elif defined(HAVE_VFS_DIRECT_IO_ITER_OFFSET)
+static ssize_t
+zpl_direct_IO(struct kiocb *kiocb, struct iov_iter *iter, loff_t pos)
+{
+	ASSERT3S(pos, ==, kiocb->ki_pos);
+	return (zpl_direct_IO_impl(iov_iter_rw(iter), kiocb, iter));
+}
+#elif defined(HAVE_VFS_DIRECT_IO_ITER_RW_OFFSET)
+static ssize_t
+zpl_direct_IO(int rw, struct kiocb *kiocb, struct iov_iter *iter, loff_t pos)
+{
+	ASSERT3S(pos, ==, kiocb->ki_pos);
+	return (zpl_direct_IO_impl(rw, kiocb, iter));
+}
+#else
+#error "Unknown direct IO interface"
+#endif
+
+#else
+
+#if defined(HAVE_VFS_DIRECT_IO_IOVEC)
+static ssize_t
+zpl_direct_IO(int rw, struct kiocb *kiocb, const struct iovec *iovp,
+    loff_t pos, unsigned long nr_segs)
+{
+	if (rw == WRITE)
+		return (zpl_aio_write(kiocb, iovp, nr_segs, pos));
+	else
+		return (zpl_aio_read(kiocb, iovp, nr_segs, pos));
+}
+#else
+#error "Unknown direct IO interface"
+#endif
+
+#endif /* HAVE_VFS_RW_ITERATE */
+
 static loff_t
 zpl_llseek(struct file *filp, loff_t offset, int whence)
 {
@@ -528,7 +578,7 @@ zpl_mmap(struct file *filp, struct vm_area_struct *vma)
 		return (error);
 
 	mutex_enter(&zp->z_lock);
-	zp->z_is_mapped = 1;
+	zp->z_is_mapped = B_TRUE;
 	mutex_exit(&zp->z_lock);
 
 	return (error);
@@ -721,17 +771,14 @@ zpl_fallocate(struct file *filp, int mode, loff_t offset, loff_t len)
 }
 #endif /* HAVE_FILE_FALLOCATE */
 
-/*
- * Map zfs file z_pflags (xvattr_t) to linux file attributes. Only file
- * attributes common to both Linux and Solaris are mapped.
- */
-static int
-zpl_ioctl_getflags(struct file *filp, void __user *arg)
+#define	ZFS_FL_USER_VISIBLE	(FS_FL_USER_VISIBLE | ZFS_PROJINHERIT_FL)
+#define	ZFS_FL_USER_MODIFIABLE	(FS_FL_USER_MODIFIABLE | ZFS_PROJINHERIT_FL)
+
+static uint32_t
+__zpl_ioctl_getflags(struct inode *ip)
 {
-	struct inode *ip = file_inode(filp);
-	unsigned int ioctl_flags = 0;
 	uint64_t zfs_flags = ITOZ(ip)->z_pflags;
-	int error;
+	uint32_t ioctl_flags = 0;
 
 	if (zfs_flags & ZFS_IMMUTABLE)
 		ioctl_flags |= FS_IMMUTABLE_FL;
@@ -742,11 +789,26 @@ zpl_ioctl_getflags(struct file *filp, void __user *arg)
 	if (zfs_flags & ZFS_NODUMP)
 		ioctl_flags |= FS_NODUMP_FL;
 
-	ioctl_flags &= FS_FL_USER_VISIBLE;
+	if (zfs_flags & ZFS_PROJINHERIT)
+		ioctl_flags |= ZFS_PROJINHERIT_FL;
 
-	error = copy_to_user(arg, &ioctl_flags, sizeof (ioctl_flags));
+	return (ioctl_flags & ZFS_FL_USER_VISIBLE);
+}
 
-	return (error);
+/*
+ * Map zfs file z_pflags (xvattr_t) to linux file attributes. Only file
+ * attributes common to both Linux and Solaris are mapped.
+ */
+static int
+zpl_ioctl_getflags(struct file *filp, void __user *arg)
+{
+	uint32_t flags;
+	int err;
+
+	flags = __zpl_ioctl_getflags(file_inode(filp));
+	err = copy_to_user(arg, &flags, sizeof (flags));
+
+	return (err);
 }
 
 /*
@@ -761,24 +823,16 @@ zpl_ioctl_getflags(struct file *filp, void __user *arg)
 #define	fchange(f0, f1, b0, b1) (!((f0) & (b0)) != !((f1) & (b1)))
 
 static int
-zpl_ioctl_setflags(struct file *filp, void __user *arg)
+__zpl_ioctl_setflags(struct inode *ip, uint32_t ioctl_flags, xvattr_t *xva)
 {
-	struct inode	*ip = file_inode(filp);
-	uint64_t	zfs_flags = ITOZ(ip)->z_pflags;
-	unsigned int	ioctl_flags;
-	cred_t		*cr = CRED();
-	xvattr_t	xva;
-	xoptattr_t	*xoap;
-	int		error;
-	fstrans_cookie_t cookie;
+	uint64_t zfs_flags = ITOZ(ip)->z_pflags;
+	xoptattr_t *xoap;
 
-	if (copy_from_user(&ioctl_flags, arg, sizeof (ioctl_flags)))
-		return (-EFAULT);
-
-	if ((ioctl_flags & ~(FS_IMMUTABLE_FL | FS_APPEND_FL | FS_NODUMP_FL)))
+	if (ioctl_flags & ~(FS_IMMUTABLE_FL | FS_APPEND_FL | FS_NODUMP_FL |
+	    ZFS_PROJINHERIT_FL))
 		return (-EOPNOTSUPP);
 
-	if ((ioctl_flags & ~(FS_FL_USER_MODIFIABLE)))
+	if (ioctl_flags & ~ZFS_FL_USER_MODIFIABLE)
 		return (-EACCES);
 
 	if ((fchange(ioctl_flags, zfs_flags, FS_IMMUTABLE_FL, ZFS_IMMUTABLE) ||
@@ -789,28 +843,100 @@ zpl_ioctl_setflags(struct file *filp, void __user *arg)
 	if (!zpl_inode_owner_or_capable(ip))
 		return (-EACCES);
 
-	xva_init(&xva);
-	xoap = xva_getxoptattr(&xva);
+	xva_init(xva);
+	xoap = xva_getxoptattr(xva);
 
-	XVA_SET_REQ(&xva, XAT_IMMUTABLE);
+	XVA_SET_REQ(xva, XAT_IMMUTABLE);
 	if (ioctl_flags & FS_IMMUTABLE_FL)
 		xoap->xoa_immutable = B_TRUE;
 
-	XVA_SET_REQ(&xva, XAT_APPENDONLY);
+	XVA_SET_REQ(xva, XAT_APPENDONLY);
 	if (ioctl_flags & FS_APPEND_FL)
 		xoap->xoa_appendonly = B_TRUE;
 
-	XVA_SET_REQ(&xva, XAT_NODUMP);
+	XVA_SET_REQ(xva, XAT_NODUMP);
 	if (ioctl_flags & FS_NODUMP_FL)
 		xoap->xoa_nodump = B_TRUE;
 
+	XVA_SET_REQ(xva, XAT_PROJINHERIT);
+	if (ioctl_flags & ZFS_PROJINHERIT_FL)
+		xoap->xoa_projinherit = B_TRUE;
+
+	return (0);
+}
+
+static int
+zpl_ioctl_setflags(struct file *filp, void __user *arg)
+{
+	struct inode *ip = file_inode(filp);
+	uint32_t flags;
+	cred_t *cr = CRED();
+	xvattr_t xva;
+	int err;
+	fstrans_cookie_t cookie;
+
+	if (copy_from_user(&flags, arg, sizeof (flags)))
+		return (-EFAULT);
+
+	err = __zpl_ioctl_setflags(ip, flags, &xva);
+	if (err)
+		return (err);
+
 	crhold(cr);
 	cookie = spl_fstrans_mark();
-	error = -zfs_setattr(ip, (vattr_t *)&xva, 0, cr);
+	err = -zfs_setattr(ip, (vattr_t *)&xva, 0, cr);
 	spl_fstrans_unmark(cookie);
 	crfree(cr);
 
-	return (error);
+	return (err);
+}
+
+static int
+zpl_ioctl_getxattr(struct file *filp, void __user *arg)
+{
+	zfsxattr_t fsx = { 0 };
+	struct inode *ip = file_inode(filp);
+	int err;
+
+	fsx.fsx_xflags = __zpl_ioctl_getflags(ip);
+	fsx.fsx_projid = ITOZ(ip)->z_projid;
+	err = copy_to_user(arg, &fsx, sizeof (fsx));
+
+	return (err);
+}
+
+static int
+zpl_ioctl_setxattr(struct file *filp, void __user *arg)
+{
+	struct inode *ip = file_inode(filp);
+	zfsxattr_t fsx;
+	cred_t *cr = CRED();
+	xvattr_t xva;
+	xoptattr_t *xoap;
+	int err;
+	fstrans_cookie_t cookie;
+
+	if (copy_from_user(&fsx, arg, sizeof (fsx)))
+		return (-EFAULT);
+
+	if (!zpl_is_valid_projid(fsx.fsx_projid))
+		return (-EINVAL);
+
+	err = __zpl_ioctl_setflags(ip, fsx.fsx_xflags, &xva);
+	if (err)
+		return (err);
+
+	xoap = xva_getxoptattr(&xva);
+	XVA_SET_REQ(&xva, XAT_PROJID);
+	xoap->xoa_projid = fsx.fsx_projid;
+
+	crhold(cr);
+	cookie = spl_fstrans_mark();
+	err = -zfs_setattr(ip, (vattr_t *)&xva, 0, cr);
+	spl_fstrans_unmark(cookie);
+	crfree(cr);
+
+	return (err);
 }
 
 static long
@@ -821,6 +947,10 @@ zpl_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		return (zpl_ioctl_getflags(filp, (void *)arg));
 	case FS_IOC_SETFLAGS:
 		return (zpl_ioctl_setflags(filp, (void *)arg));
+	case ZFS_IOC_FSGETXATTR:
+		return (zpl_ioctl_getxattr(filp, (void *)arg));
+	case ZFS_IOC_FSSETXATTR:
+		return (zpl_ioctl_setxattr(filp, (void *)arg));
 	default:
 		return (-ENOTTY);
 	}
@@ -850,6 +980,7 @@ const struct address_space_operations zpl_address_space_operations = {
 	.readpage	= zpl_readpage,
 	.writepage	= zpl_writepage,
 	.writepages	= zpl_writepages,
+	.direct_IO	= zpl_direct_IO,
 };
 
 const struct file_operations zpl_file_operations = {

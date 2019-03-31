@@ -20,10 +20,10 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, Joyent, Inc. All rights reserved.
- * Copyright (c) 2011, 2017 by Delphix. All rights reserved.
+ * Copyright (c) 2018, Joyent, Inc.
+ * Copyright (c) 2011, 2018 by Delphix. All rights reserved.
  * Copyright (c) 2014 by Saso Kiselkov. All rights reserved.
- * Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
+ * Copyright 2017 Nexenta Systems, Inc.  All rights reserved.
  */
 
 /*
@@ -258,6 +258,21 @@
  * ARC is disabled, then the L2ARC's block must be transformed to look
  * like the physical block in the main data pool before comparing the
  * checksum and determining its validity.
+ *
+ * The L1ARC has a slightly different system for storing encrypted data.
+ * Raw (encrypted + possibly compressed) data has a few subtle differences from
+ * data that is just compressed. The biggest difference is that it is not
+ * possible to decrypt encrypted data (or visa versa) if the keys aren't loaded.
+ * The other difference is that encryption cannot be treated as a suggestion.
+ * If a caller would prefer compressed data, but they actually wind up with
+ * uncompressed data the worst thing that could happen is there might be a
+ * performance hit. If the caller requests encrypted data, however, we must be
+ * sure they actually get it or else secret information could be leaked. Raw
+ * data is stored in hdr->b_crypt_hdr.b_rabd. An encrypted header, therefore,
+ * may have both an encrypted version and a decrypted version of its data at
+ * once. When a caller needs a raw arc_buf_t, it is allocated and the data is
+ * copied out of this header. To avoid complications with b_pabd, raw buffers
+ * cannot be shared.
  */
 
 #include <sys/spa.h>
@@ -274,30 +289,44 @@
 #include <sys/zio_checksum.h>
 #include <sys/multilist.h>
 #include <sys/abd.h>
+#include <sys/zil.h>
+#include <sys/fm/fs/zfs.h>
 #ifdef _KERNEL
+#include <sys/shrinker.h>
 #include <sys/vmsystm.h>
-#include <vm/anon.h>
-#include <sys/fs/swapnode.h>
 #include <sys/zpl.h>
-#include <linux/mm_compat.h>
 #include <linux/page_compat.h>
 #endif
 #include <sys/callb.h>
 #include <sys/kstat.h>
-#include <sys/dmu_tx.h>
+#include <sys/zthr.h>
 #include <zfs_fletcher.h>
 #include <sys/arc_impl.h>
 #include <sys/trace_arc.h>
+#include <sys/aggsum.h>
+#include <sys/cityhash.h>
 
 #ifndef _KERNEL
 /* set with ZFS_DEBUG=watch, to enable watchpoints on frozen buffers */
 boolean_t arc_watch = B_FALSE;
 #endif
 
-static kmutex_t		arc_reclaim_lock;
-static kcondvar_t	arc_reclaim_thread_cv;
-static boolean_t	arc_reclaim_thread_exit;
-static kcondvar_t	arc_reclaim_waiters_cv;
+/*
+ * This thread's job is to keep enough free memory in the system, by
+ * calling arc_kmem_reap_soon() plus arc_reduce_target_size(), which improves
+ * arc_available_memory().
+ */
+static zthr_t		*arc_reap_zthr;
+
+/*
+ * This thread's job is to keep arc_size under arc_c, by calling
+ * arc_adjust(), which improves arc_is_overflowing().
+ */
+static zthr_t		*arc_adjust_zthr;
+
+static kmutex_t		arc_adjust_lock;
+static kcondvar_t	arc_adjust_waiters_cv;
+static boolean_t	arc_adjust_needed = B_FALSE;
 
 /*
  * The number of headers to evict in arc_evict_state_impl() before
@@ -309,20 +338,25 @@ static kcondvar_t	arc_reclaim_waiters_cv;
 int zfs_arc_evict_batch_limit = 10;
 
 /* number of seconds before growing cache again */
-static int		arc_grow_retry = 5;
+static int arc_grow_retry = 5;
+
+/*
+ * Minimum time between calls to arc_kmem_reap_soon().
+ */
+int arc_kmem_cache_reap_retry_ms = 1000;
 
 /* shift of arc_c for calculating overflow limit in arc_get_data_impl */
-int		zfs_arc_overflow_shift = 8;
+int zfs_arc_overflow_shift = 8;
 
 /* shift of arc_c for calculating both min and max arc_p */
-static int		arc_p_min_shift = 4;
+int arc_p_min_shift = 4;
 
 /* log2(fraction of arc to reclaim) */
-static int		arc_shrink_shift = 7;
+static int arc_shrink_shift = 7;
 
 /* percent of pagecache to reclaim arc to */
 #ifdef _KERNEL
-static uint_t		zfs_arc_pc_percent = 0;
+static uint_t zfs_arc_pc_percent = 0;
 #endif
 
 /*
@@ -341,14 +375,18 @@ int			arc_no_grow_shift = 5;
  * minimum lifespan of a prefetch block in clock ticks
  * (initialized in arc_init())
  */
-static int		arc_min_prefetch_lifespan;
+static int		arc_min_prefetch_ms;
+static int		arc_min_prescient_prefetch_ms;
 
 /*
  * If this percent of memory is free, don't throttle.
  */
 int arc_lotsfree_percent = 10;
 
-static int arc_dead;
+/*
+ * hdr_recl() uses this to determine if the arc is up and running.
+ */
+static boolean_t arc_initialized;
 
 /*
  * The arc has filled available memory and has now warmed up.
@@ -374,6 +412,16 @@ int zfs_arc_shrink_shift = 0;
 int zfs_arc_p_min_shift = 0;
 int zfs_arc_average_blocksize = 8 * 1024; /* 8KB */
 
+/*
+ * ARC dirty data constraints for arc_tempreserve_space() throttle.
+ */
+unsigned long zfs_arc_dirty_limit_percent = 50;	/* total dirty data limit */
+unsigned long zfs_arc_anon_limit_percent = 25;	/* anon block dirty limit */
+unsigned long zfs_arc_pool_dirty_percent = 20;	/* each pool's anon allowance */
+
+/*
+ * Enable or disable compressed arc buffers.
+ */
 int zfs_compressed_arc_enabled = B_TRUE;
 
 /*
@@ -391,7 +439,8 @@ unsigned long zfs_arc_dnode_limit_percent = 10;
  * These tunables are Linux specific
  */
 unsigned long zfs_arc_sys_free = 0;
-int zfs_arc_min_prefetch_lifespan = 0;
+int zfs_arc_min_prefetch_ms = 0;
+int zfs_arc_min_prescient_prefetch_ms = 0;
 int zfs_arc_p_dampener_disable = 1;
 int zfs_arc_meta_prune = 10000;
 int zfs_arc_meta_strategy = ARC_STRATEGY_META_BALANCED;
@@ -458,6 +507,7 @@ typedef struct arc_stats {
 	kstat_named_t arcstat_c;
 	kstat_named_t arcstat_c_min;
 	kstat_named_t arcstat_c_max;
+	/* Not updated directly; only synced in arc_kstat_update. */
 	kstat_named_t arcstat_size;
 	/*
 	 * Number of compressed bytes stored in the arc_buf_hdr_t's b_pabd.
@@ -486,12 +536,14 @@ typedef struct arc_stats {
 	 * (allocated via arc_buf_hdr_t_full and arc_buf_hdr_t_l2only
 	 * caches), and arc_buf_t structures (allocated via arc_buf_t
 	 * cache).
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_hdr_size;
 	/*
 	 * Number of bytes consumed by ARC buffers of type equal to
 	 * ARC_BUFC_DATA. This is generally consumed by buffers backing
 	 * on disk user data (e.g. plain file contents).
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_data_size;
 	/*
@@ -499,18 +551,22 @@ typedef struct arc_stats {
 	 * ARC_BUFC_METADATA. This is generally consumed by buffers
 	 * backing on disk data that is used for internal ZFS
 	 * structures (e.g. ZAP, dnode, indirect blocks, etc).
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_metadata_size;
 	/*
 	 * Number of bytes consumed by dmu_buf_impl_t objects.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_dbuf_size;
 	/*
 	 * Number of bytes consumed by dnode_t objects.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_dnode_size;
 	/*
 	 * Number of bytes consumed by bonus buffers.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_bonus_size;
 	/*
@@ -518,6 +574,7 @@ typedef struct arc_stats {
 	 * arc_anon state. This includes *all* buffers in the arc_anon
 	 * state; e.g. data, metadata, evictable, and unevictable buffers
 	 * are all included in this value.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_anon_size;
 	/*
@@ -525,6 +582,7 @@ typedef struct arc_stats {
 	 * following criteria: backing buffers of type ARC_BUFC_DATA,
 	 * residing in the arc_anon state, and are eligible for eviction
 	 * (e.g. have no outstanding holds on the buffer).
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_anon_evictable_data;
 	/*
@@ -532,6 +590,7 @@ typedef struct arc_stats {
 	 * following criteria: backing buffers of type ARC_BUFC_METADATA,
 	 * residing in the arc_anon state, and are eligible for eviction
 	 * (e.g. have no outstanding holds on the buffer).
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_anon_evictable_metadata;
 	/*
@@ -539,6 +598,7 @@ typedef struct arc_stats {
 	 * arc_mru state. This includes *all* buffers in the arc_mru
 	 * state; e.g. data, metadata, evictable, and unevictable buffers
 	 * are all included in this value.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mru_size;
 	/*
@@ -546,6 +606,7 @@ typedef struct arc_stats {
 	 * following criteria: backing buffers of type ARC_BUFC_DATA,
 	 * residing in the arc_mru state, and are eligible for eviction
 	 * (e.g. have no outstanding holds on the buffer).
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mru_evictable_data;
 	/*
@@ -553,6 +614,7 @@ typedef struct arc_stats {
 	 * following criteria: backing buffers of type ARC_BUFC_METADATA,
 	 * residing in the arc_mru state, and are eligible for eviction
 	 * (e.g. have no outstanding holds on the buffer).
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mru_evictable_metadata;
 	/*
@@ -563,18 +625,21 @@ typedef struct arc_stats {
 	 * don't actually have ARC buffers linked off of these headers.
 	 * Thus, *if* the headers had associated ARC buffers, these
 	 * buffers *would have* consumed this number of bytes.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mru_ghost_size;
 	/*
 	 * Number of bytes that *would have been* consumed by ARC
 	 * buffers that are eligible for eviction, of type
 	 * ARC_BUFC_DATA, and linked off the arc_mru_ghost state.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mru_ghost_evictable_data;
 	/*
 	 * Number of bytes that *would have been* consumed by ARC
 	 * buffers that are eligible for eviction, of type
 	 * ARC_BUFC_METADATA, and linked off the arc_mru_ghost state.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mru_ghost_evictable_metadata;
 	/*
@@ -582,36 +647,42 @@ typedef struct arc_stats {
 	 * arc_mfu state. This includes *all* buffers in the arc_mfu
 	 * state; e.g. data, metadata, evictable, and unevictable buffers
 	 * are all included in this value.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mfu_size;
 	/*
 	 * Number of bytes consumed by ARC buffers that are eligible for
 	 * eviction, of type ARC_BUFC_DATA, and reside in the arc_mfu
 	 * state.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mfu_evictable_data;
 	/*
 	 * Number of bytes consumed by ARC buffers that are eligible for
 	 * eviction, of type ARC_BUFC_METADATA, and reside in the
 	 * arc_mfu state.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mfu_evictable_metadata;
 	/*
 	 * Total number of bytes that *would have been* consumed by ARC
 	 * buffers in the arc_mfu_ghost state. See the comment above
 	 * arcstat_mru_ghost_size for more details.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mfu_ghost_size;
 	/*
 	 * Number of bytes that *would have been* consumed by ARC
 	 * buffers that are eligible for eviction, of type
 	 * ARC_BUFC_DATA, and linked off the arc_mfu_ghost state.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mfu_ghost_evictable_data;
 	/*
 	 * Number of bytes that *would have been* consumed by ARC
 	 * buffers that are eligible for eviction, of type
 	 * ARC_BUFC_METADATA, and linked off the arc_mru_ghost state.
+	 * Not updated directly; only synced in arc_kstat_update.
 	 */
 	kstat_named_t arcstat_mfu_ghost_evictable_metadata;
 	kstat_named_t arcstat_l2_hits;
@@ -633,6 +704,7 @@ typedef struct arc_stats {
 	kstat_named_t arcstat_l2_io_error;
 	kstat_named_t arcstat_l2_lsize;
 	kstat_named_t arcstat_l2_psize;
+	/* Not updated directly; only synced in arc_kstat_update. */
 	kstat_named_t arcstat_l2_hdr_size;
 	kstat_named_t arcstat_memory_throttle_count;
 	kstat_named_t arcstat_memory_direct_count;
@@ -644,15 +716,18 @@ typedef struct arc_stats {
 	kstat_named_t arcstat_tempreserve;
 	kstat_named_t arcstat_loaned_bytes;
 	kstat_named_t arcstat_prune;
+	/* Not updated directly; only synced in arc_kstat_update. */
 	kstat_named_t arcstat_meta_used;
 	kstat_named_t arcstat_meta_limit;
 	kstat_named_t arcstat_dnode_limit;
 	kstat_named_t arcstat_meta_max;
 	kstat_named_t arcstat_meta_min;
-	kstat_named_t arcstat_sync_wait_for_async;
+	kstat_named_t arcstat_async_upgrade_sync;
 	kstat_named_t arcstat_demand_hit_predictive_prefetch;
+	kstat_named_t arcstat_demand_hit_prescient_prefetch;
 	kstat_named_t arcstat_need_free;
 	kstat_named_t arcstat_sys_free;
+	kstat_named_t arcstat_raw_size;
 } arc_stats_t;
 
 static arc_stats_t arc_stats = {
@@ -748,10 +823,12 @@ static arc_stats_t arc_stats = {
 	{ "arc_dnode_limit",		KSTAT_DATA_UINT64 },
 	{ "arc_meta_max",		KSTAT_DATA_UINT64 },
 	{ "arc_meta_min",		KSTAT_DATA_UINT64 },
-	{ "sync_wait_for_async",	KSTAT_DATA_UINT64 },
+	{ "async_upgrade_sync",		KSTAT_DATA_UINT64 },
 	{ "demand_hit_predictive_prefetch", KSTAT_DATA_UINT64 },
+	{ "demand_hit_prescient_prefetch", KSTAT_DATA_UINT64 },
 	{ "arc_need_free",		KSTAT_DATA_UINT64 },
-	{ "arc_sys_free",		KSTAT_DATA_UINT64 }
+	{ "arc_sys_free",		KSTAT_DATA_UINT64 },
+	{ "arc_raw_size",		KSTAT_DATA_UINT64 }
 };
 
 #define	ARCSTAT(stat)	(arc_stats.stat.value.ui64)
@@ -808,7 +885,6 @@ static arc_state_t	*arc_l2c_only;
  * the possibility of inconsistency by having shadow copies of the variables,
  * while still allowing the code to be readable.
  */
-#define	arc_size	ARCSTAT(arcstat_size)	/* actual total arc size */
 #define	arc_p		ARCSTAT(arcstat_p)	/* target size of MRU */
 #define	arc_c		ARCSTAT(arcstat_c)	/* target size of cache */
 #define	arc_c_min	ARCSTAT(arcstat_c_min)	/* min target cache size */
@@ -819,14 +895,12 @@ static arc_state_t	*arc_l2c_only;
 #define	arc_meta_limit	ARCSTAT(arcstat_meta_limit) /* max size for metadata */
 #define	arc_dnode_limit	ARCSTAT(arcstat_dnode_limit) /* max size for dnodes */
 #define	arc_meta_min	ARCSTAT(arcstat_meta_min) /* min size for metadata */
-#define	arc_meta_used	ARCSTAT(arcstat_meta_used) /* size of metadata */
 #define	arc_meta_max	ARCSTAT(arcstat_meta_max) /* max size of metadata */
-#define	arc_dbuf_size	ARCSTAT(arcstat_dbuf_size) /* dbuf metadata */
-#define	arc_dnode_size	ARCSTAT(arcstat_dnode_size) /* dnode metadata */
-#define	arc_bonus_size	ARCSTAT(arcstat_bonus_size) /* bonus buffer metadata */
 #define	arc_need_free	ARCSTAT(arcstat_need_free) /* bytes to be freed */
 #define	arc_sys_free	ARCSTAT(arcstat_sys_free) /* target system free bytes */
 
+/* size of all b_rabd's in entire arc */
+#define	arc_raw_size	ARCSTAT(arcstat_raw_size)
 /* compressed size of entire arc */
 #define	arc_compressed_size	ARCSTAT(arcstat_compressed_size)
 /* uncompressed size of entire arc */
@@ -834,6 +908,25 @@ static arc_state_t	*arc_l2c_only;
 /* number of bytes in the arc from arc_buf_t's */
 #define	arc_overhead_size	ARCSTAT(arcstat_overhead_size)
 
+/*
+ * There are also some ARC variables that we want to export, but that are
+ * updated so often that having the canonical representation be the statistic
+ * variable causes a performance bottleneck. We want to use aggsum_t's for these
+ * instead, but still be able to export the kstat in the same way as before.
+ * The solution is to always use the aggsum version, except in the kstat update
+ * callback.
+ */
+aggsum_t arc_size;
+aggsum_t arc_meta_used;
+aggsum_t astat_data_size;
+aggsum_t astat_metadata_size;
+aggsum_t astat_dbuf_size;
+aggsum_t astat_dnode_size;
+aggsum_t astat_bonus_size;
+aggsum_t astat_hdr_size;
+aggsum_t astat_l2_hdr_size;
+
+static hrtime_t arc_growtime;
 static list_t arc_prune_list;
 static kmutex_t arc_prune_mtx;
 static taskq_t *arc_prune_taskq;
@@ -846,6 +939,8 @@ static taskq_t *arc_prune_taskq;
 #define	HDR_IO_IN_PROGRESS(hdr)	((hdr)->b_flags & ARC_FLAG_IO_IN_PROGRESS)
 #define	HDR_IO_ERROR(hdr)	((hdr)->b_flags & ARC_FLAG_IO_ERROR)
 #define	HDR_PREFETCH(hdr)	((hdr)->b_flags & ARC_FLAG_PREFETCH)
+#define	HDR_PRESCIENT_PREFETCH(hdr)	\
+	((hdr)->b_flags & ARC_FLAG_PRESCIENT_PREFETCH)
 #define	HDR_COMPRESSION_ENABLED(hdr)	\
 	((hdr)->b_flags & ARC_FLAG_COMPRESSED_ARC)
 
@@ -856,6 +951,8 @@ static taskq_t *arc_prune_taskq;
 #define	HDR_L2_WRITING(hdr)	((hdr)->b_flags & ARC_FLAG_L2_WRITING)
 #define	HDR_L2_EVICTED(hdr)	((hdr)->b_flags & ARC_FLAG_L2_EVICTED)
 #define	HDR_L2_WRITE_HEAD(hdr)	((hdr)->b_flags & ARC_FLAG_L2_WRITE_HEAD)
+#define	HDR_PROTECTED(hdr)	((hdr)->b_flags & ARC_FLAG_PROTECTED)
+#define	HDR_NOAUTH(hdr)		((hdr)->b_flags & ARC_FLAG_NOAUTH)
 #define	HDR_SHARED_DATA(hdr)	((hdr)->b_flags & ARC_FLAG_SHARED_DATA)
 
 #define	HDR_ISTYPE_METADATA(hdr)	\
@@ -864,6 +961,13 @@ static taskq_t *arc_prune_taskq;
 
 #define	HDR_HAS_L1HDR(hdr)	((hdr)->b_flags & ARC_FLAG_HAS_L1HDR)
 #define	HDR_HAS_L2HDR(hdr)	((hdr)->b_flags & ARC_FLAG_HAS_L2HDR)
+#define	HDR_HAS_RABD(hdr)	\
+	(HDR_HAS_L1HDR(hdr) && HDR_PROTECTED(hdr) &&	\
+	(hdr)->b_crypt_hdr.b_rabd != NULL)
+#define	HDR_ENCRYPTED(hdr)	\
+	(HDR_PROTECTED(hdr) && DMU_OT_IS_ENCRYPTED((hdr)->b_crypt_hdr.b_ot))
+#define	HDR_AUTHENTICATED(hdr)	\
+	(HDR_PROTECTED(hdr) && !DMU_OT_IS_ENCRYPTED((hdr)->b_crypt_hdr.b_ot))
 
 /* For storing compression mode in b_flags */
 #define	HDR_COMPRESS_OFFSET	(highbit64(ARC_FLAG_COMPRESS_0) - 1)
@@ -876,12 +980,14 @@ static taskq_t *arc_prune_taskq;
 #define	ARC_BUF_LAST(buf)	((buf)->b_next == NULL)
 #define	ARC_BUF_SHARED(buf)	((buf)->b_flags & ARC_BUF_FLAG_SHARED)
 #define	ARC_BUF_COMPRESSED(buf)	((buf)->b_flags & ARC_BUF_FLAG_COMPRESSED)
+#define	ARC_BUF_ENCRYPTED(buf)	((buf)->b_flags & ARC_BUF_FLAG_ENCRYPTED)
 
 /*
  * Other sizes
  */
 
-#define	HDR_FULL_SIZE ((int64_t)sizeof (arc_buf_hdr_t))
+#define	HDR_FULL_CRYPT_SIZE ((int64_t)sizeof (arc_buf_hdr_t))
+#define	HDR_FULL_SIZE ((int64_t)offsetof(arc_buf_hdr_t, b_crypt_hdr))
 #define	HDR_L2ONLY_SIZE ((int64_t)offsetof(arc_buf_hdr_t, b_l1hdr))
 
 /*
@@ -979,6 +1085,14 @@ typedef struct l2arc_data_free {
 	list_node_t	l2df_list_node;
 } l2arc_data_free_t;
 
+typedef enum arc_fill_flags {
+	ARC_FILL_LOCKED		= 1 << 0, /* hdr lock is held */
+	ARC_FILL_COMPRESSED	= 1 << 1, /* fill with compressed data */
+	ARC_FILL_ENCRYPTED	= 1 << 2, /* fill with encrypted data */
+	ARC_FILL_NOAUTH		= 1 << 3, /* don't attempt to authenticate */
+	ARC_FILL_IN_PLACE	= 1 << 4  /* fill in place (special case) */
+} arc_fill_flags_t;
+
 static kmutex_t l2arc_feed_thr_lock;
 static kcondvar_t l2arc_feed_thr_cv;
 static uint8_t l2arc_thread_exit;
@@ -989,8 +1103,8 @@ static void arc_get_data_impl(arc_buf_hdr_t *, uint64_t, void *);
 static void arc_free_data_abd(arc_buf_hdr_t *, abd_t *, uint64_t, void *);
 static void arc_free_data_buf(arc_buf_hdr_t *, void *, uint64_t, void *);
 static void arc_free_data_impl(arc_buf_hdr_t *hdr, uint64_t size, void *tag);
-static void arc_hdr_free_pabd(arc_buf_hdr_t *);
-static void arc_hdr_alloc_pabd(arc_buf_hdr_t *);
+static void arc_hdr_free_abd(arc_buf_hdr_t *, boolean_t);
+static void arc_hdr_alloc_abd(arc_buf_hdr_t *, boolean_t);
 static void arc_access(arc_buf_hdr_t *, kmutex_t *);
 static boolean_t arc_is_overflowing(void);
 static void arc_buf_watch(arc_buf_t *);
@@ -1006,21 +1120,15 @@ static inline void arc_hdr_clear_flags(arc_buf_hdr_t *hdr, arc_flags_t flags);
 static boolean_t l2arc_write_eligible(uint64_t, arc_buf_hdr_t *);
 static void l2arc_read_done(zio_t *);
 
+
+/*
+ * We use Cityhash for this. It's fast, and has good hash properties without
+ * requiring any large static buffers.
+ */
 static uint64_t
 buf_hash(uint64_t spa, const dva_t *dva, uint64_t birth)
 {
-	uint8_t *vdva = (uint8_t *)dva;
-	uint64_t crc = -1ULL;
-	int i;
-
-	ASSERT(zfs_crc64_table[128] == ZFS_CRC64_POLY);
-
-	for (i = 0; i < sizeof (dva_t); i++)
-		crc = (crc >> 8) ^ zfs_crc64_table[(crc ^ vdva[i]) & 0xFF];
-
-	crc ^= (spa>>8) ^ birth;
-
-	return (crc);
+	return (cityhash4(spa, dva->dva_word[0], dva->dva_word[1], birth));
 }
 
 #define	HDR_EMPTY(hdr)						\
@@ -1142,7 +1250,9 @@ buf_hash_remove(arc_buf_hdr_t *hdr)
 /*
  * Global data structures and functions for the buf kmem cache.
  */
+
 static kmem_cache_t *hdr_full_cache;
+static kmem_cache_t *hdr_full_crypt_cache;
 static kmem_cache_t *hdr_l2only_cache;
 static kmem_cache_t *buf_cache;
 
@@ -1151,7 +1261,7 @@ buf_fini(void)
 {
 	int i;
 
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 	/*
 	 * Large allocations which do not require contiguous pages
 	 * should be using vmem_free() in the linux kernel\
@@ -1165,6 +1275,7 @@ buf_fini(void)
 	for (i = 0; i < BUF_LOCKS; i++)
 		mutex_destroy(&buf_hash_table.ht_locks[i].ht_lock);
 	kmem_cache_destroy(hdr_full_cache);
+	kmem_cache_destroy(hdr_full_crypt_cache);
 	kmem_cache_destroy(hdr_l2only_cache);
 	kmem_cache_destroy(buf_cache);
 }
@@ -1180,6 +1291,7 @@ hdr_full_cons(void *vbuf, void *unused, int kmflag)
 	arc_buf_hdr_t *hdr = vbuf;
 
 	bzero(hdr, HDR_FULL_SIZE);
+	hdr->b_l1hdr.b_byteswap = DMU_BSWAP_NUMFUNCS;
 	cv_init(&hdr->b_l1hdr.b_cv, NULL, CV_DEFAULT, NULL);
 	zfs_refcount_create(&hdr->b_l1hdr.b_refcnt);
 	mutex_init(&hdr->b_l1hdr.b_freeze_lock, NULL, MUTEX_DEFAULT, NULL);
@@ -1187,6 +1299,19 @@ hdr_full_cons(void *vbuf, void *unused, int kmflag)
 	list_link_init(&hdr->b_l2hdr.b_l2node);
 	multilist_link_init(&hdr->b_l1hdr.b_arc_node);
 	arc_space_consume(HDR_FULL_SIZE, ARC_SPACE_HDRS);
+
+	return (0);
+}
+
+/* ARGSUSED */
+static int
+hdr_full_crypt_cons(void *vbuf, void *unused, int kmflag)
+{
+	arc_buf_hdr_t *hdr = vbuf;
+
+	hdr_full_cons(vbuf, unused, kmflag);
+	bzero(&hdr->b_crypt_hdr, sizeof (hdr->b_crypt_hdr));
+	arc_space_consume(sizeof (hdr->b_crypt_hdr), ARC_SPACE_HDRS);
 
 	return (0);
 }
@@ -1236,6 +1361,16 @@ hdr_full_dest(void *vbuf, void *unused)
 
 /* ARGSUSED */
 static void
+hdr_full_crypt_dest(void *vbuf, void *unused)
+{
+	arc_buf_hdr_t *hdr = vbuf;
+
+	hdr_full_dest(vbuf, unused);
+	arc_space_return(sizeof (hdr->b_crypt_hdr), ARC_SPACE_HDRS);
+}
+
+/* ARGSUSED */
+static void
 hdr_l2only_dest(void *vbuf, void *unused)
 {
 	ASSERTV(arc_buf_hdr_t *hdr = vbuf);
@@ -1266,8 +1401,8 @@ hdr_recl(void *unused)
 	 * umem calls the reclaim func when we destroy the buf cache,
 	 * which is after we do arc_fini().
 	 */
-	if (!arc_dead)
-		cv_signal(&arc_reclaim_thread_cv);
+	if (arc_initialized)
+		zthr_wakeup(arc_reap_zthr);
 }
 
 static void
@@ -1287,7 +1422,7 @@ buf_init(void)
 		hsize <<= 1;
 retry:
 	buf_hash_table.ht_mask = hsize - 1;
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 	/*
 	 * Large allocations which do not require contiguous pages
 	 * should be using vmem_alloc() in the linux kernel
@@ -1306,6 +1441,9 @@ retry:
 
 	hdr_full_cache = kmem_cache_create("arc_buf_hdr_t_full", HDR_FULL_SIZE,
 	    0, hdr_full_cons, hdr_full_dest, hdr_recl, NULL, NULL, 0);
+	hdr_full_crypt_cache = kmem_cache_create("arc_buf_hdr_t_full_crypt",
+	    HDR_FULL_CRYPT_SIZE, 0, hdr_full_crypt_cons, hdr_full_crypt_dest,
+	    hdr_recl, NULL, NULL, 0);
 	hdr_l2only_cache = kmem_cache_create("arc_buf_hdr_t_l2only",
 	    HDR_L2ONLY_SIZE, 0, hdr_l2only_cons, hdr_l2only_dest, hdr_recl,
 	    NULL, NULL, 0);
@@ -1342,11 +1480,63 @@ arc_buf_lsize(arc_buf_t *buf)
 	return (HDR_GET_LSIZE(buf->b_hdr));
 }
 
+/*
+ * This function will return B_TRUE if the buffer is encrypted in memory.
+ * This buffer can be decrypted by calling arc_untransform().
+ */
+boolean_t
+arc_is_encrypted(arc_buf_t *buf)
+{
+	return (ARC_BUF_ENCRYPTED(buf) != 0);
+}
+
+/*
+ * Returns B_TRUE if the buffer represents data that has not had its MAC
+ * verified yet.
+ */
+boolean_t
+arc_is_unauthenticated(arc_buf_t *buf)
+{
+	return (HDR_NOAUTH(buf->b_hdr) != 0);
+}
+
+void
+arc_get_raw_params(arc_buf_t *buf, boolean_t *byteorder, uint8_t *salt,
+    uint8_t *iv, uint8_t *mac)
+{
+	arc_buf_hdr_t *hdr = buf->b_hdr;
+
+	ASSERT(HDR_PROTECTED(hdr));
+
+	bcopy(hdr->b_crypt_hdr.b_salt, salt, ZIO_DATA_SALT_LEN);
+	bcopy(hdr->b_crypt_hdr.b_iv, iv, ZIO_DATA_IV_LEN);
+	bcopy(hdr->b_crypt_hdr.b_mac, mac, ZIO_DATA_MAC_LEN);
+	*byteorder = (hdr->b_l1hdr.b_byteswap == DMU_BSWAP_NUMFUNCS) ?
+	    ZFS_HOST_BYTEORDER : !ZFS_HOST_BYTEORDER;
+}
+
+/*
+ * Indicates how this buffer is compressed in memory. If it is not compressed
+ * the value will be ZIO_COMPRESS_OFF. It can be made normally readable with
+ * arc_untransform() as long as it is also unencrypted.
+ */
 enum zio_compress
 arc_get_compression(arc_buf_t *buf)
 {
 	return (ARC_BUF_COMPRESSED(buf) ?
 	    HDR_GET_COMPRESS(buf->b_hdr) : ZIO_COMPRESS_OFF);
+}
+
+/*
+ * Return the compression algorithm used to store this data in the ARC. If ARC
+ * compression is enabled or this is an encrypted block, this will be the same
+ * as what's used to store it on-disk. Otherwise, this will be ZIO_COMPRESS_OFF.
+ */
+static inline enum zio_compress
+arc_hdr_get_compress(arc_buf_hdr_t *hdr)
+{
+	return (HDR_COMPRESSION_ENABLED(hdr) ?
+	    HDR_GET_COMPRESS(hdr) : ZIO_COMPRESS_OFF);
 }
 
 static inline boolean_t
@@ -1376,6 +1566,7 @@ static inline void
 arc_cksum_free(arc_buf_hdr_t *hdr)
 {
 	ASSERT(HDR_HAS_L1HDR(hdr));
+
 	mutex_enter(&hdr->b_l1hdr.b_freeze_lock);
 	if (hdr->b_l1hdr.b_freeze_cksum != NULL) {
 		kmem_free(hdr->b_l1hdr.b_freeze_cksum, sizeof (zio_cksum_t));
@@ -1386,10 +1577,14 @@ arc_cksum_free(arc_buf_hdr_t *hdr)
 
 /*
  * Return true iff at least one of the bufs on hdr is not compressed.
+ * Encrypted buffers count as compressed.
  */
 static boolean_t
 arc_hdr_has_uncompressed_buf(arc_buf_hdr_t *hdr)
 {
+	ASSERT(hdr->b_l1hdr.b_state == arc_anon ||
+	    MUTEX_HELD(HDR_LOCK(hdr)) || HDR_EMPTY(hdr));
+
 	for (arc_buf_t *b = hdr->b_l1hdr.b_buf; b != NULL; b = b->b_next) {
 		if (!ARC_BUF_COMPRESSED(b)) {
 			return (B_TRUE);
@@ -1413,15 +1608,13 @@ arc_cksum_verify(arc_buf_t *buf)
 	if (!(zfs_flags & ZFS_DEBUG_MODIFY))
 		return;
 
-	if (ARC_BUF_COMPRESSED(buf)) {
-		ASSERT(hdr->b_l1hdr.b_freeze_cksum == NULL ||
-		    arc_hdr_has_uncompressed_buf(hdr));
+	if (ARC_BUF_COMPRESSED(buf))
 		return;
-	}
 
 	ASSERT(HDR_HAS_L1HDR(hdr));
 
 	mutex_enter(&hdr->b_l1hdr.b_freeze_lock);
+
 	if (hdr->b_l1hdr.b_freeze_cksum == NULL || HDR_IO_ERROR(hdr)) {
 		mutex_exit(&hdr->b_l1hdr.b_freeze_lock);
 		return;
@@ -1433,56 +1626,16 @@ arc_cksum_verify(arc_buf_t *buf)
 	mutex_exit(&hdr->b_l1hdr.b_freeze_lock);
 }
 
+/*
+ * This function makes the assumption that data stored in the L2ARC
+ * will be transformed exactly as it is in the main pool. Because of
+ * this we can verify the checksum against the reading process's bp.
+ */
 static boolean_t
 arc_cksum_is_equal(arc_buf_hdr_t *hdr, zio_t *zio)
 {
-	enum zio_compress compress = BP_GET_COMPRESS(zio->io_bp);
-	boolean_t valid_cksum;
-
 	ASSERT(!BP_IS_EMBEDDED(zio->io_bp));
 	VERIFY3U(BP_GET_PSIZE(zio->io_bp), ==, HDR_GET_PSIZE(hdr));
-
-	/*
-	 * We rely on the blkptr's checksum to determine if the block
-	 * is valid or not. When compressed arc is enabled, the l2arc
-	 * writes the block to the l2arc just as it appears in the pool.
-	 * This allows us to use the blkptr's checksum to validate the
-	 * data that we just read off of the l2arc without having to store
-	 * a separate checksum in the arc_buf_hdr_t. However, if compressed
-	 * arc is disabled, then the data written to the l2arc is always
-	 * uncompressed and won't match the block as it exists in the main
-	 * pool. When this is the case, we must first compress it if it is
-	 * compressed on the main pool before we can validate the checksum.
-	 */
-	if (!HDR_COMPRESSION_ENABLED(hdr) && compress != ZIO_COMPRESS_OFF) {
-		uint64_t lsize;
-		uint64_t csize;
-		void *cbuf;
-		ASSERT3U(HDR_GET_COMPRESS(hdr), ==, ZIO_COMPRESS_OFF);
-
-		cbuf = zio_buf_alloc(HDR_GET_PSIZE(hdr));
-		lsize = HDR_GET_LSIZE(hdr);
-		csize = zio_compress_data(compress, zio->io_abd, cbuf, lsize);
-
-		ASSERT3U(csize, <=, HDR_GET_PSIZE(hdr));
-		if (csize < HDR_GET_PSIZE(hdr)) {
-			/*
-			 * Compressed blocks are always a multiple of the
-			 * smallest ashift in the pool. Ideally, we would
-			 * like to round up the csize to the next
-			 * spa_min_ashift but that value may have changed
-			 * since the block was last written. Instead,
-			 * we rely on the fact that the hdr's psize
-			 * was set to the psize of the block when it was
-			 * last written. We set the csize to that value
-			 * and zero out any part that should not contain
-			 * data.
-			 */
-			bzero((char *)cbuf + csize, HDR_GET_PSIZE(hdr) - csize);
-			csize = HDR_GET_PSIZE(hdr);
-		}
-		zio_push_transform(zio, cbuf, csize, HDR_GET_PSIZE(hdr), NULL);
-	}
 
 	/*
 	 * Block pointers always store the checksum for the logical data.
@@ -1497,11 +1650,9 @@ arc_cksum_is_equal(arc_buf_hdr_t *hdr, zio_t *zio)
 	 * generated using the correct checksum algorithm and accounts for the
 	 * logical I/O size and not just a gang fragment.
 	 */
-	valid_cksum = (zio_checksum_error_impl(zio->io_spa, zio->io_bp,
+	return (zio_checksum_error_impl(zio->io_spa, zio->io_bp,
 	    BP_GET_CHECKSUM(zio->io_bp), zio->io_abd, zio->io_size,
 	    zio->io_offset, NULL) == 0);
-	zio_pop_transforms(zio);
-	return (valid_cksum);
 }
 
 /*
@@ -1521,15 +1672,12 @@ arc_cksum_compute(arc_buf_t *buf)
 	ASSERT(HDR_HAS_L1HDR(hdr));
 
 	mutex_enter(&buf->b_hdr->b_l1hdr.b_freeze_lock);
-	if (hdr->b_l1hdr.b_freeze_cksum != NULL) {
-		ASSERT(arc_hdr_has_uncompressed_buf(hdr));
-		mutex_exit(&hdr->b_l1hdr.b_freeze_lock);
-		return;
-	} else if (ARC_BUF_COMPRESSED(buf)) {
+	if (hdr->b_l1hdr.b_freeze_cksum != NULL || ARC_BUF_COMPRESSED(buf)) {
 		mutex_exit(&hdr->b_l1hdr.b_freeze_lock);
 		return;
 	}
 
+	ASSERT(!ARC_BUF_ENCRYPTED(buf));
 	ASSERT(!ARC_BUF_COMPRESSED(buf));
 	hdr->b_l1hdr.b_freeze_cksum = kmem_alloc(sizeof (zio_cksum_t),
 	    KM_SLEEP);
@@ -1616,14 +1764,10 @@ arc_buf_thaw(arc_buf_t *buf)
 	arc_cksum_verify(buf);
 
 	/*
-	 * Compressed buffers do not manipulate the b_freeze_cksum or
-	 * allocate b_thawed.
+	 * Compressed buffers do not manipulate the b_freeze_cksum.
 	 */
-	if (ARC_BUF_COMPRESSED(buf)) {
-		ASSERT(hdr->b_l1hdr.b_freeze_cksum == NULL ||
-		    arc_hdr_has_uncompressed_buf(hdr));
+	if (ARC_BUF_COMPRESSED(buf))
 		return;
-	}
 
 	ASSERT(HDR_HAS_L1HDR(hdr));
 	arc_cksum_free(hdr);
@@ -1633,26 +1777,14 @@ arc_buf_thaw(arc_buf_t *buf)
 void
 arc_buf_freeze(arc_buf_t *buf)
 {
-	arc_buf_hdr_t *hdr = buf->b_hdr;
-	kmutex_t *hash_lock;
-
 	if (!(zfs_flags & ZFS_DEBUG_MODIFY))
 		return;
 
-	if (ARC_BUF_COMPRESSED(buf)) {
-		ASSERT(hdr->b_l1hdr.b_freeze_cksum == NULL ||
-		    arc_hdr_has_uncompressed_buf(hdr));
+	if (ARC_BUF_COMPRESSED(buf))
 		return;
-	}
 
-	hash_lock = HDR_LOCK(hdr);
-	mutex_enter(hash_lock);
-
-	ASSERT(HDR_HAS_L1HDR(hdr));
-	ASSERT(hdr->b_l1hdr.b_freeze_cksum != NULL ||
-	    hdr->b_l1hdr.b_state == arc_anon);
+	ASSERT(HDR_HAS_L1HDR(buf->b_hdr));
 	arc_cksum_compute(buf);
-	mutex_exit(hash_lock);
 }
 
 /*
@@ -1696,15 +1828,14 @@ arc_hdr_set_compress(arc_buf_hdr_t *hdr, enum zio_compress cmp)
 	 */
 	if (!zfs_compressed_arc_enabled || HDR_GET_PSIZE(hdr) == 0) {
 		arc_hdr_clear_flags(hdr, ARC_FLAG_COMPRESSED_ARC);
-		HDR_SET_COMPRESS(hdr, ZIO_COMPRESS_OFF);
 		ASSERT(!HDR_COMPRESSION_ENABLED(hdr));
-		ASSERT3U(HDR_GET_COMPRESS(hdr), ==, ZIO_COMPRESS_OFF);
 	} else {
 		arc_hdr_set_flags(hdr, ARC_FLAG_COMPRESSED_ARC);
-		HDR_SET_COMPRESS(hdr, cmp);
-		ASSERT3U(HDR_GET_COMPRESS(hdr), ==, cmp);
 		ASSERT(HDR_COMPRESSION_ENABLED(hdr));
 	}
+
+	HDR_SET_COMPRESS(hdr, cmp);
+	ASSERT3U(HDR_GET_COMPRESS(hdr), ==, cmp);
 }
 
 /*
@@ -1745,6 +1876,233 @@ arc_buf_try_copy_decompressed_data(arc_buf_t *buf)
 }
 
 /*
+ * Return the size of the block, b_pabd, that is stored in the arc_buf_hdr_t.
+ */
+static uint64_t
+arc_hdr_size(arc_buf_hdr_t *hdr)
+{
+	uint64_t size;
+
+	if (arc_hdr_get_compress(hdr) != ZIO_COMPRESS_OFF &&
+	    HDR_GET_PSIZE(hdr) > 0) {
+		size = HDR_GET_PSIZE(hdr);
+	} else {
+		ASSERT3U(HDR_GET_LSIZE(hdr), !=, 0);
+		size = HDR_GET_LSIZE(hdr);
+	}
+	return (size);
+}
+
+static int
+arc_hdr_authenticate(arc_buf_hdr_t *hdr, spa_t *spa, uint64_t dsobj)
+{
+	int ret;
+	uint64_t csize;
+	uint64_t lsize = HDR_GET_LSIZE(hdr);
+	uint64_t psize = HDR_GET_PSIZE(hdr);
+	void *tmpbuf = NULL;
+	abd_t *abd = hdr->b_l1hdr.b_pabd;
+
+	ASSERT(MUTEX_HELD(HDR_LOCK(hdr)) || HDR_EMPTY(hdr));
+	ASSERT(HDR_AUTHENTICATED(hdr));
+	ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
+
+	/*
+	 * The MAC is calculated on the compressed data that is stored on disk.
+	 * However, if compressed arc is disabled we will only have the
+	 * decompressed data available to us now. Compress it into a temporary
+	 * abd so we can verify the MAC. The performance overhead of this will
+	 * be relatively low, since most objects in an encrypted objset will
+	 * be encrypted (instead of authenticated) anyway.
+	 */
+	if (HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF &&
+	    !HDR_COMPRESSION_ENABLED(hdr)) {
+		tmpbuf = zio_buf_alloc(lsize);
+		abd = abd_get_from_buf(tmpbuf, lsize);
+		abd_take_ownership_of_buf(abd, B_TRUE);
+
+		csize = zio_compress_data(HDR_GET_COMPRESS(hdr),
+		    hdr->b_l1hdr.b_pabd, tmpbuf, lsize);
+		ASSERT3U(csize, <=, psize);
+		abd_zero_off(abd, csize, psize - csize);
+	}
+
+	/*
+	 * Authentication is best effort. We authenticate whenever the key is
+	 * available. If we succeed we clear ARC_FLAG_NOAUTH.
+	 */
+	if (hdr->b_crypt_hdr.b_ot == DMU_OT_OBJSET) {
+		ASSERT3U(HDR_GET_COMPRESS(hdr), ==, ZIO_COMPRESS_OFF);
+		ASSERT3U(lsize, ==, psize);
+		ret = spa_do_crypt_objset_mac_abd(B_FALSE, spa, dsobj, abd,
+		    psize, hdr->b_l1hdr.b_byteswap != DMU_BSWAP_NUMFUNCS);
+	} else {
+		ret = spa_do_crypt_mac_abd(B_FALSE, spa, dsobj, abd, psize,
+		    hdr->b_crypt_hdr.b_mac);
+	}
+
+	if (ret == 0)
+		arc_hdr_clear_flags(hdr, ARC_FLAG_NOAUTH);
+	else if (ret != ENOENT)
+		goto error;
+
+	if (tmpbuf != NULL)
+		abd_free(abd);
+
+	return (0);
+
+error:
+	if (tmpbuf != NULL)
+		abd_free(abd);
+
+	return (ret);
+}
+
+/*
+ * This function will take a header that only has raw encrypted data in
+ * b_crypt_hdr.b_rabd and decrypt it into a new buffer which is stored in
+ * b_l1hdr.b_pabd. If designated in the header flags, this function will
+ * also decompress the data.
+ */
+static int
+arc_hdr_decrypt(arc_buf_hdr_t *hdr, spa_t *spa, const zbookmark_phys_t *zb)
+{
+	int ret;
+	abd_t *cabd = NULL;
+	void *tmp = NULL;
+	boolean_t no_crypt = B_FALSE;
+	boolean_t bswap = (hdr->b_l1hdr.b_byteswap != DMU_BSWAP_NUMFUNCS);
+
+	ASSERT(MUTEX_HELD(HDR_LOCK(hdr)) || HDR_EMPTY(hdr));
+	ASSERT(HDR_ENCRYPTED(hdr));
+
+	arc_hdr_alloc_abd(hdr, B_FALSE);
+
+	ret = spa_do_crypt_abd(B_FALSE, spa, zb, hdr->b_crypt_hdr.b_ot,
+	    B_FALSE, bswap, hdr->b_crypt_hdr.b_salt, hdr->b_crypt_hdr.b_iv,
+	    hdr->b_crypt_hdr.b_mac, HDR_GET_PSIZE(hdr), hdr->b_l1hdr.b_pabd,
+	    hdr->b_crypt_hdr.b_rabd, &no_crypt);
+	if (ret != 0)
+		goto error;
+
+	if (no_crypt) {
+		abd_copy(hdr->b_l1hdr.b_pabd, hdr->b_crypt_hdr.b_rabd,
+		    HDR_GET_PSIZE(hdr));
+	}
+
+	/*
+	 * If this header has disabled arc compression but the b_pabd is
+	 * compressed after decrypting it, we need to decompress the newly
+	 * decrypted data.
+	 */
+	if (HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF &&
+	    !HDR_COMPRESSION_ENABLED(hdr)) {
+		/*
+		 * We want to make sure that we are correctly honoring the
+		 * zfs_abd_scatter_enabled setting, so we allocate an abd here
+		 * and then loan a buffer from it, rather than allocating a
+		 * linear buffer and wrapping it in an abd later.
+		 */
+		cabd = arc_get_data_abd(hdr, arc_hdr_size(hdr), hdr);
+		tmp = abd_borrow_buf(cabd, arc_hdr_size(hdr));
+
+		ret = zio_decompress_data(HDR_GET_COMPRESS(hdr),
+		    hdr->b_l1hdr.b_pabd, tmp, HDR_GET_PSIZE(hdr),
+		    HDR_GET_LSIZE(hdr));
+		if (ret != 0) {
+			abd_return_buf(cabd, tmp, arc_hdr_size(hdr));
+			goto error;
+		}
+
+		abd_return_buf_copy(cabd, tmp, arc_hdr_size(hdr));
+		arc_free_data_abd(hdr, hdr->b_l1hdr.b_pabd,
+		    arc_hdr_size(hdr), hdr);
+		hdr->b_l1hdr.b_pabd = cabd;
+	}
+
+	return (0);
+
+error:
+	arc_hdr_free_abd(hdr, B_FALSE);
+	if (cabd != NULL)
+		arc_free_data_buf(hdr, cabd, arc_hdr_size(hdr), hdr);
+
+	return (ret);
+}
+
+/*
+ * This function is called during arc_buf_fill() to prepare the header's
+ * abd plaintext pointer for use. This involves authenticated protected
+ * data and decrypting encrypted data into the plaintext abd.
+ */
+static int
+arc_fill_hdr_crypt(arc_buf_hdr_t *hdr, kmutex_t *hash_lock, spa_t *spa,
+    const zbookmark_phys_t *zb, boolean_t noauth)
+{
+	int ret;
+
+	ASSERT(HDR_PROTECTED(hdr));
+
+	if (hash_lock != NULL)
+		mutex_enter(hash_lock);
+
+	if (HDR_NOAUTH(hdr) && !noauth) {
+		/*
+		 * The caller requested authenticated data but our data has
+		 * not been authenticated yet. Verify the MAC now if we can.
+		 */
+		ret = arc_hdr_authenticate(hdr, spa, zb->zb_objset);
+		if (ret != 0)
+			goto error;
+	} else if (HDR_HAS_RABD(hdr) && hdr->b_l1hdr.b_pabd == NULL) {
+		/*
+		 * If we only have the encrypted version of the data, but the
+		 * unencrypted version was requested we take this opportunity
+		 * to store the decrypted version in the header for future use.
+		 */
+		ret = arc_hdr_decrypt(hdr, spa, zb);
+		if (ret != 0)
+			goto error;
+	}
+
+	ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
+
+	if (hash_lock != NULL)
+		mutex_exit(hash_lock);
+
+	return (0);
+
+error:
+	if (hash_lock != NULL)
+		mutex_exit(hash_lock);
+
+	return (ret);
+}
+
+/*
+ * This function is used by the dbuf code to decrypt bonus buffers in place.
+ * The dbuf code itself doesn't have any locking for decrypting a shared dnode
+ * block, so we use the hash lock here to protect against concurrent calls to
+ * arc_buf_fill().
+ */
+static void
+arc_buf_untransform_in_place(arc_buf_t *buf, kmutex_t *hash_lock)
+{
+	arc_buf_hdr_t *hdr = buf->b_hdr;
+
+	ASSERT(HDR_ENCRYPTED(hdr));
+	ASSERT3U(hdr->b_crypt_hdr.b_ot, ==, DMU_OT_DNODE);
+	ASSERT(MUTEX_HELD(HDR_LOCK(hdr)) || HDR_EMPTY(hdr));
+	ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
+
+	zio_crypt_copy_dnode_bonus(hdr->b_l1hdr.b_pabd, buf->b_data,
+	    arc_buf_size(buf));
+	buf->b_flags &= ~ARC_BUF_FLAG_ENCRYPTED;
+	buf->b_flags &= ~ARC_BUF_FLAG_COMPRESSED;
+	hdr->b_crypt_hdr.b_ebufcnt -= 1;
+}
+
+/*
  * Given a buf that has a data buffer attached to it, this function will
  * efficiently fill the buf with data of the specified compression setting from
  * the hdr and update the hdr's b_freeze_cksum if necessary. If the buf and hdr
@@ -1758,15 +2116,90 @@ arc_buf_try_copy_decompressed_data(arc_buf_t *buf)
  * the correct-sized data buffer.
  */
 static int
-arc_buf_fill(arc_buf_t *buf, boolean_t compressed)
+arc_buf_fill(arc_buf_t *buf, spa_t *spa, const zbookmark_phys_t *zb,
+    arc_fill_flags_t flags)
 {
+	int error = 0;
 	arc_buf_hdr_t *hdr = buf->b_hdr;
-	boolean_t hdr_compressed = (HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF);
+	boolean_t hdr_compressed =
+	    (arc_hdr_get_compress(hdr) != ZIO_COMPRESS_OFF);
+	boolean_t compressed = (flags & ARC_FILL_COMPRESSED) != 0;
+	boolean_t encrypted = (flags & ARC_FILL_ENCRYPTED) != 0;
 	dmu_object_byteswap_t bswap = hdr->b_l1hdr.b_byteswap;
+	kmutex_t *hash_lock = (flags & ARC_FILL_LOCKED) ? NULL : HDR_LOCK(hdr);
 
 	ASSERT3P(buf->b_data, !=, NULL);
-	IMPLY(compressed, hdr_compressed);
+	IMPLY(compressed, hdr_compressed || ARC_BUF_ENCRYPTED(buf));
 	IMPLY(compressed, ARC_BUF_COMPRESSED(buf));
+	IMPLY(encrypted, HDR_ENCRYPTED(hdr));
+	IMPLY(encrypted, ARC_BUF_ENCRYPTED(buf));
+	IMPLY(encrypted, ARC_BUF_COMPRESSED(buf));
+	IMPLY(encrypted, !ARC_BUF_SHARED(buf));
+
+	/*
+	 * If the caller wanted encrypted data we just need to copy it from
+	 * b_rabd and potentially byteswap it. We won't be able to do any
+	 * further transforms on it.
+	 */
+	if (encrypted) {
+		ASSERT(HDR_HAS_RABD(hdr));
+		abd_copy_to_buf(buf->b_data, hdr->b_crypt_hdr.b_rabd,
+		    HDR_GET_PSIZE(hdr));
+		goto byteswap;
+	}
+
+	/*
+	 * Adjust encrypted and authenticated headers to accomodate
+	 * the request if needed. Dnode blocks (ARC_FILL_IN_PLACE) are
+	 * allowed to fail decryption due to keys not being loaded
+	 * without being marked as an IO error.
+	 */
+	if (HDR_PROTECTED(hdr)) {
+		error = arc_fill_hdr_crypt(hdr, hash_lock, spa,
+		    zb, !!(flags & ARC_FILL_NOAUTH));
+		if (error == EACCES && (flags & ARC_FILL_IN_PLACE) != 0) {
+			return (error);
+		} else if (error != 0) {
+			if (hash_lock != NULL)
+				mutex_enter(hash_lock);
+			arc_hdr_set_flags(hdr, ARC_FLAG_IO_ERROR);
+			if (hash_lock != NULL)
+				mutex_exit(hash_lock);
+			return (error);
+		}
+	}
+
+	/*
+	 * There is a special case here for dnode blocks which are
+	 * decrypting their bonus buffers. These blocks may request to
+	 * be decrypted in-place. This is necessary because there may
+	 * be many dnodes pointing into this buffer and there is
+	 * currently no method to synchronize replacing the backing
+	 * b_data buffer and updating all of the pointers. Here we use
+	 * the hash lock to ensure there are no races. If the need
+	 * arises for other types to be decrypted in-place, they must
+	 * add handling here as well.
+	 */
+	if ((flags & ARC_FILL_IN_PLACE) != 0) {
+		ASSERT(!hdr_compressed);
+		ASSERT(!compressed);
+		ASSERT(!encrypted);
+
+		if (HDR_ENCRYPTED(hdr) && ARC_BUF_ENCRYPTED(buf)) {
+			ASSERT3U(hdr->b_crypt_hdr.b_ot, ==, DMU_OT_DNODE);
+
+			if (hash_lock != NULL)
+				mutex_enter(hash_lock);
+			arc_buf_untransform_in_place(buf, hash_lock);
+			if (hash_lock != NULL)
+				mutex_exit(hash_lock);
+
+			/* Compute the hdr's checksum if necessary */
+			arc_cksum_compute(buf);
+		}
+
+		return (0);
+	}
 
 	if (hdr_compressed == compressed) {
 		if (!arc_buf_is_shared(buf)) {
@@ -1821,7 +2254,7 @@ arc_buf_fill(arc_buf_t *buf, boolean_t compressed)
 			ASSERT3P(hdr->b_l1hdr.b_freeze_cksum, !=, NULL);
 			return (0);
 		} else {
-			int error = zio_decompress_data(HDR_GET_COMPRESS(hdr),
+			error = zio_decompress_data(HDR_GET_COMPRESS(hdr),
 			    hdr->b_l1hdr.b_pabd, buf->b_data,
 			    HDR_GET_PSIZE(hdr), HDR_GET_LSIZE(hdr));
 
@@ -1832,13 +2265,19 @@ arc_buf_fill(arc_buf_t *buf, boolean_t compressed)
 			if (error != 0) {
 				zfs_dbgmsg(
 				    "hdr %p, compress %d, psize %d, lsize %d",
-				    hdr, HDR_GET_COMPRESS(hdr),
+				    hdr, arc_hdr_get_compress(hdr),
 				    HDR_GET_PSIZE(hdr), HDR_GET_LSIZE(hdr));
+				if (hash_lock != NULL)
+					mutex_enter(hash_lock);
+				arc_hdr_set_flags(hdr, ARC_FLAG_IO_ERROR);
+				if (hash_lock != NULL)
+					mutex_exit(hash_lock);
 				return (SET_ERROR(EIO));
 			}
 		}
 	}
 
+byteswap:
 	/* Byteswap the buf's data if necessary */
 	if (bswap != DMU_BSWAP_NUMFUNCS) {
 		ASSERT(!HDR_SHARED_DATA(hdr));
@@ -1852,28 +2291,35 @@ arc_buf_fill(arc_buf_t *buf, boolean_t compressed)
 	return (0);
 }
 
-int
-arc_decompress(arc_buf_t *buf)
-{
-	return (arc_buf_fill(buf, B_FALSE));
-}
-
 /*
- * Return the size of the block, b_pabd, that is stored in the arc_buf_hdr_t.
+ * If this function is being called to decrypt an encrypted buffer or verify an
+ * authenticated one, the key must be loaded and a mapping must be made
+ * available in the keystore via spa_keystore_create_mapping() or one of its
+ * callers.
  */
-static uint64_t
-arc_hdr_size(arc_buf_hdr_t *hdr)
+int
+arc_untransform(arc_buf_t *buf, spa_t *spa, const zbookmark_phys_t *zb,
+    boolean_t in_place)
 {
-	uint64_t size;
+	int ret;
+	arc_fill_flags_t flags = 0;
 
-	if (HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF &&
-	    HDR_GET_PSIZE(hdr) > 0) {
-		size = HDR_GET_PSIZE(hdr);
-	} else {
-		ASSERT3U(HDR_GET_LSIZE(hdr), !=, 0);
-		size = HDR_GET_LSIZE(hdr);
+	if (in_place)
+		flags |= ARC_FILL_IN_PLACE;
+
+	ret = arc_buf_fill(buf, spa, zb, flags);
+	if (ret == ECKSUM) {
+		/*
+		 * Convert authentication and decryption errors to EIO
+		 * (and generate an ereport) before leaving the ARC.
+		 */
+		ret = SET_ERROR(EIO);
+		spa_log_error(spa, zb);
+		zfs_ereport_post(FM_EREPORT_ZFS_AUTHENTICATION,
+		    spa, NULL, zb, NULL, 0, 0);
 	}
-	return (size);
+
+	return (ret);
 }
 
 /*
@@ -1885,7 +2331,6 @@ static void
 arc_evictable_space_increment(arc_buf_hdr_t *hdr, arc_state_t *state)
 {
 	arc_buf_contents_t type = arc_buf_type(hdr);
-	arc_buf_t *buf;
 
 	ASSERT(HDR_HAS_L1HDR(hdr));
 
@@ -1893,6 +2338,7 @@ arc_evictable_space_increment(arc_buf_hdr_t *hdr, arc_state_t *state)
 		ASSERT0(hdr->b_l1hdr.b_bufcnt);
 		ASSERT3P(hdr->b_l1hdr.b_buf, ==, NULL);
 		ASSERT3P(hdr->b_l1hdr.b_pabd, ==, NULL);
+		ASSERT(!HDR_HAS_RABD(hdr));
 		(void) zfs_refcount_add_many(&state->arcs_esize[type],
 		    HDR_GET_LSIZE(hdr), hdr);
 		return;
@@ -1903,7 +2349,13 @@ arc_evictable_space_increment(arc_buf_hdr_t *hdr, arc_state_t *state)
 		(void) zfs_refcount_add_many(&state->arcs_esize[type],
 		    arc_hdr_size(hdr), hdr);
 	}
-	for (buf = hdr->b_l1hdr.b_buf; buf != NULL; buf = buf->b_next) {
+	if (HDR_HAS_RABD(hdr)) {
+		(void) zfs_refcount_add_many(&state->arcs_esize[type],
+		    HDR_GET_PSIZE(hdr), hdr);
+	}
+
+	for (arc_buf_t *buf = hdr->b_l1hdr.b_buf; buf != NULL;
+	    buf = buf->b_next) {
 		if (arc_buf_is_shared(buf))
 			continue;
 		(void) zfs_refcount_add_many(&state->arcs_esize[type],
@@ -1920,7 +2372,6 @@ static void
 arc_evictable_space_decrement(arc_buf_hdr_t *hdr, arc_state_t *state)
 {
 	arc_buf_contents_t type = arc_buf_type(hdr);
-	arc_buf_t *buf;
 
 	ASSERT(HDR_HAS_L1HDR(hdr));
 
@@ -1928,6 +2379,7 @@ arc_evictable_space_decrement(arc_buf_hdr_t *hdr, arc_state_t *state)
 		ASSERT0(hdr->b_l1hdr.b_bufcnt);
 		ASSERT3P(hdr->b_l1hdr.b_buf, ==, NULL);
 		ASSERT3P(hdr->b_l1hdr.b_pabd, ==, NULL);
+		ASSERT(!HDR_HAS_RABD(hdr));
 		(void) zfs_refcount_remove_many(&state->arcs_esize[type],
 		    HDR_GET_LSIZE(hdr), hdr);
 		return;
@@ -1938,7 +2390,13 @@ arc_evictable_space_decrement(arc_buf_hdr_t *hdr, arc_state_t *state)
 		(void) zfs_refcount_remove_many(&state->arcs_esize[type],
 		    arc_hdr_size(hdr), hdr);
 	}
-	for (buf = hdr->b_l1hdr.b_buf; buf != NULL; buf = buf->b_next) {
+	if (HDR_HAS_RABD(hdr)) {
+		(void) zfs_refcount_remove_many(&state->arcs_esize[type],
+		    HDR_GET_PSIZE(hdr), hdr);
+	}
+
+	for (arc_buf_t *buf = hdr->b_l1hdr.b_buf; buf != NULL;
+	    buf = buf->b_next) {
 		if (arc_buf_is_shared(buf))
 			continue;
 		(void) zfs_refcount_remove_many(&state->arcs_esize[type],
@@ -2081,7 +2539,8 @@ arc_change_state(arc_state_t *new_state, arc_buf_hdr_t *hdr,
 		old_state = hdr->b_l1hdr.b_state;
 		refcnt = zfs_refcount_count(&hdr->b_l1hdr.b_refcnt);
 		bufcnt = hdr->b_l1hdr.b_bufcnt;
-		update_old = (bufcnt > 0 || hdr->b_l1hdr.b_pabd != NULL);
+		update_old = (bufcnt > 0 || hdr->b_l1hdr.b_pabd != NULL ||
+		    HDR_HAS_RABD(hdr));
 	} else {
 		old_state = arc_l2c_only;
 		refcnt = 0;
@@ -2151,8 +2610,8 @@ arc_change_state(arc_state_t *new_state, arc_buf_hdr_t *hdr,
 			(void) zfs_refcount_add_many(&new_state->arcs_size,
 			    HDR_GET_LSIZE(hdr), hdr);
 			ASSERT3P(hdr->b_l1hdr.b_pabd, ==, NULL);
+			ASSERT(!HDR_HAS_RABD(hdr));
 		} else {
-			arc_buf_t *buf;
 			uint32_t buffers = 0;
 
 			/*
@@ -2160,7 +2619,7 @@ arc_change_state(arc_state_t *new_state, arc_buf_hdr_t *hdr,
 			 * thus we must remove each of these references one
 			 * at a time.
 			 */
-			for (buf = hdr->b_l1hdr.b_buf; buf != NULL;
+			for (arc_buf_t *buf = hdr->b_l1hdr.b_buf; buf != NULL;
 			    buf = buf->b_next) {
 				ASSERT3U(bufcnt, !=, 0);
 				buffers++;
@@ -2185,8 +2644,12 @@ arc_change_state(arc_state_t *new_state, arc_buf_hdr_t *hdr,
 				(void) zfs_refcount_add_many(
 				    &new_state->arcs_size,
 				    arc_hdr_size(hdr), hdr);
-			} else {
-				ASSERT(GHOST_STATE(old_state));
+			}
+
+			if (HDR_HAS_RABD(hdr)) {
+				(void) zfs_refcount_add_many(
+				    &new_state->arcs_size,
+				    HDR_GET_PSIZE(hdr), hdr);
 			}
 		}
 	}
@@ -2196,6 +2659,7 @@ arc_change_state(arc_state_t *new_state, arc_buf_hdr_t *hdr,
 		if (GHOST_STATE(old_state)) {
 			ASSERT0(bufcnt);
 			ASSERT3P(hdr->b_l1hdr.b_pabd, ==, NULL);
+			ASSERT(!HDR_HAS_RABD(hdr));
 
 			/*
 			 * When moving a header off of a ghost state,
@@ -2208,7 +2672,6 @@ arc_change_state(arc_state_t *new_state, arc_buf_hdr_t *hdr,
 			(void) zfs_refcount_remove_many(&old_state->arcs_size,
 			    HDR_GET_LSIZE(hdr), hdr);
 		} else {
-			arc_buf_t *buf;
 			uint32_t buffers = 0;
 
 			/*
@@ -2216,7 +2679,7 @@ arc_change_state(arc_state_t *new_state, arc_buf_hdr_t *hdr,
 			 * thus we must remove each of these references one
 			 * at a time.
 			 */
-			for (buf = hdr->b_l1hdr.b_buf; buf != NULL;
+			for (arc_buf_t *buf = hdr->b_l1hdr.b_buf; buf != NULL;
 			    buf = buf->b_next) {
 				ASSERT3U(bufcnt, !=, 0);
 				buffers++;
@@ -2236,9 +2699,20 @@ arc_change_state(arc_state_t *new_state, arc_buf_hdr_t *hdr,
 				    buf);
 			}
 			ASSERT3U(bufcnt, ==, buffers);
-			ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
-			(void) zfs_refcount_remove_many(
-			    &old_state->arcs_size, arc_hdr_size(hdr), hdr);
+			ASSERT(hdr->b_l1hdr.b_pabd != NULL ||
+			    HDR_HAS_RABD(hdr));
+
+			if (hdr->b_l1hdr.b_pabd != NULL) {
+				(void) zfs_refcount_remove_many(
+				    &old_state->arcs_size, arc_hdr_size(hdr),
+				    hdr);
+			}
+
+			if (HDR_HAS_RABD(hdr)) {
+				(void) zfs_refcount_remove_many(
+				    &old_state->arcs_size, HDR_GET_PSIZE(hdr),
+				    hdr);
+			}
 		}
 	}
 
@@ -2262,32 +2736,32 @@ arc_space_consume(uint64_t space, arc_space_type_t type)
 	default:
 		break;
 	case ARC_SPACE_DATA:
-		ARCSTAT_INCR(arcstat_data_size, space);
+		aggsum_add(&astat_data_size, space);
 		break;
 	case ARC_SPACE_META:
-		ARCSTAT_INCR(arcstat_metadata_size, space);
+		aggsum_add(&astat_metadata_size, space);
 		break;
 	case ARC_SPACE_BONUS:
-		ARCSTAT_INCR(arcstat_bonus_size, space);
+		aggsum_add(&astat_bonus_size, space);
 		break;
 	case ARC_SPACE_DNODE:
-		ARCSTAT_INCR(arcstat_dnode_size, space);
+		aggsum_add(&astat_dnode_size, space);
 		break;
 	case ARC_SPACE_DBUF:
-		ARCSTAT_INCR(arcstat_dbuf_size, space);
+		aggsum_add(&astat_dbuf_size, space);
 		break;
 	case ARC_SPACE_HDRS:
-		ARCSTAT_INCR(arcstat_hdr_size, space);
+		aggsum_add(&astat_hdr_size, space);
 		break;
 	case ARC_SPACE_L2HDRS:
-		ARCSTAT_INCR(arcstat_l2_hdr_size, space);
+		aggsum_add(&astat_l2_hdr_size, space);
 		break;
 	}
 
 	if (type != ARC_SPACE_DATA)
-		ARCSTAT_INCR(arcstat_meta_used, space);
+		aggsum_add(&arc_meta_used, space);
 
-	atomic_add_64(&arc_size, space);
+	aggsum_add(&arc_size, space);
 }
 
 void
@@ -2299,37 +2773,42 @@ arc_space_return(uint64_t space, arc_space_type_t type)
 	default:
 		break;
 	case ARC_SPACE_DATA:
-		ARCSTAT_INCR(arcstat_data_size, -space);
+		aggsum_add(&astat_data_size, -space);
 		break;
 	case ARC_SPACE_META:
-		ARCSTAT_INCR(arcstat_metadata_size, -space);
+		aggsum_add(&astat_metadata_size, -space);
 		break;
 	case ARC_SPACE_BONUS:
-		ARCSTAT_INCR(arcstat_bonus_size, -space);
+		aggsum_add(&astat_bonus_size, -space);
 		break;
 	case ARC_SPACE_DNODE:
-		ARCSTAT_INCR(arcstat_dnode_size, -space);
+		aggsum_add(&astat_dnode_size, -space);
 		break;
 	case ARC_SPACE_DBUF:
-		ARCSTAT_INCR(arcstat_dbuf_size, -space);
+		aggsum_add(&astat_dbuf_size, -space);
 		break;
 	case ARC_SPACE_HDRS:
-		ARCSTAT_INCR(arcstat_hdr_size, -space);
+		aggsum_add(&astat_hdr_size, -space);
 		break;
 	case ARC_SPACE_L2HDRS:
-		ARCSTAT_INCR(arcstat_l2_hdr_size, -space);
+		aggsum_add(&astat_l2_hdr_size, -space);
 		break;
 	}
 
 	if (type != ARC_SPACE_DATA) {
-		ASSERT(arc_meta_used >= space);
-		if (arc_meta_max < arc_meta_used)
-			arc_meta_max = arc_meta_used;
-		ARCSTAT_INCR(arcstat_meta_used, -space);
+		ASSERT(aggsum_compare(&arc_meta_used, space) >= 0);
+		/*
+		 * We use the upper bound here rather than the precise value
+		 * because the arc_meta_max value doesn't need to be
+		 * precise. It's only consumed by humans via arcstats.
+		 */
+		if (arc_meta_max < aggsum_upper_bound(&arc_meta_used))
+			arc_meta_max = aggsum_upper_bound(&arc_meta_used);
+		aggsum_add(&arc_meta_used, -space);
 	}
 
-	ASSERT(arc_size >= space);
-	atomic_add_64(&arc_size, -space);
+	ASSERT(aggsum_compare(&arc_size, space) >= 0);
+	aggsum_add(&arc_size, -space);
 }
 
 /*
@@ -2341,12 +2820,13 @@ arc_can_share(arc_buf_hdr_t *hdr, arc_buf_t *buf)
 {
 	/*
 	 * The criteria for sharing a hdr's data are:
-	 * 1. the hdr's compression matches the buf's compression
-	 * 2. the hdr doesn't need to be byteswapped
-	 * 3. the hdr isn't already being shared
-	 * 4. the buf is either compressed or it is the last buf in the hdr list
+	 * 1. the buffer is not encrypted
+	 * 2. the hdr's compression matches the buf's compression
+	 * 3. the hdr doesn't need to be byteswapped
+	 * 4. the hdr isn't already being shared
+	 * 5. the buf is either compressed or it is the last buf in the hdr list
 	 *
-	 * Criterion #4 maintains the invariant that shared uncompressed
+	 * Criterion #5 maintains the invariant that shared uncompressed
 	 * bufs must be the final buf in the hdr's b_buf list. Reading this, you
 	 * might ask, "if a compressed buf is allocated first, won't that be the
 	 * last thing in the list?", but in that case it's impossible to create
@@ -2361,9 +2841,11 @@ arc_can_share(arc_buf_hdr_t *hdr, arc_buf_t *buf)
 	 * sharing if the new buf isn't the first to be added.
 	 */
 	ASSERT3P(buf->b_hdr, ==, hdr);
-	boolean_t hdr_compressed = HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF;
+	boolean_t hdr_compressed =
+	    arc_hdr_get_compress(hdr) != ZIO_COMPRESS_OFF;
 	boolean_t buf_compressed = ARC_BUF_COMPRESSED(buf) != 0;
-	return (buf_compressed == hdr_compressed &&
+	return (!ARC_BUF_ENCRYPTED(buf) &&
+	    buf_compressed == hdr_compressed &&
 	    hdr->b_l1hdr.b_byteswap == DMU_BSWAP_NUMFUNCS &&
 	    !HDR_SHARED_DATA(hdr) &&
 	    (ARC_BUF_LAST(buf) || ARC_BUF_COMPRESSED(buf)));
@@ -2375,10 +2857,12 @@ arc_can_share(arc_buf_hdr_t *hdr, arc_buf_t *buf)
  * copy was made successfully, or an error code otherwise.
  */
 static int
-arc_buf_alloc_impl(arc_buf_hdr_t *hdr, void *tag, boolean_t compressed,
+arc_buf_alloc_impl(arc_buf_hdr_t *hdr, spa_t *spa, const zbookmark_phys_t *zb,
+    void *tag, boolean_t encrypted, boolean_t compressed, boolean_t noauth,
     boolean_t fill, arc_buf_t **ret)
 {
 	arc_buf_t *buf;
+	arc_fill_flags_t flags = ARC_FILL_LOCKED;
 
 	ASSERT(HDR_HAS_L1HDR(hdr));
 	ASSERT3U(HDR_GET_LSIZE(hdr), >, 0);
@@ -2386,6 +2870,7 @@ arc_buf_alloc_impl(arc_buf_hdr_t *hdr, void *tag, boolean_t compressed,
 	    hdr->b_type == ARC_BUFC_METADATA);
 	ASSERT3P(ret, !=, NULL);
 	ASSERT3P(*ret, ==, NULL);
+	IMPLY(encrypted, compressed);
 
 	hdr->b_l1hdr.b_mru_hits = 0;
 	hdr->b_l1hdr.b_mru_ghost_hits = 0;
@@ -2409,10 +2894,23 @@ arc_buf_alloc_impl(arc_buf_hdr_t *hdr, void *tag, boolean_t compressed,
 
 	/*
 	 * Only honor requests for compressed bufs if the hdr is actually
-	 * compressed.
+	 * compressed. This must be overriden if the buffer is encrypted since
+	 * encrypted buffers cannot be decompressed.
 	 */
-	if (compressed && HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF)
+	if (encrypted) {
 		buf->b_flags |= ARC_BUF_FLAG_COMPRESSED;
+		buf->b_flags |= ARC_BUF_FLAG_ENCRYPTED;
+		flags |= ARC_FILL_COMPRESSED | ARC_FILL_ENCRYPTED;
+	} else if (compressed &&
+	    arc_hdr_get_compress(hdr) != ZIO_COMPRESS_OFF) {
+		buf->b_flags |= ARC_BUF_FLAG_COMPRESSED;
+		flags |= ARC_FILL_COMPRESSED;
+	}
+
+	if (noauth) {
+		ASSERT0(encrypted);
+		flags |= ARC_FILL_NOAUTH;
+	}
 
 	/*
 	 * If the hdr's data can be shared then we share the data buffer and
@@ -2428,7 +2926,7 @@ arc_buf_alloc_impl(arc_buf_hdr_t *hdr, void *tag, boolean_t compressed,
 	 * need to be ABD-aware.
 	 */
 	boolean_t can_share = arc_can_share(hdr, buf) && !HDR_L2_WRITING(hdr) &&
-	    abd_is_linear(hdr->b_l1hdr.b_pabd);
+	    hdr->b_l1hdr.b_pabd != NULL && abd_is_linear(hdr->b_l1hdr.b_pabd);
 
 	/* Set up b_data and sharing */
 	if (can_share) {
@@ -2444,13 +2942,16 @@ arc_buf_alloc_impl(arc_buf_hdr_t *hdr, void *tag, boolean_t compressed,
 
 	hdr->b_l1hdr.b_buf = buf;
 	hdr->b_l1hdr.b_bufcnt += 1;
+	if (encrypted)
+		hdr->b_crypt_hdr.b_ebufcnt += 1;
 
 	/*
 	 * If the user wants the data from the hdr, we need to either copy or
 	 * decompress the data.
 	 */
 	if (fill) {
-		return (arc_buf_fill(buf, ARC_BUF_COMPRESSED(buf) != 0));
+		ASSERT3P(zb, !=, NULL);
+		return (arc_buf_fill(buf, spa, zb, flags));
 	}
 
 	return (0);
@@ -2479,7 +2980,7 @@ arc_loan_buf(spa_t *spa, boolean_t is_metadata, int size)
 	arc_buf_t *buf = arc_alloc_buf(spa, arc_onloan_tag,
 	    is_metadata ? ARC_BUFC_METADATA : ARC_BUFC_DATA, size);
 
-	arc_loaned_bytes_update(size);
+	arc_loaned_bytes_update(arc_buf_size(buf));
 
 	return (buf);
 }
@@ -2491,8 +2992,21 @@ arc_loan_compressed_buf(spa_t *spa, uint64_t psize, uint64_t lsize,
 	arc_buf_t *buf = arc_alloc_compressed_buf(spa, arc_onloan_tag,
 	    psize, lsize, compression_type);
 
-	arc_loaned_bytes_update(psize);
+	arc_loaned_bytes_update(arc_buf_size(buf));
 
+	return (buf);
+}
+
+arc_buf_t *
+arc_loan_raw_buf(spa_t *spa, uint64_t dsobj, boolean_t byteorder,
+    const uint8_t *salt, const uint8_t *iv, const uint8_t *mac,
+    dmu_object_type_t ot, uint64_t psize, uint64_t lsize,
+    enum zio_compress compression_type)
+{
+	arc_buf_t *buf = arc_alloc_raw_buf(spa, arc_onloan_tag, dsobj,
+	    byteorder, salt, iv, mac, ot, psize, lsize, compression_type);
+
+	atomic_add_64(&arc_loaned_bytes, psize);
 	return (buf);
 }
 
@@ -2541,11 +3055,11 @@ l2arc_free_abd_on_write(abd_t *abd, size_t size, arc_buf_contents_t type)
 }
 
 static void
-arc_hdr_free_on_write(arc_buf_hdr_t *hdr)
+arc_hdr_free_on_write(arc_buf_hdr_t *hdr, boolean_t free_rdata)
 {
 	arc_state_t *state = hdr->b_l1hdr.b_state;
 	arc_buf_contents_t type = arc_buf_type(hdr);
-	uint64_t size = arc_hdr_size(hdr);
+	uint64_t size = (free_rdata) ? HDR_GET_PSIZE(hdr) : arc_hdr_size(hdr);
 
 	/* protected by hash lock, if in the hash table */
 	if (multilist_link_active(&hdr->b_l1hdr.b_arc_node)) {
@@ -2563,7 +3077,11 @@ arc_hdr_free_on_write(arc_buf_hdr_t *hdr)
 		arc_space_return(size, ARC_SPACE_DATA);
 	}
 
-	l2arc_free_abd_on_write(hdr->b_l1hdr.b_pabd, size, type);
+	if (free_rdata) {
+		l2arc_free_abd_on_write(hdr->b_crypt_hdr.b_rabd, size, type);
+	} else {
+		l2arc_free_abd_on_write(hdr->b_l1hdr.b_pabd, size, type);
+	}
 }
 
 /*
@@ -2576,6 +3094,7 @@ arc_share_buf(arc_buf_hdr_t *hdr, arc_buf_t *buf)
 {
 	ASSERT(arc_can_share(hdr, buf));
 	ASSERT3P(hdr->b_l1hdr.b_pabd, ==, NULL);
+	ASSERT(!ARC_BUF_ENCRYPTED(buf));
 	ASSERT(MUTEX_HELD(HDR_LOCK(hdr)) || HDR_EMPTY(hdr));
 
 	/*
@@ -2583,8 +3102,8 @@ arc_share_buf(arc_buf_hdr_t *hdr, arc_buf_t *buf)
 	 * refcount ownership to the hdr since it always owns
 	 * the refcount whenever an arc_buf_t is shared.
 	 */
-	zfs_refcount_transfer_ownership(&hdr->b_l1hdr.b_state->arcs_size, buf,
-	    hdr);
+	zfs_refcount_transfer_ownership_many(&hdr->b_l1hdr.b_state->arcs_size,
+	    arc_hdr_size(hdr), buf, hdr);
 	hdr->b_l1hdr.b_pabd = abd_get_from_buf(buf->b_data, arc_buf_size(buf));
 	abd_take_ownership_of_buf(hdr->b_l1hdr.b_pabd,
 	    HDR_ISTYPE_METADATA(hdr));
@@ -2612,8 +3131,8 @@ arc_unshare_buf(arc_buf_hdr_t *hdr, arc_buf_t *buf)
 	 * We are no longer sharing this buffer so we need
 	 * to transfer its ownership to the rightful owner.
 	 */
-	zfs_refcount_transfer_ownership(&hdr->b_l1hdr.b_state->arcs_size, hdr,
-	    buf);
+	zfs_refcount_transfer_ownership_many(&hdr->b_l1hdr.b_state->arcs_size,
+	    arc_hdr_size(hdr), hdr, buf);
 	arc_hdr_clear_flags(hdr, ARC_FLAG_SHARED_DATA);
 	abd_release_ownership_of_buf(hdr->b_l1hdr.b_pabd);
 	abd_put(hdr->b_l1hdr.b_pabd);
@@ -2705,6 +3224,21 @@ arc_buf_destroy_impl(arc_buf_t *buf)
 
 		ASSERT(hdr->b_l1hdr.b_bufcnt > 0);
 		hdr->b_l1hdr.b_bufcnt -= 1;
+
+		if (ARC_BUF_ENCRYPTED(buf)) {
+			hdr->b_crypt_hdr.b_ebufcnt -= 1;
+
+			/*
+			 * If we have no more encrypted buffers and we've
+			 * already gotten a copy of the decrypted data we can
+			 * free b_rabd to save some space.
+			 */
+			if (hdr->b_crypt_hdr.b_ebufcnt == 0 &&
+			    HDR_HAS_RABD(hdr) && hdr->b_l1hdr.b_pabd != NULL &&
+			    !HDR_IO_IN_PROGRESS(hdr)) {
+				arc_hdr_free_abd(hdr, B_TRUE);
+			}
+		}
 	}
 
 	arc_buf_t *lastbuf = arc_buf_remove(hdr, buf);
@@ -2719,16 +3253,17 @@ arc_buf_destroy_impl(arc_buf_t *buf)
 		 * There is an equivalent case for compressed bufs, but since
 		 * they aren't guaranteed to be the last buf in the list and
 		 * that is an exceedingly rare case, we just allow that space be
-		 * wasted temporarily.
+		 * wasted temporarily. We must also be careful not to share
+		 * encrypted buffers, since they cannot be shared.
 		 */
-		if (lastbuf != NULL) {
+		if (lastbuf != NULL && !ARC_BUF_ENCRYPTED(lastbuf)) {
 			/* Only one buf can be shared at once */
 			VERIFY(!arc_buf_is_shared(lastbuf));
 			/* hdr is uncompressed so can't have compressed buf */
 			VERIFY(!ARC_BUF_COMPRESSED(lastbuf));
 
 			ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
-			arc_hdr_free_pabd(hdr);
+			arc_hdr_free_abd(hdr, B_FALSE);
 
 			/*
 			 * We must setup a new shared block between the
@@ -2749,7 +3284,7 @@ arc_buf_destroy_impl(arc_buf_t *buf)
 		 */
 		ASSERT3P(lastbuf, !=, NULL);
 		ASSERT(arc_buf_is_shared(lastbuf) ||
-		    HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF);
+		    arc_hdr_get_compress(hdr) != ZIO_COMPRESS_OFF);
 	}
 
 	/*
@@ -2766,26 +3301,40 @@ arc_buf_destroy_impl(arc_buf_t *buf)
 }
 
 static void
-arc_hdr_alloc_pabd(arc_buf_hdr_t *hdr)
+arc_hdr_alloc_abd(arc_buf_hdr_t *hdr, boolean_t alloc_rdata)
 {
+	uint64_t size;
+
 	ASSERT3U(HDR_GET_LSIZE(hdr), >, 0);
 	ASSERT(HDR_HAS_L1HDR(hdr));
-	ASSERT(!HDR_SHARED_DATA(hdr));
+	ASSERT(!HDR_SHARED_DATA(hdr) || alloc_rdata);
+	IMPLY(alloc_rdata, HDR_PROTECTED(hdr));
 
-	ASSERT3P(hdr->b_l1hdr.b_pabd, ==, NULL);
-	hdr->b_l1hdr.b_pabd = arc_get_data_abd(hdr, arc_hdr_size(hdr), hdr);
-	hdr->b_l1hdr.b_byteswap = DMU_BSWAP_NUMFUNCS;
-	ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
+	if (alloc_rdata) {
+		size = HDR_GET_PSIZE(hdr);
+		ASSERT3P(hdr->b_crypt_hdr.b_rabd, ==, NULL);
+		hdr->b_crypt_hdr.b_rabd = arc_get_data_abd(hdr, size, hdr);
+		ASSERT3P(hdr->b_crypt_hdr.b_rabd, !=, NULL);
+		ARCSTAT_INCR(arcstat_raw_size, size);
+	} else {
+		size = arc_hdr_size(hdr);
+		ASSERT3P(hdr->b_l1hdr.b_pabd, ==, NULL);
+		hdr->b_l1hdr.b_pabd = arc_get_data_abd(hdr, size, hdr);
+		ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
+	}
 
-	ARCSTAT_INCR(arcstat_compressed_size, arc_hdr_size(hdr));
+	ARCSTAT_INCR(arcstat_compressed_size, size);
 	ARCSTAT_INCR(arcstat_uncompressed_size, HDR_GET_LSIZE(hdr));
 }
 
 static void
-arc_hdr_free_pabd(arc_buf_hdr_t *hdr)
+arc_hdr_free_abd(arc_buf_hdr_t *hdr, boolean_t free_rdata)
 {
+	uint64_t size = (free_rdata) ? HDR_GET_PSIZE(hdr) : arc_hdr_size(hdr);
+
 	ASSERT(HDR_HAS_L1HDR(hdr));
-	ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
+	ASSERT(hdr->b_l1hdr.b_pabd != NULL || HDR_HAS_RABD(hdr));
+	IMPLY(free_rdata, HDR_HAS_RABD(hdr));
 
 	/*
 	 * If the hdr is currently being written to the l2arc then
@@ -2794,28 +3343,42 @@ arc_hdr_free_pabd(arc_buf_hdr_t *hdr)
 	 * writing it to the l2arc device.
 	 */
 	if (HDR_L2_WRITING(hdr)) {
-		arc_hdr_free_on_write(hdr);
+		arc_hdr_free_on_write(hdr, free_rdata);
 		ARCSTAT_BUMP(arcstat_l2_free_on_write);
+	} else if (free_rdata) {
+		arc_free_data_abd(hdr, hdr->b_crypt_hdr.b_rabd, size, hdr);
 	} else {
-		arc_free_data_abd(hdr, hdr->b_l1hdr.b_pabd,
-		    arc_hdr_size(hdr), hdr);
+		arc_free_data_abd(hdr, hdr->b_l1hdr.b_pabd, size, hdr);
 	}
-	hdr->b_l1hdr.b_pabd = NULL;
-	hdr->b_l1hdr.b_byteswap = DMU_BSWAP_NUMFUNCS;
 
-	ARCSTAT_INCR(arcstat_compressed_size, -arc_hdr_size(hdr));
+	if (free_rdata) {
+		hdr->b_crypt_hdr.b_rabd = NULL;
+		ARCSTAT_INCR(arcstat_raw_size, -size);
+	} else {
+		hdr->b_l1hdr.b_pabd = NULL;
+	}
+
+	if (hdr->b_l1hdr.b_pabd == NULL && !HDR_HAS_RABD(hdr))
+		hdr->b_l1hdr.b_byteswap = DMU_BSWAP_NUMFUNCS;
+
+	ARCSTAT_INCR(arcstat_compressed_size, -size);
 	ARCSTAT_INCR(arcstat_uncompressed_size, -HDR_GET_LSIZE(hdr));
 }
 
 static arc_buf_hdr_t *
 arc_hdr_alloc(uint64_t spa, int32_t psize, int32_t lsize,
-    enum zio_compress compression_type, arc_buf_contents_t type)
+    boolean_t protected, enum zio_compress compression_type,
+    arc_buf_contents_t type, boolean_t alloc_rdata)
 {
 	arc_buf_hdr_t *hdr;
 
 	VERIFY(type == ARC_BUFC_DATA || type == ARC_BUFC_METADATA);
+	if (protected) {
+		hdr = kmem_cache_alloc(hdr_full_crypt_cache, KM_PUSHPAGE);
+	} else {
+		hdr = kmem_cache_alloc(hdr_full_cache, KM_PUSHPAGE);
+	}
 
-	hdr = kmem_cache_alloc(hdr_full_cache, KM_PUSHPAGE);
 	ASSERT(HDR_EMPTY(hdr));
 	ASSERT3P(hdr->b_l1hdr.b_freeze_cksum, ==, NULL);
 	HDR_SET_PSIZE(hdr, psize);
@@ -2825,6 +3388,8 @@ arc_hdr_alloc(uint64_t spa, int32_t psize, int32_t lsize,
 	hdr->b_flags = 0;
 	arc_hdr_set_flags(hdr, arc_bufc_to_flags(type) | ARC_FLAG_HAS_L1HDR);
 	arc_hdr_set_compress(hdr, compression_type);
+	if (protected)
+		arc_hdr_set_flags(hdr, ARC_FLAG_PROTECTED);
 
 	hdr->b_l1hdr.b_state = arc_anon;
 	hdr->b_l1hdr.b_arc_access = 0;
@@ -2836,7 +3401,7 @@ arc_hdr_alloc(uint64_t spa, int32_t psize, int32_t lsize,
 	 * the compressed or uncompressed data depending on the block
 	 * it references and compressed arc enablement.
 	 */
-	arc_hdr_alloc_pabd(hdr);
+	arc_hdr_alloc_abd(hdr, alloc_rdata);
 	ASSERT(zfs_refcount_is_zero(&hdr->b_l1hdr.b_refcnt));
 
 	return (hdr);
@@ -2852,12 +3417,23 @@ arc_hdr_alloc(uint64_t spa, int32_t psize, int32_t lsize,
 static arc_buf_hdr_t *
 arc_hdr_realloc(arc_buf_hdr_t *hdr, kmem_cache_t *old, kmem_cache_t *new)
 {
+	ASSERT(HDR_HAS_L2HDR(hdr));
+
 	arc_buf_hdr_t *nhdr;
 	l2arc_dev_t *dev = hdr->b_l2hdr.b_dev;
 
-	ASSERT(HDR_HAS_L2HDR(hdr));
 	ASSERT((old == hdr_full_cache && new == hdr_l2only_cache) ||
 	    (old == hdr_l2only_cache && new == hdr_full_cache));
+
+	/*
+	 * if the caller wanted a new full header and the header is to be
+	 * encrypted we will actually allocate the header from the full crypt
+	 * cache instead. The same applies to freeing from the old cache.
+	 */
+	if (HDR_PROTECTED(hdr) && new == hdr_full_cache)
+		new = hdr_full_crypt_cache;
+	if (HDR_PROTECTED(hdr) && old == hdr_full_cache)
+		old = hdr_full_crypt_cache;
 
 	nhdr = kmem_cache_alloc(new, KM_PUSHPAGE);
 
@@ -2866,7 +3442,7 @@ arc_hdr_realloc(arc_buf_hdr_t *hdr, kmem_cache_t *old, kmem_cache_t *new)
 
 	bcopy(hdr, nhdr, HDR_L2ONLY_SIZE);
 
-	if (new == hdr_full_cache) {
+	if (new == hdr_full_cache || new == hdr_full_crypt_cache) {
 		arc_hdr_set_flags(nhdr, ARC_FLAG_HAS_L1HDR);
 		/*
 		 * arc_access and arc_change_state need to be aware that a
@@ -2877,6 +3453,7 @@ arc_hdr_realloc(arc_buf_hdr_t *hdr, kmem_cache_t *old, kmem_cache_t *new)
 
 		/* Verify previous threads set to NULL before freeing */
 		ASSERT3P(nhdr->b_l1hdr.b_pabd, ==, NULL);
+		ASSERT(!HDR_HAS_RABD(hdr));
 	} else {
 		ASSERT3P(hdr->b_l1hdr.b_buf, ==, NULL);
 		ASSERT0(hdr->b_l1hdr.b_bufcnt);
@@ -2899,6 +3476,7 @@ arc_hdr_realloc(arc_buf_hdr_t *hdr, kmem_cache_t *old, kmem_cache_t *new)
 		 */
 		VERIFY(!HDR_L2_WRITING(hdr));
 		VERIFY3P(hdr->b_l1hdr.b_pabd, ==, NULL);
+		ASSERT(!HDR_HAS_RABD(hdr));
 
 		arc_hdr_clear_flags(nhdr, ARC_FLAG_HAS_L1HDR);
 	}
@@ -2931,15 +3509,177 @@ arc_hdr_realloc(arc_buf_hdr_t *hdr, kmem_cache_t *old, kmem_cache_t *new)
 	 * the wrong pointer address when calling arc_hdr_destroy() later.
 	 */
 
-	(void) zfs_refcount_remove_many(&dev->l2ad_alloc, arc_hdr_size(hdr),
-	    hdr);
-	(void) zfs_refcount_add_many(&dev->l2ad_alloc, arc_hdr_size(nhdr),
-	    nhdr);
+	(void) zfs_refcount_remove_many(&dev->l2ad_alloc,
+	    arc_hdr_size(hdr), hdr);
+	(void) zfs_refcount_add_many(&dev->l2ad_alloc,
+	    arc_hdr_size(nhdr), nhdr);
 
 	buf_discard_identity(hdr);
 	kmem_cache_free(old, hdr);
 
 	return (nhdr);
+}
+
+/*
+ * This function allows an L1 header to be reallocated as a crypt
+ * header and vice versa. If we are going to a crypt header, the
+ * new fields will be zeroed out.
+ */
+static arc_buf_hdr_t *
+arc_hdr_realloc_crypt(arc_buf_hdr_t *hdr, boolean_t need_crypt)
+{
+	arc_buf_hdr_t *nhdr;
+	arc_buf_t *buf;
+	kmem_cache_t *ncache, *ocache;
+	unsigned nsize, osize;
+
+	/*
+	 * This function requires that hdr is in the arc_anon state.
+	 * Therefore it won't have any L2ARC data for us to worry
+	 * about copying.
+	 */
+	ASSERT(HDR_HAS_L1HDR(hdr));
+	ASSERT(!HDR_HAS_L2HDR(hdr));
+	ASSERT3U(!!HDR_PROTECTED(hdr), !=, need_crypt);
+	ASSERT3P(hdr->b_l1hdr.b_state, ==, arc_anon);
+	ASSERT(!multilist_link_active(&hdr->b_l1hdr.b_arc_node));
+	ASSERT(!list_link_active(&hdr->b_l2hdr.b_l2node));
+	ASSERT3P(hdr->b_hash_next, ==, NULL);
+
+	if (need_crypt) {
+		ncache = hdr_full_crypt_cache;
+		nsize = sizeof (hdr->b_crypt_hdr);
+		ocache = hdr_full_cache;
+		osize = HDR_FULL_SIZE;
+	} else {
+		ncache = hdr_full_cache;
+		nsize = HDR_FULL_SIZE;
+		ocache = hdr_full_crypt_cache;
+		osize = sizeof (hdr->b_crypt_hdr);
+	}
+
+	nhdr = kmem_cache_alloc(ncache, KM_PUSHPAGE);
+
+	/*
+	 * Copy all members that aren't locks or condvars to the new header.
+	 * No lists are pointing to us (as we asserted above), so we don't
+	 * need to worry about the list nodes.
+	 */
+	nhdr->b_dva = hdr->b_dva;
+	nhdr->b_birth = hdr->b_birth;
+	nhdr->b_type = hdr->b_type;
+	nhdr->b_flags = hdr->b_flags;
+	nhdr->b_psize = hdr->b_psize;
+	nhdr->b_lsize = hdr->b_lsize;
+	nhdr->b_spa = hdr->b_spa;
+	nhdr->b_l1hdr.b_freeze_cksum = hdr->b_l1hdr.b_freeze_cksum;
+	nhdr->b_l1hdr.b_bufcnt = hdr->b_l1hdr.b_bufcnt;
+	nhdr->b_l1hdr.b_byteswap = hdr->b_l1hdr.b_byteswap;
+	nhdr->b_l1hdr.b_state = hdr->b_l1hdr.b_state;
+	nhdr->b_l1hdr.b_arc_access = hdr->b_l1hdr.b_arc_access;
+	nhdr->b_l1hdr.b_mru_hits = hdr->b_l1hdr.b_mru_hits;
+	nhdr->b_l1hdr.b_mru_ghost_hits = hdr->b_l1hdr.b_mru_ghost_hits;
+	nhdr->b_l1hdr.b_mfu_hits = hdr->b_l1hdr.b_mfu_hits;
+	nhdr->b_l1hdr.b_mfu_ghost_hits = hdr->b_l1hdr.b_mfu_ghost_hits;
+	nhdr->b_l1hdr.b_l2_hits = hdr->b_l1hdr.b_l2_hits;
+	nhdr->b_l1hdr.b_acb = hdr->b_l1hdr.b_acb;
+	nhdr->b_l1hdr.b_pabd = hdr->b_l1hdr.b_pabd;
+
+	/*
+	 * This zfs_refcount_add() exists only to ensure that the individual
+	 * arc buffers always point to a header that is referenced, avoiding
+	 * a small race condition that could trigger ASSERTs.
+	 */
+	(void) zfs_refcount_add(&nhdr->b_l1hdr.b_refcnt, FTAG);
+	nhdr->b_l1hdr.b_buf = hdr->b_l1hdr.b_buf;
+	for (buf = nhdr->b_l1hdr.b_buf; buf != NULL; buf = buf->b_next) {
+		mutex_enter(&buf->b_evict_lock);
+		buf->b_hdr = nhdr;
+		mutex_exit(&buf->b_evict_lock);
+	}
+
+	zfs_refcount_transfer(&nhdr->b_l1hdr.b_refcnt, &hdr->b_l1hdr.b_refcnt);
+	(void) zfs_refcount_remove(&nhdr->b_l1hdr.b_refcnt, FTAG);
+	ASSERT0(zfs_refcount_count(&hdr->b_l1hdr.b_refcnt));
+
+	if (need_crypt) {
+		arc_hdr_set_flags(nhdr, ARC_FLAG_PROTECTED);
+	} else {
+		arc_hdr_clear_flags(nhdr, ARC_FLAG_PROTECTED);
+	}
+
+	/* unset all members of the original hdr */
+	bzero(&hdr->b_dva, sizeof (dva_t));
+	hdr->b_birth = 0;
+	hdr->b_type = ARC_BUFC_INVALID;
+	hdr->b_flags = 0;
+	hdr->b_psize = 0;
+	hdr->b_lsize = 0;
+	hdr->b_spa = 0;
+	hdr->b_l1hdr.b_freeze_cksum = NULL;
+	hdr->b_l1hdr.b_buf = NULL;
+	hdr->b_l1hdr.b_bufcnt = 0;
+	hdr->b_l1hdr.b_byteswap = 0;
+	hdr->b_l1hdr.b_state = NULL;
+	hdr->b_l1hdr.b_arc_access = 0;
+	hdr->b_l1hdr.b_mru_hits = 0;
+	hdr->b_l1hdr.b_mru_ghost_hits = 0;
+	hdr->b_l1hdr.b_mfu_hits = 0;
+	hdr->b_l1hdr.b_mfu_ghost_hits = 0;
+	hdr->b_l1hdr.b_l2_hits = 0;
+	hdr->b_l1hdr.b_acb = NULL;
+	hdr->b_l1hdr.b_pabd = NULL;
+
+	if (ocache == hdr_full_crypt_cache) {
+		ASSERT(!HDR_HAS_RABD(hdr));
+		hdr->b_crypt_hdr.b_ot = DMU_OT_NONE;
+		hdr->b_crypt_hdr.b_ebufcnt = 0;
+		hdr->b_crypt_hdr.b_dsobj = 0;
+		bzero(hdr->b_crypt_hdr.b_salt, ZIO_DATA_SALT_LEN);
+		bzero(hdr->b_crypt_hdr.b_iv, ZIO_DATA_IV_LEN);
+		bzero(hdr->b_crypt_hdr.b_mac, ZIO_DATA_MAC_LEN);
+	}
+
+	buf_discard_identity(hdr);
+	kmem_cache_free(ocache, hdr);
+
+	return (nhdr);
+}
+
+/*
+ * This function is used by the send / receive code to convert a newly
+ * allocated arc_buf_t to one that is suitable for a raw encrypted write. It
+ * is also used to allow the root objset block to be uupdated without altering
+ * its embedded MACs. Both block types will always be uncompressed so we do not
+ * have to worry about compression type or psize.
+ */
+void
+arc_convert_to_raw(arc_buf_t *buf, uint64_t dsobj, boolean_t byteorder,
+    dmu_object_type_t ot, const uint8_t *salt, const uint8_t *iv,
+    const uint8_t *mac)
+{
+	arc_buf_hdr_t *hdr = buf->b_hdr;
+
+	ASSERT(ot == DMU_OT_DNODE || ot == DMU_OT_OBJSET);
+	ASSERT(HDR_HAS_L1HDR(hdr));
+	ASSERT3P(hdr->b_l1hdr.b_state, ==, arc_anon);
+
+	buf->b_flags |= (ARC_BUF_FLAG_COMPRESSED | ARC_BUF_FLAG_ENCRYPTED);
+	if (!HDR_PROTECTED(hdr))
+		hdr = arc_hdr_realloc_crypt(hdr, B_TRUE);
+	hdr->b_crypt_hdr.b_dsobj = dsobj;
+	hdr->b_crypt_hdr.b_ot = ot;
+	hdr->b_l1hdr.b_byteswap = (byteorder == ZFS_HOST_BYTEORDER) ?
+	    DMU_BSWAP_NUMFUNCS : DMU_OT_BYTESWAP(ot);
+	if (!arc_hdr_has_uncompressed_buf(hdr))
+		arc_cksum_free(hdr);
+
+	if (salt != NULL)
+		bcopy(salt, hdr->b_crypt_hdr.b_salt, ZIO_DATA_SALT_LEN);
+	if (iv != NULL)
+		bcopy(iv, hdr->b_crypt_hdr.b_iv, ZIO_DATA_IV_LEN);
+	if (mac != NULL)
+		bcopy(mac, hdr->b_crypt_hdr.b_mac, ZIO_DATA_MAC_LEN);
 }
 
 /*
@@ -2950,11 +3690,12 @@ arc_buf_t *
 arc_alloc_buf(spa_t *spa, void *tag, arc_buf_contents_t type, int32_t size)
 {
 	arc_buf_hdr_t *hdr = arc_hdr_alloc(spa_load_guid(spa), size, size,
-	    ZIO_COMPRESS_OFF, type);
+	    B_FALSE, ZIO_COMPRESS_OFF, type, B_FALSE);
 	ASSERT(!MUTEX_HELD(HDR_LOCK(hdr)));
 
 	arc_buf_t *buf = NULL;
-	VERIFY0(arc_buf_alloc_impl(hdr, tag, B_FALSE, B_FALSE, &buf));
+	VERIFY0(arc_buf_alloc_impl(hdr, spa, NULL, tag, B_FALSE, B_FALSE,
+	    B_FALSE, B_FALSE, &buf));
 	arc_buf_thaw(buf);
 
 	return (buf);
@@ -2970,29 +3711,72 @@ arc_alloc_compressed_buf(spa_t *spa, void *tag, uint64_t psize, uint64_t lsize,
 {
 	ASSERT3U(lsize, >, 0);
 	ASSERT3U(lsize, >=, psize);
-	ASSERT(compression_type > ZIO_COMPRESS_OFF);
-	ASSERT(compression_type < ZIO_COMPRESS_FUNCTIONS);
+	ASSERT3U(compression_type, >, ZIO_COMPRESS_OFF);
+	ASSERT3U(compression_type, <, ZIO_COMPRESS_FUNCTIONS);
 
 	arc_buf_hdr_t *hdr = arc_hdr_alloc(spa_load_guid(spa), psize, lsize,
-	    compression_type, ARC_BUFC_DATA);
+	    B_FALSE, compression_type, ARC_BUFC_DATA, B_FALSE);
 	ASSERT(!MUTEX_HELD(HDR_LOCK(hdr)));
 
 	arc_buf_t *buf = NULL;
-	VERIFY0(arc_buf_alloc_impl(hdr, tag, B_TRUE, B_FALSE, &buf));
+	VERIFY0(arc_buf_alloc_impl(hdr, spa, NULL, tag, B_FALSE,
+	    B_TRUE, B_FALSE, B_FALSE, &buf));
 	arc_buf_thaw(buf);
 	ASSERT3P(hdr->b_l1hdr.b_freeze_cksum, ==, NULL);
 
 	if (!arc_buf_is_shared(buf)) {
 		/*
 		 * To ensure that the hdr has the correct data in it if we call
-		 * arc_decompress() on this buf before it's been written to
+		 * arc_untransform() on this buf before it's been written to
 		 * disk, it's easiest if we just set up sharing between the
 		 * buf and the hdr.
 		 */
 		ASSERT(!abd_is_linear(hdr->b_l1hdr.b_pabd));
-		arc_hdr_free_pabd(hdr);
+		arc_hdr_free_abd(hdr, B_FALSE);
 		arc_share_buf(hdr, buf);
 	}
+
+	return (buf);
+}
+
+arc_buf_t *
+arc_alloc_raw_buf(spa_t *spa, void *tag, uint64_t dsobj, boolean_t byteorder,
+    const uint8_t *salt, const uint8_t *iv, const uint8_t *mac,
+    dmu_object_type_t ot, uint64_t psize, uint64_t lsize,
+    enum zio_compress compression_type)
+{
+	arc_buf_hdr_t *hdr;
+	arc_buf_t *buf;
+	arc_buf_contents_t type = DMU_OT_IS_METADATA(ot) ?
+	    ARC_BUFC_METADATA : ARC_BUFC_DATA;
+
+	ASSERT3U(lsize, >, 0);
+	ASSERT3U(lsize, >=, psize);
+	ASSERT3U(compression_type, >=, ZIO_COMPRESS_OFF);
+	ASSERT3U(compression_type, <, ZIO_COMPRESS_FUNCTIONS);
+
+	hdr = arc_hdr_alloc(spa_load_guid(spa), psize, lsize, B_TRUE,
+	    compression_type, type, B_TRUE);
+	ASSERT(!MUTEX_HELD(HDR_LOCK(hdr)));
+
+	hdr->b_crypt_hdr.b_dsobj = dsobj;
+	hdr->b_crypt_hdr.b_ot = ot;
+	hdr->b_l1hdr.b_byteswap = (byteorder == ZFS_HOST_BYTEORDER) ?
+	    DMU_BSWAP_NUMFUNCS : DMU_OT_BYTESWAP(ot);
+	bcopy(salt, hdr->b_crypt_hdr.b_salt, ZIO_DATA_SALT_LEN);
+	bcopy(iv, hdr->b_crypt_hdr.b_iv, ZIO_DATA_IV_LEN);
+	bcopy(mac, hdr->b_crypt_hdr.b_mac, ZIO_DATA_MAC_LEN);
+
+	/*
+	 * This buffer will be considered encrypted even if the ot is not an
+	 * encrypted type. It will become authenticated instead in
+	 * arc_write_ready().
+	 */
+	buf = NULL;
+	VERIFY0(arc_buf_alloc_impl(hdr, spa, NULL, tag, B_TRUE, B_TRUE,
+	    B_FALSE, B_FALSE, &buf));
+	arc_buf_thaw(buf);
+	ASSERT3P(hdr->b_l1hdr.b_freeze_cksum, ==, NULL);
 
 	return (buf);
 }
@@ -3062,15 +3846,24 @@ arc_hdr_destroy(arc_buf_hdr_t *hdr)
 		while (hdr->b_l1hdr.b_buf != NULL)
 			arc_buf_destroy_impl(hdr->b_l1hdr.b_buf);
 
-		if (hdr->b_l1hdr.b_pabd != NULL)
-			arc_hdr_free_pabd(hdr);
+		if (hdr->b_l1hdr.b_pabd != NULL) {
+			arc_hdr_free_abd(hdr, B_FALSE);
+		}
+
+		if (HDR_HAS_RABD(hdr))
+			arc_hdr_free_abd(hdr, B_TRUE);
 	}
 
 	ASSERT3P(hdr->b_hash_next, ==, NULL);
 	if (HDR_HAS_L1HDR(hdr)) {
 		ASSERT(!multilist_link_active(&hdr->b_l1hdr.b_arc_node));
 		ASSERT3P(hdr->b_l1hdr.b_acb, ==, NULL);
-		kmem_cache_free(hdr_full_cache, hdr);
+
+		if (!HDR_PROTECTED(hdr)) {
+			kmem_cache_free(hdr_full_cache, hdr);
+		} else {
+			kmem_cache_free(hdr_full_crypt_cache, hdr);
+		}
 	} else {
 		kmem_cache_free(hdr_l2only_cache, hdr);
 	}
@@ -3119,6 +3912,8 @@ arc_evict_hdr(arc_buf_hdr_t *hdr, kmutex_t *hash_lock)
 {
 	arc_state_t *evicted_state, *state;
 	int64_t bytes_evicted = 0;
+	int min_lifetime = HDR_PRESCIENT_PREFETCH(hdr) ?
+	    arc_min_prescient_prefetch_ms : arc_min_prefetch_ms;
 
 	ASSERT(MUTEX_HELD(hash_lock));
 	ASSERT(HDR_HAS_L1HDR(hdr));
@@ -3147,6 +3942,7 @@ arc_evict_hdr(arc_buf_hdr_t *hdr, kmutex_t *hash_lock)
 
 		if (HDR_HAS_L2HDR(hdr)) {
 			ASSERT(hdr->b_l1hdr.b_pabd == NULL);
+			ASSERT(!HDR_HAS_RABD(hdr));
 			/*
 			 * This buffer is cached on the 2nd Level ARC;
 			 * don't destroy the header.
@@ -3172,7 +3968,7 @@ arc_evict_hdr(arc_buf_hdr_t *hdr, kmutex_t *hash_lock)
 	if (HDR_IO_IN_PROGRESS(hdr) ||
 	    ((hdr->b_flags & (ARC_FLAG_PREFETCH | ARC_FLAG_INDIRECT)) &&
 	    ddi_get_lbolt() - hdr->b_l1hdr.b_arc_access <
-	    arc_min_prefetch_lifespan)) {
+	    MSEC_TO_TICK(min_lifetime))) {
 		ARCSTAT_BUMP(arcstat_evict_skip);
 		return (bytes_evicted);
 	}
@@ -3213,7 +4009,11 @@ arc_evict_hdr(arc_buf_hdr_t *hdr, kmutex_t *hash_lock)
 		 * This ensures that the accounting is updated correctly
 		 * in arc_free_data_impl().
 		 */
-		arc_hdr_free_pabd(hdr);
+		if (hdr->b_l1hdr.b_pabd != NULL)
+			arc_hdr_free_abd(hdr, B_FALSE);
+
+		if (HDR_HAS_RABD(hdr))
+			arc_hdr_free_abd(hdr, B_TRUE);
 
 		arc_change_state(evicted_state, hdr, hash_lock);
 		ASSERT(HDR_IN_HASH_TABLE(hdr));
@@ -3318,13 +4118,14 @@ arc_evict_state_impl(multilist_t *ml, int idx, arc_buf_hdr_t *marker,
 			 * function should proceed in this case).
 			 *
 			 * If threads are left sleeping, due to not
-			 * using cv_broadcast, they will be woken up
-			 * just before arc_reclaim_thread() sleeps.
+			 * using cv_broadcast here, they will be woken
+			 * up via cv_broadcast in arc_adjust_cb() just
+			 * before arc_adjust_zthr sleeps.
 			 */
-			mutex_enter(&arc_reclaim_lock);
+			mutex_enter(&arc_adjust_lock);
 			if (!arc_is_overflowing())
-				cv_signal(&arc_reclaim_waiters_cv);
-			mutex_exit(&arc_reclaim_lock);
+				cv_signal(&arc_adjust_waiters_cv);
+			mutex_exit(&arc_adjust_lock);
 		} else {
 			ARCSTAT_BUMP(arcstat_mutex_miss);
 		}
@@ -3356,7 +4157,6 @@ arc_evict_state(arc_state_t *state, uint64_t spa, int64_t bytes,
 	multilist_t *ml = state->arcs_list[type];
 	int num_sublists;
 	arc_buf_hdr_t **markers;
-	int i;
 
 	IMPLY(bytes < 0, bytes == ARC_EVICT_ALL);
 
@@ -3370,7 +4170,7 @@ arc_evict_state(arc_state_t *state, uint64_t spa, int64_t bytes,
 	 * than starting from the tail each time.
 	 */
 	markers = kmem_zalloc(sizeof (*markers) * num_sublists, KM_SLEEP);
-	for (i = 0; i < num_sublists; i++) {
+	for (int i = 0; i < num_sublists; i++) {
 		multilist_sublist_t *mls;
 
 		markers[i] = kmem_cache_alloc(hdr_full_cache, KM_SLEEP);
@@ -3400,9 +4200,12 @@ arc_evict_state(arc_state_t *state, uint64_t spa, int64_t bytes,
 		 * Request that 10% of the LRUs be scanned by the superblock
 		 * shrinker.
 		 */
-		if (type == ARC_BUFC_DATA && arc_dnode_size > arc_dnode_limit)
-			arc_prune_async((arc_dnode_size - arc_dnode_limit) /
-			    sizeof (dnode_t) / zfs_arc_dnode_reduce_percent);
+		if (type == ARC_BUFC_DATA && aggsum_compare(&astat_dnode_size,
+		    arc_dnode_limit) > 0) {
+			arc_prune_async((aggsum_upper_bound(&astat_dnode_size) -
+			    arc_dnode_limit) / sizeof (dnode_t) /
+			    zfs_arc_dnode_reduce_percent);
+		}
 
 		/*
 		 * Start eviction using a randomly selected sublist,
@@ -3411,7 +4214,7 @@ arc_evict_state(arc_state_t *state, uint64_t spa, int64_t bytes,
 		 * (e.g. index 0) would cause evictions to favor certain
 		 * sublists over others.
 		 */
-		for (i = 0; i < num_sublists; i++) {
+		for (int i = 0; i < num_sublists; i++) {
 			uint64_t bytes_remaining;
 			uint64_t bytes_evicted;
 
@@ -3457,7 +4260,7 @@ arc_evict_state(arc_state_t *state, uint64_t spa, int64_t bytes,
 		}
 	}
 
-	for (i = 0; i < num_sublists; i++) {
+	for (int i = 0; i < num_sublists; i++) {
 		multilist_sublist_t *mls = multilist_sublist_lock(ml, i);
 		multilist_sublist_remove(mls, markers[i]);
 		multilist_sublist_unlock(mls);
@@ -3585,14 +4388,14 @@ arc_adjust_impl(arc_state_t *state, uint64_t spa, int64_t bytes,
  *
  * Therefore, this function has been updated to make alternating passes
  * over the ARC releasing data buffers and then newly unheld meta data
- * buffers.  This ensures forward progress is maintained and arc_meta_used
+ * buffers.  This ensures forward progress is maintained and meta_used
  * will decrease.  Normally this is sufficient, but if required the ARC
  * will call the registered prune callbacks causing dentry and inodes to
  * be dropped from the VFS cache.  This will make dnode meta data buffers
  * available for reclaim.
  */
 static uint64_t
-arc_adjust_meta_balanced(void)
+arc_adjust_meta_balanced(uint64_t meta_used)
 {
 	int64_t delta, prune = 0, adjustmnt;
 	uint64_t total_evicted = 0;
@@ -3608,7 +4411,7 @@ restart:
 	 * metadata from the MFU. I think we probably need to implement a
 	 * "metadata arc_p" value to do this properly.
 	 */
-	adjustmnt = arc_meta_used - arc_meta_limit;
+	adjustmnt = meta_used - arc_meta_limit;
 
 	if (adjustmnt > 0 &&
 	    zfs_refcount_count(&arc_mru->arcs_esize[type]) > 0) {
@@ -3635,7 +4438,7 @@ restart:
 		total_evicted += arc_adjust_impl(arc_mfu, 0, delta, type);
 	}
 
-	adjustmnt = arc_meta_used - arc_meta_limit;
+	adjustmnt = meta_used - arc_meta_limit;
 
 	if (adjustmnt > 0 &&
 	    zfs_refcount_count(&arc_mru_ghost->arcs_esize[type]) > 0) {
@@ -3659,7 +4462,7 @@ restart:
 	 * meta buffers.  Requests to the upper layers will be made with
 	 * increasingly large scan sizes until the ARC is below the limit.
 	 */
-	if (arc_meta_used > arc_meta_limit) {
+	if (meta_used > arc_meta_limit) {
 		if (type == ARC_BUFC_DATA) {
 			type = ARC_BUFC_METADATA;
 		} else {
@@ -3684,7 +4487,7 @@ restart:
  * capped by the arc_meta_limit tunable.
  */
 static uint64_t
-arc_adjust_meta_only(void)
+arc_adjust_meta_only(uint64_t meta_used)
 {
 	uint64_t total_evicted = 0;
 	int64_t target;
@@ -3696,7 +4499,7 @@ arc_adjust_meta_only(void)
 	 * we're over the meta limit more than we're over arc_p, we
 	 * evict some from the MRU here, and some from the MFU below.
 	 */
-	target = MIN((int64_t)(arc_meta_used - arc_meta_limit),
+	target = MIN((int64_t)(meta_used - arc_meta_limit),
 	    (int64_t)(zfs_refcount_count(&arc_anon->arcs_size) +
 	    zfs_refcount_count(&arc_mru->arcs_size) - arc_p));
 
@@ -3707,9 +4510,9 @@ arc_adjust_meta_only(void)
 	 * below the meta limit, but not so much as to drop us below the
 	 * space allotted to the MFU (which is defined as arc_c - arc_p).
 	 */
-	target = MIN((int64_t)(arc_meta_used - arc_meta_limit),
-	    (int64_t)(zfs_refcount_count(&arc_mfu->arcs_size) - (arc_c -
-	    arc_p)));
+	target = MIN((int64_t)(meta_used - arc_meta_limit),
+	    (int64_t)(zfs_refcount_count(&arc_mfu->arcs_size) -
+	    (arc_c - arc_p)));
 
 	total_evicted += arc_adjust_impl(arc_mfu, 0, target, ARC_BUFC_METADATA);
 
@@ -3717,12 +4520,12 @@ arc_adjust_meta_only(void)
 }
 
 static uint64_t
-arc_adjust_meta(void)
+arc_adjust_meta(uint64_t meta_used)
 {
 	if (zfs_arc_meta_strategy == ARC_STRATEGY_META_ONLY)
-		return (arc_adjust_meta_only());
+		return (arc_adjust_meta_only(meta_used));
 	else
-		return (arc_adjust_meta_balanced());
+		return (arc_adjust_meta_balanced(meta_used));
 }
 
 /*
@@ -3809,12 +4612,14 @@ arc_adjust(void)
 	uint64_t total_evicted = 0;
 	uint64_t bytes;
 	int64_t target;
+	uint64_t asize = aggsum_value(&arc_size);
+	uint64_t ameta = aggsum_value(&arc_meta_used);
 
 	/*
 	 * If we're over arc_meta_limit, we want to correct that before
 	 * potentially evicting data buffers below.
 	 */
-	total_evicted += arc_adjust_meta();
+	total_evicted += arc_adjust_meta(ameta);
 
 	/*
 	 * Adjust MRU size
@@ -3826,9 +4631,9 @@ arc_adjust(void)
 	 * the MRU is over arc_p, we'll evict enough to get back to
 	 * arc_p here, and then evict more from the MFU below.
 	 */
-	target = MIN((int64_t)(arc_size - arc_c),
+	target = MIN((int64_t)(asize - arc_c),
 	    (int64_t)(zfs_refcount_count(&arc_anon->arcs_size) +
-	    zfs_refcount_count(&arc_mru->arcs_size) + arc_meta_used - arc_p));
+	    zfs_refcount_count(&arc_mru->arcs_size) + ameta - arc_p));
 
 	/*
 	 * If we're below arc_meta_min, always prefer to evict data.
@@ -3839,7 +4644,7 @@ arc_adjust(void)
 	 * type, spill over into the next type.
 	 */
 	if (arc_adjust_type(arc_mru) == ARC_BUFC_METADATA &&
-	    arc_meta_used > arc_meta_min) {
+	    ameta > arc_meta_min) {
 		bytes = arc_adjust_impl(arc_mru, 0, target, ARC_BUFC_METADATA);
 		total_evicted += bytes;
 
@@ -3866,16 +4671,23 @@ arc_adjust(void)
 	}
 
 	/*
+	 * Re-sum ARC stats after the first round of evictions.
+	 */
+	asize = aggsum_value(&arc_size);
+	ameta = aggsum_value(&arc_meta_used);
+
+
+	/*
 	 * Adjust MFU size
 	 *
 	 * Now that we've tried to evict enough from the MRU to get its
 	 * size back to arc_p, if we're still above the target cache
 	 * size, we evict the rest from the MFU.
 	 */
-	target = arc_size - arc_c;
+	target = asize - arc_c;
 
 	if (arc_adjust_type(arc_mfu) == ARC_BUFC_METADATA &&
-	    arc_meta_used > arc_meta_min) {
+	    ameta > arc_meta_min) {
 		bytes = arc_adjust_impl(arc_mfu, 0, target, ARC_BUFC_METADATA);
 		total_evicted += bytes;
 
@@ -3973,16 +4785,17 @@ arc_flush(spa_t *spa, boolean_t retry)
 	(void) arc_flush_state(arc_mfu_ghost, guid, ARC_BUFC_METADATA, retry);
 }
 
-void
-arc_shrink(int64_t to_free)
+static void
+arc_reduce_target_size(int64_t to_free)
 {
+	uint64_t asize = aggsum_value(&arc_size);
 	uint64_t c = arc_c;
 
 	if (c > to_free && c - to_free > arc_c_min) {
 		arc_c = c - to_free;
 		atomic_add_64(&arc_p, -(arc_p >> arc_shrink_shift));
-		if (arc_c > arc_size)
-			arc_c = MAX(arc_size, arc_c_min);
+		if (asize < arc_c)
+			arc_c = MAX(asize, arc_c_min);
 		if (arc_p > arc_c)
 			arc_p = (arc_c >> 1);
 		ASSERT(arc_c >= arc_c_min);
@@ -3991,10 +4804,14 @@ arc_shrink(int64_t to_free)
 		arc_c = arc_c_min;
 	}
 
-	if (arc_size > arc_c)
-		(void) arc_adjust();
+	if (asize > arc_c) {
+		/* See comment in arc_adjust_cb_check() on why lock+flag */
+		mutex_enter(&arc_adjust_lock);
+		arc_adjust_needed = B_TRUE;
+		mutex_exit(&arc_adjust_lock);
+		zthr_wakeup(arc_adjust_zthr);
+	}
 }
-
 /*
  * Return maximum amount of memory that we could possibly use.  Reduced
  * to half of all memory in user space which is primarily used for testing.
@@ -4004,9 +4821,9 @@ arc_all_memory(void)
 {
 #ifdef _KERNEL
 #ifdef CONFIG_HIGHMEM
-	return (ptob(zfs_totalram_pages - totalhigh_pages));
+	return (ptob(totalram_pages - totalhigh_pages));
 #else
-	return (ptob(zfs_totalram_pages));
+	return (ptob(totalram_pages));
 #endif /* CONFIG_HIGHMEM */
 #else
 	return (ptob(physmem) / 2);
@@ -4198,7 +5015,7 @@ arc_reclaim_needed(void)
 }
 
 static void
-arc_kmem_reap_now(void)
+arc_kmem_reap_soon(void)
 {
 	size_t			i;
 	kmem_cache_t		*prev_cache = NULL;
@@ -4208,7 +5025,8 @@ arc_kmem_reap_now(void)
 	extern kmem_cache_t	*range_seg_cache;
 
 #ifdef _KERNEL
-	if ((arc_meta_used >= arc_meta_limit) && zfs_arc_meta_prune) {
+	if ((aggsum_compare(&arc_meta_used, arc_meta_limit) >= 0) &&
+	    zfs_arc_meta_prune) {
 		/*
 		 * We are exceeding our meta-data cache limit.
 		 * Prune some entries to release holds on meta-data.
@@ -4252,134 +5070,165 @@ arc_kmem_reap_now(void)
 	}
 }
 
-/*
- * Threads can block in arc_get_data_impl() waiting for this thread to evict
- * enough data and signal them to proceed. When this happens, the threads in
- * arc_get_data_impl() are sleeping while holding the hash lock for their
- * particular arc header. Thus, we must be careful to never sleep on a
- * hash lock in this thread. This is to prevent the following deadlock:
- *
- *  - Thread A sleeps on CV in arc_get_data_impl() holding hash lock "L",
- *    waiting for the reclaim thread to signal it.
- *
- *  - arc_reclaim_thread() tries to acquire hash lock "L" using mutex_enter,
- *    fails, and goes to sleep forever.
- *
- * This possible deadlock is avoided by always acquiring a hash lock
- * using mutex_tryenter() from arc_reclaim_thread().
- */
-static void
-arc_reclaim_thread(void)
+/* ARGSUSED */
+static boolean_t
+arc_adjust_cb_check(void *arg, zthr_t *zthr)
 {
-	fstrans_cookie_t	cookie = spl_fstrans_mark();
-	hrtime_t		growtime = 0;
-	callb_cpr_t		cpr;
+	/*
+	 * This is necessary in order to keep the kstat information
+	 * up to date for tools that display kstat data such as the
+	 * mdb ::arc dcmd and the Linux crash utility.  These tools
+	 * typically do not call kstat's update function, but simply
+	 * dump out stats from the most recent update.  Without
+	 * this call, these commands may show stale stats for the
+	 * anon, mru, mru_ghost, mfu, and mfu_ghost lists. Even
+	 * with this change, the data might be up to 1 second
+	 * out of date(the arc_adjust_zthr has a maximum sleep
+	 * time of 1 second); but that should suffice.  The
+	 * arc_state_t structures can be queried directly if more
+	 * accurate information is needed.
+	 */
+	if (arc_ksp != NULL)
+		arc_ksp->ks_update(arc_ksp, KSTAT_READ);
 
-	CALLB_CPR_INIT(&cpr, &arc_reclaim_lock, callb_generic_cpr, FTAG);
+	/*
+	 * We have to rely on arc_get_data_impl() to tell us when to adjust,
+	 * rather than checking if we are overflowing here, so that we are
+	 * sure to not leave arc_get_data_impl() waiting on
+	 * arc_adjust_waiters_cv.  If we have become "not overflowing" since
+	 * arc_get_data_impl() checked, we need to wake it up.  We could
+	 * broadcast the CV here, but arc_get_data_impl() may have not yet
+	 * gone to sleep.  We would need to use a mutex to ensure that this
+	 * function doesn't broadcast until arc_get_data_impl() has gone to
+	 * sleep (e.g. the arc_adjust_lock).  However, the lock ordering of
+	 * such a lock would necessarily be incorrect with respect to the
+	 * zthr_lock, which is held before this function is called, and is
+	 * held by arc_get_data_impl() when it calls zthr_wakeup().
+	 */
+	return (arc_adjust_needed);
+}
 
-	mutex_enter(&arc_reclaim_lock);
-	while (!arc_reclaim_thread_exit) {
-		int64_t to_free;
-		uint64_t evicted = 0;
-		uint64_t need_free = arc_need_free;
-		arc_tuning_update();
+/*
+ * Keep arc_size under arc_c by running arc_adjust which evicts data
+ * from the ARC.
+ */
+/* ARGSUSED */
+static void
+arc_adjust_cb(void *arg, zthr_t *zthr)
+{
+	uint64_t evicted = 0;
+	fstrans_cookie_t cookie = spl_fstrans_mark();
 
+	/* Evict from cache */
+	evicted = arc_adjust();
+
+	/*
+	 * If evicted is zero, we couldn't evict anything
+	 * via arc_adjust(). This could be due to hash lock
+	 * collisions, but more likely due to the majority of
+	 * arc buffers being unevictable. Therefore, even if
+	 * arc_size is above arc_c, another pass is unlikely to
+	 * be helpful and could potentially cause us to enter an
+	 * infinite loop.  Additionally, zthr_iscancelled() is
+	 * checked here so that if the arc is shutting down, the
+	 * broadcast will wake any remaining arc adjust waiters.
+	 */
+	mutex_enter(&arc_adjust_lock);
+	arc_adjust_needed = !zthr_iscancelled(arc_adjust_zthr) &&
+	    evicted > 0 && aggsum_compare(&arc_size, arc_c) > 0;
+	if (!arc_adjust_needed) {
 		/*
-		 * This is necessary in order for the mdb ::arc dcmd to
-		 * show up to date information. Since the ::arc command
-		 * does not call the kstat's update function, without
-		 * this call, the command may show stale stats for the
-		 * anon, mru, mru_ghost, mfu, and mfu_ghost lists. Even
-		 * with this change, the data might be up to 1 second
-		 * out of date; but that should suffice. The arc_state_t
-		 * structures can be queried directly if more accurate
-		 * information is needed.
+		 * We're either no longer overflowing, or we
+		 * can't evict anything more, so we should wake
+		 * arc_get_data_impl() sooner.
 		 */
-#ifndef __linux__
-		if (arc_ksp != NULL)
-			arc_ksp->ks_update(arc_ksp, KSTAT_READ);
-#endif
-		mutex_exit(&arc_reclaim_lock);
+		cv_broadcast(&arc_adjust_waiters_cv);
+		arc_need_free = 0;
+	}
+	mutex_exit(&arc_adjust_lock);
+	spl_fstrans_unmark(cookie);
+}
 
+/* ARGSUSED */
+static boolean_t
+arc_reap_cb_check(void *arg, zthr_t *zthr)
+{
+	int64_t free_memory = arc_available_memory();
+
+	/*
+	 * If a kmem reap is already active, don't schedule more.  We must
+	 * check for this because kmem_cache_reap_soon() won't actually
+	 * block on the cache being reaped (this is to prevent callers from
+	 * becoming implicitly blocked by a system-wide kmem reap -- which,
+	 * on a system with many, many full magazines, can take minutes).
+	 */
+	if (!kmem_cache_reap_active() && free_memory < 0) {
+
+		arc_no_grow = B_TRUE;
+		arc_warm = B_TRUE;
 		/*
-		 * We call arc_adjust() before (possibly) calling
-		 * arc_kmem_reap_now(), so that we can wake up
-		 * arc_get_data_buf() sooner.
+		 * Wait at least zfs_grow_retry (default 5) seconds
+		 * before considering growing.
 		 */
-		evicted = arc_adjust();
-
-		int64_t free_memory = arc_available_memory();
-		if (free_memory < 0) {
-
-			arc_no_grow = B_TRUE;
-			arc_warm = B_TRUE;
-
-			/*
-			 * Wait at least zfs_grow_retry (default 5) seconds
-			 * before considering growing.
-			 */
-			growtime = gethrtime() + SEC2NSEC(arc_grow_retry);
-
-			arc_kmem_reap_now();
-
-			/*
-			 * If we are still low on memory, shrink the ARC
-			 * so that we have arc_shrink_min free space.
-			 */
-			free_memory = arc_available_memory();
-
-			to_free = (arc_c >> arc_shrink_shift) - free_memory;
-			if (to_free > 0) {
-#ifdef _KERNEL
-				to_free = MAX(to_free, need_free);
-#endif
-				arc_shrink(to_free);
-			}
-		} else if (free_memory < arc_c >> arc_no_grow_shift) {
-			arc_no_grow = B_TRUE;
-		} else if (gethrtime() >= growtime) {
-			arc_no_grow = B_FALSE;
-		}
-
-		mutex_enter(&arc_reclaim_lock);
-
-		/*
-		 * If evicted is zero, we couldn't evict anything via
-		 * arc_adjust(). This could be due to hash lock
-		 * collisions, but more likely due to the majority of
-		 * arc buffers being unevictable. Therefore, even if
-		 * arc_size is above arc_c, another pass is unlikely to
-		 * be helpful and could potentially cause us to enter an
-		 * infinite loop.
-		 */
-		if (arc_size <= arc_c || evicted == 0) {
-			/*
-			 * We're either no longer overflowing, or we
-			 * can't evict anything more, so we should wake
-			 * up any threads before we go to sleep and remove
-			 * the bytes we were working on from arc_need_free
-			 * since nothing more will be done here.
-			 */
-			cv_broadcast(&arc_reclaim_waiters_cv);
-			ARCSTAT_INCR(arcstat_need_free, -need_free);
-
-			/*
-			 * Block until signaled, or after one second (we
-			 * might need to perform arc_kmem_reap_now()
-			 * even if we aren't being signalled)
-			 */
-			CALLB_CPR_SAFE_BEGIN(&cpr);
-			(void) cv_timedwait_sig_hires(&arc_reclaim_thread_cv,
-			    &arc_reclaim_lock, SEC2NSEC(1), MSEC2NSEC(1), 0);
-			CALLB_CPR_SAFE_END(&cpr, &arc_reclaim_lock);
-		}
+		arc_growtime = gethrtime() + SEC2NSEC(arc_grow_retry);
+		return (B_TRUE);
+	} else if (free_memory < arc_c >> arc_no_grow_shift) {
+		arc_no_grow = B_TRUE;
+	} else if (gethrtime() >= arc_growtime) {
+		arc_no_grow = B_FALSE;
 	}
 
-	arc_reclaim_thread_exit = B_FALSE;
-	cv_broadcast(&arc_reclaim_thread_cv);
-	CALLB_CPR_EXIT(&cpr);		/* drops arc_reclaim_lock */
+	return (B_FALSE);
+}
+
+/*
+ * Keep enough free memory in the system by reaping the ARC's kmem
+ * caches.  To cause more slabs to be reapable, we may reduce the
+ * target size of the cache (arc_c), causing the arc_adjust_cb()
+ * to free more buffers.
+ */
+/* ARGSUSED */
+static void
+arc_reap_cb(void *arg, zthr_t *zthr)
+{
+	int64_t free_memory;
+	fstrans_cookie_t cookie = spl_fstrans_mark();
+
+	/*
+	 * Kick off asynchronous kmem_reap()'s of all our caches.
+	 */
+	arc_kmem_reap_soon();
+
+	/*
+	 * Wait at least arc_kmem_cache_reap_retry_ms between
+	 * arc_kmem_reap_soon() calls. Without this check it is possible to
+	 * end up in a situation where we spend lots of time reaping
+	 * caches, while we're near arc_c_min.  Waiting here also gives the
+	 * subsequent free memory check a chance of finding that the
+	 * asynchronous reap has already freed enough memory, and we don't
+	 * need to call arc_reduce_target_size().
+	 */
+	delay((hz * arc_kmem_cache_reap_retry_ms + 999) / 1000);
+
+	/*
+	 * Reduce the target size as needed to maintain the amount of free
+	 * memory in the system at a fraction of the arc_size (1/128th by
+	 * default).  If oversubscribed (free_memory < 0) then reduce the
+	 * target arc_size by the deficit amount plus the fractional
+	 * amount.  If free memory is positive but less then the fractional
+	 * amount, reduce by what is needed to hit the fractional amount.
+	 */
+	free_memory = arc_available_memory();
+
+	int64_t to_free =
+	    (arc_c >> arc_shrink_shift) - free_memory;
+	if (to_free > 0) {
+#ifdef _KERNEL
+		to_free = MAX(to_free, arc_need_free);
+#endif
+		arc_reduce_target_size(to_free);
+	}
 	spl_fstrans_unmark(cookie);
-	thread_exit();
 }
 
 #ifdef _KERNEL
@@ -4431,12 +5280,13 @@ arc_reclaim_thread(void)
 static uint64_t
 arc_evictable_memory(void)
 {
+	int64_t asize = aggsum_value(&arc_size);
 	uint64_t arc_clean =
 	    zfs_refcount_count(&arc_mru->arcs_esize[ARC_BUFC_DATA]) +
 	    zfs_refcount_count(&arc_mru->arcs_esize[ARC_BUFC_METADATA]) +
 	    zfs_refcount_count(&arc_mfu->arcs_esize[ARC_BUFC_DATA]) +
 	    zfs_refcount_count(&arc_mfu->arcs_esize[ARC_BUFC_METADATA]);
-	uint64_t arc_dirty = MAX((int64_t)arc_size - (int64_t)arc_clean, 0);
+	uint64_t arc_dirty = MAX((int64_t)asize - (int64_t)arc_clean, 0);
 
 	/*
 	 * Scale reported evictable memory in proportion to page cache, cap
@@ -4448,7 +5298,7 @@ arc_evictable_memory(void)
 	if (arc_dirty >= min)
 		return (arc_clean);
 
-	return (MAX((int64_t)arc_size - (int64_t)min, 0));
+	return (MAX((int64_t)asize - (int64_t)min, 0));
 }
 
 /*
@@ -4482,21 +5332,21 @@ __arc_shrinker_func(struct shrinker *shrink, struct shrink_control *sc)
 		return (SHRINK_STOP);
 
 	/* Reclaim in progress */
-	if (mutex_tryenter(&arc_reclaim_lock) == 0) {
+	if (mutex_tryenter(&arc_adjust_lock) == 0) {
 		ARCSTAT_INCR(arcstat_need_free, ptob(sc->nr_to_scan));
 		return (0);
 	}
 
-	mutex_exit(&arc_reclaim_lock);
+	mutex_exit(&arc_adjust_lock);
 
 	/*
 	 * Evict the requested number of pages by shrinking arc_c the
 	 * requested amount.
 	 */
 	if (pages > 0) {
-		arc_shrink(ptob(sc->nr_to_scan));
+		arc_reduce_target_size(ptob(sc->nr_to_scan));
 		if (current_is_kswapd())
-			arc_kmem_reap_now();
+			arc_kmem_reap_soon();
 #ifdef HAVE_SPLIT_SHRINKER_CALLBACK
 		pages = MAX((int64_t)pages -
 		    (int64_t)btop(arc_evictable_memory()), 0);
@@ -4506,7 +5356,7 @@ __arc_shrinker_func(struct shrinker *shrink, struct shrink_control *sc)
 		/*
 		 * We've shrunk what we can, wake up threads.
 		 */
-		cv_broadcast(&arc_reclaim_waiters_cv);
+		cv_broadcast(&arc_adjust_waiters_cv);
 	} else
 		pages = SHRINK_STOP;
 
@@ -4521,7 +5371,7 @@ __arc_shrinker_func(struct shrinker *shrink, struct shrink_control *sc)
 		ARCSTAT_BUMP(arcstat_memory_indirect_count);
 	} else {
 		arc_no_grow = B_TRUE;
-		arc_kmem_reap_now();
+		arc_kmem_reap_soon();
 		ARCSTAT_BUMP(arcstat_memory_direct_count);
 	}
 
@@ -4575,8 +5425,11 @@ arc_adapt(int bytes, arc_state_t *state)
 	}
 	ASSERT((int64_t)arc_p >= 0);
 
+	/*
+	 * Wake reap thread if we do not have any available memory
+	 */
 	if (arc_reclaim_needed()) {
-		cv_signal(&arc_reclaim_thread_cv);
+		zthr_wakeup(arc_reap_zthr);
 		return;
 	}
 
@@ -4591,7 +5444,8 @@ arc_adapt(int bytes, arc_state_t *state)
 	 * cache size, increment the target cache size
 	 */
 	ASSERT3U(arc_c, >=, 2ULL << SPA_MAXBLOCKSHIFT);
-	if (arc_size >= arc_c - (2ULL << SPA_MAXBLOCKSHIFT)) {
+	if (aggsum_compare(&arc_size, arc_c - (2ULL << SPA_MAXBLOCKSHIFT)) >=
+	    0) {
 		atomic_add_64(&arc_c, (int64_t)bytes);
 		if (arc_c > arc_c_max)
 			arc_c = arc_c_max;
@@ -4614,7 +5468,16 @@ arc_is_overflowing(void)
 	uint64_t overflow = MAX(SPA_MAXBLOCKSIZE,
 	    arc_c >> zfs_arc_overflow_shift);
 
-	return (arc_size >= arc_c + overflow);
+	/*
+	 * We just compare the lower bound here for performance reasons. Our
+	 * primary goals are to make sure that the arc never grows without
+	 * bound, and that it can reach its maximum size. This check
+	 * accomplishes both goals. The maximum amount we could run over by is
+	 * 2 * aggsum_borrow_multiplier * NUM_CPUS * the average size of a block
+	 * in the ARC. In practice, that's in the tens of MB, which is low
+	 * enough to be safe.
+	 */
+	return (aggsum_lower_bound(&arc_size) >= arc_c + overflow);
 }
 
 static abd_t *
@@ -4674,7 +5537,7 @@ arc_get_data_impl(arc_buf_hdr_t *hdr, uint64_t size, void *tag)
 	 * overflowing; thus we don't use a while loop here.
 	 */
 	if (arc_is_overflowing()) {
-		mutex_enter(&arc_reclaim_lock);
+		mutex_enter(&arc_adjust_lock);
 
 		/*
 		 * Now that we've acquired the lock, we may no longer be
@@ -4688,11 +5551,12 @@ arc_get_data_impl(arc_buf_hdr_t *hdr, uint64_t size, void *tag)
 		 * shouldn't cause any harm.
 		 */
 		if (arc_is_overflowing()) {
-			cv_signal(&arc_reclaim_thread_cv);
-			cv_wait(&arc_reclaim_waiters_cv, &arc_reclaim_lock);
+			arc_adjust_needed = B_TRUE;
+			zthr_wakeup(arc_adjust_zthr);
+			(void) cv_wait(&arc_adjust_waiters_cv,
+			    &arc_adjust_lock);
 		}
-
-		mutex_exit(&arc_reclaim_lock);
+		mutex_exit(&arc_adjust_lock);
 	}
 
 	VERIFY3U(hdr->b_type, ==, type);
@@ -4729,7 +5593,8 @@ arc_get_data_impl(arc_buf_hdr_t *hdr, uint64_t size, void *tag)
 		 * If we are growing the cache, and we are adding anonymous
 		 * data, and we have outgrown arc_p, update arc_p
 		 */
-		if (arc_size < arc_c && hdr->b_l1hdr.b_state == arc_anon &&
+		if (aggsum_compare(&arc_size, arc_c) < 0 &&
+		    hdr->b_l1hdr.b_state == arc_anon &&
 		    (zfs_refcount_count(&arc_anon->arcs_size) +
 		    zfs_refcount_count(&arc_mru->arcs_size) > arc_p))
 			arc_p = MIN(arc_c, arc_p + size);
@@ -4820,13 +5685,15 @@ arc_access(arc_buf_hdr_t *hdr, kmutex_t *hash_lock)
 		 * - move the buffer to the head of the list if this is
 		 *   another prefetch (to make it less likely to be evicted).
 		 */
-		if (HDR_PREFETCH(hdr)) {
+		if (HDR_PREFETCH(hdr) || HDR_PRESCIENT_PREFETCH(hdr)) {
 			if (zfs_refcount_count(&hdr->b_l1hdr.b_refcnt) == 0) {
 				/* link protected by hash lock */
 				ASSERT(multilist_link_active(
 				    &hdr->b_l1hdr.b_arc_node));
 			} else {
-				arc_hdr_clear_flags(hdr, ARC_FLAG_PREFETCH);
+				arc_hdr_clear_flags(hdr,
+				    ARC_FLAG_PREFETCH |
+				    ARC_FLAG_PRESCIENT_PREFETCH);
 				atomic_inc_32(&hdr->b_l1hdr.b_mru_hits);
 				ARCSTAT_BUMP(arcstat_mru_hits);
 			}
@@ -4860,10 +5727,13 @@ arc_access(arc_buf_hdr_t *hdr, kmutex_t *hash_lock)
 		 * MFU state.
 		 */
 
-		if (HDR_PREFETCH(hdr)) {
+		if (HDR_PREFETCH(hdr) || HDR_PRESCIENT_PREFETCH(hdr)) {
 			new_state = arc_mru;
-			if (zfs_refcount_count(&hdr->b_l1hdr.b_refcnt) > 0)
-				arc_hdr_clear_flags(hdr, ARC_FLAG_PREFETCH);
+			if (zfs_refcount_count(&hdr->b_l1hdr.b_refcnt) > 0) {
+				arc_hdr_clear_flags(hdr,
+				    ARC_FLAG_PREFETCH |
+				    ARC_FLAG_PRESCIENT_PREFETCH);
+			}
 			DTRACE_PROBE1(new_state__mru, arc_buf_hdr_t *, hdr);
 		} else {
 			new_state = arc_mfu;
@@ -4885,11 +5755,7 @@ arc_access(arc_buf_hdr_t *hdr, kmutex_t *hash_lock)
 		 * If it was a prefetch, we will explicitly move it to
 		 * the head of the list now.
 		 */
-		if ((HDR_PREFETCH(hdr)) != 0) {
-			ASSERT(zfs_refcount_is_zero(&hdr->b_l1hdr.b_refcnt));
-			/* link protected by hash_lock */
-			ASSERT(multilist_link_active(&hdr->b_l1hdr.b_arc_node));
-		}
+
 		atomic_inc_32(&hdr->b_l1hdr.b_mfu_hits);
 		ARCSTAT_BUMP(arcstat_mfu_hits);
 		hdr->b_l1hdr.b_arc_access = ddi_get_lbolt();
@@ -4901,12 +5767,11 @@ arc_access(arc_buf_hdr_t *hdr, kmutex_t *hash_lock)
 		 * MFU state.
 		 */
 
-		if (HDR_PREFETCH(hdr)) {
+		if (HDR_PREFETCH(hdr) || HDR_PRESCIENT_PREFETCH(hdr)) {
 			/*
 			 * This is a prefetch access...
 			 * move this block back to the MRU state.
 			 */
-			ASSERT0(zfs_refcount_count(&hdr->b_l1hdr.b_refcnt));
 			new_state = arc_mru;
 		}
 
@@ -4970,31 +5835,38 @@ arc_buf_access(arc_buf_t *buf)
 	mutex_exit(hash_lock);
 
 	ARCSTAT_BUMP(arcstat_hits);
-	ARCSTAT_CONDSTAT(!HDR_PREFETCH(hdr), demand, prefetch,
-	    !HDR_ISTYPE_METADATA(hdr), data, metadata, hits);
+	ARCSTAT_CONDSTAT(!HDR_PREFETCH(hdr) && !HDR_PRESCIENT_PREFETCH(hdr),
+	    demand, prefetch, !HDR_ISTYPE_METADATA(hdr), data, metadata, hits);
 }
 
 /* a generic arc_read_done_func_t which you can use */
 /* ARGSUSED */
 void
-arc_bcopy_func(zio_t *zio, arc_buf_t *buf, void *arg)
+arc_bcopy_func(zio_t *zio, const zbookmark_phys_t *zb, const blkptr_t *bp,
+    arc_buf_t *buf, void *arg)
 {
-	if (zio == NULL || zio->io_error == 0)
-		bcopy(buf->b_data, arg, arc_buf_size(buf));
+	if (buf == NULL)
+		return;
+
+	bcopy(buf->b_data, arg, arc_buf_size(buf));
 	arc_buf_destroy(buf, arg);
 }
 
-/* a generic arc_done_func_t */
+/* a generic arc_read_done_func_t */
+/* ARGSUSED */
 void
-arc_getbuf_func(zio_t *zio, arc_buf_t *buf, void *arg)
+arc_getbuf_func(zio_t *zio, const zbookmark_phys_t *zb, const blkptr_t *bp,
+    arc_buf_t *buf, void *arg)
 {
 	arc_buf_t **bufp = arg;
-	if (zio && zio->io_error) {
-		arc_buf_destroy(buf, arg);
+
+	if (buf == NULL) {
+		ASSERT(zio == NULL || zio->io_error != 0);
 		*bufp = NULL;
 	} else {
+		ASSERT(zio == NULL || zio->io_error == 0);
 		*bufp = buf;
-		ASSERT(buf->b_data);
+		ASSERT(buf->b_data != NULL);
 	}
 }
 
@@ -5003,26 +5875,27 @@ arc_hdr_verify(arc_buf_hdr_t *hdr, blkptr_t *bp)
 {
 	if (BP_IS_HOLE(bp) || BP_IS_EMBEDDED(bp)) {
 		ASSERT3U(HDR_GET_PSIZE(hdr), ==, 0);
-		ASSERT3U(HDR_GET_COMPRESS(hdr), ==, ZIO_COMPRESS_OFF);
+		ASSERT3U(arc_hdr_get_compress(hdr), ==, ZIO_COMPRESS_OFF);
 	} else {
 		if (HDR_COMPRESSION_ENABLED(hdr)) {
-			ASSERT3U(HDR_GET_COMPRESS(hdr), ==,
+			ASSERT3U(arc_hdr_get_compress(hdr), ==,
 			    BP_GET_COMPRESS(bp));
 		}
 		ASSERT3U(HDR_GET_LSIZE(hdr), ==, BP_GET_LSIZE(bp));
 		ASSERT3U(HDR_GET_PSIZE(hdr), ==, BP_GET_PSIZE(bp));
+		ASSERT3U(!!HDR_PROTECTED(hdr), ==, BP_IS_PROTECTED(bp));
 	}
 }
 
 static void
 arc_read_done(zio_t *zio)
 {
+	blkptr_t 	*bp = zio->io_bp;
 	arc_buf_hdr_t	*hdr = zio->io_private;
 	kmutex_t	*hash_lock = NULL;
 	arc_callback_t	*callback_list;
 	arc_callback_t	*acb;
 	boolean_t	freeable = B_FALSE;
-	boolean_t	no_zio_error = (zio->io_error == 0);
 
 	/*
 	 * The hdr was inserted into hash-table and removed from lists
@@ -5049,7 +5922,27 @@ arc_read_done(zio_t *zio)
 		ASSERT3P(hash_lock, !=, NULL);
 	}
 
-	if (no_zio_error) {
+	if (BP_IS_PROTECTED(bp)) {
+		hdr->b_crypt_hdr.b_ot = BP_GET_TYPE(bp);
+		hdr->b_crypt_hdr.b_dsobj = zio->io_bookmark.zb_objset;
+		zio_crypt_decode_params_bp(bp, hdr->b_crypt_hdr.b_salt,
+		    hdr->b_crypt_hdr.b_iv);
+
+		if (BP_GET_TYPE(bp) == DMU_OT_INTENT_LOG) {
+			void *tmpbuf;
+
+			tmpbuf = abd_borrow_buf_copy(zio->io_abd,
+			    sizeof (zil_chain_t));
+			zio_crypt_decode_mac_zil(tmpbuf,
+			    hdr->b_crypt_hdr.b_mac);
+			abd_return_buf(zio->io_abd, tmpbuf,
+			    sizeof (zil_chain_t));
+		} else {
+			zio_crypt_decode_mac_bp(bp, hdr->b_crypt_hdr.b_mac);
+		}
+	}
+
+	if (zio->io_error == 0) {
 		/* byteswap if necessary */
 		if (BP_SHOULD_BYTESWAP(zio->io_bp)) {
 			if (BP_GET_LEVEL(zio->io_bp) > 0) {
@@ -5070,7 +5963,8 @@ arc_read_done(zio_t *zio)
 	callback_list = hdr->b_l1hdr.b_acb;
 	ASSERT3P(callback_list, !=, NULL);
 
-	if (hash_lock && no_zio_error && hdr->b_l1hdr.b_state == arc_anon) {
+	if (hash_lock && zio->io_error == 0 &&
+	    hdr->b_l1hdr.b_state == arc_anon) {
 		/*
 		 * Only call arc_access on anonymous buffers.  This is because
 		 * if we've issued an I/O for an evicted buffer, we've already
@@ -5091,27 +5985,74 @@ arc_read_done(zio_t *zio)
 		if (!acb->acb_done)
 			continue;
 
-		/* This is a demand read since prefetches don't use callbacks */
 		callback_cnt++;
 
-		int error = arc_buf_alloc_impl(hdr, acb->acb_private,
-		    acb->acb_compressed, no_zio_error, &acb->acb_buf);
-		if (no_zio_error) {
+		if (zio->io_error != 0)
+			continue;
+
+		int error = arc_buf_alloc_impl(hdr, zio->io_spa,
+		    &acb->acb_zb, acb->acb_private, acb->acb_encrypted,
+		    acb->acb_compressed, acb->acb_noauth, B_TRUE,
+		    &acb->acb_buf);
+
+		/*
+		 * Assert non-speculative zios didn't fail because an
+		 * encryption key wasn't loaded
+		 */
+		ASSERT((zio->io_flags & ZIO_FLAG_SPECULATIVE) ||
+		    error != EACCES);
+
+		/*
+		 * If we failed to decrypt, report an error now (as the zio
+		 * layer would have done if it had done the transforms).
+		 */
+		if (error == ECKSUM) {
+			ASSERT(BP_IS_PROTECTED(bp));
+			error = SET_ERROR(EIO);
+			if ((zio->io_flags & ZIO_FLAG_SPECULATIVE) == 0) {
+				spa_log_error(zio->io_spa, &acb->acb_zb);
+				zfs_ereport_post(FM_EREPORT_ZFS_AUTHENTICATION,
+				    zio->io_spa, NULL, &acb->acb_zb, zio, 0, 0);
+			}
+		}
+
+		if (error != 0) {
+			/*
+			 * Decompression or decryption failed.  Set
+			 * io_error so that when we call acb_done
+			 * (below), we will indicate that the read
+			 * failed. Note that in the unusual case
+			 * where one callback is compressed and another
+			 * uncompressed, we will mark all of them
+			 * as failed, even though the uncompressed
+			 * one can't actually fail.  In this case,
+			 * the hdr will not be anonymous, because
+			 * if there are multiple callbacks, it's
+			 * because multiple threads found the same
+			 * arc buf in the hash table.
+			 */
 			zio->io_error = error;
 		}
 	}
+
+	/*
+	 * If there are multiple callbacks, we must have the hash lock,
+	 * because the only way for multiple threads to find this hdr is
+	 * in the hash table.  This ensures that if there are multiple
+	 * callbacks, the hdr is not anonymous.  If it were anonymous,
+	 * we couldn't use arc_buf_destroy() in the error case below.
+	 */
+	ASSERT(callback_cnt < 2 || hash_lock != NULL);
+
 	hdr->b_l1hdr.b_acb = NULL;
 	arc_hdr_clear_flags(hdr, ARC_FLAG_IO_IN_PROGRESS);
-	if (callback_cnt == 0) {
-		ASSERT(HDR_PREFETCH(hdr));
-		ASSERT0(hdr->b_l1hdr.b_bufcnt);
-		ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
-	}
+	if (callback_cnt == 0)
+		ASSERT(hdr->b_l1hdr.b_pabd != NULL || HDR_HAS_RABD(hdr));
 
 	ASSERT(zfs_refcount_is_zero(&hdr->b_l1hdr.b_refcnt) ||
 	    callback_list != NULL);
 
-	if (no_zio_error) {
+	if (zio->io_error == 0) {
 		arc_hdr_verify(hdr, zio->io_bp);
 	} else {
 		arc_hdr_set_flags(hdr, ARC_FLAG_IO_ERROR);
@@ -5144,8 +6085,20 @@ arc_read_done(zio_t *zio)
 
 	/* execute each callback and free its structure */
 	while ((acb = callback_list) != NULL) {
-		if (acb->acb_done)
-			acb->acb_done(zio, acb->acb_buf, acb->acb_private);
+		if (acb->acb_done != NULL) {
+			if (zio->io_error != 0 && acb->acb_buf != NULL) {
+				/*
+				 * If arc_buf_alloc_impl() fails during
+				 * decompression, the buf will still be
+				 * allocated, and needs to be freed here.
+				 */
+				arc_buf_destroy(acb->acb_buf,
+				    acb->acb_private);
+				acb->acb_buf = NULL;
+			}
+			acb->acb_done(zio, &zio->io_bookmark, zio->io_bp,
+			    acb->acb_buf, acb->acb_private);
+		}
 
 		if (acb->acb_zio_dummy != NULL) {
 			acb->acb_zio_dummy->io_error = zio->io_error;
@@ -5179,15 +6132,19 @@ arc_read_done(zio_t *zio)
  * for readers of this block.
  */
 int
-arc_read(zio_t *pio, spa_t *spa, const blkptr_t *bp, arc_done_func_t *done,
-    void *private, zio_priority_t priority, int zio_flags,
-    arc_flags_t *arc_flags, const zbookmark_phys_t *zb)
+arc_read(zio_t *pio, spa_t *spa, const blkptr_t *bp,
+    arc_read_done_func_t *done, void *private, zio_priority_t priority,
+    int zio_flags, arc_flags_t *arc_flags, const zbookmark_phys_t *zb)
 {
 	arc_buf_hdr_t *hdr = NULL;
 	kmutex_t *hash_lock = NULL;
 	zio_t *rzio;
 	uint64_t guid = spa_load_guid(spa);
-	boolean_t compressed_read = (zio_flags & ZIO_FLAG_RAW) != 0;
+	boolean_t compressed_read = (zio_flags & ZIO_FLAG_RAW_COMPRESS) != 0;
+	boolean_t encrypted_read = BP_IS_ENCRYPTED(bp) &&
+	    (zio_flags & ZIO_FLAG_RAW_ENCRYPT) != 0;
+	boolean_t noauth_read = BP_IS_AUTHENTICATED(bp) &&
+	    (zio_flags & ZIO_FLAG_RAW_ENCRYPT) != 0;
 	int rc = 0;
 
 	ASSERT(!BP_IS_EMBEDDED(bp) ||
@@ -5202,37 +6159,33 @@ top:
 		hdr = buf_hash_find(guid, bp, &hash_lock);
 	}
 
-	if (hdr != NULL && HDR_HAS_L1HDR(hdr) && hdr->b_l1hdr.b_pabd != NULL) {
+	/*
+	 * Determine if we have an L1 cache hit or a cache miss. For simplicity
+	 * we maintain encrypted data seperately from compressed / uncompressed
+	 * data. If the user is requesting raw encrypted data and we don't have
+	 * that in the header we will read from disk to guarantee that we can
+	 * get it even if the encryption keys aren't loaded.
+	 */
+	if (hdr != NULL && HDR_HAS_L1HDR(hdr) && (HDR_HAS_RABD(hdr) ||
+	    (hdr->b_l1hdr.b_pabd != NULL && !encrypted_read))) {
 		arc_buf_t *buf = NULL;
 		*arc_flags |= ARC_FLAG_CACHED;
 
 		if (HDR_IO_IN_PROGRESS(hdr)) {
+			zio_t *head_zio = hdr->b_l1hdr.b_acb->acb_zio_head;
 
+			ASSERT3P(head_zio, !=, NULL);
 			if ((hdr->b_flags & ARC_FLAG_PRIO_ASYNC_READ) &&
 			    priority == ZIO_PRIORITY_SYNC_READ) {
 				/*
-				 * This sync read must wait for an
-				 * in-progress async read (e.g. a predictive
-				 * prefetch).  Async reads are queued
-				 * separately at the vdev_queue layer, so
-				 * this is a form of priority inversion.
-				 * Ideally, we would "inherit" the demand
-				 * i/o's priority by moving the i/o from
-				 * the async queue to the synchronous queue,
-				 * but there is currently no mechanism to do
-				 * so.  Track this so that we can evaluate
-				 * the magnitude of this potential performance
-				 * problem.
-				 *
-				 * Note that if the prefetch i/o is already
-				 * active (has been issued to the device),
-				 * the prefetch improved performance, because
-				 * we issued it sooner than we would have
-				 * without the prefetch.
+				 * This is a sync read that needs to wait for
+				 * an in-flight async read. Request that the
+				 * zio have its priority upgraded.
 				 */
-				DTRACE_PROBE1(arc__sync__wait__for__async,
+				zio_change_priority(head_zio, priority);
+				DTRACE_PROBE1(arc__async__upgrade__sync,
 				    arc_buf_hdr_t *, hdr);
-				ARCSTAT_BUMP(arcstat_sync_wait_for_async);
+				ARCSTAT_BUMP(arcstat_async_upgrade_sync);
 			}
 			if (hdr->b_flags & ARC_FLAG_PREDICTIVE_PREFETCH) {
 				arc_hdr_clear_flags(hdr,
@@ -5254,11 +6207,15 @@ top:
 				acb->acb_done = done;
 				acb->acb_private = private;
 				acb->acb_compressed = compressed_read;
+				acb->acb_encrypted = encrypted_read;
+				acb->acb_noauth = noauth_read;
+				acb->acb_zb = *zb;
 				if (pio != NULL)
 					acb->acb_zio_dummy = zio_null(pio,
 					    spa, NULL, NULL, NULL, zio_flags);
 
 				ASSERT3P(acb->acb_done, !=, NULL);
+				acb->acb_zio_head = head_zio;
 				acb->acb_next = hdr->b_l1hdr.b_acb;
 				hdr->b_l1hdr.b_acb = acb;
 				mutex_exit(hash_lock);
@@ -5286,17 +6243,52 @@ top:
 				arc_hdr_clear_flags(hdr,
 				    ARC_FLAG_PREDICTIVE_PREFETCH);
 			}
+
+			if (hdr->b_flags & ARC_FLAG_PRESCIENT_PREFETCH) {
+				ARCSTAT_BUMP(
+				    arcstat_demand_hit_prescient_prefetch);
+				arc_hdr_clear_flags(hdr,
+				    ARC_FLAG_PRESCIENT_PREFETCH);
+			}
+
 			ASSERT(!BP_IS_EMBEDDED(bp) || !BP_IS_HOLE(bp));
 
 			/* Get a buf with the desired data in it. */
-			VERIFY0(arc_buf_alloc_impl(hdr, private,
-			    compressed_read, B_TRUE, &buf));
+			rc = arc_buf_alloc_impl(hdr, spa, zb, private,
+			    encrypted_read, compressed_read, noauth_read,
+			    B_TRUE, &buf);
+			if (rc == ECKSUM) {
+				/*
+				 * Convert authentication and decryption errors
+				 * to EIO (and generate an ereport if needed)
+				 * before leaving the ARC.
+				 */
+				rc = SET_ERROR(EIO);
+				if ((zio_flags & ZIO_FLAG_SPECULATIVE) == 0) {
+					spa_log_error(spa, zb);
+					zfs_ereport_post(
+					    FM_EREPORT_ZFS_AUTHENTICATION,
+					    spa, NULL, zb, NULL, 0, 0);
+				}
+			}
+			if (rc != 0) {
+				(void) remove_reference(hdr, hash_lock,
+				    private);
+				arc_buf_destroy_impl(buf);
+				buf = NULL;
+			}
+
+			/* assert any errors weren't due to unloaded keys */
+			ASSERT((zio_flags & ZIO_FLAG_SPECULATIVE) ||
+			    rc != EACCES);
 		} else if (*arc_flags & ARC_FLAG_PREFETCH &&
 		    zfs_refcount_count(&hdr->b_l1hdr.b_refcnt) == 0) {
 			arc_hdr_set_flags(hdr, ARC_FLAG_PREFETCH);
 		}
 		DTRACE_PROBE1(arc__hit, arc_buf_hdr_t *, hdr);
 		arc_access(hdr, hash_lock);
+		if (*arc_flags & ARC_FLAG_PRESCIENT_PREFETCH)
+			arc_hdr_set_flags(hdr, ARC_FLAG_PRESCIENT_PREFETCH);
 		if (*arc_flags & ARC_FLAG_L2CACHE)
 			arc_hdr_set_flags(hdr, ARC_FLAG_L2CACHE);
 		mutex_exit(hash_lock);
@@ -5306,7 +6298,7 @@ top:
 		    data, metadata, hits);
 
 		if (done)
-			done(NULL, buf, private);
+			done(NULL, zb, bp, buf, private);
 	} else {
 		uint64_t lsize = BP_GET_LSIZE(bp);
 		uint64_t psize = BP_GET_PSIZE(bp);
@@ -5315,6 +6307,7 @@ top:
 		uint64_t addr = 0;
 		boolean_t devw = B_FALSE;
 		uint64_t size;
+		abd_t *hdr_abd;
 
 		/*
 		 * Gracefully handle a damaged logical block size as a
@@ -5330,7 +6323,8 @@ top:
 			arc_buf_hdr_t *exists = NULL;
 			arc_buf_contents_t type = BP_GET_BUFC_TYPE(bp);
 			hdr = arc_hdr_alloc(spa_load_guid(spa), psize, lsize,
-			    BP_GET_COMPRESS(bp), type);
+			    BP_IS_PROTECTED(bp), BP_GET_COMPRESS(bp), type,
+			    encrypted_read);
 
 			if (!BP_IS_EMBEDDED(bp)) {
 				hdr->b_dva = *BP_IDENTITY(bp);
@@ -5346,26 +6340,43 @@ top:
 			}
 		} else {
 			/*
-			 * This block is in the ghost cache. If it was L2-only
-			 * (and thus didn't have an L1 hdr), we realloc the
-			 * header to add an L1 hdr.
+			 * This block is in the ghost cache or encrypted data
+			 * was requested and we didn't have it. If it was
+			 * L2-only (and thus didn't have an L1 hdr),
+			 * we realloc the header to add an L1 hdr.
 			 */
 			if (!HDR_HAS_L1HDR(hdr)) {
 				hdr = arc_hdr_realloc(hdr, hdr_l2only_cache,
 				    hdr_full_cache);
 			}
 
-			ASSERT3P(hdr->b_l1hdr.b_pabd, ==, NULL);
-			ASSERT(GHOST_STATE(hdr->b_l1hdr.b_state));
-			ASSERT(!HDR_IO_IN_PROGRESS(hdr));
-			ASSERT(zfs_refcount_is_zero(&hdr->b_l1hdr.b_refcnt));
-			ASSERT3P(hdr->b_l1hdr.b_buf, ==, NULL);
-			ASSERT3P(hdr->b_l1hdr.b_freeze_cksum, ==, NULL);
+			if (GHOST_STATE(hdr->b_l1hdr.b_state)) {
+				ASSERT3P(hdr->b_l1hdr.b_pabd, ==, NULL);
+				ASSERT(!HDR_HAS_RABD(hdr));
+				ASSERT(!HDR_IO_IN_PROGRESS(hdr));
+				ASSERT0(zfs_refcount_count(
+				    &hdr->b_l1hdr.b_refcnt));
+				ASSERT3P(hdr->b_l1hdr.b_buf, ==, NULL);
+				ASSERT3P(hdr->b_l1hdr.b_freeze_cksum, ==, NULL);
+			} else if (HDR_IO_IN_PROGRESS(hdr)) {
+				/*
+				 * If this header already had an IO in progress
+				 * and we are performing another IO to fetch
+				 * encrypted data we must wait until the first
+				 * IO completes so as not to confuse
+				 * arc_read_done(). This should be very rare
+				 * and so the performance impact shouldn't
+				 * matter.
+				 */
+				cv_wait(&hdr->b_l1hdr.b_cv, hash_lock);
+				mutex_exit(hash_lock);
+				goto top;
+			}
 
 			/*
 			 * This is a delicate dance that we play here.
-			 * This hdr is in the ghost list so we access it
-			 * to move it out of the ghost list before we
+			 * This hdr might be in the ghost list so we access
+			 * it to move it out of the ghost list before we
 			 * initiate the read. If it's a prefetch then
 			 * it won't have a callback so we'll remove the
 			 * reference that arc_buf_alloc_impl() created. We
@@ -5373,25 +6384,43 @@ top:
 			 * avoid hitting an assert in remove_reference().
 			 */
 			arc_access(hdr, hash_lock);
-			arc_hdr_alloc_pabd(hdr);
+			arc_hdr_alloc_abd(hdr, encrypted_read);
 		}
-		ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
-		size = arc_hdr_size(hdr);
 
-		/*
-		 * If compression is enabled on the hdr, then will do
-		 * RAW I/O and will store the compressed data in the hdr's
-		 * data block. Otherwise, the hdr's data block will contain
-		 * the uncompressed data.
-		 */
-		if (HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF) {
+		if (encrypted_read) {
+			ASSERT(HDR_HAS_RABD(hdr));
+			size = HDR_GET_PSIZE(hdr);
+			hdr_abd = hdr->b_crypt_hdr.b_rabd;
 			zio_flags |= ZIO_FLAG_RAW;
+		} else {
+			ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
+			size = arc_hdr_size(hdr);
+			hdr_abd = hdr->b_l1hdr.b_pabd;
+
+			if (arc_hdr_get_compress(hdr) != ZIO_COMPRESS_OFF) {
+				zio_flags |= ZIO_FLAG_RAW_COMPRESS;
+			}
+
+			/*
+			 * For authenticated bp's, we do not ask the ZIO layer
+			 * to authenticate them since this will cause the entire
+			 * IO to fail if the key isn't loaded. Instead, we
+			 * defer authentication until arc_buf_fill(), which will
+			 * verify the data when the key is available.
+			 */
+			if (BP_IS_AUTHENTICATED(bp))
+				zio_flags |= ZIO_FLAG_RAW_ENCRYPT;
 		}
 
-		if (*arc_flags & ARC_FLAG_PREFETCH)
+		if (*arc_flags & ARC_FLAG_PREFETCH &&
+		    zfs_refcount_is_zero(&hdr->b_l1hdr.b_refcnt))
 			arc_hdr_set_flags(hdr, ARC_FLAG_PREFETCH);
+		if (*arc_flags & ARC_FLAG_PRESCIENT_PREFETCH)
+			arc_hdr_set_flags(hdr, ARC_FLAG_PRESCIENT_PREFETCH);
 		if (*arc_flags & ARC_FLAG_L2CACHE)
 			arc_hdr_set_flags(hdr, ARC_FLAG_L2CACHE);
+		if (BP_IS_AUTHENTICATED(bp))
+			arc_hdr_set_flags(hdr, ARC_FLAG_NOAUTH);
 		if (BP_GET_LEVEL(bp) > 0)
 			arc_hdr_set_flags(hdr, ARC_FLAG_INDIRECT);
 		if (*arc_flags & ARC_FLAG_PREDICTIVE_PREFETCH)
@@ -5402,6 +6431,9 @@ top:
 		acb->acb_done = done;
 		acb->acb_private = private;
 		acb->acb_compressed = compressed_read;
+		acb->acb_encrypted = encrypted_read;
+		acb->acb_noauth = noauth_read;
+		acb->acb_zb = *zb;
 
 		ASSERT3P(hdr->b_l1hdr.b_acb, ==, NULL);
 		hdr->b_l1hdr.b_acb = acb;
@@ -5412,20 +6444,23 @@ top:
 			devw = hdr->b_l2hdr.b_dev->l2ad_writing;
 			addr = hdr->b_l2hdr.b_daddr;
 			/*
-			 * Lock out device removal.
+			 * Lock out L2ARC device removal.
 			 */
 			if (vdev_is_dead(vd) ||
 			    !spa_config_tryenter(spa, SCL_L2ARC, vd, RW_READER))
 				vd = NULL;
 		}
 
-		if (priority == ZIO_PRIORITY_ASYNC_READ)
+		/*
+		 * We count both async reads and scrub IOs as asynchronous so
+		 * that both can be upgraded in the event of a cache hit while
+		 * the read IO is still in-flight.
+		 */
+		if (priority == ZIO_PRIORITY_ASYNC_READ ||
+		    priority == ZIO_PRIORITY_SCRUB)
 			arc_hdr_set_flags(hdr, ARC_FLAG_PRIO_ASYNC_READ);
 		else
 			arc_hdr_clear_flags(hdr, ARC_FLAG_PRIO_ASYNC_READ);
-
-		if (hash_lock != NULL)
-			mutex_exit(hash_lock);
 
 		/*
 		 * At this point, we have a level 1 cache miss.  Try again in
@@ -5474,7 +6509,7 @@ top:
 					    HDR_ISTYPE_METADATA(hdr));
 					cb->l2rcb_abd = abd;
 				} else {
-					abd = hdr->b_l1hdr.b_pabd;
+					abd = hdr_abd;
 				}
 
 				ASSERT(addr >= VDEV_LABEL_START_SIZE &&
@@ -5487,7 +6522,7 @@ top:
 				 * Issue a null zio if the underlying buffer
 				 * was squashed to zero size by compression.
 				 */
-				ASSERT3U(HDR_GET_COMPRESS(hdr), !=,
+				ASSERT3U(arc_hdr_get_compress(hdr), !=,
 				    ZIO_COMPRESS_EMPTY);
 				rzio = zio_read_phys(pio, vd, addr,
 				    asize, abd,
@@ -5497,10 +6532,15 @@ top:
 				    ZIO_FLAG_CANFAIL |
 				    ZIO_FLAG_DONT_PROPAGATE |
 				    ZIO_FLAG_DONT_RETRY, B_FALSE);
+				acb->acb_zio_head = rzio;
+
+				if (hash_lock != NULL)
+					mutex_exit(hash_lock);
 
 				DTRACE_PROBE2(l2arc__read, vdev_t *, vd,
 				    zio_t *, rzio);
-				ARCSTAT_INCR(arcstat_l2_read_bytes, size);
+				ARCSTAT_INCR(arcstat_l2_read_bytes,
+				    HDR_GET_PSIZE(hdr));
 
 				if (*arc_flags & ARC_FLAG_NOWAIT) {
 					zio_nowait(rzio);
@@ -5512,6 +6552,8 @@ top:
 					goto out;
 
 				/* l2arc read error; goto zio_read() */
+				if (hash_lock != NULL)
+					mutex_enter(hash_lock);
 			} else {
 				DTRACE_PROBE1(l2arc__miss,
 				    arc_buf_hdr_t *, hdr);
@@ -5530,8 +6572,12 @@ top:
 			}
 		}
 
-		rzio = zio_read(pio, spa, bp, hdr->b_l1hdr.b_pabd, size,
+		rzio = zio_read(pio, spa, bp, hdr_abd, size,
 		    arc_read_done, hdr, priority, zio_flags, zb);
+		acb->acb_zio_head = rzio;
+
+		if (hash_lock != NULL)
+			mutex_exit(hash_lock);
 
 		if (*arc_flags & ARC_FLAG_WAIT) {
 			rc = zio_wait(rzio);
@@ -5543,7 +6589,9 @@ top:
 	}
 
 out:
-	spa_read_history_add(spa, zb, *arc_flags);
+	/* embedded bps don't actually go to disk */
+	if (!BP_IS_EMBEDDED(bp))
+		spa_read_history_add(spa, zb, *arc_flags);
 	return (rc);
 }
 
@@ -5642,8 +6690,6 @@ arc_freed(spa_t *spa, const blkptr_t *bp)
 void
 arc_release(arc_buf_t *buf, void *tag)
 {
-	kmutex_t *hash_lock;
-	arc_state_t *state;
 	arc_buf_hdr_t *hdr = buf->b_hdr;
 
 	/*
@@ -5684,7 +6730,7 @@ arc_release(arc_buf_t *buf, void *tag)
 		return;
 	}
 
-	hash_lock = HDR_LOCK(hdr);
+	kmutex_t *hash_lock = HDR_LOCK(hdr);
 	mutex_enter(hash_lock);
 
 	/*
@@ -5692,7 +6738,7 @@ arc_release(arc_buf_t *buf, void *tag)
 	 * held, we must be careful not to reference state or the
 	 * b_state field after dropping the lock.
 	 */
-	state = hdr->b_l1hdr.b_state;
+	arc_state_t *state = hdr->b_l1hdr.b_state;
 	ASSERT3P(hash_lock, ==, HDR_LOCK(hdr));
 	ASSERT3P(state, !=, arc_anon);
 
@@ -5724,7 +6770,8 @@ arc_release(arc_buf_t *buf, void *tag)
 		uint64_t spa = hdr->b_spa;
 		uint64_t psize = HDR_GET_PSIZE(hdr);
 		uint64_t lsize = HDR_GET_LSIZE(hdr);
-		enum zio_compress compress = HDR_GET_COMPRESS(hdr);
+		boolean_t protected = HDR_PROTECTED(hdr);
+		enum zio_compress compress = arc_hdr_get_compress(hdr);
 		arc_buf_contents_t type = arc_buf_type(hdr);
 		VERIFY3U(hdr->b_type, ==, type);
 
@@ -5767,7 +6814,7 @@ arc_release(arc_buf_t *buf, void *tag)
 			if (arc_can_share(hdr, lastbuf)) {
 				arc_share_buf(hdr, lastbuf);
 			} else {
-				arc_hdr_alloc_pabd(hdr);
+				arc_hdr_alloc_abd(hdr, B_FALSE);
 				abd_copy_from_buf(hdr->b_l1hdr.b_pabd,
 				    buf->b_data, psize);
 			}
@@ -5782,10 +6829,11 @@ arc_release(arc_buf_t *buf, void *tag)
 			 * if we have a compressed, shared buffer.
 			 */
 			ASSERT(arc_buf_is_shared(lastbuf) ||
-			    HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF);
+			    arc_hdr_get_compress(hdr) != ZIO_COMPRESS_OFF);
 			ASSERT(!ARC_BUF_SHARED(buf));
 		}
-		ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
+
+		ASSERT(hdr->b_l1hdr.b_pabd != NULL || HDR_HAS_RABD(hdr));
 		ASSERT3P(state, !=, arc_l2c_only);
 
 		(void) zfs_refcount_remove_many(&state->arcs_size,
@@ -5799,6 +6847,9 @@ arc_release(arc_buf_t *buf, void *tag)
 		}
 
 		hdr->b_l1hdr.b_bufcnt -= 1;
+		if (ARC_BUF_ENCRYPTED(buf))
+			hdr->b_crypt_hdr.b_ebufcnt -= 1;
+
 		arc_cksum_verify(buf);
 		arc_buf_unwatch(buf);
 
@@ -5812,7 +6863,8 @@ arc_release(arc_buf_t *buf, void *tag)
 		 * Allocate a new hdr. The new hdr will contain a b_pabd
 		 * buffer which will be freed in arc_write().
 		 */
-		nhdr = arc_hdr_alloc(spa, psize, lsize, compress, type);
+		nhdr = arc_hdr_alloc(spa, psize, lsize, protected,
+		    compress, type, HDR_HAS_RABD(hdr));
 		ASSERT3P(nhdr->b_l1hdr.b_buf, ==, NULL);
 		ASSERT0(nhdr->b_l1hdr.b_bufcnt);
 		ASSERT0(zfs_refcount_count(&nhdr->b_l1hdr.b_refcnt));
@@ -5821,6 +6873,8 @@ arc_release(arc_buf_t *buf, void *tag)
 
 		nhdr->b_l1hdr.b_buf = buf;
 		nhdr->b_l1hdr.b_bufcnt = 1;
+		if (ARC_BUF_ENCRYPTED(buf))
+			nhdr->b_crypt_hdr.b_ebufcnt = 1;
 		nhdr->b_l1hdr.b_mru_hits = 0;
 		nhdr->b_l1hdr.b_mru_ghost_hits = 0;
 		nhdr->b_l1hdr.b_mfu_hits = 0;
@@ -5845,8 +6899,8 @@ arc_release(arc_buf_t *buf, void *tag)
 		hdr->b_l1hdr.b_l2_hits = 0;
 		arc_change_state(arc_anon, hdr, hash_lock);
 		hdr->b_l1hdr.b_arc_access = 0;
-		mutex_exit(hash_lock);
 
+		mutex_exit(hash_lock);
 		buf_discard_identity(hdr);
 		arc_buf_thaw(buf);
 	}
@@ -5883,8 +6937,8 @@ arc_write_ready(zio_t *zio)
 	arc_write_callback_t *callback = zio->io_private;
 	arc_buf_t *buf = callback->awcb_buf;
 	arc_buf_hdr_t *hdr = buf->b_hdr;
-	uint64_t psize = BP_IS_HOLE(zio->io_bp) ? 0 : BP_GET_PSIZE(zio->io_bp);
-	enum zio_compress compress;
+	blkptr_t *bp = zio->io_bp;
+	uint64_t psize = BP_IS_HOLE(bp) ? 0 : BP_GET_PSIZE(bp);
 	fstrans_cookie_t cookie = spl_fstrans_mark();
 
 	ASSERT(HDR_HAS_L1HDR(hdr));
@@ -5903,11 +6957,15 @@ arc_write_ready(zio_t *zio)
 			if (arc_buf_is_shared(buf)) {
 				arc_unshare_buf(hdr, buf);
 			} else {
-				arc_hdr_free_pabd(hdr);
+				arc_hdr_free_abd(hdr, B_FALSE);
 			}
 		}
+
+		if (HDR_HAS_RABD(hdr))
+			arc_hdr_free_abd(hdr, B_TRUE);
 	}
 	ASSERT3P(hdr->b_l1hdr.b_pabd, ==, NULL);
+	ASSERT(!HDR_HAS_RABD(hdr));
 	ASSERT(!HDR_SHARED_DATA(hdr));
 	ASSERT(!arc_buf_is_shared(buf));
 
@@ -5916,21 +6974,69 @@ arc_write_ready(zio_t *zio)
 	if (HDR_IO_IN_PROGRESS(hdr))
 		ASSERT(zio->io_flags & ZIO_FLAG_REEXECUTED);
 
-	arc_cksum_compute(buf);
 	arc_hdr_set_flags(hdr, ARC_FLAG_IO_IN_PROGRESS);
 
-	if (BP_IS_HOLE(zio->io_bp) || BP_IS_EMBEDDED(zio->io_bp)) {
+	if (BP_IS_PROTECTED(bp) != !!HDR_PROTECTED(hdr))
+		hdr = arc_hdr_realloc_crypt(hdr, BP_IS_PROTECTED(bp));
+
+	if (BP_IS_PROTECTED(bp)) {
+		/* ZIL blocks are written through zio_rewrite */
+		ASSERT3U(BP_GET_TYPE(bp), !=, DMU_OT_INTENT_LOG);
+		ASSERT(HDR_PROTECTED(hdr));
+
+		if (BP_SHOULD_BYTESWAP(bp)) {
+			if (BP_GET_LEVEL(bp) > 0) {
+				hdr->b_l1hdr.b_byteswap = DMU_BSWAP_UINT64;
+			} else {
+				hdr->b_l1hdr.b_byteswap =
+				    DMU_OT_BYTESWAP(BP_GET_TYPE(bp));
+			}
+		} else {
+			hdr->b_l1hdr.b_byteswap = DMU_BSWAP_NUMFUNCS;
+		}
+
+		hdr->b_crypt_hdr.b_ot = BP_GET_TYPE(bp);
+		hdr->b_crypt_hdr.b_dsobj = zio->io_bookmark.zb_objset;
+		zio_crypt_decode_params_bp(bp, hdr->b_crypt_hdr.b_salt,
+		    hdr->b_crypt_hdr.b_iv);
+		zio_crypt_decode_mac_bp(bp, hdr->b_crypt_hdr.b_mac);
+	}
+
+	/*
+	 * If this block was written for raw encryption but the zio layer
+	 * ended up only authenticating it, adjust the buffer flags now.
+	 */
+	if (BP_IS_AUTHENTICATED(bp) && ARC_BUF_ENCRYPTED(buf)) {
+		arc_hdr_set_flags(hdr, ARC_FLAG_NOAUTH);
+		buf->b_flags &= ~ARC_BUF_FLAG_ENCRYPTED;
+		if (BP_GET_COMPRESS(bp) == ZIO_COMPRESS_OFF)
+			buf->b_flags &= ~ARC_BUF_FLAG_COMPRESSED;
+	} else if (BP_IS_HOLE(bp) && ARC_BUF_ENCRYPTED(buf)) {
+		buf->b_flags &= ~ARC_BUF_FLAG_ENCRYPTED;
+		buf->b_flags &= ~ARC_BUF_FLAG_COMPRESSED;
+	}
+
+	/* this must be done after the buffer flags are adjusted */
+	arc_cksum_compute(buf);
+
+	enum zio_compress compress;
+	if (BP_IS_HOLE(bp) || BP_IS_EMBEDDED(bp)) {
 		compress = ZIO_COMPRESS_OFF;
 	} else {
-		ASSERT3U(HDR_GET_LSIZE(hdr), ==, BP_GET_LSIZE(zio->io_bp));
-		compress = BP_GET_COMPRESS(zio->io_bp);
+		ASSERT3U(HDR_GET_LSIZE(hdr), ==, BP_GET_LSIZE(bp));
+		compress = BP_GET_COMPRESS(bp);
 	}
 	HDR_SET_PSIZE(hdr, psize);
 	arc_hdr_set_compress(hdr, compress);
 
+	if (zio->io_error != 0 || psize == 0)
+		goto out;
+
 	/*
-	 * Fill the hdr with data. If the hdr is compressed, the data we want
-	 * is available from the zio, otherwise we can take it from the buf.
+	 * Fill the hdr with data. If the buffer is encrypted we have no choice
+	 * but to copy the data into b_radb. If the hdr is compressed, the data
+	 * we want is available from the zio, otherwise we can take it from
+	 * the buf.
 	 *
 	 * We might be able to share the buf's data with the hdr here. However,
 	 * doing so would cause the ARC to be full of linear ABDs if we write a
@@ -5940,23 +7046,29 @@ arc_write_ready(zio_t *zio)
 	 * written. Therefore, if they're allowed then we allocate one and copy
 	 * the data into it; otherwise, we share the data directly if we can.
 	 */
-	if (zfs_abd_scatter_enabled || !arc_can_share(hdr, buf)) {
-		arc_hdr_alloc_pabd(hdr);
-
+	if (ARC_BUF_ENCRYPTED(buf)) {
+		ASSERT3U(psize, >, 0);
+		ASSERT(ARC_BUF_COMPRESSED(buf));
+		arc_hdr_alloc_abd(hdr, B_TRUE);
+		abd_copy(hdr->b_crypt_hdr.b_rabd, zio->io_abd, psize);
+	} else if (zfs_abd_scatter_enabled || !arc_can_share(hdr, buf)) {
 		/*
 		 * Ideally, we would always copy the io_abd into b_pabd, but the
 		 * user may have disabled compressed ARC, thus we must check the
 		 * hdr's compression setting rather than the io_bp's.
 		 */
-		if (HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF) {
-			ASSERT3U(BP_GET_COMPRESS(zio->io_bp), !=,
-			    ZIO_COMPRESS_OFF);
+		if (BP_IS_ENCRYPTED(bp)) {
 			ASSERT3U(psize, >, 0);
-
+			arc_hdr_alloc_abd(hdr, B_TRUE);
+			abd_copy(hdr->b_crypt_hdr.b_rabd, zio->io_abd, psize);
+		} else if (arc_hdr_get_compress(hdr) != ZIO_COMPRESS_OFF &&
+		    !ARC_BUF_COMPRESSED(buf)) {
+			ASSERT3U(psize, >, 0);
+			arc_hdr_alloc_abd(hdr, B_FALSE);
 			abd_copy(hdr->b_l1hdr.b_pabd, zio->io_abd, psize);
 		} else {
 			ASSERT3U(zio->io_orig_size, ==, arc_hdr_size(hdr));
-
+			arc_hdr_alloc_abd(hdr, B_FALSE);
 			abd_copy_from_buf(hdr->b_l1hdr.b_pabd, buf->b_data,
 			    arc_buf_size(buf));
 		}
@@ -5968,7 +7080,8 @@ arc_write_ready(zio_t *zio)
 		arc_share_buf(hdr, buf);
 	}
 
-	arc_hdr_verify(hdr, zio->io_bp);
+out:
+	arc_hdr_verify(hdr, bp);
 	spl_fstrans_unmark(cookie);
 }
 
@@ -6080,9 +7193,9 @@ arc_write_done(zio_t *zio)
 zio_t *
 arc_write(zio_t *pio, spa_t *spa, uint64_t txg,
     blkptr_t *bp, arc_buf_t *buf, boolean_t l2arc,
-    const zio_prop_t *zp, arc_done_func_t *ready,
-    arc_done_func_t *children_ready, arc_done_func_t *physdone,
-    arc_done_func_t *done, void *private, zio_priority_t priority,
+    const zio_prop_t *zp, arc_write_done_func_t *ready,
+    arc_write_done_func_t *children_ready, arc_write_done_func_t *physdone,
+    arc_write_done_func_t *done, void *private, zio_priority_t priority,
     int zio_flags, const zbookmark_phys_t *zb)
 {
 	arc_buf_hdr_t *hdr = buf->b_hdr;
@@ -6098,16 +7211,30 @@ arc_write(zio_t *pio, spa_t *spa, uint64_t txg,
 	ASSERT3U(hdr->b_l1hdr.b_bufcnt, >, 0);
 	if (l2arc)
 		arc_hdr_set_flags(hdr, ARC_FLAG_L2CACHE);
-	if (ARC_BUF_COMPRESSED(buf)) {
-		/*
-		 * We're writing a pre-compressed buffer.  Make the
-		 * compression algorithm requested by the zio_prop_t match
-		 * the pre-compressed buffer's compression algorithm.
-		 */
-		localprop.zp_compress = HDR_GET_COMPRESS(hdr);
 
-		ASSERT3U(HDR_GET_LSIZE(hdr), !=, arc_buf_size(buf));
+	if (ARC_BUF_ENCRYPTED(buf)) {
+		ASSERT(ARC_BUF_COMPRESSED(buf));
+		localprop.zp_encrypt = B_TRUE;
+		localprop.zp_compress = HDR_GET_COMPRESS(hdr);
+		localprop.zp_byteorder =
+		    (hdr->b_l1hdr.b_byteswap == DMU_BSWAP_NUMFUNCS) ?
+		    ZFS_HOST_BYTEORDER : !ZFS_HOST_BYTEORDER;
+		bcopy(hdr->b_crypt_hdr.b_salt, localprop.zp_salt,
+		    ZIO_DATA_SALT_LEN);
+		bcopy(hdr->b_crypt_hdr.b_iv, localprop.zp_iv,
+		    ZIO_DATA_IV_LEN);
+		bcopy(hdr->b_crypt_hdr.b_mac, localprop.zp_mac,
+		    ZIO_DATA_MAC_LEN);
+		if (DMU_OT_IS_ENCRYPTED(localprop.zp_type)) {
+			localprop.zp_nopwrite = B_FALSE;
+			localprop.zp_copies =
+			    MIN(localprop.zp_copies, SPA_DVAS_PER_BP - 1);
+		}
 		zio_flags |= ZIO_FLAG_RAW;
+	} else if (ARC_BUF_COMPRESSED(buf)) {
+		ASSERT3U(HDR_GET_LSIZE(hdr), !=, arc_buf_size(buf));
+		localprop.zp_compress = HDR_GET_COMPRESS(hdr);
+		zio_flags |= ZIO_FLAG_RAW_COMPRESS;
 	}
 	callback = kmem_zalloc(sizeof (arc_write_callback_t), KM_SLEEP);
 	callback->awcb_ready = ready;
@@ -6131,11 +7258,13 @@ arc_write(zio_t *pio, spa_t *spa, uint64_t txg,
 		if (arc_buf_is_shared(buf)) {
 			arc_unshare_buf(hdr, buf);
 		} else {
-			arc_hdr_free_pabd(hdr);
+			arc_hdr_free_abd(hdr, B_FALSE);
 		}
 		VERIFY3P(buf->b_data, !=, NULL);
-		arc_hdr_set_compress(hdr, ZIO_COMPRESS_OFF);
 	}
+
+	if (HDR_HAS_RABD(hdr))
+		arc_hdr_free_abd(hdr, B_TRUE);
 
 	if (!(zio_flags & ZIO_FLAG_RAW))
 		arc_hdr_set_compress(hdr, ZIO_COMPRESS_OFF);
@@ -6154,12 +7283,10 @@ arc_write(zio_t *pio, spa_t *spa, uint64_t txg,
 }
 
 static int
-arc_memory_throttle(uint64_t reserve, uint64_t txg)
+arc_memory_throttle(spa_t *spa, uint64_t reserve, uint64_t txg)
 {
 #ifdef _KERNEL
 	uint64_t available_memory = arc_free_memory();
-	static uint64_t page_load = 0;
-	static uint64_t last_txg = 0;
 
 #if defined(_ILP32)
 	available_memory =
@@ -6169,9 +7296,9 @@ arc_memory_throttle(uint64_t reserve, uint64_t txg)
 	if (available_memory > arc_all_memory() * arc_lotsfree_percent / 100)
 		return (0);
 
-	if (txg > last_txg) {
-		last_txg = txg;
-		page_load = 0;
+	if (txg > spa->spa_lowmem_last_txg) {
+		spa->spa_lowmem_last_txg = txg;
+		spa->spa_lowmem_page_load = 0;
 	}
 	/*
 	 * If we are in pageout, we know that memory is already tight,
@@ -6179,21 +7306,22 @@ arc_memory_throttle(uint64_t reserve, uint64_t txg)
 	 * continue to let page writes occur as quickly as possible.
 	 */
 	if (current_is_kswapd()) {
-		if (page_load > MAX(arc_sys_free / 4, available_memory) / 4) {
+		if (spa->spa_lowmem_page_load >
+		    MAX(arc_sys_free / 4, available_memory) / 4) {
 			DMU_TX_STAT_BUMP(dmu_tx_memory_reclaim);
 			return (SET_ERROR(ERESTART));
 		}
 		/* Note: reserve is inflated, so we deflate */
-		page_load += reserve / 8;
+		atomic_add_64(&spa->spa_lowmem_page_load, reserve / 8);
 		return (0);
-	} else if (page_load > 0 && arc_reclaim_needed()) {
+	} else if (spa->spa_lowmem_page_load > 0 && arc_reclaim_needed()) {
 		/* memory is low, delay before restarting */
 		ARCSTAT_INCR(arcstat_memory_throttle_count, 1);
 		DMU_TX_STAT_BUMP(dmu_tx_memory_reclaim);
 		return (SET_ERROR(EAGAIN));
 	}
-	page_load = 0;
-#endif
+	spa->spa_lowmem_page_load = 0;
+#endif /* _KERNEL */
 	return (0);
 }
 
@@ -6205,7 +7333,7 @@ arc_tempreserve_clear(uint64_t reserve)
 }
 
 int
-arc_tempreserve_space(uint64_t reserve, uint64_t txg)
+arc_tempreserve_space(spa_t *spa, uint64_t reserve, uint64_t txg)
 {
 	int error;
 	uint64_t anon_size;
@@ -6241,7 +7369,7 @@ arc_tempreserve_space(uint64_t reserve, uint64_t txg)
 	 * in order to compress/encrypt/etc the data.  We therefore need to
 	 * make sure that there is sufficient available memory for this.
 	 */
-	error = arc_memory_throttle(reserve, txg);
+	error = arc_memory_throttle(spa, reserve, txg);
 	if (error != 0)
 		return (error);
 
@@ -6249,14 +7377,26 @@ arc_tempreserve_space(uint64_t reserve, uint64_t txg)
 	 * Throttle writes when the amount of dirty data in the cache
 	 * gets too large.  We try to keep the cache less than half full
 	 * of dirty blocks so that our sync times don't grow too large.
+	 *
+	 * In the case of one pool being built on another pool, we want
+	 * to make sure we don't end up throttling the lower (backing)
+	 * pool when the upper pool is the majority contributor to dirty
+	 * data. To insure we make forward progress during throttling, we
+	 * also check the current pool's net dirty data and only throttle
+	 * if it exceeds zfs_arc_pool_dirty_percent of the anonymous dirty
+	 * data in the cache.
+	 *
 	 * Note: if two requests come in concurrently, we might let them
 	 * both succeed, when one of them should fail.  Not a huge deal.
 	 */
+	uint64_t total_dirty = reserve + arc_tempreserve + anon_size;
+	uint64_t spa_dirty_anon = spa_dirty_data(spa);
 
-	if (reserve + arc_tempreserve + anon_size > arc_c / 2 &&
-	    anon_size > arc_c / 4) {
-		uint64_t meta_esize =
-		    zfs_refcount_count(
+	if (total_dirty > arc_c * zfs_arc_dirty_limit_percent / 100 &&
+	    anon_size > arc_c * zfs_arc_anon_limit_percent / 100 &&
+	    spa_dirty_anon > anon_size * zfs_arc_pool_dirty_percent / 100) {
+#ifdef ZFS_DEBUG
+		uint64_t meta_esize = zfs_refcount_count(
 		    &arc_anon->arcs_esize[ARC_BUFC_METADATA]);
 		uint64_t data_esize =
 		    zfs_refcount_count(&arc_anon->arcs_esize[ARC_BUFC_DATA]);
@@ -6264,6 +7404,7 @@ arc_tempreserve_space(uint64_t reserve, uint64_t txg)
 		    "anon_data=%lluK tempreserve=%lluK arc_c=%lluK\n",
 		    arc_tempreserve >> 10, meta_esize >> 10,
 		    data_esize >> 10, reserve >> 10, arc_c >> 10);
+#endif
 		DMU_TX_STAT_BUMP(dmu_tx_dirty_throttle);
 		return (SET_ERROR(ERESTART));
 	}
@@ -6288,7 +7429,7 @@ arc_kstat_update(kstat_t *ksp, int rw)
 	arc_stats_t *as = ksp->ks_data;
 
 	if (rw == KSTAT_WRITE) {
-		return (EACCES);
+		return (SET_ERROR(EACCES));
 	} else {
 		arc_kstat_update_state(arc_anon,
 		    &as->arcstat_anon_size,
@@ -6310,6 +7451,17 @@ arc_kstat_update(kstat_t *ksp, int rw)
 		    &as->arcstat_mfu_ghost_size,
 		    &as->arcstat_mfu_ghost_evictable_data,
 		    &as->arcstat_mfu_ghost_evictable_metadata);
+
+		ARCSTAT(arcstat_size) = aggsum_value(&arc_size);
+		ARCSTAT(arcstat_meta_used) = aggsum_value(&arc_meta_used);
+		ARCSTAT(arcstat_data_size) = aggsum_value(&astat_data_size);
+		ARCSTAT(arcstat_metadata_size) =
+		    aggsum_value(&astat_metadata_size);
+		ARCSTAT(arcstat_hdr_size) = aggsum_value(&astat_hdr_size);
+		ARCSTAT(arcstat_l2_hdr_size) = aggsum_value(&astat_l2_hdr_size);
+		ARCSTAT(arcstat_dbuf_size) = aggsum_value(&astat_dbuf_size);
+		ARCSTAT(arcstat_dnode_size) = aggsum_value(&astat_dnode_size);
+		ARCSTAT(arcstat_bonus_size) = aggsum_value(&astat_bonus_size);
 
 		as->arcstat_memory_all_bytes.value.ui64 =
 		    arc_all_memory();
@@ -6430,9 +7582,15 @@ arc_tuning_update(void)
 	if (zfs_arc_p_min_shift)
 		arc_p_min_shift = zfs_arc_p_min_shift;
 
-	/* Valid range: 1 - N ticks */
-	if (zfs_arc_min_prefetch_lifespan)
-		arc_min_prefetch_lifespan = zfs_arc_min_prefetch_lifespan;
+	/* Valid range: 1 - N ms */
+	if (zfs_arc_min_prefetch_ms)
+		arc_min_prefetch_ms = zfs_arc_min_prefetch_ms;
+
+	/* Valid range: 1 - N ms */
+	if (zfs_arc_min_prescient_prefetch_ms) {
+		arc_min_prescient_prefetch_ms =
+		    zfs_arc_min_prescient_prefetch_ms;
+	}
 
 	/* Valid range: 0 - 100 */
 	if ((zfs_arc_lotsfree_percent >= 0) &&
@@ -6516,6 +7674,16 @@ arc_state_init(void)
 	zfs_refcount_create(&arc_mfu_ghost->arcs_size);
 	zfs_refcount_create(&arc_l2c_only->arcs_size);
 
+	aggsum_init(&arc_meta_used, 0);
+	aggsum_init(&arc_size, 0);
+	aggsum_init(&astat_data_size, 0);
+	aggsum_init(&astat_metadata_size, 0);
+	aggsum_init(&astat_hdr_size, 0);
+	aggsum_init(&astat_l2_hdr_size, 0);
+	aggsum_init(&astat_bonus_size, 0);
+	aggsum_init(&astat_dnode_size, 0);
+	aggsum_init(&astat_dbuf_size, 0);
+
 	arc_anon->arcs_state = ARC_STATE_ANON;
 	arc_mru->arcs_state = ARC_STATE_MRU;
 	arc_mru_ghost->arcs_state = ARC_STATE_MRU_GHOST;
@@ -6557,6 +7725,16 @@ arc_state_fini(void)
 	multilist_destroy(arc_mfu_ghost->arcs_list[ARC_BUFC_DATA]);
 	multilist_destroy(arc_l2c_only->arcs_list[ARC_BUFC_METADATA]);
 	multilist_destroy(arc_l2c_only->arcs_list[ARC_BUFC_DATA]);
+
+	aggsum_fini(&arc_meta_used);
+	aggsum_fini(&arc_size);
+	aggsum_fini(&astat_data_size);
+	aggsum_fini(&astat_metadata_size);
+	aggsum_fini(&astat_hdr_size);
+	aggsum_fini(&astat_l2_hdr_size);
+	aggsum_fini(&astat_bonus_size);
+	aggsum_fini(&astat_dnode_size);
+	aggsum_fini(&astat_dbuf_size);
 }
 
 uint64_t
@@ -6569,13 +7747,11 @@ void
 arc_init(void)
 {
 	uint64_t percent, allmem = arc_all_memory();
+	mutex_init(&arc_adjust_lock, NULL, MUTEX_DEFAULT, NULL);
+	cv_init(&arc_adjust_waiters_cv, NULL, CV_DEFAULT, NULL);
 
-	mutex_init(&arc_reclaim_lock, NULL, MUTEX_DEFAULT, NULL);
-	cv_init(&arc_reclaim_thread_cv, NULL, CV_DEFAULT, NULL);
-	cv_init(&arc_reclaim_waiters_cv, NULL, CV_DEFAULT, NULL);
-
-	/* Convert seconds to clock ticks */
-	arc_min_prefetch_lifespan = 1 * hz;
+	arc_min_prefetch_ms = 1000;
+	arc_min_prescient_prefetch_ms = 6000;
 
 #ifdef _KERNEL
 	/*
@@ -6608,7 +7784,6 @@ arc_init(void)
 
 	arc_c = arc_c_max;
 	arc_p = (arc_c >> 1);
-	arc_size = 0;
 
 	/* Set min to 1/2 of arc_c_min */
 	arc_meta_min = 1ULL << SPA_MAXBLOCKSHIFT;
@@ -6633,6 +7808,13 @@ arc_init(void)
 		arc_c = arc_c_min;
 
 	arc_state_init();
+
+	/*
+	 * The arc must be "uninitialized", so that hdr_recl() (which is
+	 * registered by buf_init()) will not access arc_reap_zthr before
+	 * it is created.
+	 */
+	ASSERT(!arc_initialized);
 	buf_init();
 
 	list_create(&arc_prune_list, sizeof (arc_prune_t),
@@ -6641,8 +7823,6 @@ arc_init(void)
 
 	arc_prune_taskq = taskq_create("arc_prune", max_ncpus, defclsyspri,
 	    max_ncpus, INT_MAX, TASKQ_PREPOPULATE | TASKQ_DYNAMIC);
-
-	arc_reclaim_thread_exit = B_FALSE;
 
 	arc_ksp = kstat_create("zfs", 0, "arcstats", "misc", KSTAT_TYPE_NAMED,
 	    sizeof (arc_stats) / sizeof (kstat_named_t), KSTAT_FLAG_VIRTUAL);
@@ -6653,10 +7833,12 @@ arc_init(void)
 		kstat_install(arc_ksp);
 	}
 
-	(void) thread_create(NULL, 0, arc_reclaim_thread, NULL, 0, &p0,
-	    TS_RUN, defclsyspri);
+	arc_adjust_zthr = zthr_create(arc_adjust_cb_check,
+	    arc_adjust_cb, NULL);
+	arc_reap_zthr = zthr_create_timer(arc_reap_cb_check,
+	    arc_reap_cb, NULL, SEC2NSEC(1));
 
-	arc_dead = B_FALSE;
+	arc_initialized = B_TRUE;
 	arc_warm = B_FALSE;
 
 	/*
@@ -6688,22 +7870,10 @@ arc_fini(void)
 	spl_unregister_shrinker(&arc_shrinker);
 #endif /* _KERNEL */
 
-	mutex_enter(&arc_reclaim_lock);
-	arc_reclaim_thread_exit = B_TRUE;
-	/*
-	 * The reclaim thread will set arc_reclaim_thread_exit back to
-	 * B_FALSE when it is finished exiting; we're waiting for that.
-	 */
-	while (arc_reclaim_thread_exit) {
-		cv_signal(&arc_reclaim_thread_cv);
-		cv_wait(&arc_reclaim_thread_cv, &arc_reclaim_lock);
-	}
-	mutex_exit(&arc_reclaim_lock);
-
 	/* Use B_TRUE to ensure *all* buffers are evicted */
 	arc_flush(NULL, B_TRUE);
 
-	arc_dead = B_TRUE;
+	arc_initialized = B_FALSE;
 
 	if (arc_ksp != NULL) {
 		kstat_delete(arc_ksp);
@@ -6724,12 +7894,22 @@ arc_fini(void)
 
 	list_destroy(&arc_prune_list);
 	mutex_destroy(&arc_prune_mtx);
-	mutex_destroy(&arc_reclaim_lock);
-	cv_destroy(&arc_reclaim_thread_cv);
-	cv_destroy(&arc_reclaim_waiters_cv);
+	(void) zthr_cancel(arc_adjust_zthr);
+	zthr_destroy(arc_adjust_zthr);
 
-	arc_state_fini();
+	(void) zthr_cancel(arc_reap_zthr);
+	zthr_destroy(arc_reap_zthr);
+
+	mutex_destroy(&arc_adjust_lock);
+	cv_destroy(&arc_adjust_waiters_cv);
+
+	/*
+	 * buf_fini() must proceed arc_state_fini() because buf_fin() may
+	 * trigger the release of kmem magazines, which can callback to
+	 * arc_space_return() which accesses aggsums freed in act_state_fini().
+	 */
 	buf_fini();
+	arc_state_fini();
 
 	ASSERT0(arc_loaned_bytes);
 }
@@ -7146,6 +8326,96 @@ top:
 	kmem_free(cb, sizeof (l2arc_write_callback_t));
 }
 
+static int
+l2arc_untransform(zio_t *zio, l2arc_read_callback_t *cb)
+{
+	int ret;
+	spa_t *spa = zio->io_spa;
+	arc_buf_hdr_t *hdr = cb->l2rcb_hdr;
+	blkptr_t *bp = zio->io_bp;
+	uint8_t salt[ZIO_DATA_SALT_LEN];
+	uint8_t iv[ZIO_DATA_IV_LEN];
+	uint8_t mac[ZIO_DATA_MAC_LEN];
+	boolean_t no_crypt = B_FALSE;
+
+	/*
+	 * ZIL data is never be written to the L2ARC, so we don't need
+	 * special handling for its unique MAC storage.
+	 */
+	ASSERT3U(BP_GET_TYPE(bp), !=, DMU_OT_INTENT_LOG);
+	ASSERT(MUTEX_HELD(HDR_LOCK(hdr)));
+	ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
+
+	/*
+	 * If the data was encrypted, decrypt it now. Note that
+	 * we must check the bp here and not the hdr, since the
+	 * hdr does not have its encryption parameters updated
+	 * until arc_read_done().
+	 */
+	if (BP_IS_ENCRYPTED(bp)) {
+		abd_t *eabd = arc_get_data_abd(hdr, arc_hdr_size(hdr), hdr);
+
+		zio_crypt_decode_params_bp(bp, salt, iv);
+		zio_crypt_decode_mac_bp(bp, mac);
+
+		ret = spa_do_crypt_abd(B_FALSE, spa, &cb->l2rcb_zb,
+		    BP_GET_TYPE(bp), BP_GET_DEDUP(bp), BP_SHOULD_BYTESWAP(bp),
+		    salt, iv, mac, HDR_GET_PSIZE(hdr), eabd,
+		    hdr->b_l1hdr.b_pabd, &no_crypt);
+		if (ret != 0) {
+			arc_free_data_abd(hdr, eabd, arc_hdr_size(hdr), hdr);
+			goto error;
+		}
+
+		/*
+		 * If we actually performed decryption, replace b_pabd
+		 * with the decrypted data. Otherwise we can just throw
+		 * our decryption buffer away.
+		 */
+		if (!no_crypt) {
+			arc_free_data_abd(hdr, hdr->b_l1hdr.b_pabd,
+			    arc_hdr_size(hdr), hdr);
+			hdr->b_l1hdr.b_pabd = eabd;
+			zio->io_abd = eabd;
+		} else {
+			arc_free_data_abd(hdr, eabd, arc_hdr_size(hdr), hdr);
+		}
+	}
+
+	/*
+	 * If the L2ARC block was compressed, but ARC compression
+	 * is disabled we decompress the data into a new buffer and
+	 * replace the existing data.
+	 */
+	if (HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF &&
+	    !HDR_COMPRESSION_ENABLED(hdr)) {
+		abd_t *cabd = arc_get_data_abd(hdr, arc_hdr_size(hdr), hdr);
+		void *tmp = abd_borrow_buf(cabd, arc_hdr_size(hdr));
+
+		ret = zio_decompress_data(HDR_GET_COMPRESS(hdr),
+		    hdr->b_l1hdr.b_pabd, tmp, HDR_GET_PSIZE(hdr),
+		    HDR_GET_LSIZE(hdr));
+		if (ret != 0) {
+			abd_return_buf_copy(cabd, tmp, arc_hdr_size(hdr));
+			arc_free_data_abd(hdr, cabd, arc_hdr_size(hdr), hdr);
+			goto error;
+		}
+
+		abd_return_buf_copy(cabd, tmp, arc_hdr_size(hdr));
+		arc_free_data_abd(hdr, hdr->b_l1hdr.b_pabd,
+		    arc_hdr_size(hdr), hdr);
+		hdr->b_l1hdr.b_pabd = cabd;
+		zio->io_abd = cabd;
+		zio->io_size = HDR_GET_LSIZE(hdr);
+	}
+
+	return (0);
+
+error:
+	return (ret);
+}
+
+
 /*
  * A read to a cache device completed.  Validate buffer contents before
  * handing over to the regular ARC routines.
@@ -7153,17 +8423,19 @@ top:
 static void
 l2arc_read_done(zio_t *zio)
 {
-	l2arc_read_callback_t *cb;
+	int tfm_error = 0;
+	l2arc_read_callback_t *cb = zio->io_private;
 	arc_buf_hdr_t *hdr;
 	kmutex_t *hash_lock;
 	boolean_t valid_cksum;
+	boolean_t using_rdata = (BP_IS_ENCRYPTED(&cb->l2rcb_bp) &&
+	    (cb->l2rcb_flags & ZIO_FLAG_RAW_ENCRYPT));
 
 	ASSERT3P(zio->io_vd, !=, NULL);
 	ASSERT(zio->io_flags & ZIO_FLAG_DONT_PROPAGATE);
 
 	spa_config_exit(zio->io_spa, SCL_L2ARC, zio->io_vd);
 
-	cb = zio->io_private;
 	ASSERT3P(cb, !=, NULL);
 	hdr = cb->l2rcb_hdr;
 	ASSERT3P(hdr, !=, NULL);
@@ -7179,8 +8451,13 @@ l2arc_read_done(zio_t *zio)
 	if (cb->l2rcb_abd != NULL) {
 		ASSERT3U(arc_hdr_size(hdr), <, zio->io_size);
 		if (zio->io_error == 0) {
-			abd_copy(hdr->b_l1hdr.b_pabd, cb->l2rcb_abd,
-			    arc_hdr_size(hdr));
+			if (using_rdata) {
+				abd_copy(hdr->b_crypt_hdr.b_rabd,
+				    cb->l2rcb_abd, arc_hdr_size(hdr));
+			} else {
+				abd_copy(hdr->b_l1hdr.b_pabd,
+				    cb->l2rcb_abd, arc_hdr_size(hdr));
+			}
 		}
 
 		/*
@@ -7196,7 +8473,15 @@ l2arc_read_done(zio_t *zio)
 		 */
 		abd_free(cb->l2rcb_abd);
 		zio->io_size = zio->io_orig_size = arc_hdr_size(hdr);
-		zio->io_abd = zio->io_orig_abd = hdr->b_l1hdr.b_pabd;
+
+		if (using_rdata) {
+			ASSERT(HDR_HAS_RABD(hdr));
+			zio->io_abd = zio->io_orig_abd =
+			    hdr->b_crypt_hdr.b_rabd;
+		} else {
+			ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
+			zio->io_abd = zio->io_orig_abd = hdr->b_l1hdr.b_pabd;
+		}
 	}
 
 	ASSERT3P(zio->io_abd, !=, NULL);
@@ -7204,12 +8489,23 @@ l2arc_read_done(zio_t *zio)
 	/*
 	 * Check this survived the L2ARC journey.
 	 */
-	ASSERT3P(zio->io_abd, ==, hdr->b_l1hdr.b_pabd);
+	ASSERT(zio->io_abd == hdr->b_l1hdr.b_pabd ||
+	    (HDR_HAS_RABD(hdr) && zio->io_abd == hdr->b_crypt_hdr.b_rabd));
 	zio->io_bp_copy = cb->l2rcb_bp;	/* XXX fix in L2ARC 2.0	*/
 	zio->io_bp = &zio->io_bp_copy;	/* XXX fix in L2ARC 2.0	*/
 
 	valid_cksum = arc_cksum_is_equal(hdr, zio);
-	if (valid_cksum && zio->io_error == 0 && !HDR_L2_EVICTED(hdr)) {
+
+	/*
+	 * b_rabd will always match the data as it exists on disk if it is
+	 * being used. Therefore if we are reading into b_rabd we do not
+	 * attempt to untransform the data.
+	 */
+	if (valid_cksum && !using_rdata)
+		tfm_error = l2arc_untransform(zio, cb);
+
+	if (valid_cksum && tfm_error == 0 && zio->io_error == 0 &&
+	    !HDR_L2_EVICTED(hdr)) {
 		mutex_exit(hash_lock);
 		zio->io_private = hdr;
 		arc_read_done(zio);
@@ -7224,7 +8520,7 @@ l2arc_read_done(zio_t *zio)
 		} else {
 			zio->io_error = SET_ERROR(EIO);
 		}
-		if (!valid_cksum)
+		if (!valid_cksum || tfm_error != 0)
 			ARCSTAT_BUMP(arcstat_l2_cksum_bad);
 
 		/*
@@ -7234,11 +8530,13 @@ l2arc_read_done(zio_t *zio)
 		 */
 		if (zio->io_waiter == NULL) {
 			zio_t *pio = zio_unique_parent(zio);
+			void *abd = (using_rdata) ?
+			    hdr->b_crypt_hdr.b_rabd : hdr->b_l1hdr.b_pabd;
 
 			ASSERT(!pio || pio->io_child_type == ZIO_CHILD_LOGICAL);
 
 			zio_nowait(zio_read(pio, zio->io_spa, zio->io_bp,
-			    hdr->b_l1hdr.b_pabd, zio->io_size, arc_read_done,
+			    abd, zio->io_size, arc_read_done,
 			    hdr, zio->io_priority, cb->l2rcb_flags,
 			    &cb->l2rcb_zb));
 		}
@@ -7351,18 +8649,16 @@ top:
 			goto top;
 		}
 
-		if (HDR_L2_WRITE_HEAD(hdr)) {
-			/*
-			 * We hit a write head node.  Leave it for
-			 * l2arc_write_done().
-			 */
-			list_remove(buflist, hdr);
-			mutex_exit(hash_lock);
-			continue;
-		}
+		/*
+		 * A header can't be on this list if it doesn't have L2 header.
+		 */
+		ASSERT(HDR_HAS_L2HDR(hdr));
 
-		if (!all && HDR_HAS_L2HDR(hdr) &&
-		    (hdr->b_l2hdr.b_daddr > taddr ||
+		/* Ensure this header has finished being written. */
+		ASSERT(!HDR_L2_WRITING(hdr));
+		ASSERT(!HDR_L2_WRITE_HEAD(hdr));
+
+		if (!all && (hdr->b_l2hdr.b_daddr >= taddr ||
 		    hdr->b_l2hdr.b_daddr < dev->l2ad_hand)) {
 			/*
 			 * We've evicted to the target address,
@@ -7372,7 +8668,6 @@ top:
 			break;
 		}
 
-		ASSERT(HDR_HAS_L2HDR(hdr));
 		if (!HDR_HAS_L1HDR(hdr)) {
 			ASSERT(!HDR_L2_READING(hdr));
 			/*
@@ -7395,14 +8690,128 @@ top:
 				arc_hdr_set_flags(hdr, ARC_FLAG_L2_EVICTED);
 			}
 
-			/* Ensure this header has finished being written */
-			ASSERT(!HDR_L2_WRITING(hdr));
-
 			arc_hdr_l2hdr_destroy(hdr);
 		}
 		mutex_exit(hash_lock);
 	}
 	mutex_exit(&dev->l2ad_mtx);
+}
+
+/*
+ * Handle any abd transforms that might be required for writing to the L2ARC.
+ * If successful, this function will always return an abd with the data
+ * transformed as it is on disk in a new abd of asize bytes.
+ */
+static int
+l2arc_apply_transforms(spa_t *spa, arc_buf_hdr_t *hdr, uint64_t asize,
+    abd_t **abd_out)
+{
+	int ret;
+	void *tmp = NULL;
+	abd_t *cabd = NULL, *eabd = NULL, *to_write = hdr->b_l1hdr.b_pabd;
+	enum zio_compress compress = HDR_GET_COMPRESS(hdr);
+	uint64_t psize = HDR_GET_PSIZE(hdr);
+	uint64_t size = arc_hdr_size(hdr);
+	boolean_t ismd = HDR_ISTYPE_METADATA(hdr);
+	boolean_t bswap = (hdr->b_l1hdr.b_byteswap != DMU_BSWAP_NUMFUNCS);
+	dsl_crypto_key_t *dck = NULL;
+	uint8_t mac[ZIO_DATA_MAC_LEN] = { 0 };
+	boolean_t no_crypt = B_FALSE;
+
+	ASSERT((HDR_GET_COMPRESS(hdr) != ZIO_COMPRESS_OFF &&
+	    !HDR_COMPRESSION_ENABLED(hdr)) ||
+	    HDR_ENCRYPTED(hdr) || HDR_SHARED_DATA(hdr) || psize != asize);
+	ASSERT3U(psize, <=, asize);
+
+	/*
+	 * If this data simply needs its own buffer, we simply allocate it
+	 * and copy the data. This may be done to elimiate a depedency on a
+	 * shared buffer or to reallocate the buffer to match asize.
+	 */
+	if (HDR_HAS_RABD(hdr) && asize != psize) {
+		ASSERT3U(asize, >=, psize);
+		to_write = abd_alloc_for_io(asize, ismd);
+		abd_copy(to_write, hdr->b_crypt_hdr.b_rabd, psize);
+		if (psize != asize)
+			abd_zero_off(to_write, psize, asize - psize);
+		goto out;
+	}
+
+	if ((compress == ZIO_COMPRESS_OFF || HDR_COMPRESSION_ENABLED(hdr)) &&
+	    !HDR_ENCRYPTED(hdr)) {
+		ASSERT3U(size, ==, psize);
+		to_write = abd_alloc_for_io(asize, ismd);
+		abd_copy(to_write, hdr->b_l1hdr.b_pabd, size);
+		if (size != asize)
+			abd_zero_off(to_write, size, asize - size);
+		goto out;
+	}
+
+	if (compress != ZIO_COMPRESS_OFF && !HDR_COMPRESSION_ENABLED(hdr)) {
+		cabd = abd_alloc_for_io(asize, ismd);
+		tmp = abd_borrow_buf(cabd, asize);
+
+		psize = zio_compress_data(compress, to_write, tmp, size);
+		ASSERT3U(psize, <=, HDR_GET_PSIZE(hdr));
+		if (psize < asize)
+			bzero((char *)tmp + psize, asize - psize);
+		psize = HDR_GET_PSIZE(hdr);
+		abd_return_buf_copy(cabd, tmp, asize);
+		to_write = cabd;
+	}
+
+	if (HDR_ENCRYPTED(hdr)) {
+		eabd = abd_alloc_for_io(asize, ismd);
+
+		/*
+		 * If the dataset was disowned before the buffer
+		 * made it to this point, the key to re-encrypt
+		 * it won't be available. In this case we simply
+		 * won't write the buffer to the L2ARC.
+		 */
+		ret = spa_keystore_lookup_key(spa, hdr->b_crypt_hdr.b_dsobj,
+		    FTAG, &dck);
+		if (ret != 0)
+			goto error;
+
+		ret = zio_do_crypt_abd(B_TRUE, &dck->dck_key,
+		    hdr->b_crypt_hdr.b_ot, bswap, hdr->b_crypt_hdr.b_salt,
+		    hdr->b_crypt_hdr.b_iv, mac, psize, to_write, eabd,
+		    &no_crypt);
+		if (ret != 0)
+			goto error;
+
+		if (no_crypt)
+			abd_copy(eabd, to_write, psize);
+
+		if (psize != asize)
+			abd_zero_off(eabd, psize, asize - psize);
+
+		/* assert that the MAC we got here matches the one we saved */
+		ASSERT0(bcmp(mac, hdr->b_crypt_hdr.b_mac, ZIO_DATA_MAC_LEN));
+		spa_keystore_dsl_key_rele(spa, dck, FTAG);
+
+		if (to_write == cabd)
+			abd_free(cabd);
+
+		to_write = eabd;
+	}
+
+out:
+	ASSERT3P(to_write, !=, hdr->b_l1hdr.b_pabd);
+	*abd_out = to_write;
+	return (0);
+
+error:
+	if (dck != NULL)
+		spa_keystore_dsl_key_rele(spa, dck, FTAG);
+	if (cabd != NULL)
+		abd_free(cabd);
+	if (eabd != NULL)
+		abd_free(eabd);
+
+	*abd_out = NULL;
+	return (ret);
 }
 
 /*
@@ -7425,7 +8834,6 @@ l2arc_write_buffers(spa_t *spa, l2arc_dev_t *dev, uint64_t target_sz)
 	l2arc_write_callback_t *cb;
 	zio_t *pio, *wzio;
 	uint64_t guid = spa_load_guid(spa);
-	int try;
 
 	ASSERT3P(dev->l2ad_vdev, !=, NULL);
 
@@ -7438,7 +8846,7 @@ l2arc_write_buffers(spa_t *spa, l2arc_dev_t *dev, uint64_t target_sz)
 	/*
 	 * Copy buffers for L2ARC writing.
 	 */
-	for (try = 0; try < L2ARC_FEED_TYPES; try++) {
+	for (int try = 0; try < L2ARC_FEED_TYPES; try++) {
 		multilist_sublist_t *mls = l2arc_sublist_lock(try);
 		uint64_t passed_sz = 0;
 
@@ -7461,6 +8869,7 @@ l2arc_write_buffers(spa_t *spa, l2arc_dev_t *dev, uint64_t target_sz)
 
 		for (; hdr; hdr = hdr_prev) {
 			kmutex_t *hash_lock;
+			abd_t *to_write = NULL;
 
 			if (arc_warm == B_FALSE)
 				hdr_prev = multilist_sublist_next(mls, hdr);
@@ -7498,9 +8907,10 @@ l2arc_write_buffers(spa_t *spa, l2arc_dev_t *dev, uint64_t target_sz)
 			ASSERT(HDR_HAS_L1HDR(hdr));
 
 			ASSERT3U(HDR_GET_PSIZE(hdr), >, 0);
-			ASSERT3P(hdr->b_l1hdr.b_pabd, !=, NULL);
 			ASSERT3U(arc_hdr_size(hdr), >, 0);
-			uint64_t psize = arc_hdr_size(hdr);
+			ASSERT(hdr->b_l1hdr.b_pabd != NULL ||
+			    HDR_HAS_RABD(hdr));
+			uint64_t psize = HDR_GET_PSIZE(hdr);
 			uint64_t asize = vdev_psize_to_asize(dev->l2ad_vdev,
 			    psize);
 
@@ -7508,6 +8918,57 @@ l2arc_write_buffers(spa_t *spa, l2arc_dev_t *dev, uint64_t target_sz)
 				full = B_TRUE;
 				mutex_exit(hash_lock);
 				break;
+			}
+
+			/*
+			 * We rely on the L1 portion of the header below, so
+			 * it's invalid for this header to have been evicted out
+			 * of the ghost cache, prior to being written out. The
+			 * ARC_FLAG_L2_WRITING bit ensures this won't happen.
+			 */
+			arc_hdr_set_flags(hdr, ARC_FLAG_L2_WRITING);
+			ASSERT(HDR_HAS_L1HDR(hdr));
+
+			ASSERT3U(HDR_GET_PSIZE(hdr), >, 0);
+			ASSERT(hdr->b_l1hdr.b_pabd != NULL ||
+			    HDR_HAS_RABD(hdr));
+			ASSERT3U(arc_hdr_size(hdr), >, 0);
+
+			/*
+			 * If this header has b_rabd, we can use this since it
+			 * must always match the data exactly as it exists on
+			 * disk. Otherwise, the L2ARC can  normally use the
+			 * hdr's data, but if we're sharing data between the
+			 * hdr and one of its bufs, L2ARC needs its own copy of
+			 * the data so that the ZIO below can't race with the
+			 * buf consumer. To ensure that this copy will be
+			 * available for the lifetime of the ZIO and be cleaned
+			 * up afterwards, we add it to the l2arc_free_on_write
+			 * queue. If we need to apply any transforms to the
+			 * data (compression, encryption) we will also need the
+			 * extra buffer.
+			 */
+			if (HDR_HAS_RABD(hdr) && psize == asize) {
+				to_write = hdr->b_crypt_hdr.b_rabd;
+			} else if ((HDR_COMPRESSION_ENABLED(hdr) ||
+			    HDR_GET_COMPRESS(hdr) == ZIO_COMPRESS_OFF) &&
+			    !HDR_ENCRYPTED(hdr) && !HDR_SHARED_DATA(hdr) &&
+			    psize == asize) {
+				to_write = hdr->b_l1hdr.b_pabd;
+			} else {
+				int ret;
+				arc_buf_contents_t type = arc_buf_type(hdr);
+
+				ret = l2arc_apply_transforms(spa, hdr, asize,
+				    &to_write);
+				if (ret != 0) {
+					arc_hdr_clear_flags(hdr,
+					    ARC_FLAG_L2_WRITING);
+					mutex_exit(hash_lock);
+					continue;
+				}
+
+				l2arc_free_abd_on_write(to_write, asize, type);
 			}
 
 			if (pio == NULL) {
@@ -7532,44 +8993,15 @@ l2arc_write_buffers(spa_t *spa, l2arc_dev_t *dev, uint64_t target_sz)
 			hdr->b_l2hdr.b_hits = 0;
 
 			hdr->b_l2hdr.b_daddr = dev->l2ad_hand;
-			arc_hdr_set_flags(hdr,
-			    ARC_FLAG_L2_WRITING | ARC_FLAG_HAS_L2HDR);
+			arc_hdr_set_flags(hdr, ARC_FLAG_HAS_L2HDR);
 
 			mutex_enter(&dev->l2ad_mtx);
 			list_insert_head(&dev->l2ad_buflist, hdr);
 			mutex_exit(&dev->l2ad_mtx);
 
-			(void) zfs_refcount_add_many(&dev->l2ad_alloc, psize,
-			    hdr);
+			(void) zfs_refcount_add_many(&dev->l2ad_alloc,
+			    arc_hdr_size(hdr), hdr);
 
-			/*
-			 * Normally the L2ARC can use the hdr's data, but if
-			 * we're sharing data between the hdr and one of its
-			 * bufs, L2ARC needs its own copy of the data so that
-			 * the ZIO below can't race with the buf consumer.
-			 * Another case where we need to create a copy of the
-			 * data is when the buffer size is not device-aligned
-			 * and we need to pad the block to make it such.
-			 * That also keeps the clock hand suitably aligned.
-			 *
-			 * To ensure that the copy will be available for the
-			 * lifetime of the ZIO and be cleaned up afterwards, we
-			 * add it to the l2arc_free_on_write queue.
-			 */
-			abd_t *to_write;
-			if (!HDR_SHARED_DATA(hdr) && psize == asize) {
-				to_write = hdr->b_l1hdr.b_pabd;
-			} else {
-				to_write = abd_alloc_for_io(asize,
-				    HDR_ISTYPE_METADATA(hdr));
-				abd_copy(to_write, hdr->b_l1hdr.b_pabd, psize);
-				if (asize != psize) {
-					abd_zero_off(to_write, psize,
-					    asize - psize);
-				}
-				l2arc_free_abd_on_write(to_write, asize,
-				    arc_buf_type(hdr));
-			}
 			wzio = zio_write_phys(pio, dev->l2ad_vdev,
 			    hdr->b_l2hdr.b_daddr, asize, to_write,
 			    ZIO_CHECKSUM_OFF, NULL, hdr,
@@ -7630,8 +9062,9 @@ l2arc_write_buffers(spa_t *spa, l2arc_dev_t *dev, uint64_t target_sz)
  * This thread feeds the L2ARC at regular intervals.  This is the beating
  * heart of the L2ARC.
  */
+/* ARGSUSED */
 static void
-l2arc_feed_thread(void)
+l2arc_feed_thread(void *unused)
 {
 	callb_cpr_t cpr;
 	l2arc_dev_t *dev;
@@ -7890,7 +9323,7 @@ l2arc_stop(void)
 	mutex_exit(&l2arc_feed_thr_lock);
 }
 
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 EXPORT_SYMBOL(arc_buf_size);
 EXPORT_SYMBOL(arc_write);
 EXPORT_SYMBOL(arc_read);
@@ -7948,8 +9381,12 @@ MODULE_PARM_DESC(zfs_arc_average_blocksize, "Target average block size");
 module_param(zfs_compressed_arc_enabled, int, 0644);
 MODULE_PARM_DESC(zfs_compressed_arc_enabled, "Disable compressed arc buffers");
 
-module_param(zfs_arc_min_prefetch_lifespan, int, 0644);
-MODULE_PARM_DESC(zfs_arc_min_prefetch_lifespan, "Min life of prefetch block");
+module_param(zfs_arc_min_prefetch_ms, int, 0644);
+MODULE_PARM_DESC(zfs_arc_min_prefetch_ms, "Min life of prefetch block in ms");
+
+module_param(zfs_arc_min_prescient_prefetch_ms, int, 0644);
+MODULE_PARM_DESC(zfs_arc_min_prescient_prefetch_ms,
+	"Min life of prescient prefetched block in ms");
 
 module_param(l2arc_write_max, ulong, 0644);
 MODULE_PARM_DESC(l2arc_write_max, "Max write bytes per interval");
