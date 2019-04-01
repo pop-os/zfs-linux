@@ -19,7 +19,7 @@ Build-Depends: debhelper-compat (= 10),
                python3-cffi,
                python3-setuptools,
                python3-sphinx,
-               python3,
+               python3-all-dev,
                uuid-dev,
                zlib1g-dev
 Standards-Version: 4.3.0
