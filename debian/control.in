@@ -105,7 +105,7 @@ Depends: ${misc:Depends},
          ${python3:Depends},
          python3-cffi,
          zfsutils-linux (= ${binary:Version})
-Description: A wrapper for libzfs_core C library
+Description: wrapper for libzfs_core C library
  libzfs_core is intended to be a stable interface for programmatic
  administration of ZFS. This wrapper provides one-to-one wrappers for
  libzfs_core API functions, but the signatures and types are more natural to
@@ -127,7 +127,7 @@ Depends:
  ${misc:Depends}
 Recommends:
  python3-pyzfs
-Description: A wrapper for libzfs_core C library (documentation)
+Description: wrapper for libzfs_core C library (documentation)
  libzfs_core is intended to be a stable interface for programmatic
  administration of ZFS. This wrapper provides one-to-one wrappers for
  libzfs_core API functions, but the signatures and types are more natural to
