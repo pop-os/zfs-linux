@@ -29,7 +29,7 @@ zfs-linux (0.8.0~rc3-1) UNRELEASED; urgency=medium
   * Override more false-positive lintian Errors for zfsutils-linux.
   * Drop zfs-dbg in favor of automatic -dbgsym packages.
   * Overhaul copyright for the 0.8.X release.
-  * Remove 24 backported patches that are already applied in current version:
+  * Remove 25 backported patches that are already applied in current version:
      - 2301-zfs-promote-rename-.-recv-should-be-an-error.patch
      - 2302-Fix-parsable-zfs-get-for-compressratios.patch
      - 2303-Fix-zpool-events-scripted-mode-tab-separator.patch
@@ -54,6 +54,7 @@ zfs-linux (0.8.0~rc3-1) UNRELEASED; urgency=medium
      - 2338-OpenZFS-8731-ASSERT3U-nui64s-UINT16_MAX-fails-for-la.patch
      - 2339-Prevent-zdb-8-from-occasionally-hanging-on-I-O.patch
      - 2341-Change-movaps-to-movups-in-AES-NI-code.patch
+     - 3203-Fix-zpool-create-t-tempname.patch
 
  -- Mo Zhou <cdluminate@gmail.com>  Mon, 04 Mar 2019 07:56:07 +0000
 
