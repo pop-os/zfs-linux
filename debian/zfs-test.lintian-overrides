@@ -1,2 +1,8 @@
-zfs-test: arch-dependent-file-in-usr-share
-zfs-test: wrong-path-for-interpreter usr/share/zfs/zfs-tests/tests/perf/regression/random_readwrite_fixed.ksh
+arch-dependent-file-in-usr-share
+wrong-path-for-interpreter usr/share/zfs/zfs-tests/tests/perf/regression/random_readwrite_fixed.ksh
+python-script-but-no-python-dep usr/share/zfs/test-runner/bin/test-runner.py
+script-not-executable usr/share/zfs/zfs-tests/tests/functional/cli_root/zpool_import/zpool_import.kshlib
+executable-not-elf-or-script usr/share/zfs/zfs-tests/tests/functional/cli_root/zpool_initialize/zpool_initialize.kshlib
+executable-not-elf-or-script usr/share/zfs/zfs-tests/tests/functional/alloc_class/alloc_class.kshlib
+executable-not-elf-or-script usr/share/zfs/zfs-tests/tests/functional/alloc_class/alloc_class.cfg
+executable-not-elf-or-script usr/share/zfs/zfs-tests/tests/functional/removal/removal.kshlib
