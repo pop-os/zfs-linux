@@ -5,7 +5,6 @@ zfs-linux (0.8.0~rc3-1) UNRELEASED; urgency=medium
   * Install systemd zfs-mount-generator
   * SPL is now included in upstream ZFS packaging.
     Build dummy spl and spl-dkms packages to ease upgrades.
-  * Track Debian version in module
   * Remove patches included upstream.
   * Refresh patches
   * Include new scsi example scripts
@@ -25,10 +24,13 @@ zfs-linux (0.8.0~rc3-1) UNRELEASED; urgency=medium
   * Remove duplicated "Priority" fields in control*.
   * Update short and long descriptions for dummy packages: spl, spl-dkms.
   * Let dummy packages depends on misc:Depends, to make lintian happy.
-  * Override false-postive lintian Error wrong-path-for-interpreter.
-  * Override more false-positive lintian Errors for zfsutils-linux.
+  * Update lintian overrides for zfsutils-linux, zfs-test and zfs-zed.
   * Drop zfs-dbg in favor of automatic -dbgsym packages.
   * Overhaul copyright for the 0.8.X release.
+  * Add 2 NEW autopkgtest cases which build modules and modules-udeb packages.
+  * Update control.modules.in and refresh the kernel module file list.
+  * Add missing Deps: file, python3-distutils for zfs-dkms.
+  * Upgrade debian/watch to uscan-version-4.
   * Remove 25 backported patches that are already applied in current version:
      - 2301-zfs-promote-rename-.-recv-should-be-an-error.patch
      - 2302-Fix-parsable-zfs-get-for-compressratios.patch
@@ -56,7 +58,7 @@ zfs-linux (0.8.0~rc3-1) UNRELEASED; urgency=medium
      - 2341-Change-movaps-to-movups-in-AES-NI-code.patch
      - 3203-Fix-zpool-create-t-tempname.patch
 
- -- Mo Zhou <cdluminate@gmail.com>  Mon, 01 Apr 2019 07:50:12 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Mon, 01 Apr 2019 13:52:19 +0000
 
 zfs-linux (0.7.13-1) unstable; urgency=medium
 
