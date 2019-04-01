@@ -8,14 +8,11 @@ if ! (echo "amd64 arm64 ppc64el s390x" | grep -o $DEB_HOST_ARCH); then
 	exit 0
 fi
 
-apt-get install spl-dkms --no-install-recommends -y
-
 # NOTE: zfs-dkms will pull zfsutils-linux if you enable apt to install
 # recommended packages. Systemd units of zfsutils-linux will cause
 # installation failure.
 apt-get install zfs-dkms --no-install-recommends -y
 
 for kver in $(ls /lib/modules); do
-dkms build spl/$zfsver -k $kver
 dkms build zfs/$zfsver -k $kver
 done
