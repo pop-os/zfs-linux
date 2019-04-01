@@ -146,6 +146,7 @@ Description: wrapper for libzfs_core C library (documentation)
 Package: zfs-dkms
 Architecture: all
 Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}, ${perl:Depends},
+ file, python3-distutils,
 Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), @LINUX_COMPAT@
 Breaks: spl-dkms (<< 0.8.0~rc1),
 Replaces: spl-dkms,
