@@ -5,19 +5,18 @@ zfs-linux (0.8.0~rc3-1) UNRELEASED; urgency=medium
   * Install systemd zfs-mount-generator
   * SPL is now included in upstream ZFS packaging.
     Build dummy spl and spl-dkms packages to ease upgrades.
-  * Remove patches included upstream.
-  * Refresh patches
-  * Include new scsi example scripts
-  * Use arc_summary3.py to provide arc_summary
-  * Reflect tests removed upstream
-  * Include zfs-program manual page
+    (Closes: #909153, #902165, #894609)
+  * Refresh remaining patches.
+  * Include new scsi example scripts.
+  * Use arc_summary3.py to provide arc_summary.
+  * Reflect tests removed upstream.
+  * Include zfs-program manual page.
   * Add ssl dependency.
-  * Track upstream python3 migration
-  * Build pyzfs python3 package
+  * Build and provide python3-pyzfs package.
   * Fix dh_strip build failure
 
   [ Mo Zhou ]
-  * New upstream version 0.8.0~rc3
+  * New upstream version 0.8.0~rc3 (Closes: #900862)
   * Use Linux-{Maximum,Minimum} META info to specify linux compatibility.
     Based on Antonio Russo <antonio.e.russo@gmail.com>'s patch.
   * Update the Homepage URL to use https format URL.
