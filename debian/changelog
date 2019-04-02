@@ -31,6 +31,8 @@ zfs-linux (0.8.0~rc3-1) UNRELEASED; urgency=medium
   * Update control.modules.in and refresh the kernel module file list.
   * Add missing Deps: file, python3-distutils for zfs-dkms.
   * Upgrade debian/watch to uscan-version-4.
+  * Autopkgtest: New smoke test: kernel-smoke-test-encryption
+  * Autopkgtest: New test case that runs ztest.
   * Remove 25 backported patches that are already applied in current version:
      - 2301-zfs-promote-rename-.-recv-should-be-an-error.patch
      - 2302-Fix-parsable-zfs-get-for-compressratios.patch
@@ -58,7 +60,7 @@ zfs-linux (0.8.0~rc3-1) UNRELEASED; urgency=medium
      - 2341-Change-movaps-to-movups-in-AES-NI-code.patch
      - 3203-Fix-zpool-create-t-tempname.patch
 
- -- Mo Zhou <cdluminate@gmail.com>  Mon, 01 Apr 2019 13:52:19 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Tue, 02 Apr 2019 06:23:24 +0000
 
 zfs-linux (0.7.13-1) unstable; urgency=medium
 
