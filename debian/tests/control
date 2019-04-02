@@ -1,4 +1,4 @@
-Tests: kernel-smoke-test
+Tests: kernel-smoke-test, kernel-ztest
 Restrictions: needs-root, isolation-machine
 Depends:
  zfsutils-linux [ amd64 arm64 ppc64el s390x ],
