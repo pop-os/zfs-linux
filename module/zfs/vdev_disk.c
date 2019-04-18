@@ -30,11 +30,13 @@
 #include <sys/spa_impl.h>
 #include <sys/vdev_disk.h>
 #include <sys/vdev_impl.h>
+#include <sys/vdev_trim.h>
 #include <sys/abd.h>
 #include <sys/fs/zfs.h>
 #include <sys/zio.h>
 #include <linux/mod_compat.h>
 #include <linux/msdos_fs.h>
+#include <linux/vfs_compat.h>
 
 char *zfs_vdev_scheduler = VDEV_SCHEDULER;
 static void *zfs_vdev_holder = VDEV_HOLDER;
@@ -79,7 +81,7 @@ vdev_bdev_mode(int smode)
 	ASSERT3S(smode & (FREAD | FWRITE), !=, 0);
 
 	if ((smode & FREAD) && !(smode & FWRITE))
-		mode = MS_RDONLY;
+		mode = SB_RDONLY;
 
 	return (mode);
 }
@@ -107,6 +109,10 @@ bdev_capacity(struct block_device *bdev)
  * case, and updating the partition table if appropriate.  Once the partition
  * size has been increased the additional capacity will be visible using
  * bdev_capacity().
+ *
+ * The returned maximum expansion capacity is always expected to be larger, or
+ * at the very least equal, to its usable capacity to prevent overestimating
+ * the pool expandsize.
  */
 static uint64_t
 bdev_max_capacity(struct block_device *bdev, uint64_t wholedisk)
@@ -121,14 +127,17 @@ bdev_max_capacity(struct block_device *bdev, uint64_t wholedisk)
 		 * alignment restrictions.  Over reporting this value isn't
 		 * harmful and would only result in slightly less capacity
 		 * than expected post expansion.
+		 * The estimated available space may be slightly smaller than
+		 * bdev_capacity() for devices where the number of sectors is
+		 * not a multiple of the alignment size and the partition layout
+		 * is keeping less than PARTITION_END_ALIGNMENT bytes after the
+		 * "reserved" EFI partition: in such cases return the device
+		 * usable capacity.
 		 */
 		available = i_size_read(bdev->bd_contains->bd_inode) -
 		    ((EFI_MIN_RESV_SIZE + NEW_START_BLOCK +
 		    PARTITION_END_ALIGNMENT) << SECTOR_BITS);
-		if (available > 0)
-			psize = available;
-		else
-			psize = bdev_capacity(bdev);
+		psize = MAX(available, bdev_capacity(bdev));
 	} else {
 		psize = bdev_capacity(bdev);
 	}
@@ -215,7 +224,7 @@ vdev_elevator_switch(vdev_t *v, char *elevator)
 	strfree(argv[2]);
 #endif /* HAVE_ELEVATOR_CHANGE */
 	if (error) {
-		zfs_dbgmsg("Unable to set \"%s\" scheduler for %s (%s): %d\n",
+		zfs_dbgmsg("Unable to set \"%s\" scheduler for %s (%s): %d",
 		    elevator, v->vdev_path, device, error);
 	}
 }
@@ -314,7 +323,7 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 
 	if (IS_ERR(bdev)) {
 		int error = -PTR_ERR(bdev);
-		vdev_dbgmsg(v, "open error=%d count=%d\n", error, count);
+		vdev_dbgmsg(v, "open error=%d count=%d", error, count);
 		vd->vd_bdev = NULL;
 		v->vdev_tsd = vd;
 		rw_exit(&vd->vd_lock);
@@ -325,14 +334,22 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 		rw_exit(&vd->vd_lock);
 	}
 
+	struct request_queue *q = bdev_get_queue(vd->vd_bdev);
+
 	/*  Determine the physical block size */
 	block_size = vdev_bdev_block_size(vd->vd_bdev);
 
 	/* Clear the nowritecache bit, causes vdev_reopen() to try again. */
 	v->vdev_nowritecache = B_FALSE;
 
+	/* Set when device reports it supports TRIM. */
+	v->vdev_has_trim = !!blk_queue_discard(q);
+
+	/* Set when device reports it supports secure TRIM. */
+	v->vdev_has_securetrim = !!blk_queue_discard_secure(q);
+
 	/* Inform the ZIO pipeline that we are non-rotational */
-	v->vdev_nonrot = blk_queue_nonrot(bdev_get_queue(vd->vd_bdev));
+	v->vdev_nonrot = blk_queue_nonrot(q);
 
 	/* Physical volume size in bytes for the partition */
 	*psize = bdev_capacity(vd->vd_bdev);
@@ -512,13 +529,38 @@ vdev_submit_bio_impl(struct bio *bio)
 #endif
 }
 
-#ifndef HAVE_BIO_SET_DEV
+#ifdef HAVE_BIO_SET_DEV
+#if defined(CONFIG_BLK_CGROUP) && defined(HAVE_BIO_SET_DEV_GPL_ONLY)
+/*
+ * The Linux 5.0 kernel updated the bio_set_dev() macro so it calls the
+ * GPL-only bio_associate_blkg() symbol thus inadvertently converting
+ * the entire macro.  Provide a minimal version which always assigns the
+ * request queue's root_blkg to the bio.
+ */
+static inline void
+vdev_bio_associate_blkg(struct bio *bio)
+{
+	struct request_queue *q = bio->bi_disk->queue;
+
+	ASSERT3P(q, !=, NULL);
+	ASSERT3P(q->root_blkg, !=, NULL);
+	ASSERT3P(bio->bi_blkg, ==, NULL);
+
+	if (blkg_tryget(q->root_blkg))
+		bio->bi_blkg = q->root_blkg;
+}
+#define	bio_associate_blkg vdev_bio_associate_blkg
+#endif
+#else
+/*
+ * Provide a bio_set_dev() helper macro for pre-Linux 4.14 kernels.
+ */
 static inline void
 bio_set_dev(struct bio *bio, struct block_device *bdev)
 {
 	bio->bi_bdev = bdev;
 }
-#endif /* !HAVE_BIO_SET_DEV */
+#endif /* HAVE_BIO_SET_DEV */
 
 static inline void
 vdev_submit_bio(struct bio *bio)
@@ -695,6 +737,7 @@ vdev_disk_io_start(zio_t *zio)
 {
 	vdev_t *v = zio->io_vd;
 	vdev_disk_t *vd = v->vdev_tsd;
+	unsigned long trim_flags = 0;
 	int rw, flags, error;
 
 	/*
@@ -779,6 +822,19 @@ vdev_disk_io_start(zio_t *zio)
 		flags = 0;
 #endif
 		break;
+
+	case ZIO_TYPE_TRIM:
+#if defined(BLKDEV_DISCARD_SECURE)
+		if (zio->io_trim_flags & ZIO_TRIM_SECURE)
+			trim_flags |= BLKDEV_DISCARD_SECURE;
+#endif
+		zio->io_error = -blkdev_issue_discard(vd->vd_bdev,
+		    zio->io_offset >> 9, zio->io_size >> 9, GFP_NOFS,
+		    trim_flags);
+
+		rw_exit(&vd->vd_lock);
+		zio_interrupt(zio);
+		return;
 
 	default:
 		rw_exit(&vd->vd_lock);
