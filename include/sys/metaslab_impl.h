@@ -69,7 +69,7 @@ typedef enum trace_alloc_type {
 	TRACE_ENOSPC		= -6ULL,
 	TRACE_CONDENSING	= -7ULL,
 	TRACE_VDEV_ERROR	= -8ULL,
-	TRACE_INITIALIZING	= -9ULL
+	TRACE_DISABLED		= -9ULL,
 } trace_alloc_type_t;
 
 #define	METASLAB_WEIGHT_PRIMARY		(1ULL << 63)
@@ -272,10 +272,10 @@ struct metaslab_group {
 	uint64_t		mg_fragmentation;
 	uint64_t		mg_histogram[RANGE_TREE_HISTOGRAM_SIZE];
 
-	int			mg_ms_initializing;
-	boolean_t		mg_initialize_updating;
-	kmutex_t		mg_ms_initialize_lock;
-	kcondvar_t		mg_ms_initialize_cv;
+	int			mg_ms_disabled;
+	boolean_t		mg_disabled_updating;
+	kmutex_t		mg_ms_disabled_lock;
+	kcondvar_t		mg_ms_disabled_cv;
 };
 
 /*
@@ -340,8 +340,34 @@ struct metaslab_group {
  * being written.
  */
 struct metaslab {
+	/*
+	 * This is the main lock of the metaslab and its purpose is to
+	 * coordinate our allocations and frees [e.g metaslab_block_alloc(),
+	 * metaslab_free_concrete(), ..etc] with our various syncing
+	 * procedures [e.g. metaslab_sync(), metaslab_sync_done(), ..etc].
+	 *
+	 * The lock is also used during some miscellaneous operations like
+	 * using the metaslab's histogram for the metaslab group's histogram
+	 * aggregation, or marking the metaslab for initialization.
+	 */
 	kmutex_t	ms_lock;
+
+	/*
+	 * Acquired together with the ms_lock whenever we expect to
+	 * write to metaslab data on-disk (i.e flushing entries to
+	 * the metaslab's space map). It helps coordinate readers of
+	 * the metaslab's space map [see spa_vdev_remove_thread()]
+	 * with writers [see metaslab_sync()].
+	 *
+	 * Note that metaslab_load(), even though a reader, uses
+	 * a completely different mechanism to deal with the reading
+	 * of the metaslab's space map based on ms_synced_length. That
+	 * said, the function still uses the ms_sync_lock after it
+	 * has read the ms_sm [see relevant comment in metaslab_load()
+	 * as to why].
+	 */
 	kmutex_t	ms_sync_lock;
+
 	kcondvar_t	ms_load_cv;
 	space_map_t	*ms_sm;
 	uint64_t	ms_id;
@@ -351,6 +377,7 @@ struct metaslab {
 
 	range_tree_t	*ms_allocating[TXG_SIZE];
 	range_tree_t	*ms_allocatable;
+	uint64_t	ms_allocated_this_txg;
 
 	/*
 	 * The following range trees are accessed only from syncing context.
@@ -362,19 +389,81 @@ struct metaslab {
 	range_tree_t	*ms_defer[TXG_DEFER_SIZE];
 	range_tree_t	*ms_checkpointing; /* to add to the checkpoint */
 
+	/*
+	 * The ms_trim tree is the set of allocatable segments which are
+	 * eligible for trimming. (When the metaslab is loaded, it's a
+	 * subset of ms_allocatable.)  It's kept in-core as long as the
+	 * autotrim property is set and is not vacated when the metaslab
+	 * is unloaded.  Its purpose is to aggregate freed ranges to
+	 * facilitate efficient trimming.
+	 */
+	range_tree_t	*ms_trim;
+
 	boolean_t	ms_condensing;	/* condensing? */
 	boolean_t	ms_condense_wanted;
 	uint64_t	ms_condense_checked_txg;
 
-	uint64_t	ms_initializing; /* leaves initializing this ms */
+	/*
+	 * The number of consumers which have disabled the metaslab.
+	 */
+	uint64_t	ms_disabled;
 
 	/*
-	 * We must hold both ms_lock and ms_group->mg_lock in order to
-	 * modify ms_loaded.
+	 * We must always hold the ms_lock when modifying ms_loaded
+	 * and ms_loading.
 	 */
 	boolean_t	ms_loaded;
 	boolean_t	ms_loading;
 
+	/*
+	 * The following histograms count entries that are in the
+	 * metaslab's space map (and its histogram) but are not in
+	 * ms_allocatable yet, because they are in ms_freed, ms_freeing,
+	 * or ms_defer[].
+	 *
+	 * When the metaslab is not loaded, its ms_weight needs to
+	 * reflect what is allocatable (i.e. what will be part of
+	 * ms_allocatable if it is loaded).  The weight is computed from
+	 * the spacemap histogram, but that includes ranges that are
+	 * not yet allocatable (because they are in ms_freed,
+	 * ms_freeing, or ms_defer[]).  Therefore, when calculating the
+	 * weight, we need to remove those ranges.
+	 *
+	 * The ranges in the ms_freed and ms_defer[] range trees are all
+	 * present in the spacemap.  However, the spacemap may have
+	 * multiple entries to represent a contiguous range, because it
+	 * is written across multiple sync passes, but the changes of
+	 * all sync passes are consolidated into the range trees.
+	 * Adjacent ranges that are freed in different sync passes of
+	 * one txg will be represented separately (as 2 or more entries)
+	 * in the space map (and its histogram), but these adjacent
+	 * ranges will be consolidated (represented as one entry) in the
+	 * ms_freed/ms_defer[] range trees (and their histograms).
+	 *
+	 * When calculating the weight, we can not simply subtract the
+	 * range trees' histograms from the spacemap's histogram,
+	 * because the range trees' histograms may have entries in
+	 * higher buckets than the spacemap, due to consolidation.
+	 * Instead we must subtract the exact entries that were added to
+	 * the spacemap's histogram.  ms_synchist and ms_deferhist[]
+	 * represent these exact entries, so we can subtract them from
+	 * the spacemap's histogram when calculating ms_weight.
+	 *
+	 * ms_synchist represents the same ranges as ms_freeing +
+	 * ms_freed, but without consolidation across sync passes.
+	 *
+	 * ms_deferhist[i] represents the same ranges as ms_defer[i],
+	 * but without consolidation across sync passes.
+	 */
+	uint64_t	ms_synchist[SPACE_MAP_HISTOGRAM_SIZE];
+	uint64_t	ms_deferhist[TXG_DEFER_SIZE][SPACE_MAP_HISTOGRAM_SIZE];
+
+	/*
+	 * Tracks the exact amount of allocated space of this metaslab
+	 * (and specifically the metaslab's space map) up to the most
+	 * recently completed sync pass [see usage in metaslab_sync()].
+	 */
+	uint64_t	ms_allocated_space;
 	int64_t		ms_deferspace;	/* sum of ms_defermap[] space	*/
 	uint64_t	ms_weight;	/* weight vs. others in group	*/
 	uint64_t	ms_activation_weight;	/* activation weight	*/
@@ -410,6 +499,9 @@ struct metaslab {
 	metaslab_group_t *ms_group;	/* metaslab group		*/
 	avl_node_t	ms_group_node;	/* node in metaslab group tree	*/
 	txg_node_t	ms_txg_node;	/* per-txg dirty metaslab links	*/
+
+	/* updated every time we are done syncing the metaslab's space map */
+	uint64_t	ms_synced_length;
 
 	boolean_t	ms_new;
 };

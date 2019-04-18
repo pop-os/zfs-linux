@@ -439,6 +439,7 @@ int
 zfs_read(struct inode *ip, uio_t *uio, int ioflag, cred_t *cr)
 {
 	int error = 0;
+	boolean_t frsync = B_FALSE;
 
 	znode_t *zp = ITOZ(ip);
 	zfsvfs_t *zfsvfs = ITOZSB(ip);
@@ -466,12 +467,19 @@ zfs_read(struct inode *ip, uio_t *uio, int ioflag, cred_t *cr)
 		return (0);
 	}
 
+#ifdef FRSYNC
 	/*
 	 * If we're in FRSYNC mode, sync out this znode before reading it.
 	 * Only do this for non-snapshots.
+	 *
+	 * Some platforms do not support FRSYNC and instead map it
+	 * to FSYNC, which results in unnecessary calls to zil_commit. We
+	 * only honor FRSYNC requests on platforms which support it.
 	 */
+	frsync = !!(ioflag & FRSYNC);
+#endif
 	if (zfsvfs->z_log &&
-	    (ioflag & FRSYNC || zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS))
+	    (frsync || zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS))
 		zil_commit(zfsvfs->z_log, zp->z_id);
 
 	/*
@@ -844,8 +852,13 @@ zfs_write(struct inode *ip, uio_t *uio, int ioflag, cred_t *cr)
 				xuio_stat_wbuf_copied();
 			} else {
 				ASSERT(xuio || tx_bytes == max_blksz);
-				dmu_assign_arcbuf_by_dbuf(
+				error = dmu_assign_arcbuf_by_dbuf(
 				    sa_get_db(zp->z_sa_hdl), woff, abuf, tx);
+				if (error != 0) {
+					dmu_return_arcbuf(abuf);
+					dmu_tx_commit(tx);
+					break;
+				}
 			}
 			ASSERT(tx_bytes <= uio->uio_resid);
 			uioskip(uio, tx_bytes);
@@ -2697,11 +2710,12 @@ zfs_setattr_dir(znode_t *dzp)
 	dmu_tx_t	*tx = NULL;
 	uint64_t	uid, gid;
 	sa_bulk_attr_t	bulk[4];
-	int		count = 0;
+	int		count;
 	int		err;
 
 	zap_cursor_init(&zc, os, dzp->z_id);
 	while ((err = zap_cursor_retrieve(&zc, &zap)) == 0) {
+		count = 0;
 		if (zap.za_integer_length != 8 || zap.za_num_integers != 1) {
 			err = ENXIO;
 			break;

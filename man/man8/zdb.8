@@ -10,7 +10,7 @@
 .\"
 .\"
 .\" Copyright 2012, Richard Lowe.
-.\" Copyright (c) 2012, 2017 by Delphix. All rights reserved.
+.\" Copyright (c) 2012, 2018 by Delphix. All rights reserved.
 .\" Copyright 2017 Nexenta Systems, Inc.
 .\" Copyright (c) 2017 Lawrence Livermore National Security, LLC.
 .\" Copyright (c) 2017 Intel Corporation.
@@ -23,7 +23,7 @@
 .Nd display zpool debugging and consistency information
 .Sh SYNOPSIS
 .Nm
-.Op Fl AbcdDFGhikLMPsvX
+.Op Fl AbcdDFGhikLMPsvXY
 .Op Fl e Oo Fl V Oc Op Fl p Ar path ...
 .Op Fl I Ar inflight I/Os
 .Oo Fl o Ar var Ns = Ns Ar value Oc Ns ...
@@ -50,7 +50,7 @@
 .Ar device
 .Nm
 .Fl m
-.Op Fl AFLPX
+.Op Fl AFLPXY
 .Op Fl e Oo Fl V Oc Op Fl p Ar path ...
 .Op Fl t Ar txg
 .Op Fl U Ar cache
@@ -78,10 +78,8 @@ some amount of consistency checking.
 It is a not a general purpose tool and options
 .Pq and facilities
 may change.
-This is neither a
-.Xr fsck 1M
-nor an
-.Xr fsdb 1M
+This is not a
+.Xr fsck 8
 utility.
 .Pp
 The output of this command in general reflects the on-disk structure of a ZFS
@@ -194,7 +192,7 @@ If the
 option is also specified, also display the uberblocks on this device.  Specify
 multiple times to increase verbosity.
 .It Fl L
-Disable leak tracing and the loading of space maps.
+Disable leak detection and the loading of space maps.
 By default,
 .Nm
 verifies that all non-free blocks are referenced, which can be very expensive.
@@ -349,6 +347,10 @@ Attempt
 transaction rewind, that is attempt the same recovery as
 .Fl F
 but read transactions otherwise deemed too old.
+.It Fl Y
+Attempt all possible combinations when reconstructing indirect split blocks.
+This flag disables the individual I/O deadman timer in order to allow as
+much time as required for the attempted reconstruction.
 .El
 .Pp
 Specifying a display option more than once enables verbosity for only that

@@ -131,6 +131,7 @@ spa_read_history_init(spa_t *spa)
 	shl->procfs_list.pl_private = shl;
 	procfs_list_install(module,
 	    "reads",
+	    0600,
 	    &shl->procfs_list,
 	    spa_read_history_show,
 	    spa_read_history_show_header,
@@ -301,6 +302,7 @@ spa_txg_history_init(spa_t *spa)
 	shl->procfs_list.pl_private = shl;
 	procfs_list_install(module,
 	    "txgs",
+	    0644,
 	    &shl->procfs_list,
 	    spa_txg_history_show,
 	    spa_txg_history_show_header,
@@ -414,9 +416,9 @@ spa_txg_history_init_io(spa_t *spa, uint64_t txg, dsl_pool_t *dp)
 
 	ts = kmem_alloc(sizeof (txg_stat_t), KM_SLEEP);
 
-	spa_config_enter(spa, SCL_ALL, FTAG, RW_READER);
+	spa_config_enter(spa, SCL_CONFIG, FTAG, RW_READER);
 	vdev_get_stats(spa->spa_root_vdev, &ts->vs1);
-	spa_config_exit(spa, SCL_ALL, FTAG);
+	spa_config_exit(spa, SCL_CONFIG, FTAG);
 
 	ts->txg = txg;
 	ts->ndirty = dp->dp_dirty_pertxg[txg & TXG_MASK];
@@ -437,9 +439,9 @@ spa_txg_history_fini_io(spa_t *spa, txg_stat_t *ts)
 		return;
 	}
 
-	spa_config_enter(spa, SCL_ALL, FTAG, RW_READER);
+	spa_config_enter(spa, SCL_CONFIG, FTAG, RW_READER);
 	vdev_get_stats(spa->spa_root_vdev, &ts->vs2);
-	spa_config_exit(spa, SCL_ALL, FTAG);
+	spa_config_exit(spa, SCL_CONFIG, FTAG);
 
 	spa_txg_history_set(spa, ts->txg, TXG_STATE_SYNCED, gethrtime());
 	spa_txg_history_set_io(spa, ts->txg,
@@ -706,6 +708,7 @@ spa_mmp_history_init(spa_t *spa)
 	shl->procfs_list.pl_private = shl;
 	procfs_list_install(module,
 	    "multihost",
+	    0644,
 	    &shl->procfs_list,
 	    spa_mmp_history_show,
 	    spa_mmp_history_show_header,
@@ -887,6 +890,105 @@ spa_health_destroy(spa_t *spa)
 	mutex_destroy(&shk->lock);
 }
 
+static spa_iostats_t spa_iostats_template = {
+	{ "trim_extents_written",		KSTAT_DATA_UINT64 },
+	{ "trim_bytes_written",			KSTAT_DATA_UINT64 },
+	{ "trim_extents_skipped",		KSTAT_DATA_UINT64 },
+	{ "trim_bytes_skipped",			KSTAT_DATA_UINT64 },
+	{ "trim_extents_failed",		KSTAT_DATA_UINT64 },
+	{ "trim_bytes_failed",			KSTAT_DATA_UINT64 },
+	{ "autotrim_extents_written",		KSTAT_DATA_UINT64 },
+	{ "autotrim_bytes_written",		KSTAT_DATA_UINT64 },
+	{ "autotrim_extents_skipped",		KSTAT_DATA_UINT64 },
+	{ "autotrim_bytes_skipped",		KSTAT_DATA_UINT64 },
+	{ "autotrim_extents_failed",		KSTAT_DATA_UINT64 },
+	{ "autotrim_bytes_failed",		KSTAT_DATA_UINT64 },
+};
+
+#define	SPA_IOSTATS_ADD(stat, val) \
+    atomic_add_64(&iostats->stat.value.ui64, (val));
+
+void
+spa_iostats_trim_add(spa_t *spa, trim_type_t type,
+    uint64_t extents_written, uint64_t bytes_written,
+    uint64_t extents_skipped, uint64_t bytes_skipped,
+    uint64_t extents_failed, uint64_t bytes_failed)
+{
+	spa_history_kstat_t *shk = &spa->spa_stats.iostats;
+	kstat_t *ksp = shk->kstat;
+	spa_iostats_t *iostats;
+
+	if (ksp == NULL)
+		return;
+
+	iostats = ksp->ks_data;
+	if (type == TRIM_TYPE_MANUAL) {
+		SPA_IOSTATS_ADD(trim_extents_written, extents_written);
+		SPA_IOSTATS_ADD(trim_bytes_written, bytes_written);
+		SPA_IOSTATS_ADD(trim_extents_skipped, extents_skipped);
+		SPA_IOSTATS_ADD(trim_bytes_skipped, bytes_skipped);
+		SPA_IOSTATS_ADD(trim_extents_failed, extents_failed);
+		SPA_IOSTATS_ADD(trim_bytes_failed, bytes_failed);
+	} else {
+		SPA_IOSTATS_ADD(autotrim_extents_written, extents_written);
+		SPA_IOSTATS_ADD(autotrim_bytes_written, bytes_written);
+		SPA_IOSTATS_ADD(autotrim_extents_skipped, extents_skipped);
+		SPA_IOSTATS_ADD(autotrim_bytes_skipped, bytes_skipped);
+		SPA_IOSTATS_ADD(autotrim_extents_failed, extents_failed);
+		SPA_IOSTATS_ADD(autotrim_bytes_failed, bytes_failed);
+	}
+}
+
+int
+spa_iostats_update(kstat_t *ksp, int rw)
+{
+	if (rw == KSTAT_WRITE) {
+		memcpy(ksp->ks_data, &spa_iostats_template,
+		    sizeof (spa_iostats_t));
+	}
+
+	return (0);
+}
+
+static void
+spa_iostats_init(spa_t *spa)
+{
+	spa_history_kstat_t *shk = &spa->spa_stats.iostats;
+
+	mutex_init(&shk->lock, NULL, MUTEX_DEFAULT, NULL);
+
+	char *name = kmem_asprintf("zfs/%s", spa_name(spa));
+	kstat_t *ksp = kstat_create(name, 0, "iostats", "misc",
+	    KSTAT_TYPE_NAMED, sizeof (spa_iostats_t) / sizeof (kstat_named_t),
+	    KSTAT_FLAG_VIRTUAL);
+
+	shk->kstat = ksp;
+	if (ksp) {
+		int size = sizeof (spa_iostats_t);
+		ksp->ks_lock = &shk->lock;
+		ksp->ks_private = spa;
+		ksp->ks_update = spa_iostats_update;
+		ksp->ks_data = kmem_alloc(size, KM_SLEEP);
+		memcpy(ksp->ks_data, &spa_iostats_template, size);
+		kstat_install(ksp);
+	}
+
+	strfree(name);
+}
+
+static void
+spa_iostats_destroy(spa_t *spa)
+{
+	spa_history_kstat_t *shk = &spa->spa_stats.iostats;
+	kstat_t *ksp = shk->kstat;
+	if (ksp) {
+		kmem_free(ksp->ks_data, sizeof (spa_iostats_t));
+		kstat_delete(ksp);
+	}
+
+	mutex_destroy(&shk->lock);
+}
+
 void
 spa_stats_init(spa_t *spa)
 {
@@ -896,11 +998,13 @@ spa_stats_init(spa_t *spa)
 	spa_io_history_init(spa);
 	spa_mmp_history_init(spa);
 	spa_state_init(spa);
+	spa_iostats_init(spa);
 }
 
 void
 spa_stats_destroy(spa_t *spa)
 {
+	spa_iostats_destroy(spa);
 	spa_health_destroy(spa);
 	spa_tx_assign_destroy(spa);
 	spa_txg_history_destroy(spa);
