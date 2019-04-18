@@ -7,7 +7,7 @@ Index: zfs/etc/init.d/zfs-import.in
 ===================================================================
 --- zfs.orig/etc/init.d/zfs-import.in
 +++ zfs/etc/init.d/zfs-import.in
-@@ -308,8 +308,7 @@ do_start()
+@@ -309,8 +309,7 @@ do_start()
  
  # ----------------------------------------------------
  
