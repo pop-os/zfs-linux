@@ -1,8 +1,18 @@
-zfs-linux (0.8.0~rc4-1) UNRELEASED; urgency=medium
+zfs-linux (0.8.0~rc4-1) experimental; urgency=medium
 
   * New upstream version 0.8.0~rc4
+  * Remove already merged patches:
+    - clarify-zpool-iostat-statistics-reporting.patch
+    - allow-rename-of-in-use-zvol-dataset.patch
+    - delay-injection-can-cause-indefinitely-hung-zios.patch
+    - dont-enter-zvols-rangelock-for-read-bio-with-size-0.patch
+    - fix-zdb-crash.patch
+    - zfs-mount-manpage-should-document-legacy-behaviour.patch
+    - zfs-mounted-nfsv3-shares-fail-lock-reclaims.patch
+  * Refresh remaining patches (quilt push -a --refresh).
+  * Refresh debian/control.
 
- -- Mo Zhou <cdluminate@gmail.com>  Thu, 18 Apr 2019 02:04:08 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Thu, 18 Apr 2019 08:48:08 +0000
 
 zfs-linux (0.8.0~rc3-1) experimental; urgency=medium
 
