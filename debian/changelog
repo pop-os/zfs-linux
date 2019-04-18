@@ -1,3 +1,9 @@
+zfs-linux (0.8.0~rc4-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.8.0~rc4
+
+ -- Mo Zhou <cdluminate@gmail.com>  Thu, 18 Apr 2019 02:04:08 +0000
+
 zfs-linux (0.8.0~rc3-1) experimental; urgency=medium
 
   [ Antonio Russo ]
