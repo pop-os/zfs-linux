@@ -25,6 +25,15 @@
 # for all fio runs. The ARC is cleared with `zinject -a` prior to each run
 # so reads will go to disk.
 #
+# Thread/Concurrency settings:
+#    PERF_NTHREADS defines the number of files created in the test filesystem,
+#    as well as the number of threads that will simultaneously drive IO to
+#    those files.  The settings chosen are from measurements in the
+#    PerfAutoESX/ZFSPerfESX Environments, selected at concurrency levels that
+#    are at peak throughput but lowest latency.  Higher concurrency introduces
+#    queue time latency and would reduce the impact of code-induced performance
+#    regressions.
+#
 
 . $STF_SUITE/include/libtest.shlib
 . $STF_SUITE/tests/perf/perf.shlib
@@ -32,35 +41,33 @@
 function cleanup
 {
 	# kill fio and iostat
-	pkill ${fio##*/}
-	pkill ${iostat##*/}
-	log_must_busy zfs destroy $TESTFS
-	log_must_busy zpool destroy $PERFPOOL
+	pkill fio
+	pkill iostat
+	recreate_perf_pool
 }
 
 trap "log_fail \"Measure IO stats during random read load\"" SIGTERM
-
-log_assert "Measure IO stats during random read load"
 log_onexit cleanup
 
-export TESTFS=$PERFPOOL/testfs
-recreate_perfpool
-log_must zfs create $PERF_FS_OPTS $TESTFS
+recreate_perf_pool
+populate_perf_filesystems
 
 # Aim to fill the pool to 50% capacity while accounting for a 3x compressratio.
-export TOTAL_SIZE=$(($(get_prop avail $TESTFS) * 3 / 2))
+export TOTAL_SIZE=$(($(get_prop avail $PERFPOOL) * 3 / 2))
 
 # Variables for use by fio.
 if [[ -n $PERF_REGRESSION_WEEKLY ]]; then
 	export PERF_RUNTIME=${PERF_RUNTIME:-$PERF_RUNTIME_WEEKLY}
 	export PERF_RUNTYPE=${PERF_RUNTYPE:-'weekly'}
-	export PERF_NTHREADS=${PERF_NTHREADS:-'8 16 64'}
+	export PERF_NTHREADS=${PERF_NTHREADS:-'8 16 32 64'}
+	export PERF_NTHREADS_PER_FS=${PERF_NTHREADS_PER_FS:-'0'}
 	export PERF_SYNC_TYPES=${PERF_SYNC_TYPES:-'1'}
-	export PERF_IOSIZES=${PERF_IOSIZES:-'8k'}
+	export PERF_IOSIZES=${PERF_IOSIZES:-'8k 64k 128k'}
 elif [[ -n $PERF_REGRESSION_NIGHTLY ]]; then
 	export PERF_RUNTIME=${PERF_RUNTIME:-$PERF_RUNTIME_NIGHTLY}
 	export PERF_RUNTYPE=${PERF_RUNTYPE:-'nightly'}
-	export PERF_NTHREADS=${PERF_NTHREADS:-'64 128'}
+	export PERF_NTHREADS=${PERF_NTHREADS:-'16 32'}
+	export PERF_NTHREADS_PER_FS=${PERF_NTHREADS_PER_FS:-'0'}
 	export PERF_SYNC_TYPES=${PERF_SYNC_TYPES:-'1'}
 	export PERF_IOSIZES=${PERF_IOSIZES:-'8k'}
 fi
@@ -70,18 +77,30 @@ fi
 # of the available files.
 export NUMJOBS=$(get_max $PERF_NTHREADS)
 export FILE_SIZE=$((TOTAL_SIZE / NUMJOBS))
+export DIRECTORY=$(get_directory)
 log_must fio $FIO_SCRIPTS/mkfiles.fio
 
 # Set up the scripts and output files that will log performance data.
 lun_list=$(pool_to_lun_list $PERFPOOL)
 log_note "Collecting backend IO stats with lun list $lun_list"
 if is_linux; then
-        export collect_scripts=("zpool iostat -lpvyL $PERFPOOL 1" "zpool.iostat"
-            "vmstat 1" "vmstat" "mpstat -P ALL 1" "mpstat" "iostat -dxyz 1"
-            "iostat")
+	typeset perf_record_cmd="perf record -F 99 -a -g -q \
+	    -o /dev/stdout -- sleep ${PERF_RUNTIME}"
+
+        export collect_scripts=(
+	    "zpool iostat -lpvyL $PERFPOOL 1" "zpool.iostat"
+	    "vmstat -t 1" "vmstat"
+	    "mpstat -P ALL 1" "mpstat"
+	    "iostat -tdxyz 1" "iostat"
+	    "$perf_record_cmd" "perf"
+	)
 else
-	export collect_scripts=("$PERF_SCRIPTS/io.d $PERFPOOL $lun_list 1" "io"
-	    "vmstat 1" "vmstat" "mpstat 1" "mpstat" "iostat -xcnz 1" "iostat")
+	export collect_scripts=(
+	    "$PERF_SCRIPTS/io.d $PERFPOOL $lun_list 1" "io"
+	    "vmstat -T d 1" "vmstat"
+	    "mpstat -T d 1" "mpstat"
+	    "iostat -T d -xcnz 1" "iostat"
+	)
 fi
 
 log_note "Random reads with $PERF_RUNTYPE settings"

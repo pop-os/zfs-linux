@@ -45,7 +45,6 @@
 
 verify_runnable "both"
 
-# See issue: https://github.com/zfsonlinux/zfs/issues/5479
 if is_kmemleak; then
 	log_unsupported "Test case runs slowly when kmemleak is enabled"
 fi
@@ -87,6 +86,11 @@ for dp in ${depth_array[@]}; do
 	done
 	(( old_val=dp ))
 done
+
+# Ensure 'zfs get -t snapshot <dataset>' works as though -d 1 was specified
+log_must eval "zfs get -H -t snapshot -o name creation $DEPTH_FS > $DEPTH_OUTPUT"
+log_must eval "zfs get -H -t snapshot -d 1 -o name creation $DEPTH_FS > $EXPECT_OUTPUT"
+log_must diff $DEPTH_OUTPUT $EXPECT_OUTPUT
 
 log_pass "'zfs get -d <n>' should get expected output."
 

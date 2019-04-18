@@ -38,6 +38,7 @@
 #include <sys/sunddi.h>
 #include <sys/cred.h>
 #include "zfs_comutil.h"
+#include "zfs_gitrev.h"
 #ifdef _KERNEL
 #include <sys/zone.h>
 #endif
@@ -183,11 +184,7 @@ static char *
 spa_history_zone(void)
 {
 #ifdef _KERNEL
-#ifdef HAVE_SPL
 	return ("linux");
-#else
-	return (curproc->p_zone->zone_name);
-#endif
 #else
 	return (NULL);
 #endif
@@ -385,10 +382,15 @@ spa_history_log_nvl(spa_t *spa, nvlist_t *nvl)
 {
 	int err = 0;
 	dmu_tx_t *tx;
-	nvlist_t *nvarg;
+	nvlist_t *nvarg, *in_nvl = NULL;
 
 	if (spa_version(spa) < SPA_VERSION_ZPOOL_HISTORY || !spa_writeable(spa))
 		return (SET_ERROR(EINVAL));
+
+	err = nvlist_lookup_nvlist(nvl, ZPOOL_HIST_INPUT_NVL, &in_nvl);
+	if (err == 0) {
+		(void) nvlist_remove_all(in_nvl, ZPOOL_HIDDEN_ARGS);
+	}
 
 	tx = dmu_tx_create_dd(spa_get_dsl(spa)->dp_mos_dir);
 	err = dmu_tx_assign(tx, TXG_WAIT);
@@ -616,12 +618,12 @@ spa_history_log_version(spa_t *spa, const char *operation, dmu_tx_t *tx)
 	utsname_t *u = utsname();
 
 	spa_history_log_internal(spa, operation, tx,
-	    "pool version %llu; software version %llu/%llu; uts %s %s %s %s",
-	    (u_longlong_t)spa_version(spa), SPA_VERSION, ZPL_VERSION,
+	    "pool version %llu; software version %s; uts %s %s %s %s",
+	    (u_longlong_t)spa_version(spa), ZFS_META_GITREV,
 	    u->nodename, u->release, u->version, u->machine);
 }
 
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 EXPORT_SYMBOL(spa_history_create_obj);
 EXPORT_SYMBOL(spa_history_get);
 EXPORT_SYMBOL(spa_history_log);

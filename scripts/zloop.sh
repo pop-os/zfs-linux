@@ -20,17 +20,17 @@
 # Copyright (C) 2016 Lawrence Livermore National Security, LLC.
 #
 
-basedir=$(dirname "$0")
-
+BASE_DIR=$(dirname "$0")
 SCRIPT_COMMON=common.sh
-if [ -f "${basedir}/${SCRIPT_COMMON}" ]; then
-	. "${basedir}/${SCRIPT_COMMON}"
+if [ -f "${BASE_DIR}/${SCRIPT_COMMON}" ]; then
+	. "${BASE_DIR}/${SCRIPT_COMMON}"
 else
 	echo "Missing helper script ${SCRIPT_COMMON}" && exit 1
 fi
 
 # shellcheck disable=SC2034
 PROG=zloop.sh
+GDB=${GDB:-gdb}
 
 DEFAULTWORKDIR=/var/tmp
 DEFAULTCOREDIR=/var/tmp/zloop
@@ -127,7 +127,10 @@ function store_core
 		or_die mv ztest.zdb "$dest/"
 		or_die mv ztest.out "$dest/"
 		or_die mv "$workdir/ztest*" "$dest/vdev/"
-		or_die mv "$workdir/zpool.cache" "$dest/vdev/"
+
+		if [[ -e "$workdir/zpool.cache" ]]; then
+			or_die mv "$workdir/zpool.cache" "$dest/vdev/"
+		fi
 
 		# check for core
 		if [[ -f "$core" ]]; then
@@ -196,6 +199,7 @@ shift $((OPTIND - 1))
 
 # enable core dumps
 ulimit -c unlimited
+export ASAN_OPTIONS=abort_on_error=1:disable_coredump=0
 
 if [[ -f "$(core_file)" ]]; then
 	echo -n "There's a core dump here you might want to look at first... "
@@ -225,7 +229,7 @@ curtime=$starttime
 
 # if no timeout was specified, loop forever.
 while [[ $timeout -eq 0 ]] || [[ $curtime -le $((starttime + timeout)) ]]; do
-	zopt="-VVVVV"
+	zopt="-G -VVVVV"
 
 	# start each run with an empty directory
 	workdir="$basedir/$rundir"

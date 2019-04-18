@@ -20,13 +20,14 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2014 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2018 by Delphix. All rights reserved.
  * Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
  * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
  * Copyright 2013 Saso Kiselkov. All rights reserved.
  * Copyright (c) 2014 Integros [integros.com]
  * Copyright 2017 Joyent, Inc.
  * Copyright (c) 2017 Datto Inc.
+ * Copyright (c) 2017, Intel Corporation.
  */
 
 #ifndef _SYS_SPA_H
@@ -63,6 +64,7 @@ typedef struct zbookmark_phys zbookmark_phys_t;
 
 struct dsl_pool;
 struct dsl_dataset;
+struct dsl_crypto_params;
 
 /*
  * General-purpose 32-bit and 64-bit bitfield encodings.
@@ -152,6 +154,7 @@ _NOTE(CONSTCOND) } while (0)
 #define	SPA_ASIZEBITS		24	/* ASIZE up to 64 times larger	*/
 
 #define	SPA_COMPRESSBITS	7
+#define	SPA_VDEVBITS		24
 
 /*
  * All SPA data is represented by 128-bit data virtual addresses (DVAs).
@@ -176,15 +179,15 @@ typedef struct zio_cksum_salt {
  *
  *	64	56	48	40	32	24	16	8	0
  *	+-------+-------+-------+-------+-------+-------+-------+-------+
- * 0	|		vdev1		| GRID  |	  ASIZE		|
+ * 0	|  pad  |	  vdev1         | GRID  |	  ASIZE		|
  *	+-------+-------+-------+-------+-------+-------+-------+-------+
  * 1	|G|			 offset1				|
  *	+-------+-------+-------+-------+-------+-------+-------+-------+
- * 2	|		vdev2		| GRID  |	  ASIZE		|
+ * 2	|  pad  |	  vdev2         | GRID  |	  ASIZE		|
  *	+-------+-------+-------+-------+-------+-------+-------+-------+
  * 3	|G|			 offset2				|
  *	+-------+-------+-------+-------+-------+-------+-------+-------+
- * 4	|		vdev3		| GRID  |	  ASIZE		|
+ * 4	|  pad  |	  vdev3         | GRID  |	  ASIZE		|
  *	+-------+-------+-------+-------+-------+-------+-------+-------+
  * 5	|G|			 offset3				|
  *	+-------+-------+-------+-------+-------+-------+-------+-------+
@@ -222,14 +225,94 @@ typedef struct zio_cksum_salt {
  * G		gang block indicator
  * B		byteorder (endianness)
  * D		dedup
- * X		encryption (on version 30, which is not supported)
+ * X		encryption
  * E		blkptr_t contains embedded data (see below)
  * lvl		level of indirection
  * type		DMU object type
- * phys birth	txg of block allocation; zero if same as logical birth txg
+ * phys birth	txg when dva[0] was written; zero if same as logical birth txg
+ *              note that typically all the dva's would be written in this
+ *              txg, but they could be different if they were moved by
+ *              device removal.
  * log. birth	transaction group in which the block was logically born
  * fill count	number of non-zero blocks under this bp
  * checksum[4]	256-bit checksum of the data this bp describes
+ */
+
+/*
+ * The blkptr_t's of encrypted blocks also need to store the encryption
+ * parameters so that the block can be decrypted. This layout is as follows:
+ *
+ *	64	56	48	40	32	24	16	8	0
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * 0	|		vdev1		| GRID  |	  ASIZE		|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * 1	|G|			 offset1				|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * 2	|		vdev2		| GRID  |	  ASIZE		|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * 3	|G|			 offset2				|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * 4	|			salt					|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * 5	|			IV1					|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * 6	|BDX|lvl| type	| cksum |E| comp|    PSIZE	|     LSIZE	|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * 7	|			padding					|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * 8	|			padding					|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * 9	|			physical birth txg			|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * a	|			logical birth txg			|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * b	|		IV2		|	    fill count		|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * c	|			checksum[0]				|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * d	|			checksum[1]				|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * e	|			MAC[0]					|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ * f	|			MAC[1]					|
+ *	+-------+-------+-------+-------+-------+-------+-------+-------+
+ *
+ * Legend:
+ *
+ * salt		Salt for generating encryption keys
+ * IV1		First 64 bits of encryption IV
+ * X		Block requires encryption handling (set to 1)
+ * E		blkptr_t contains embedded data (set to 0, see below)
+ * fill count	number of non-zero blocks under this bp (truncated to 32 bits)
+ * IV2		Last 32 bits of encryption IV
+ * checksum[2]	128-bit checksum of the data this bp describes
+ * MAC[2]	128-bit message authentication code for this data
+ *
+ * The X bit being set indicates that this block is one of 3 types. If this is
+ * a level 0 block with an encrypted object type, the block is encrypted
+ * (see BP_IS_ENCRYPTED()). If this is a level 0 block with an unencrypted
+ * object type, this block is authenticated with an HMAC (see
+ * BP_IS_AUTHENTICATED()). Otherwise (if level > 0), this bp will use the MAC
+ * words to store a checksum-of-MACs from the level below (see
+ * BP_HAS_INDIRECT_MAC_CKSUM()). For convenience in the code, BP_IS_PROTECTED()
+ * refers to both encrypted and authenticated blocks and BP_USES_CRYPT()
+ * refers to any of these 3 kinds of blocks.
+ *
+ * The additional encryption parameters are the salt, IV, and MAC which are
+ * explained in greater detail in the block comment at the top of zio_crypt.c.
+ * The MAC occupies half of the checksum space since it serves a very similar
+ * purpose: to prevent data corruption on disk. The only functional difference
+ * is that the checksum is used to detect on-disk corruption whether or not the
+ * encryption key is loaded and the MAC provides additional protection against
+ * malicious disk tampering. We use the 3rd DVA to store the salt and first
+ * 64 bits of the IV. As a result encrypted blocks can only have 2 copies
+ * maximum instead of the normal 3. The last 32 bits of the IV are stored in
+ * the upper bits of what is usually the fill count. Note that only blocks at
+ * level 0 or -2 are ever encrypted, which allows us to guarantee that these
+ * 32 bits are not trampled over by other code (see zio_crypt.c for details).
+ * The salt and IV are not used for authenticated bps or bps with an indirect
+ * MAC checksum, so these blocks can utilize all 3 DVAs and the full 64 bits
+ * for the fill count.
  */
 
 /*
@@ -268,7 +351,7 @@ typedef struct zio_cksum_salt {
  * payload		contains the embedded data
  * B (byteorder)	byteorder (endianness)
  * D (dedup)		padding (set to zero)
- * X			encryption (set to zero; see above)
+ * X			encryption (set to zero)
  * E (embedded)		set to one
  * lvl			indirection level
  * type			DMU object type
@@ -287,7 +370,9 @@ typedef struct zio_cksum_salt {
  * BP's so the BP_SET_* macros can be used with them.  etype, PSIZE, LSIZE must
  * be set with the BPE_SET_* macros.  BP_SET_EMBEDDED() should be called before
  * other macros, as they assert that they are only used on BP's of the correct
- * "embedded-ness".
+ * "embedded-ness". Encrypted blkptr_t's cannot be embedded because they use
+ * the payload space for encryption parameters (see the comment above on
+ * how encryption parameters are stored).
  */
 
 #define	BPE_GET_ETYPE(bp)	\
@@ -327,6 +412,7 @@ typedef enum bp_embedded_type {
 
 #define	SPA_BLKPTRSHIFT	7		/* blkptr_t is 128 bytes	*/
 #define	SPA_DVAS_PER_BP	3		/* Number of DVAs in a bp	*/
+#define	SPA_SYNC_MIN_VDEVS 3		/* min vdevs to update during sync */
 
 /*
  * A block is a hole when it has either 1) never been written to, or
@@ -359,8 +445,9 @@ typedef struct blkptr {
 #define	DVA_GET_GRID(dva)	BF64_GET((dva)->dva_word[0], 24, 8)
 #define	DVA_SET_GRID(dva, x)	BF64_SET((dva)->dva_word[0], 24, 8, x)
 
-#define	DVA_GET_VDEV(dva)	BF64_GET((dva)->dva_word[0], 32, 32)
-#define	DVA_SET_VDEV(dva, x)	BF64_SET((dva)->dva_word[0], 32, 32, x)
+#define	DVA_GET_VDEV(dva)	BF64_GET((dva)->dva_word[0], 32, SPA_VDEVBITS)
+#define	DVA_SET_VDEV(dva, x)	\
+	BF64_SET((dva)->dva_word[0], 32, SPA_VDEVBITS, x)
 
 #define	DVA_GET_OFFSET(dva)	\
 	BF64_GET_SB((dva)->dva_word[1], 0, 63, SPA_MINBLOCKSHIFT, 0)
@@ -411,6 +498,26 @@ _NOTE(CONSTCOND) } while (0)
 #define	BP_GET_LEVEL(bp)		BF64_GET((bp)->blk_prop, 56, 5)
 #define	BP_SET_LEVEL(bp, x)		BF64_SET((bp)->blk_prop, 56, 5, x)
 
+/* encrypted, authenticated, and MAC cksum bps use the same bit */
+#define	BP_USES_CRYPT(bp)		BF64_GET((bp)->blk_prop, 61, 1)
+#define	BP_SET_CRYPT(bp, x)		BF64_SET((bp)->blk_prop, 61, 1, x)
+
+#define	BP_IS_ENCRYPTED(bp)			\
+	(BP_USES_CRYPT(bp) &&			\
+	BP_GET_LEVEL(bp) <= 0 &&		\
+	DMU_OT_IS_ENCRYPTED(BP_GET_TYPE(bp)))
+
+#define	BP_IS_AUTHENTICATED(bp)			\
+	(BP_USES_CRYPT(bp) &&			\
+	BP_GET_LEVEL(bp) <= 0 &&		\
+	!DMU_OT_IS_ENCRYPTED(BP_GET_TYPE(bp)))
+
+#define	BP_HAS_INDIRECT_MAC_CKSUM(bp)		\
+	(BP_USES_CRYPT(bp) && BP_GET_LEVEL(bp) > 0)
+
+#define	BP_IS_PROTECTED(bp)			\
+	(BP_IS_ENCRYPTED(bp) || BP_IS_AUTHENTICATED(bp))
+
 #define	BP_GET_DEDUP(bp)		BF64_GET((bp)->blk_prop, 62, 1)
 #define	BP_SET_DEDUP(bp, x)		BF64_SET((bp)->blk_prop, 62, 1, x)
 
@@ -428,7 +535,26 @@ _NOTE(CONSTCOND) } while (0)
 	(bp)->blk_phys_birth = ((logical) == (physical) ? 0 : (physical)); \
 }
 
-#define	BP_GET_FILL(bp) (BP_IS_EMBEDDED(bp) ? 1 : (bp)->blk_fill)
+#define	BP_GET_FILL(bp)				\
+	((BP_IS_ENCRYPTED(bp)) ? BF64_GET((bp)->blk_fill, 0, 32) : \
+	((BP_IS_EMBEDDED(bp)) ? 1 : (bp)->blk_fill))
+
+#define	BP_SET_FILL(bp, fill)			\
+{						\
+	if (BP_IS_ENCRYPTED(bp))			\
+		BF64_SET((bp)->blk_fill, 0, 32, fill); \
+	else					\
+		(bp)->blk_fill = fill;		\
+}
+
+#define	BP_GET_IV2(bp)				\
+	(ASSERT(BP_IS_ENCRYPTED(bp)),		\
+	BF64_GET((bp)->blk_fill, 32, 32))
+#define	BP_SET_IV2(bp, iv2)			\
+{						\
+	ASSERT(BP_IS_ENCRYPTED(bp));		\
+	BF64_SET((bp)->blk_fill, 32, 32, iv2);	\
+}
 
 #define	BP_IS_METADATA(bp)	\
 	(BP_GET_LEVEL(bp) > 0 || DMU_OT_IS_METADATA(BP_GET_TYPE(bp)))
@@ -437,7 +563,7 @@ _NOTE(CONSTCOND) } while (0)
 	(BP_IS_EMBEDDED(bp) ? 0 : \
 	DVA_GET_ASIZE(&(bp)->blk_dva[0]) + \
 	DVA_GET_ASIZE(&(bp)->blk_dva[1]) + \
-	DVA_GET_ASIZE(&(bp)->blk_dva[2]))
+	(DVA_GET_ASIZE(&(bp)->blk_dva[2]) * !BP_IS_ENCRYPTED(bp)))
 
 #define	BP_GET_UCSIZE(bp)	\
 	(BP_IS_METADATA(bp) ? BP_GET_PSIZE(bp) : BP_GET_LSIZE(bp))
@@ -446,13 +572,13 @@ _NOTE(CONSTCOND) } while (0)
 	(BP_IS_EMBEDDED(bp) ? 0 : \
 	!!DVA_GET_ASIZE(&(bp)->blk_dva[0]) + \
 	!!DVA_GET_ASIZE(&(bp)->blk_dva[1]) + \
-	!!DVA_GET_ASIZE(&(bp)->blk_dva[2]))
+	(!!DVA_GET_ASIZE(&(bp)->blk_dva[2]) * !BP_IS_ENCRYPTED(bp)))
 
 #define	BP_COUNT_GANG(bp)	\
 	(BP_IS_EMBEDDED(bp) ? 0 : \
 	(DVA_GET_GANG(&(bp)->blk_dva[0]) + \
 	DVA_GET_GANG(&(bp)->blk_dva[1]) + \
-	DVA_GET_GANG(&(bp)->blk_dva[2])))
+	(DVA_GET_GANG(&(bp)->blk_dva[2]) * !BP_IS_ENCRYPTED(bp))))
 
 #define	DVA_EQUAL(dva1, dva2)	\
 	((dva1)->dva_word[1] == (dva2)->dva_word[1] && \
@@ -505,7 +631,7 @@ _NOTE(CONSTCOND) } while (0)
 
 #define	BP_SHOULD_BYTESWAP(bp)	(BP_GET_BYTEORDER(bp) != ZFS_HOST_BYTEORDER)
 
-#define	BP_SPRINTF_LEN	320
+#define	BP_SPRINTF_LEN	400
 
 /*
  * This macro allows code sharing between zfs, libzpool, and mdb.
@@ -518,8 +644,19 @@ _NOTE(CONSTCOND) } while (0)
 	    { "zero", "single", "double", "triple" };			\
 	int len = 0;							\
 	int copies = 0;							\
-	int d;								\
-									\
+	const char *crypt_type;						\
+	if (bp != NULL) {						\
+		if (BP_IS_ENCRYPTED(bp)) {				\
+			crypt_type = "encrypted";			\
+			/* LINTED E_SUSPICIOUS_COMPARISON */		\
+		} else if (BP_IS_AUTHENTICATED(bp)) {			\
+			crypt_type = "authenticated";			\
+		} else if (BP_HAS_INDIRECT_MAC_CKSUM(bp)) {		\
+			crypt_type = "indirect-MAC";			\
+		} else {						\
+			crypt_type = "unencrypted";			\
+		}							\
+	}								\
 	if (bp == NULL) {						\
 		len += func(buf + len, size - len, "<NULL>");		\
 	} else if (BP_IS_HOLE(bp)) {					\
@@ -542,7 +679,7 @@ _NOTE(CONSTCOND) } while (0)
 		    (u_longlong_t)BPE_GET_PSIZE(bp),			\
 		    (u_longlong_t)bp->blk_birth);			\
 	} else {							\
-		for (d = 0; d < BP_GET_NDVAS(bp); d++) {		\
+		for (int d = 0; d < BP_GET_NDVAS(bp); d++) {		\
 			const dva_t *dva = &bp->blk_dva[d];		\
 			if (DVA_IS_VALID(dva))				\
 				copies++;				\
@@ -553,18 +690,27 @@ _NOTE(CONSTCOND) } while (0)
 			    (u_longlong_t)DVA_GET_ASIZE(dva),		\
 			    ws);					\
 		}							\
+		if (BP_IS_ENCRYPTED(bp)) {				\
+			len += func(buf + len, size - len,		\
+			    "salt=%llx iv=%llx:%llx%c",			\
+			    (u_longlong_t)bp->blk_dva[2].dva_word[0],	\
+			    (u_longlong_t)bp->blk_dva[2].dva_word[1],	\
+			    (u_longlong_t)BP_GET_IV2(bp),		\
+			    ws);					\
+		}							\
 		if (BP_IS_GANG(bp) &&					\
 		    DVA_GET_ASIZE(&bp->blk_dva[2]) <=			\
 		    DVA_GET_ASIZE(&bp->blk_dva[1]) / 2)			\
 			copies--;					\
 		len += func(buf + len, size - len,			\
-		    "[L%llu %s] %s %s %s %s %s %s%c"			\
+		    "[L%llu %s] %s %s %s %s %s %s %s%c"			\
 		    "size=%llxL/%llxP birth=%lluL/%lluP fill=%llu%c"	\
 		    "cksum=%llx:%llx:%llx:%llx",			\
 		    (u_longlong_t)BP_GET_LEVEL(bp),			\
 		    type,						\
 		    checksum,						\
 		    compress,						\
+		    crypt_type,						\
 		    BP_GET_BYTEORDER(bp) == 0 ? "BE" : "LE",		\
 		    BP_IS_GANG(bp) ? "gang" : "contiguous",		\
 		    BP_GET_DEDUP(bp) ? "dedup" : "unique",		\
@@ -592,18 +738,38 @@ typedef enum spa_import_type {
 	SPA_IMPORT_ASSEMBLE
 } spa_import_type_t;
 
+/*
+ * Send TRIM commands in-line during normal pool operation while deleting.
+ *	OFF: no
+ *	ON: yes
+ */
+typedef enum {
+	SPA_AUTOTRIM_OFF = 0,	/* default */
+	SPA_AUTOTRIM_ON
+} spa_autotrim_t;
+
+/*
+ * Reason TRIM command was issued, used internally for accounting purposes.
+ */
+typedef enum trim_type {
+	TRIM_TYPE_MANUAL = 0,
+	TRIM_TYPE_AUTO = 1,
+} trim_type_t;
+
 /* state manipulation functions */
 extern int spa_open(const char *pool, spa_t **, void *tag);
 extern int spa_open_rewind(const char *pool, spa_t **, void *tag,
     nvlist_t *policy, nvlist_t **config);
 extern int spa_get_stats(const char *pool, nvlist_t **config, char *altroot,
     size_t buflen);
-extern int spa_create(const char *pool, nvlist_t *config, nvlist_t *props,
-    nvlist_t *zplprops);
+extern int spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
+    nvlist_t *zplprops, struct dsl_crypto_params *dcp);
 extern int spa_import(char *pool, nvlist_t *config, nvlist_t *props,
     uint64_t flags);
 extern nvlist_t *spa_tryimport(nvlist_t *tryconfig);
 extern int spa_destroy(char *pool);
+extern int spa_checkpoint(const char *pool);
+extern int spa_checkpoint_discard(const char *pool);
 extern int spa_export(char *pool, nvlist_t **oldconfig, boolean_t force,
     boolean_t hardforce);
 extern int spa_reset(char *pool);
@@ -616,14 +782,17 @@ extern void spa_inject_delref(spa_t *spa);
 extern void spa_scan_stat_init(spa_t *spa);
 extern int spa_scan_get_stats(spa_t *spa, pool_scan_stat_t *ps);
 
-#define	SPA_ASYNC_CONFIG_UPDATE	0x01
-#define	SPA_ASYNC_REMOVE	0x02
-#define	SPA_ASYNC_PROBE		0x04
-#define	SPA_ASYNC_RESILVER_DONE	0x08
-#define	SPA_ASYNC_RESILVER	0x10
-#define	SPA_ASYNC_AUTOEXPAND	0x20
-#define	SPA_ASYNC_REMOVE_DONE	0x40
-#define	SPA_ASYNC_REMOVE_STOP	0x80
+#define	SPA_ASYNC_CONFIG_UPDATE			0x01
+#define	SPA_ASYNC_REMOVE			0x02
+#define	SPA_ASYNC_PROBE				0x04
+#define	SPA_ASYNC_RESILVER_DONE			0x08
+#define	SPA_ASYNC_RESILVER			0x10
+#define	SPA_ASYNC_AUTOEXPAND			0x20
+#define	SPA_ASYNC_REMOVE_DONE			0x40
+#define	SPA_ASYNC_REMOVE_STOP			0x80
+#define	SPA_ASYNC_INITIALIZE_RESTART		0x100
+#define	SPA_ASYNC_TRIM_RESTART			0x200
+#define	SPA_ASYNC_AUTOTRIM_RESTART		0x400
 
 /*
  * Controls the behavior of spa_vdev_remove().
@@ -639,6 +808,10 @@ extern int spa_vdev_detach(spa_t *spa, uint64_t guid, uint64_t pguid,
     int replace_done);
 extern int spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare);
 extern boolean_t spa_vdev_remove_active(spa_t *spa);
+extern int spa_vdev_initialize(spa_t *spa, nvlist_t *nv, uint64_t cmd_type,
+    nvlist_t *vdev_errlist);
+extern int spa_vdev_trim(spa_t *spa, nvlist_t *nv, uint64_t cmd_type,
+    uint64_t rate, boolean_t partial, boolean_t secure, nvlist_t *vdev_errlist);
 extern int spa_vdev_setpath(spa_t *spa, uint64_t guid, const char *newpath);
 extern int spa_vdev_setfru(spa_t *spa, uint64_t guid, const char *newfru);
 extern int spa_vdev_split_mirror(spa_t *spa, char *newname, nvlist_t *config,
@@ -678,7 +851,7 @@ extern kmutex_t spa_namespace_lock;
 #define	SPA_CONFIG_UPDATE_POOL	0
 #define	SPA_CONFIG_UPDATE_VDEVS	1
 
-extern void spa_config_sync(spa_t *, boolean_t, boolean_t);
+extern void spa_write_cachefile(spa_t *, boolean_t, boolean_t);
 extern void spa_config_load(void);
 extern nvlist_t *spa_all_configs(uint64_t *);
 extern void spa_config_set(spa_t *spa, nvlist_t *config);
@@ -715,22 +888,28 @@ extern boolean_t spa_refcount_zero(spa_t *spa);
 #define	SCL_STATE_ALL	(SCL_STATE | SCL_L2ARC | SCL_ZIO)
 
 /* Historical pool statistics */
-typedef struct spa_stats_history {
+typedef struct spa_history_kstat {
 	kmutex_t		lock;
 	uint64_t		count;
 	uint64_t		size;
 	kstat_t			*kstat;
 	void			*private;
 	list_t			list;
-} spa_stats_history_t;
+} spa_history_kstat_t;
+
+typedef struct spa_history_list {
+	uint64_t		size;
+	procfs_list_t		procfs_list;
+} spa_history_list_t;
 
 typedef struct spa_stats {
-	spa_stats_history_t	read_history;
-	spa_stats_history_t	txg_history;
-	spa_stats_history_t	tx_assign_histogram;
-	spa_stats_history_t	io_history;
-	spa_stats_history_t	mmp_history;
-	spa_stats_history_t	state;		/* pool state */
+	spa_history_list_t	read_history;
+	spa_history_list_t	txg_history;
+	spa_history_kstat_t	tx_assign_histogram;
+	spa_history_kstat_t	io_history;
+	spa_history_list_t	mmp_history;
+	spa_history_kstat_t	state;		/* pool state */
+	spa_history_kstat_t	iostats;
 } spa_stats_t;
 
 typedef enum txg_state {
@@ -749,6 +928,22 @@ typedef struct txg_stat {
 	uint64_t		ndirty;
 } txg_stat_t;
 
+/* Assorted pool IO kstats */
+typedef struct spa_iostats {
+	kstat_named_t	trim_extents_written;
+	kstat_named_t	trim_bytes_written;
+	kstat_named_t	trim_extents_skipped;
+	kstat_named_t	trim_bytes_skipped;
+	kstat_named_t	trim_extents_failed;
+	kstat_named_t	trim_bytes_failed;
+	kstat_named_t	autotrim_extents_written;
+	kstat_named_t	autotrim_bytes_written;
+	kstat_named_t	autotrim_extents_skipped;
+	kstat_named_t	autotrim_bytes_skipped;
+	kstat_named_t	autotrim_extents_failed;
+	kstat_named_t	autotrim_bytes_failed;
+} spa_iostats_t;
+
 extern void spa_stats_init(spa_t *spa);
 extern void spa_stats_destroy(spa_t *spa);
 extern void spa_read_history_add(spa_t *spa, const zbookmark_phys_t *zb,
@@ -763,9 +958,13 @@ extern void spa_tx_assign_add_nsecs(spa_t *spa, uint64_t nsecs);
 extern int spa_mmp_history_set_skip(spa_t *spa, uint64_t mmp_kstat_id);
 extern int spa_mmp_history_set(spa_t *spa, uint64_t mmp_kstat_id, int io_error,
     hrtime_t duration);
-extern void *spa_mmp_history_add(spa_t *spa, uint64_t txg, uint64_t timestamp,
+extern void spa_mmp_history_add(spa_t *spa, uint64_t txg, uint64_t timestamp,
     uint64_t mmp_delay, vdev_t *vd, int label, uint64_t mmp_kstat_id,
     int error);
+extern void spa_iostats_trim_add(spa_t *spa, trim_type_t type,
+    uint64_t extents_written, uint64_t bytes_written,
+    uint64_t extents_skipped, uint64_t bytes_skipped,
+    uint64_t extents_failed, uint64_t bytes_failed);
 
 /* Pool configuration locks */
 extern int spa_config_tryenter(spa_t *spa, int locks, void *tag, krw_t rw);
@@ -794,7 +993,7 @@ typedef enum spa_log_state {
 
 extern spa_log_state_t spa_get_log_state(spa_t *spa);
 extern void spa_set_log_state(spa_t *spa, spa_log_state_t state);
-extern int spa_offline_log(spa_t *spa);
+extern int spa_reset_logs(spa_t *spa);
 
 /* Log claim callback */
 extern void spa_claim_notify(zio_t *zio);
@@ -804,6 +1003,7 @@ extern void spa_deadman(void *);
 extern boolean_t spa_shutting_down(spa_t *spa);
 extern struct dsl_pool *spa_get_dsl(spa_t *spa);
 extern boolean_t spa_is_initializing(spa_t *spa);
+extern boolean_t spa_indirect_vdevs_loaded(spa_t *spa);
 extern blkptr_t *spa_get_rootblkptr(spa_t *spa);
 extern void spa_set_rootblkptr(spa_t *spa, const blkptr_t *bp);
 extern void spa_altroot(spa_t *, char *, size_t);
@@ -821,29 +1021,41 @@ extern spa_load_state_t spa_load_state(spa_t *spa);
 extern uint64_t spa_freeze_txg(spa_t *spa);
 extern uint64_t spa_get_worst_case_asize(spa_t *spa, uint64_t lsize);
 extern uint64_t spa_get_dspace(spa_t *spa);
+extern uint64_t spa_get_checkpoint_space(spa_t *spa);
 extern uint64_t spa_get_slop_space(spa_t *spa);
 extern void spa_update_dspace(spa_t *spa);
 extern uint64_t spa_version(spa_t *spa);
 extern boolean_t spa_deflate(spa_t *spa);
 extern metaslab_class_t *spa_normal_class(spa_t *spa);
 extern metaslab_class_t *spa_log_class(spa_t *spa);
+extern metaslab_class_t *spa_special_class(spa_t *spa);
+extern metaslab_class_t *spa_dedup_class(spa_t *spa);
+extern metaslab_class_t *spa_preferred_class(spa_t *spa, uint64_t size,
+    dmu_object_type_t objtype, uint_t level, uint_t special_smallblk);
+
 extern void spa_evicting_os_register(spa_t *, objset_t *os);
 extern void spa_evicting_os_deregister(spa_t *, objset_t *os);
 extern void spa_evicting_os_wait(spa_t *spa);
 extern int spa_max_replication(spa_t *spa);
 extern int spa_prev_software_version(spa_t *spa);
-extern uint8_t spa_get_failmode(spa_t *spa);
+extern uint64_t spa_get_failmode(spa_t *spa);
+extern uint64_t spa_get_deadman_failmode(spa_t *spa);
+extern void spa_set_deadman_failmode(spa_t *spa, const char *failmode);
 extern boolean_t spa_suspended(spa_t *spa);
 extern uint64_t spa_bootfs(spa_t *spa);
 extern uint64_t spa_delegation(spa_t *spa);
 extern objset_t *spa_meta_objset(spa_t *spa);
 extern uint64_t spa_deadman_synctime(spa_t *spa);
+extern uint64_t spa_deadman_ziotime(spa_t *spa);
+extern uint64_t spa_dirty_data(spa_t *spa);
+extern spa_autotrim_t spa_get_autotrim(spa_t *spa);
 
 /* Miscellaneous support routines */
+extern void spa_load_failed(spa_t *spa, const char *fmt, ...);
+extern void spa_load_note(spa_t *spa, const char *fmt, ...);
 extern void spa_activate_mos_feature(spa_t *spa, const char *feature,
     dmu_tx_t *tx);
 extern void spa_deactivate_mos_feature(spa_t *spa, const char *feature);
-extern int spa_rename(const char *oldname, const char *newname);
 extern spa_t *spa_by_guid(uint64_t pool_guid, uint64_t device_guid);
 extern boolean_t spa_guid_exists(uint64_t pool_guid, uint64_t device_guid);
 extern char *spa_strdup(const char *);
@@ -867,9 +1079,25 @@ extern boolean_t spa_writeable(spa_t *spa);
 extern boolean_t spa_has_pending_synctask(spa_t *spa);
 extern int spa_maxblocksize(spa_t *spa);
 extern int spa_maxdnodesize(spa_t *spa);
+extern boolean_t spa_has_checkpoint(spa_t *spa);
+extern boolean_t spa_importing_readonly_checkpoint(spa_t *spa);
+extern boolean_t spa_suspend_async_destroy(spa_t *spa);
+extern uint64_t spa_min_claim_txg(spa_t *spa);
 extern void zfs_blkptr_verify(spa_t *spa, const blkptr_t *bp);
+extern boolean_t zfs_dva_valid(spa_t *spa, const dva_t *dva,
+    const blkptr_t *bp);
+typedef void (*spa_remap_cb_t)(uint64_t vdev, uint64_t offset, uint64_t size,
+    void *arg);
+extern boolean_t spa_remap_blkptr(spa_t *spa, blkptr_t *bp,
+    spa_remap_cb_t callback, void *arg);
+extern uint64_t spa_get_last_removal_txg(spa_t *spa);
+extern boolean_t spa_trust_config(spa_t *spa);
+extern uint64_t spa_missing_tvds_allowed(spa_t *spa);
+extern void spa_set_missing_tvds(spa_t *spa, uint64_t missing);
+extern boolean_t spa_top_vdevs_spacemap_addressable(spa_t *spa);
 extern boolean_t spa_multihost(spa_t *spa);
 extern unsigned long spa_get_hostid(void);
+extern void spa_activate_allocation_classes(spa_t *, dmu_tx_t *);
 
 extern int spa_mode(spa_t *spa);
 extern uint64_t zfs_strtonum(const char *str, char **nptr);
@@ -894,9 +1122,12 @@ extern const char *spa_state_to_name(spa_t *spa);
 
 /* error handling */
 struct zbookmark_phys;
-extern void spa_log_error(spa_t *spa, zio_t *zio);
-extern void zfs_ereport_post(const char *class, spa_t *spa, vdev_t *vd,
-    zio_t *zio, uint64_t stateoroffset, uint64_t length);
+extern void spa_log_error(spa_t *spa, const zbookmark_phys_t *zb);
+extern int zfs_ereport_post(const char *class, spa_t *spa, vdev_t *vd,
+    const zbookmark_phys_t *zb, zio_t *zio, uint64_t stateoroffset,
+    uint64_t length);
+extern boolean_t zfs_ereport_is_valid(const char *class, spa_t *spa, vdev_t *vd,
+    zio_t *zio);
 extern nvlist_t *zfs_event_create(spa_t *spa, vdev_t *vd, const char *type,
     const char *name, nvlist_t *aux);
 extern void zfs_post_remove(spa_t *spa, vdev_t *vd);
@@ -912,6 +1143,10 @@ extern void spa_get_errlists(spa_t *spa, avl_tree_t *last, avl_tree_t *scrub);
 /* vdev cache */
 extern void vdev_cache_stat_init(void);
 extern void vdev_cache_stat_fini(void);
+
+/* vdev mirror */
+extern void vdev_mirror_stat_init(void);
+extern void vdev_mirror_stat_fini(void);
 
 /* Initialization and termination */
 extern void spa_init(int flags);
@@ -941,14 +1176,11 @@ _NOTE(CONSTCOND) } while (0)
 #define	dprintf_bp(bp, fmt, ...)
 #endif
 
-extern boolean_t spa_debug_enabled(spa_t *spa);
-#define	spa_dbgmsg(spa, ...)			\
-{						\
-	if (spa_debug_enabled(spa))		\
-		zfs_dbgmsg(__VA_ARGS__);	\
-}
-
 extern int spa_mode_global;			/* mode, e.g. FREAD | FWRITE */
+extern int zfs_deadman_enabled;
+extern unsigned long zfs_deadman_synctime_ms;
+extern unsigned long zfs_deadman_ziotime_ms;
+extern unsigned long zfs_deadman_checktime_ms;
 
 #ifdef	__cplusplus
 }

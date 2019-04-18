@@ -21,6 +21,7 @@
 #
 #
 # Copyright (c) 2016, 2017 by Intel Corporation. All rights reserved.
+# Copyright (c) 2019 by Delphix. All rights reserved.
 #
 
 . $STF_SUITE/include/libtest.shlib
@@ -54,9 +55,17 @@ fi
 
 function cleanup
 {
-	#online last disk before fail
-	on_off_disk $offline_disk "online" $host
-	poolexists $TESTPOOL && destroy_pool $TESTPOOL
+	typeset disk
+
+	# Replace any disk that may have been removed at failure time.
+	for disk in $DISK1 $DISK2 $DISK3; do
+		# Skip loop devices and devices that currently exist.
+		is_loop_device $disk && continue
+		is_real_device $disk && continue
+		insert_disk $disk $(get_scsi_host $disk)
+	done
+	destroy_pool $TESTPOOL
+	unload_scsi_debug
 }
 
 log_assert "Testing automated auto-online FMA test"
@@ -65,8 +74,8 @@ log_onexit cleanup
 
 # If using the default loop devices, need a scsi_debug device for auto-online
 if is_loop_device $DISK1; then
-	SD=$(lsscsi | nawk '/scsi_debug/ {print $6; exit}')
-	SDDEVICE=$(echo $SD | nawk -F / '{print $3}')
+	load_scsi_debug $SDSIZE $SDHOSTS $SDTGTS $SDLUNS '512b'
+	SDDEVICE=$(get_debug_device)
 	SDDEVICE_ID=$(get_persistent_disk_name $SDDEVICE)
 	autoonline_disks="$SDDEVICE"
 else
@@ -98,11 +107,10 @@ for offline_disk in $autoonline_disks
 do
 	log_must zpool export -F $TESTPOOL
 
-	host=$(ls /sys/block/$offline_disk/device/scsi_device \
-	    | nawk -F : '{ print $1}')
+	host=$(get_scsi_host $offline_disk)
 
 	# Offline disk
-	on_off_disk $offline_disk "offline"
+	remove_disk $offline_disk
 
 	# Reimport pool with drive missing
 	log_must zpool import $TESTPOOL
@@ -112,10 +120,10 @@ do
 	fi
 
 	# Clear zpool events
-	zpool events -c $TESTPOOL
+	log_must zpool events -c
 
 	# Online disk
-	on_off_disk $offline_disk "online" $host
+	insert_disk $offline_disk $host
 
 	log_note "Delay for ZED auto-online"
 	typeset -i timeout=0

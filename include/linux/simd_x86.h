@@ -81,9 +81,16 @@
 #endif
 
 #if defined(_KERNEL)
-#if defined(HAVE_UNDERSCORE_KERNEL_FPU)
+
+#if defined(HAVE_KERNEL_FPU_API_HEADER)
 #include <asm/fpu/api.h>
 #include <asm/fpu/internal.h>
+#else
+#include <asm/i387.h>
+#include <asm/xcr.h>
+#endif
+
+#if defined(HAVE_UNDERSCORE_KERNEL_FPU)
 #define	kfpu_begin()		\
 {							\
 	preempt_disable();		\
@@ -95,8 +102,6 @@
 	preempt_enable();		\
 }
 #elif defined(HAVE_KERNEL_FPU)
-#include <asm/i387.h>
-#include <asm/xcr.h>
 #define	kfpu_begin()	kernel_fpu_begin()
 #define	kfpu_end()		kernel_fpu_end()
 #else
@@ -154,7 +159,9 @@ typedef enum cpuid_inst_sets {
 	AVX512VBMI,
 	AVX512PF,
 	AVX512ER,
-	AVX512VL
+	AVX512VL,
+	AES,
+	PCLMULQDQ
 } cpuid_inst_sets_t;
 
 /*
@@ -176,6 +183,8 @@ typedef struct cpuid_feature_desc {
 #define	_AVX512PF_BIT		(_AVX512F_BIT | (1U << 26))
 #define	_AVX512ER_BIT		(_AVX512F_BIT | (1U << 27))
 #define	_AVX512VL_BIT		(1U << 31) /* if used also check other levels */
+#define	_AES_BIT		(1U << 25)
+#define	_PCLMULQDQ_BIT		(1U << 1)
 
 /*
  * Descriptions of supported instruction sets
@@ -200,7 +209,9 @@ static const cpuid_feature_desc_t cpuid_features[] = {
 	[AVX512VBMI]	= {7U, 0U, _AVX512VBMI_BIT,	ECX	},
 	[AVX512PF]	= {7U, 0U, _AVX512PF_BIT,	EBX	},
 	[AVX512ER]	= {7U, 0U, _AVX512ER_BIT,	EBX	},
-	[AVX512VL]	= {7U, 0U, _AVX512ER_BIT,	EBX	}
+	[AVX512VL]	= {7U, 0U, _AVX512ER_BIT,	EBX	},
+	[AES]		= {1U, 0U, _AES_BIT,		ECX	},
+	[PCLMULQDQ]	= {1U, 0U, _PCLMULQDQ_BIT,	ECX	},
 };
 
 /*
@@ -271,6 +282,8 @@ CPUID_FEATURE_CHECK(avx512vbmi, AVX512VBMI);
 CPUID_FEATURE_CHECK(avx512pf, AVX512PF);
 CPUID_FEATURE_CHECK(avx512er, AVX512ER);
 CPUID_FEATURE_CHECK(avx512vl, AVX512VL);
+CPUID_FEATURE_CHECK(aes, AES);
+CPUID_FEATURE_CHECK(pclmulqdq, PCLMULQDQ);
 
 #endif /* !defined(_KERNEL) */
 
@@ -481,6 +494,40 @@ zfs_bmi2_available(void)
 #endif
 #elif !defined(_KERNEL)
 	return (__cpuid_has_bmi2());
+#endif
+}
+
+/*
+ * Check if AES instruction set is available
+ */
+static inline boolean_t
+zfs_aes_available(void)
+{
+#if defined(_KERNEL)
+#if defined(X86_FEATURE_AES) && defined(KERNEL_EXPORTS_X86_FPU)
+	return (!!boot_cpu_has(X86_FEATURE_AES));
+#else
+	return (B_FALSE);
+#endif
+#elif !defined(_KERNEL)
+	return (__cpuid_has_aes());
+#endif
+}
+
+/*
+ * Check if PCLMULQDQ instruction set is available
+ */
+static inline boolean_t
+zfs_pclmulqdq_available(void)
+{
+#if defined(_KERNEL)
+#if defined(X86_FEATURE_PCLMULQDQ) && defined(KERNEL_EXPORTS_X86_FPU)
+	return (!!boot_cpu_has(X86_FEATURE_PCLMULQDQ));
+#else
+	return (B_FALSE);
+#endif
+#elif !defined(_KERNEL)
+	return (__cpuid_has_pclmulqdq());
 #endif
 }
 

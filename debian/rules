@@ -4,10 +4,13 @@ include /usr/share/dpkg/default.mk
 
 LSB_DISTRIBUTOR := $(shell lsb_release -is)
 NAME := $(shell awk '$$1 == "Name:" { print $$2; }' META)
-LINUX_NEXT := $(shell awk -F. '{print $$1 "." $$2+1}' debian/linux_compat)
+LINUX_MIN  := $(shell awk '/Linux-Minimum:/{print $$2}' META)
+LINUX_NEXT := $(shell awk -F'[ .]' '/Linux-Maximum:/{print $$2 "." $$3+1}' META)
 
 DKMSFILES := module include config zfs.release.in autogen.sh META AUTHORS \
-		DISCLAIMER COPYRIGHT OPENSOLARIS.LICENSE README.markdown
+		COPYRIGHT LICENSE README.md
+
+SPHINX_BUILD = $(shell dpkg -L python3-sphinx | grep "sphinx-build$$")
 
 ifndef BUILD_UDEB
 BUILD_UDEB=false
@@ -17,14 +20,6 @@ ifndef KVERS
 KVERS=$(shell uname -r)
 endif
 
-ifndef SPL
-SPL=/usr/src/spl-$(DEB_VERSION_UPSTREAM)
-endif
-
-ifndef SPLOBJ
-SPLOBJ=/var/lib/dkms/spl/$(DEB_VERSION_UPSTREAM)/$(KVERS)/$(DEB_TARGET_GNU_CPU)
-endif
-
 non_epoch_version=$(shell echo $(KVERS) | perl -pe 's/^\d+://')
 PACKAGE=zfs
 pmodules = $(PACKAGE)-modules-$(non_epoch_version)
@@ -32,16 +27,16 @@ pmodules = $(PACKAGE)-modules-$(non_epoch_version)
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@ --with autoreconf,dkms,python3,systemd --parallel
+	dh $@ --with autoreconf,dkms,python3,systemd,sphinxdoc
 
 override_dh_autoreconf:
 	@# Embed the downstream version in the module.
-	@sed -e 's/^Version:.*/Version:      $(DEB_VERSION_UPSTREAM)/' -i.orig META
+	@sed -e 's/^Version:.*/Version:       $(DEB_VERSION_UPSTREAM)/' -i.orig META
 
 	dh_autoreconf
 
 override_dh_auto_configure:
-	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(LINUX_NEXT)~\)/" debian/control.in > debian/control
+	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(LINUX_NEXT)~\), linux-libc-dev \(>= $(LINUX_MIN)~\),/" debian/control.in > debian/control
 ifeq ($(BUILD_UDEB), true)
 	cat debian/control.udeb.in >> debian/control
 endif
@@ -52,9 +47,12 @@ endif
 	  --sbindir=/sbin \
 	  --libdir=/lib \
 	  --with-udevdir=/lib/udev \
+	  --with-zfsexecdir=/usr/lib/zfs-linux \
 	  --enable-systemd \
+	  --enable-pyzfs \
 	  --with-systemdunitdir=/lib/systemd/system \
 	  --with-systemdpresetdir=/lib/systemd/system-preset \
+	  --with-systemdgeneratordir=/lib/systemd/system-generators \
 	  --with-config=user
 
 override_dh_auto_build:
@@ -81,9 +79,9 @@ override_dh_auto_install:
 	# Remove suffix (.py) as per policy 10.4 - Scripts
 	# https://www.debian.org/doc/debian-policy/ch-files.html#s-scripts
 	mkdir -p '$(CURDIR)/debian/tmp/usr/sbin/'
-	mv '$(CURDIR)/debian/tmp/usr/bin/arc_summary.py' '$(CURDIR)/debian/tmp/usr/sbin/arc_summary'
-	mv '$(CURDIR)/debian/tmp/usr/bin/arcstat.py' '$(CURDIR)/debian/tmp/usr/sbin/arcstat'
-	mv '$(CURDIR)/debian/tmp/usr/bin/dbufstat.py' '$(CURDIR)/debian/tmp/usr/sbin/dbufstat'
+	mv '$(CURDIR)/debian/tmp/usr/bin/arc_summary' '$(CURDIR)/debian/tmp/usr/sbin/arc_summary'
+	mv '$(CURDIR)/debian/tmp/usr/bin/arcstat' '$(CURDIR)/debian/tmp/usr/sbin/arcstat'
+	mv '$(CURDIR)/debian/tmp/usr/bin/dbufstat' '$(CURDIR)/debian/tmp/usr/sbin/dbufstat'
 
 	@# Zed has dependencies outside of the system root.
 	mv '$(CURDIR)/debian/tmp/sbin/zed' '$(CURDIR)/debian/tmp/usr/sbin/zed'
@@ -121,6 +119,9 @@ override_dh_auto_install:
 	chmod a-x '$(CURDIR)/debian/tmp/etc/default/zfs'
 	chmod a-x '$(CURDIR)/debian/tmp/usr/share/bash-completion/completions/zfs'
 
+override_dh_python3:
+	dh_python3 -p python3-pyzfs
+
 override_dh_dkms:
 	'$(CURDIR)/scripts/dkms.mkconf' -n $(NAME) -v $(DEB_VERSION_UPSTREAM) -f '$(CURDIR)/scripts/zfs-dkms.dkms'
 	dh_dkms
@@ -137,7 +138,7 @@ ifeq ($(BUILD_UDEB), true)
 endif
 
 override_dh_strip:
-	dh_strip --dbg-package=zfs-dbg
+	dh_strip
 ifeq ($(BUILD_UDEB), true)
 	dh_strip -plibnvpair1-udeb
 	dh_strip -plibuutil1-udeb
@@ -152,7 +153,7 @@ override_dh_auto_clean:
 	dh_auto_clean
 	debconf-updatepo
 	@if test -e META.orig; then mv META.orig META; fi
-	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(LINUX_NEXT)~\)/" debian/control.in > debian/control
+	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(LINUX_NEXT)~\), linux-libc-dev \(>= $(LINUX_MIN)~\),/" debian/control.in > debian/control
 ifeq ($(BUILD_UDEB), true)
 	cat debian/control.udeb.in >> debian/control
 endif
@@ -168,6 +169,12 @@ override_dh_installinit:
 	dh_installinit -R --name zfs-zed
 	mkdir -p debian/zfsutils-linux/lib/systemd/system
 	ln -sr /dev/null debian/zfsutils-linux/lib/systemd/system/zfs-import.service
+
+override_dh_installdocs:
+	dh_installdocs
+ifeq (,$(findstring nodoc, $(DEB_BUILD_OPTIONS)))
+	http_proxy='127.0.0.1:9' $(SPHINX_BUILD) -N -bhtml "$(CURDIR)/contrib/pyzfs/docs/source/" debian/pyzfs-doc/usr/share/doc/pyzfs-doc/html/
+endif
 
 # ------------
 
@@ -185,9 +192,7 @@ override_dh_configure_modules_udeb_stamp:
 		--without-selinux \
 		--with-config=kernel \
 		--with-linux=$(KSRC) \
-		--with-linux-obj=$(KOBJ) \
-		--with-spl=$(SPL) \
-		--with-spl-obj=$(SPLOBJ)
+		--with-linux-obj=$(KOBJ)
 	touch override_dh_configure_modules_udeb_stamp
 
 override_dh_configure_modules: override_dh_configure_modules_stamp
@@ -195,9 +200,7 @@ override_dh_configure_modules_stamp:
 	./configure \
 		--with-config=kernel \
 		--with-linux=$(KSRC) \
-		--with-linux-obj=$(KOBJ) \
-		--with-spl=$(SPL) \
-		--with-spl-obj=$(SPLOBJ)
+		--with-linux-obj=$(KOBJ)
 	touch override_dh_configure_modules_stamp
 
 override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configure_modules_udeb

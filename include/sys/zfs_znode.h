@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 by Delphix. All rights reserved.
+ * Copyright (c) 2012, 2018 by Delphix. All rights reserved.
  * Copyright 2016 Nexenta Systems, Inc. All rights reserved.
  */
 
@@ -30,7 +30,6 @@
 #ifdef _KERNEL
 #include <sys/isa_defs.h>
 #include <sys/types32.h>
-#include <sys/attr.h>
 #include <sys/list.h>
 #include <sys/dmu.h>
 #include <sys/sa.h>
@@ -42,6 +41,7 @@
 #endif
 #include <sys/zfs_acl.h>
 #include <sys/zil.h>
+#include <sys/zfs_project.h>
 
 #ifdef	__cplusplus
 extern "C" {
@@ -65,6 +65,18 @@ extern "C" {
 #define	ZFS_REPARSE		0x0000080000000000ull
 #define	ZFS_OFFLINE		0x0000100000000000ull
 #define	ZFS_SPARSE		0x0000200000000000ull
+
+/*
+ * PROJINHERIT attribute is used to indicate that the child object under the
+ * directory which has the PROJINHERIT attribute needs to inherit its parent
+ * project ID that is used by project quota.
+ */
+#define	ZFS_PROJINHERIT		0x0000400000000000ull
+
+/*
+ * PROJID attr is used internally to indicate that the object has project ID.
+ */
+#define	ZFS_PROJID		0x0000800000000000ull
 
 #define	ZFS_ATTR_SET(zp, attr, value, pflags, tx) \
 { \
@@ -110,6 +122,7 @@ extern "C" {
 #define	SA_ZPL_ZNODE_ACL(z)	z->z_attr_table[ZPL_ZNODE_ACL]
 #define	SA_ZPL_DXATTR(z)	z->z_attr_table[ZPL_DXATTR]
 #define	SA_ZPL_PAD(z)		z->z_attr_table[ZPL_PAD]
+#define	SA_ZPL_PROJID(z)	z->z_attr_table[ZPL_PROJID]
 
 /*
  * Is ID ephemeral?
@@ -128,7 +141,7 @@ extern "C" {
 
 /*
  * Special attributes for master node.
- * "userquota@" and "groupquota@" are also valid (from
+ * "userquota@", "groupquota@" and "projectquota@" are also valid (from
  * zfs_userquota_prop_prefixes[]).
  */
 #define	ZFS_FSID		"FSID"
@@ -178,7 +191,7 @@ typedef struct znode {
 	krwlock_t	z_parent_lock;	/* parent lock for directories */
 	krwlock_t	z_name_lock;	/* "master" lock for dirent locks */
 	zfs_dirlock_t	*z_dirlocks;	/* directory entry lock list */
-	zfs_rlock_t	z_range_lock;	/* file range lock */
+	rangelock_t	z_rangelock;	/* file range locks */
 	uint8_t		z_unlinked;	/* file has been unlinked */
 	uint8_t		z_atime_dirty;	/* atime needs to be synced */
 	uint8_t		z_zn_prefetch;	/* Prefetch znodes? */
@@ -196,6 +209,7 @@ typedef struct znode {
 	krwlock_t	z_xattr_lock;	/* xattr data lock */
 	nvlist_t	*z_xattr_cached; /* cached xattrs */
 	uint64_t	z_xattr_parent;	/* parent obj for this xattr */
+	uint64_t	z_projid;	/* project ID */
 	list_node_t	z_link_node;	/* all znodes in fs link */
 	sa_handle_t	*z_sa_hdl;	/* handle to sa data */
 	boolean_t	z_is_sa;	/* are we native sa? */
@@ -211,6 +225,13 @@ typedef struct znode_hold {
 	avl_node_t	zh_node;	/* avl tree linkage */
 	zfs_refcount_t	zh_refcount;	/* active consumer reference count */
 } znode_hold_t;
+
+static inline uint64_t
+zfs_inherit_projid(znode_t *dzp)
+{
+	return ((dzp->z_pflags & ZFS_PROJINHERIT) ? dzp->z_projid :
+	    ZFS_DEFAULT_PROJID);
+}
 
 /*
  * Range locking rules
@@ -238,28 +259,35 @@ typedef struct znode_hold {
 
 #define	S_ISDEV(mode)	(S_ISCHR(mode) || S_ISBLK(mode) || S_ISFIFO(mode))
 
-/* Called on entry to each ZFS vnode and vfs operation  */
-#define	ZFS_ENTER(zfsvfs) \
-	{ \
-		rrm_enter_read(&(zfsvfs)->z_teardown_lock, FTAG); \
-		if ((zfsvfs)->z_unmounted) { \
-			ZFS_EXIT(zfsvfs); \
-			return (EIO); \
-		} \
-	}
+/* Called on entry to each ZFS inode and vfs operation. */
+#define	ZFS_ENTER_ERROR(zfsvfs, error)				\
+do {								\
+	rrm_enter_read(&(zfsvfs)->z_teardown_lock, FTAG);	\
+	if ((zfsvfs)->z_unmounted) {				\
+		ZFS_EXIT(zfsvfs);				\
+		return (error);					\
+	}							\
+} while (0)
+#define	ZFS_ENTER(zfsvfs)	ZFS_ENTER_ERROR(zfsvfs, EIO)
+#define	ZPL_ENTER(zfsvfs)	ZFS_ENTER_ERROR(zfsvfs, -EIO)
 
-/* Must be called before exiting the vop */
-#define	ZFS_EXIT(zfsvfs) \
-	{ \
-		rrm_exit(&(zfsvfs)->z_teardown_lock, FTAG); \
-	}
+/* Must be called before exiting the operation. */
+#define	ZFS_EXIT(zfsvfs)					\
+do {								\
+	rrm_exit(&(zfsvfs)->z_teardown_lock, FTAG);		\
+} while (0)
+#define	ZPL_EXIT(zfsvfs)	ZFS_EXIT(zfsvfs)
 
-/* Verifies the znode is valid */
-#define	ZFS_VERIFY_ZP(zp) \
-	if ((zp)->z_sa_hdl == NULL) { \
-		ZFS_EXIT(ZTOZSB(zp)); \
-		return (EIO); \
-	}
+/* Verifies the znode is valid. */
+#define	ZFS_VERIFY_ZP_ERROR(zp, error)				\
+do {								\
+	if ((zp)->z_sa_hdl == NULL) {				\
+		ZFS_EXIT(ZTOZSB(zp));				\
+		return (error);					\
+	}							\
+} while (0)
+#define	ZFS_VERIFY_ZP(zp)	ZFS_VERIFY_ZP_ERROR(zp, EIO)
+#define	ZPL_VERIFY_ZP(zp)	ZFS_VERIFY_ZP_ERROR(zp, -EIO)
 
 /*
  * Macros for dealing with dmu_buf_hold
@@ -361,7 +389,6 @@ extern void zfs_log_acl(zilog_t *zilog, dmu_tx_t *tx, znode_t *zp,
     vsecattr_t *vsecp, zfs_fuid_info_t *fuidp);
 extern void zfs_xvattr_set(znode_t *zp, xvattr_t *xvap, dmu_tx_t *tx);
 extern void zfs_upgrade(zfsvfs_t *zfsvfs, dmu_tx_t *tx);
-extern int zfs_create_share_dir(zfsvfs_t *zfsvfs, dmu_tx_t *tx);
 
 #if defined(HAVE_UIO_RW)
 extern caddr_t zfs_map_page(page_t *, enum seg_rw);
@@ -369,7 +396,7 @@ extern void zfs_unmap_page(page_t *, caddr_t);
 #endif /* HAVE_UIO_RW */
 
 extern zil_get_data_t zfs_get_data;
-extern zil_replay_func_t zfs_replay_vector[TX_MAX_TYPE];
+extern zil_replay_func_t *zfs_replay_vector[TX_MAX_TYPE];
 extern int zfsfstype;
 
 #endif /* _KERNEL */

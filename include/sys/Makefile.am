@@ -1,7 +1,8 @@
-SUBDIRS = fm fs crypto sysevent
+SUBDIRS = fm fs crypto lua sysevent
 
 COMMON_H = \
 	$(top_srcdir)/include/sys/abd.h \
+	$(top_srcdir)/include/sys/aggsum.h \
 	$(top_srcdir)/include/sys/arc.h \
 	$(top_srcdir)/include/sys/arc_impl.h \
 	$(top_srcdir)/include/sys/avl.h \
@@ -11,11 +12,15 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/bpobj.h \
 	$(top_srcdir)/include/sys/bptree.h \
 	$(top_srcdir)/include/sys/bqueue.h \
+	$(top_srcdir)/include/sys/cityhash.h \
+	$(top_srcdir)/include/sys/spa_checkpoint.h \
+	$(top_srcdir)/include/sys/dataset_kstats.h \
 	$(top_srcdir)/include/sys/dbuf.h \
 	$(top_srcdir)/include/sys/ddt.h \
 	$(top_srcdir)/include/sys/dmu.h \
 	$(top_srcdir)/include/sys/dmu_impl.h \
 	$(top_srcdir)/include/sys/dmu_objset.h \
+	$(top_srcdir)/include/sys/dmu_recv.h \
 	$(top_srcdir)/include/sys/dmu_send.h \
 	$(top_srcdir)/include/sys/dmu_traverse.h \
 	$(top_srcdir)/include/sys/dmu_tx.h \
@@ -27,6 +32,7 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/dsl_deleg.h \
 	$(top_srcdir)/include/sys/dsl_destroy.h \
 	$(top_srcdir)/include/sys/dsl_dir.h \
+	$(top_srcdir)/include/sys/dsl_crypt.h \
 	$(top_srcdir)/include/sys/dsl_pool.h \
 	$(top_srcdir)/include/sys/dsl_prop.h \
 	$(top_srcdir)/include/sys/dsl_scan.h \
@@ -34,11 +40,14 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/dsl_userhold.h \
 	$(top_srcdir)/include/sys/edonr.h \
 	$(top_srcdir)/include/sys/efi_partition.h \
+	$(top_srcdir)/include/sys/frame.h \
+	$(top_srcdir)/include/sys/hkdf.h \
 	$(top_srcdir)/include/sys/metaslab.h \
 	$(top_srcdir)/include/sys/metaslab_impl.h \
 	$(top_srcdir)/include/sys/mmp.h \
 	$(top_srcdir)/include/sys/mntent.h \
 	$(top_srcdir)/include/sys/multilist.h \
+	$(top_srcdir)/include/sys/note.h \
 	$(top_srcdir)/include/sys/nvpair.h \
 	$(top_srcdir)/include/sys/nvpair_impl.h \
 	$(top_srcdir)/include/sys/pathname.h \
@@ -68,6 +77,7 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/trace_dnode.h \
 	$(top_srcdir)/include/sys/trace_multilist.h \
 	$(top_srcdir)/include/sys/trace_txg.h \
+	$(top_srcdir)/include/sys/trace_vdev.h \
 	$(top_srcdir)/include/sys/trace_zil.h \
 	$(top_srcdir)/include/sys/trace_zio.h \
 	$(top_srcdir)/include/sys/trace_zrlock.h \
@@ -84,12 +94,21 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/vdev_file.h \
 	$(top_srcdir)/include/sys/vdev.h \
 	$(top_srcdir)/include/sys/vdev_impl.h \
+	$(top_srcdir)/include/sys/vdev_indirect_births.h \
+	$(top_srcdir)/include/sys/vdev_indirect_mapping.h \
+	$(top_srcdir)/include/sys/vdev_initialize.h \
 	$(top_srcdir)/include/sys/vdev_raidz.h \
 	$(top_srcdir)/include/sys/vdev_raidz_impl.h \
+	$(top_srcdir)/include/sys/vdev_removal.h \
+	$(top_srcdir)/include/sys/vdev_trim.h \
 	$(top_srcdir)/include/sys/xvattr.h \
 	$(top_srcdir)/include/sys/zap.h \
 	$(top_srcdir)/include/sys/zap_impl.h \
 	$(top_srcdir)/include/sys/zap_leaf.h \
+	$(top_srcdir)/include/sys/zcp.h \
+	$(top_srcdir)/include/sys/zcp_global.h \
+	$(top_srcdir)/include/sys/zcp_iter.h \
+	$(top_srcdir)/include/sys/zcp_prop.h \
 	$(top_srcdir)/include/sys/zfeature.h \
 	$(top_srcdir)/include/sys/zfs_acl.h \
 	$(top_srcdir)/include/sys/zfs_context.h \
@@ -98,10 +117,12 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/zfs_delay.h \
 	$(top_srcdir)/include/sys/zfs_dir.h \
 	$(top_srcdir)/include/sys/zfs_fuid.h \
+	$(top_srcdir)/include/sys/zfs_project.h \
 	$(top_srcdir)/include/sys/zfs_ratelimit.h \
 	$(top_srcdir)/include/sys/zfs_rlock.h \
 	$(top_srcdir)/include/sys/zfs_sa.h \
 	$(top_srcdir)/include/sys/zfs_stat.h \
+	$(top_srcdir)/include/sys/zfs_sysfs.h \
 	$(top_srcdir)/include/sys/zfs_vfsops.h \
 	$(top_srcdir)/include/sys/zfs_vnops.h \
 	$(top_srcdir)/include/sys/zfs_znode.h \
@@ -109,10 +130,12 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/zil_impl.h \
 	$(top_srcdir)/include/sys/zio_checksum.h \
 	$(top_srcdir)/include/sys/zio_compress.h \
+	$(top_srcdir)/include/sys/zio_crypt.h \
 	$(top_srcdir)/include/sys/zio.h \
 	$(top_srcdir)/include/sys/zio_impl.h \
 	$(top_srcdir)/include/sys/zio_priority.h \
-	$(top_srcdir)/include/sys/zrlock.h
+	$(top_srcdir)/include/sys/zrlock.h \
+	$(top_srcdir)/include/sys/zthr.h
 
 KERNEL_H = \
 	$(top_srcdir)/include/sys/zfs_ioctl.h \

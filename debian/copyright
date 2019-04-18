@@ -27,12 +27,14 @@ Disclaimer:
 License: CDDL-1.0
 
 Files: *
-Copyright: 2000, 2002, 2004-2007, 2009, 2010, Oracle and/or its affiliates.
+Copyright:
+  2000, 2002, 2004-2007, 2009, 2010, Oracle and/or its affiliates.
+  2013-2014, Lawrence Livermore National Security, LLC
 License: CDDL-1.0
 
 Files: cmd/*
 Copyright: 2011, 2013, Nexenta Systems, Inc.
-  2007, 2009, Sun Microsystems, Inc.
+           2007, 2009, Sun Microsystems, Inc.
 License: CDDL-1.0
 
 Files: cmd/arc_summary/*
@@ -45,8 +47,8 @@ License: BSD-2-clause
 Files: cmd/arcstat/*
 Source: http://github.com/mharsch/arcstat
 Copyright:
- 2007, Oracle and/or its affiliates.
- 2010-2015, Mike Harsch
+  2007, Oracle and/or its affiliates.
+  2010-2015, Mike Harsch
 License: CDDL-1.0
 
 Files: cmd/dbufstat/*
@@ -55,101 +57,97 @@ License: CDDL-1.0
 
 Files: cmd/mount_zfs/*
 Copyright: 2011, Lawrence Livermore National Security, LLC
-  2005, 2010, Oracle and/or its affiliates.
+           2005, 2010, Oracle and/or its affiliates.
+License: CDDL-1.0
+
+Files: cmd/raidz_test/*
+Copyright: 2016 Gvozden Nešković.
 License: CDDL-1.0
 
 Files: cmd/vdev_id/*
 Copyright: 2011, 2013, Nexenta Systems, Inc.
-  2007, 2009, Sun Microsystems, Inc.
+           2007, 2009, Sun Microsystems, Inc.
 License: CDDL-1.0
 
 Files: cmd/zdb/*
-Copyright: 2015, Intel Corporation
-  2011, 2014, Delphix.
+Copyright:
   2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: cmd/zdb/zdb_il.c
-Copyright: 2013, 2014, Delphix.
+  2011, 2018 by Delphix.
+  2014 Integros [integros.com]
+  2016 Nexenta Systems, Inc.
+  2017, 2018 Lawrence Livermore National Security, LLC.
+  2015, 2017, Intel Corporation.
+  2017 Spectra Logic Corp Inc.
   2012, Cyril Plisko.
   2009, Sun Microsystems, Inc.
 License: CDDL-1.0
 
 Files: cmd/zed/*
-Copyright: 2013-2014, Lawrence Livermore National Security, LLC
+Copyright:
+  2004, 2010, Oracle and/or its affiliates.
+  2004 Sun Microsystems, Inc.
+  2016, Intel Corporation.
+  2018, loli10K <ezomori.nozomu@gmail.com>
+  2017 Open-E, Inc.
+  2013-2014, Lawrence Livermore National Security, LLC
 License: CDDL-1.0
 
-Files: cmd/zfs/zfs_iter.c
-Copyright: 2013, Nexenta Systems, Inc.
-  2013, Delphix.
-  2012, Pawel Jakub Dawidek <pawel@dawidek.net>
+Files: cmd/zfs/*
+Copyright:
   2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: cmd/zfs/zfs_main.c
-Copyright: 2013, Steven Hartland.
-  2013, Nexenta Systems, Inc.
+  2009 Sun Microsystems, Inc.
+  2011, 2013, 2014, Delphix.
   2012, Joyent, Inc.
-  2011, 2014, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: cmd/zfs/zfs_util.h
-Copyright: 2000, 2002, 2004-2007, 2009, 2010, Oracle and/or its affiliates.
+  2012, Pawel Jakub Dawidek <pawel@dawidek.net>
+  2013, Nexenta Systems, Inc.
+  2013, Steven Hartland.
+  2012 Milan Jurik.
+  2016 Igor Kozhukhov <ikozhukhov@gmail.com>
+  2018 Datto Inc.
 License: CDDL-1.0
 
 Files: cmd/zhack/*
 Copyright: 2013, Steven Hartland.
-  2011, 2012, 2014, Delphix.
+           2011, 2012, 2014, Delphix.
 License: CDDL-1.0
 
 Files: cmd/zinject/*
 Copyright: 2011-2015, Delphix.
-  2000, 2005-2010, Oracle and/or its affiliates.
+           2000, 2005-2010, Oracle and/or its affiliates.
+           2017, Intel Corporation.
 License: CDDL-1.0
-
-Files: cmd/zinject/zinject.h
-Copyright: 2000, 2002, 2004-2007, 2009, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: cmd/zpios/*
-Copyright: 2008-2010, Lawrence Livermore National Security, LLC
-  2004, Cluster File Systems, Inc
-License: GPL-2+
 
 Files: cmd/zpool/*
-Copyright: 2005-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: cmd/zpool/zpool_main.c
-Copyright: 2013, Prasad Joshi (sTec).
-  2012, Frederik Wessels.
-  2012, Cyril Plisko.
-  2011, Nexenta Systems, Inc.
-  2011, 2014, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: cmd/zpool/zpool_util.h
-Copyright: 2000, 2002, 2004-2007, 2009, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: cmd/zpool/zpool_vdev.c
-Copyright: 2011-2015, Delphix.
-  2000, 2005-2010, Oracle and/or its affiliates.
+Copyright:
+ 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ 2005-2010, Sun Microsystems, Inc.
+ 2011 Nexenta Systems, Inc. All rights reserved.
+ 2011, 2018 by Delphix. All rights reserved.
+ 2012 by Cyril Plisko. All rights reserved.
+ 2012 by Frederik Wessels. All rights reserved.
+ 2013 by Prasad Joshi (sTec). All rights reserved.
+ 2016 Igor Kozhukhov <ikozhukhov@gmail.com>.
+ 2017 Datto Inc.
+ 2017 Open-E, Inc. All Rights Reserved.
+ 2017, Intel Corporation.
 License: CDDL-1.0
 
 Files: cmd/zstreamdump/*
-Copyright: 2013, Delphix.
+Copyright:
+  2013, Delphix.
   2012, Martin Matuska <martin@matuska.org>
   2010, Sun Microsystems, Inc.
 License: CDDL-1.0
 
 Files: cmd/ztest/*
-Copyright: 2013, Steven Hartland.
-  2011, Nexenta Systems, Inc.
-  2011, 2015, Delphix.
+Copyright:
   2005, 2010, Oracle and/or its affiliates.
+  2011, 2018 by Delphix.
+  2011 Nexenta Systems, Inc.
+  2013 Steven Hartland.
+  2014 Integros [integros.com]
+  2017 Joyent, Inc.
+  2017, Intel Corporation.
 License: CDDL-1.0
 
 Files: cmd/zvol_id/*
@@ -181,9 +179,13 @@ License: PERMISSIVE2
  This configure script is free software; the Free Software Foundation
  gives unlimited permission to copy, distribute and modify it.
 
-Files: contrib/*
+Files: contrib/bash_completion.d/*
 Copyright: 2010, 2013, Aneurin Price <aneurin.price@gmail.com>
 License: Expat
+
+FIles: contrib/pyzfs/*
+Copyright: 2015 ClusterHQ
+License: Apache-2.0
 
 Files: debian/*
 Copyright:
@@ -193,6 +195,7 @@ Copyright:
  2013, Turbo Fredriksson <turbo@bayour.com>
  2012-2013, Richard Laager <rlaager@wiktel.com>
  2011-2013, Darik Horn <dajhorn@vanadac.com>
+ 2018, Mo Zhou <lumin@debian.org>
 License: GPL-2+
 
 Files: debian/po/*
@@ -211,233 +214,41 @@ Copyright:
   2011, Darik Horn.
 License: BSD-2-clause
 
+Files: etc/systemd/system-generators/*
+Copyright: 2017 Antonio Russo <antonio.e.russo@gmail.com>
+License: Expat
+
 Files: include/*
-Copyright: 2000, 2002, 2004, 2005, 2007, 2009, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/libuutil_common.h
-  include/zfs_fletcher.h
-  include/zfs_prop.h
-Copyright: 2005-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: include/libuutil_impl.h
-Copyright: 1990-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: include/libzfs.h
-Copyright: 2013, Steven Hartland.
-  2013, Nexenta Systems, Inc.
-  2013, Delphix.
-  2012, Joyent, Inc.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/libzfs_core.h
-Copyright: 2011-2014, Delphix.
-License: CDDL-1.0
-
-Files: include/libzfs_impl.h
-  include/zfs_comutil.h
-Copyright: 2011-2015, Delphix.
-  2000, 2005-2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/linux/*
-Copyright: 2008-2011, Lawrence Livermore National Security, LLC
-License: CDDL-1.0
-
-Files: include/linux/kmap_compat.h
-Copyright: 2015, Chunwei Chen.
-License: CDDL-1.0
-
-Files: include/linux/vfs_compat.h
-Copyright: 2015, Jörg Thalheim
-  2011, Lawrence Livermore National Security, LLC
-License: CDDL-1.0
-
-Files: include/sys/arc.h
-Copyright: 2013, Saso Kiselkov.
-  2011, 2012, 2014, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/arc_impl.h
-Copyright: 2013, Saso Kiselkov.
-  2013, Nexenta Systems, Inc.
-  2013, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/avl.h
-  include/sys/dmu_tx.h
-  include/sys/metaslab_impl.h
-  include/sys/range_tree.h
-  include/sys/rrwlock.h
-  include/sys/space_map.h
-  include/sys/space_reftree.h
-  include/sys/txg.h
-  include/sys/txg_impl.h
-  include/sys/uberblock.h
-  include/sys/zio_impl.h
-Copyright: 2011-2014, Delphix.
-  2007, 2009, 2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: include/sys/avl_impl.h
-  include/sys/nvpair_impl.h
-  include/sys/sdt.h
-  include/sys/uuid.h
-  include/sys/vdev_file.h
-Copyright: 1990-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: include/sys/blkptr.h
-  include/sys/dsl_bookmark.h
-  include/sys/multilist.h
-Copyright: 2013-2014, Delphix.
-License: CDDL-1.0
-
-Files: include/sys/bpobj.h
-  include/sys/dmu_traverse.h
-  include/sys/dsl_deleg.h
-  include/sys/dsl_pool.h
-  include/sys/dsl_prop.h
-  include/sys/dsl_scan.h
-  include/sys/dsl_synctask.h
-  include/sys/metaslab.h
-  include/sys/nvpair.h
-  include/sys/vdev.h
-  include/sys/vdev_impl.h
-  include/sys/zap.h
-  include/sys/zfs_debug.h
-  include/sys/zfs_ioctl.h
-  include/sys/zfs_znode.h
-Copyright: 2011-2015, Delphix.
-  2000, 2005-2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/bptree.h
-  include/sys/zfeature.h
-Copyright: 2011-2014, Delphix.
-License: CDDL-1.0
-
-Files: include/sys/dbuf.h
-Copyright: 2014, Spectra Logic Corporation
-  2013, Saso Kiselkov.
-  2012, 2015, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/dmu.h
-Copyright: 2014, Spectra Logic Corporation
-  2014, HybridCluster.
-  2012, Joyent, Inc.
-  2011, Nexenta Systems, Inc.
-  2011, 2014, Delphix.
+Copyright:
+  2000, 2002, 2004, 2005, 2007, 2009, 2010, Oracle and/or its affiliates.
+  2007 The Regents of the University of California.
+  2008 Sun Microsystems, Inc.
+  2009, 2010, Jorn Amundsen <jorn.amundsen@ntnu.no>
+  2011 Nexenta Systems, Inc.
+  2011, 2018 by Delphix.
+  2011-2018 Lawrence Livermore National Security, LLC.
+  2013 by Saso Kiselkov.
+  2013, 2017 Joyent, Inc.
+  2014 HybridCluster.
+  2014 Integros [integros.com]
+  2014 Spectra Logic Corporation,
+  2015 Jörg Thalheim.
+  2015 by Chunwei Chen.
+  2016 Actifio, Inc.
+  2016 Gvozden Neskovic <neskovic@compeng.uni-frankfurt.de>
+  2016 Romain Dolbeau <romain@dolbeau.org>
+  2017 Datto Inc.
+  2017, Intel Corporation.
+  2016 RackTop Systems.
+  2016 Toomas Soome <tsoome@me.com>
+  1983-1989, AT&T
+  1982, 1986, 1988, The Regents of the University of California
   2010, Robert Milkowski
-  2005, 2010, Oracle and/or its affiliates.
 License: CDDL-1.0
 
-Files: include/sys/dmu_impl.h
-Copyright: 2013, Delphix.
-  2012, Joyent, Inc.
-  2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: include/sys/dmu_objset.h
-Copyright: 2014, Spectra Logic Corporation
-  2013, Saso Kiselkov.
-  2012, 2014, Delphix.
-  2010, Robert Milkowski
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/dmu_send.h
-Copyright: 2013, Joyent, Inc.
-  2012, 2014, Delphix.
-  2011, Nexenta Systems, Inc.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/dmu_zfetch.h
-  include/sys/spa_boot.h
-  include/sys/u8_textprep.h
-  include/sys/unique.h
-  include/sys/zfs_dir.h
-  include/sys/zfs_fuid.h
-  include/sys/zfs_rlock.h
-  include/sys/zfs_sa.h
-  include/sys/zio_compress.h
-Copyright: 2005-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: include/sys/dnode.h
-  include/sys/sa_impl.h
-Copyright: 2014, Spectra Logic Corporation
-  2011-2015, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/dsl_dataset.h
-Copyright: 2014, Spectra Logic Corporation
-  2013, Steven Hartland.
-  2013, Joyent, Inc.
-  2013, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/dsl_destroy.h
-Copyright: 2013, Delphix.
-  2012, Joyent, Inc.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/dsl_dir.h
-Copyright: 2014, Spectra Logic Corporation
-  2014, Joyent, Inc.
-  2013, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/dsl_userhold.h
-Copyright: 2013, Steven Hartland.
-  2012, 2013, Joyent, Inc.
-  2012, 2014, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/fm/fs/*
-Copyright: 2005-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: include/sys/fs/*
-Copyright: 2013, Joyent, Inc.
-  2011, Nexenta Systems, Inc.
-  2011, 2014, Delphix.
-  2010, Robert Milkowski
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/mntent.h
-Copyright: 2008, 2009, Sun Microsystems, Inc.
-  1984, 1986-1989, AT&T
-License: CDDL-1.0
-
-Files: include/sys/spa.h
-Copyright: 2014, Spectra Logic Corporation
-  2011, Nexenta Systems, Inc.
-  2011, 2014, 2015, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/spa_impl.h
-Copyright: 2016, Actifio, Inc.
-  2014, Spectra Logic Corporation
-  2011, Nexenta Systems, Inc.
-  2011, 2015, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
+Files: include/sys/lua/*
+Copyright: 1994-2015 Lua.org, PUC-Rio.
+License: Expat
 
 Files: include/sys/u8_textprep_data.h
 Copyright: 2007, Sun Microsystems, Inc.
@@ -476,316 +287,102 @@ License: Expat~Unicode
  registered in some jurisdictions. All other trademarks and registered
  trademarks mentioned herein are the property of their respective owners.
 
-Files: include/sys/uio_impl.h
-Copyright: 2007, 2009, 2010, Sun Microsystems, Inc.
-  1983-1989, AT&T
-  1982, 1986, 1988, The Regents of the University of California
-License: CDDL-1.0
-
-Files: include/sys/vdev_disk.h
-  include/sys/zpl.h
-Copyright: 2008-2011, Lawrence Livermore National Security, LLC
-License: CDDL-1.0
-
-Files: include/sys/xvattr.h
-Copyright: 1988, 2010, Oracle and/or its affiliates.
-  1983-1989, AT&T
-  1982, 1986, 1988, The Regents of the University of California
-License: CDDL-1.0
-
-Files: include/sys/zap_impl.h
-  include/sys/zap_leaf.h
-Copyright: 2014, Spectra Logic Corporation
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/zfs_context.h
-Copyright: 2012, Joyent, Inc.
-  2012, 2014, Delphix.
-  2011, Nexenta Systems, Inc.
-  2009, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: include/sys/zfs_ctldir.h
-Copyright: 2011, Lawrence Livermore National Security, LLC
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/zil.h
-  include/sys/zil_impl.h
-Copyright: 2011-2014, Delphix.
-  2010, Robert Milkowski
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/zio.h
-Copyright: 2013, Saso Kiselkov.
-  2012, 2014, Delphix.
-  2011, Nexenta Systems, Inc.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/sys/zvol.h
-Copyright: 2016, Actifio, Inc.
-  2005, 2006, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/zfeature_common.h
-Copyright: 2013, Saso Kiselkov.
-  2013, Delphix.
-License: CDDL-1.0
-
-Files: include/zfs_deleg.h
-Copyright: 2012-2015, Delphix.
-  2010, 2011, Nexenta Systems, Inc.
-  2005, 2007, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: include/zfs_namecheck.h
-Copyright: 2011-2014, Delphix.
-  2007, 2009, 2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: include/zpios-ctl.h
-  include/zpios-internal.h
-Copyright: 2008-2010, Lawrence Livermore National Security, LLC
-  2004, Cluster File Systems, Inc
-License: GPL-2+
-
 Files: lib/*
-Copyright: 2000, 2002, 2004, 2005, 2007, 2009, 2010, Oracle and/or its affiliates.
+Copyright:
+  2000, 2002, 2004, 2005, 2007, 2009, 2010, Oracle and/or its affiliates.
+  2011-2018 Lawrence Livermore National Security, LLC.
 License: CDDL-1.0
 
 Files: lib/libnvpair/*
-Copyright: 2011-2015, Delphix.
+Copyright:
+  2014, Joyent, Inc.
+  2011-2015, Delphix.
   2000, 2005-2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libnvpair/nvpair_alloc_system.c
-Copyright: 1990-2010, Sun Microsystems, Inc.
+  1990-2010, Sun Microsystems, Inc.
 License: CDDL-1.0
 
 Files: lib/libshare/*
 Copyright: 2011, Gunnar Beutner
   2002, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libshare/nfs.c
-Copyright: 2012, Cyril Plisko.
-  2011, Gunnar Beutner
-  2002, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libshare/smb.c
-Copyright: 2011, 2012, Turbo Fredriksson <turbo@bayour.com>, based on nfs.c
-  2002, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libshare/smb.h
-Copyright: 2011, Turbo Fredriksson <turbo@bayour.com>
+  2011,2012 Turbo Fredriksson <turbo@bayour.com>
+  2012 Cyril Plisko.
 License: CDDL-1.0
 
 Files: lib/libspl/*
-Copyright: 2005-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: lib/libspl/asm-generic/*
-Copyright: 1990-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: lib/libspl/getexecname.c
-Copyright: 1990-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: lib/libspl/getmntany.c
-Copyright: 2006, Ricardo Correia.
-  2005, Sun Microsystems, Inc.
-  1988, AT&T
-License: CDDL-1.0
-
-Files: lib/libspl/include/*
-Copyright: 1990-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: lib/libspl/include/atomic.h
-  lib/libspl/include/libshare.h
-  lib/libspl/include/statcommon.h
-  lib/libspl/include/zone.h
-Copyright: 2005-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: lib/libspl/include/note.h
-Copyright: 1994, 2008, Sun Microsystems, Inc
-License: CDDL-1.0
-
-Files: lib/libspl/include/rpc/*
-Copyright: 2005-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: lib/libspl/include/rpc/xdr.h
-Copyright: 2005, Sun Microsystems, Inc.
-  1983-1989, AT&T
-License: CDDL-1.0
-
-Files: lib/libspl/include/synch.h
-Copyright: 2014, Zettabyte Software, LLC.
-  2008, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: lib/libspl/include/sys/acl.h
-  lib/libspl/include/sys/acl_impl.h
-  lib/libspl/include/sys/dkio.h
-  lib/libspl/include/sys/isa_defs.h
-  lib/libspl/include/sys/kmem.h
-  lib/libspl/include/sys/kstat.h
-  lib/libspl/include/sys/list.h
-  lib/libspl/include/sys/stack.h
-  lib/libspl/include/sys/stropts.h
-  lib/libspl/include/sys/types32.h
-  lib/libspl/include/sys/tzfile.h
-Copyright: 2005-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: lib/libspl/include/sys/byteorder.h
-Copyright: 2007, 2009, 2010, Sun Microsystems, Inc.
-  1983-1989, AT&T
+Copyright:
   1982, 1986, 1988, The Regents of the University of California
-License: CDDL-1.0
-
-Files: lib/libspl/include/sys/dktp/*
-Copyright: 2008, 2009, Sun Microsystems, Inc.
   1984, 1986-1989, AT&T
-License: CDDL-1.0
-
-Files: lib/libspl/include/sys/mnttab.h
-Copyright: 2006, Ricardo Correia
-  2004, Sun Microsystems, Inc.
-  1984, 1986-1989, AT&T
-License: CDDL-1.0
-
-Files: lib/libspl/include/sys/note.h
-  lib/libspl/include/sys/sunddi.h
-Copyright: 1994, 2008, Sun Microsystems, Inc
-License: CDDL-1.0
-
-Files: lib/libspl/include/sys/stat.h
-Copyright: 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libspl/include/sys/uio.h
-Copyright: 2005, Sun Microsystems, Inc.
-  1984, 1986-1989, AT&T
-  1982, 1986, 1988, The Regents of the University of California
-License: CDDL-1.0
-
-Files: lib/libspl/include/sys/vtoc.h
-Copyright: 2008, 2009, Sun Microsystems, Inc.
-  1984, 1986-1989, AT&T
-License: CDDL-1.0
-
-Files: lib/libspl/mkdirp.c
-Copyright: 2008, 2009, Sun Microsystems, Inc.
-  1984, 1986-1989, AT&T
-License: CDDL-1.0
-
-Files: lib/libspl/strnlen.c
-Copyright: 2008, Sun Microsystems, Inc
-License: CDDL-1.0
-
-Files: lib/libspl/zone.c
-Copyright: 2006, Ricardo Correia.
+  2005-2010, Sun Microsystems, Inc.
+  2006, Ricardo Correia.
+  2010, Oracle and/or its affiliates.
+  2014, Zettabyte Software, LLC.
+  2017, Lawrence Livermore National Security, LLC.
 License: CDDL-1.0
 
 Files: lib/libuutil/*
 Copyright: 1990-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: lib/libuutil/uu_alloc.c
-  lib/libuutil/uu_misc.c
-  lib/libuutil/uu_string.c
-Copyright: 2000, 2002, 2004-2007, 2009, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libuutil/uu_avl.c
-  lib/libuutil/uu_list.c
-Copyright: 2005-2010, Sun Microsystems, Inc.
+           2000, 2002, 2004-2007, 2009, 2010, Oracle and/or its affiliates.
 License: CDDL-1.0
 
 Files: lib/libzfs/*
-Copyright: 2011, 2014, Nexenta Systems, Inc.
-  2011-2015, Delphix.
+Copyright:
   2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libzfs/libzfs_changelist.c
-Copyright: 2010, Sun Microsystems, Inc.
-  2007, Ramprakash Jelari
-License: CDDL-1.0
-
-Files: lib/libzfs/libzfs_config.c
-Copyright: 2011-2014, Delphix.
+  2005, 2010, Oracle and/or its affiliates.
+  2005, 2010, Oracle and/or its affiliates.
   2007, 2009, 2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: lib/libzfs/libzfs_dataset.c
-Copyright: 2013, Steven Hartland.
-  2013, Nexenta Systems, Inc.
-  2013, Martin Matuska.
-  2013, Joyent, Inc.
-  2013, Delphix.
-  2012, Pawel Jakub Dawidek <pawel@dawidek.net>
-  2012, DEY Storage Systems, Inc.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libzfs/libzfs_diff.c
-Copyright: 2015, Nexenta Systems, Inc.
-  2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libzfs/libzfs_fru.c
-  lib/libzfs/libzfs_graph.c
-Copyright: 2005-2010, Sun Microsystems, Inc.
-License: CDDL-1.0
-
-Files: lib/libzfs/libzfs_mount.c
-Copyright: 2000, 2002, 2004-2007, 2009, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libzfs/libzfs_sendrecv.c
-Copyright: 2013, Steven Hartland.
-  2012, Pawel Jakub Dawidek <pawel@dawidek.net>
-  2012, Joyent, Inc.
+  2007, Ramprakash Jelari
   2011, 2014, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libzfs/libzfs_status.c
-Copyright: 2013, Steven Hartland.
-  2012, 2014, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
-Files: lib/libzfs/libzfs_util.c
-Copyright: 2013, Joyent, Inc.
-  2012, Delphix.
-  2005, 2010, Oracle and/or its affiliates.
+  2011, 2014, Nexenta Systems, Inc.
+  2011-2015, Delphix.
+  2012, DEY Storage Systems, Inc.
+  2012, Joyent, Inc.
+  2012, Pawel Jakub Dawidek <pawel@dawidek.net>
+  2013, Delphix.
+  2013, Joyent, Inc.
+  2013, Martin Matuska.
+  2013, Nexenta Systems, Inc.
+  2013, Steven Hartland.
+  2015 by Syneto S.R.L.
+  2015, OmniTI Computer Consulting, Inc.
+  2016 Igor Kozhukhov <ikozhukhov@gmail.com>
+  2017-2018 RackTop Systems.
+  2017 Open-E, Inc.
+  2017, Intel Corporation.
+  2018, loli10K <ezomori.nozomu@gmail.com>
+  2018 Datto Inc.
 License: CDDL-1.0
 
 Files: lib/libzfs_core/*
-Copyright: 2013, Steven Hartland.
-  2011, 2012, 2014, Delphix.
+Copyright:
+  2012, 2018 by Delphix.
+  2017 Datto Inc.
+  2017 RackTop Systems.
+  2017 Open-E, Inc.
+  2013, Steven Hartland.
 License: CDDL-1.0
 
-Files: lib/libzpool/taskq.c
-Copyright: 2014, Delphix.
+Files: lib/libzpool/*
+Copyright:
+  2014, Delphix.
+  2016 Actifio, Inc.
+  2014 by Delphix.
+  2017 Jason King
+  2017, Intel Corporation.
   2012, Garrett DAmore <garrett@damore.org>.
   2011, Nexenta Systems, Inc.
   2010, Sun Microsystems, Inc.
 License: CDDL-1.0
 
+Files: lib/libzutil/*
+Copyright:
+  2015 Nexenta Systems, Inc.
+  2005, 2010, Oracle and/or its affiliates.
+  2012, 2018 by Delphix.
+  2015 RackTop Systems.
+  2016, Intel Corporation.
+License: CDDL-1.0
+
 Files: man/man1/zhack.1
-       man/man1/zpios.1
        man/man8/mount.zfs.8
        man/man8/zinject.8
 Copyright: 2013, Darik Horn <dajhorn@vanadac.com>
@@ -881,6 +478,13 @@ Copyright: 2007, 2009, 2010, Sun Microsystems, Inc.
   1983-1989, AT&T
   1982, 1986, 1988, The Regents of the University of California
 License: CDDL-1.0
+
+Files: module/spl/*
+Copyright:
+  2008-2010 Sun Microsystems, Inc.
+  2007-2010 Lawrence Livermore National Security, LLC.
+  2007 The Regents of the University of California.
+License: GPL-2+
 
 Files: module/zfs/*
 Copyright: 2011-2015, Delphix.
@@ -1088,12 +692,6 @@ Copyright: 2012, 2014, Delphix.
   2008-2010, Lawrence Livermore National Security, LLC
 License: CDDL-1.0
 
-Files: module/zfs/zfeature_common.c
-Copyright: 2014, Nexenta Systems, Inc.
-  2013, Saso Kiselkov.
-  2013, Delphix.
-License: CDDL-1.0
-
 Files: module/zfs/zfs_ctldir.c
 Copyright: 2013, Delphix.
   2011, Lawrence Livermore National Security, LLC
@@ -1163,18 +761,52 @@ Copyright: 2015, Chunwei Chen.
   2011, Lawrence Livermore National Security, LLC
 License: CDDL-1.0
 
-Files: module/zpios/*
-Copyright: 2008-2010, Lawrence Livermore National Security, LLC
-  2004, Cluster File Systems, Inc
-License: GPL-2+
-
 Files: scripts/*
 Copyright: 2003-2012, Ville Skyttä <ville.skytta@iki.fi>
+           Thorsten Leemhuis <fedora@leemhuis.info>
+           Nicolas Chauvet <kwizart@gmail.com>
 License: Expat
 
 Files: scripts/cstyle.pl
+       scripts/make_gitrev.sh
+       scripts/zfs-tests.sh
+       scripts/zloop.sh
 Copyright: 2005-2010, Sun Microsystems, Inc.
+  2018 by Delphix.
+  2018 by Matthew Thode.
 License: CDDL-1.0
+
+Files: tests/*
+Copyright:
+  2007 Sun Microsystems, Inc.  All rights reserved.
+  2012, 2018 by Delphix. All rights reserved.
+  2013 Saso Kiselkov. All rights reserved.
+  2013 by Jinshan Xiong. No rights reserved.
+  2013, 2018 by Delphix. All rights reserved.
+  2014 Nexenta Systems, Inc.
+  2015 STRATO AG.
+  2015-2018 Lawrence Livermore National Security, LLC.
+  2015, OmniTI Computer Consulting, Inc. All rights reserved.
+  2016 by Gvozden Neskovic. All rights reserved.
+  2016 by Intel, Corp.
+  2016 by Jinshan Xiong. No rights reserved.
+  2016, loli10K. All rights reserved.
+  2017 Datto, Inc.
+  2017 Open-E, Inc. All Rights Reserved.
+  2017 by Datto Inc. All rights reserved.
+  2017 by Fan Yong. All rights reserved.
+  2018 Canonical.  All rights reserved.
+  2018 George Melikov. All Rights Reserved.
+  2018 Joyent, Inc.
+  2018 Nutanix Inc.  All rights reserved.
+  2018 by Nutanix. All rights reserved.
+  2018, Nexenta Systems, Inc.  All rights reserved.
+  2018, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
+License: CDDL-1.0
+
+Files: tests/zfs-tests/tests/functional/channel_program/lua_core/*.lua
+Copyright:1994-2016 Lua.org, PUC-Rio.
+License: Expat
 
 
 License: Expat
@@ -1577,3 +1209,19 @@ License: BSD-2-clause
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: Apache-2.0
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+ http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian systems, the complete text of the Apache version 2.0 license
+ can be found in "/usr/share/common-licenses/Apache-2.0".

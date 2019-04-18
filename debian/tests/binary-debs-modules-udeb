@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+export KVERS=$(dpkg -s linux-headers-amd64 linux-headers-arm64 \
+			linux-headers-powerpc64le linux-headers-s390x 2>/dev/null \
+			| grep Depends | head -n1 \
+			| sed -e 's@.*linux-headers-\(.*\)-.*@\1@');
+export KVERSX=$(dpkg -s linux-headers-amd64 linux-headers-arm64 \
+			linux-headers-powerpc64le linux-headers-s390x 2>/dev/null \
+			| grep Depends | head -n1 \
+			| sed -e 's@.*linux-headers-\(.*\)@\1@');
+export KSRC=/usr/src/linux-headers-$KVERS-common ;
+export KOBJ=/usr/src/linux-headers-$KVERSX ;
+fakeroot debian/rules override_dh_binary-modules-udeb KVERS=$KVERS KSRC=$KSRC KOBJ=$KOBJ

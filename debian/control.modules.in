@@ -1,17 +1,12 @@
 Source: zfs-linux
 Section: contrib/kernel
-Priority: extra
+Priority: optional
 Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.debian.net>
-Build-Depends: autoconf,
-               autogen,
-               automake,
-               autotools-dev,
-               debhelper (>= 9),
+Build-Depends: debhelper-compat (= 10),
                dkms (>> 2.1.1.2-5),
                libtool,
-               linux-headers-_KVERS_,
-               spl-dkms
-Standards-Version: 4.1.1
+               linux-headers-_KVERS_
+Standards-Version: 4.3.0
 Homepage: http://www.zfsonlinux.org/
 Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
@@ -19,7 +14,7 @@ Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
 Package: zfs-modules-_KVERS_
 Architecture: _ARCH_
 Provides: zfs-modules
-Depends: linux-image-_KVERS_, spl-modules | spl-dkms
+Depends: linux-image-_KVERS_
 Recommends: zfsutils
 Description: OpenZFS filesystem kernel modules for Linux (kernel _KVERS_)
  An advanced integrated volume manager and filesystem that is designed for

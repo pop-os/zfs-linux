@@ -36,6 +36,10 @@
 #include <sys/vdev_raidz.h>
 #include <sys/vdev_raidz_impl.h>
 
+#ifdef ZFS_DEBUG
+#include <sys/vdev.h>	/* For vdev_xlate() in vdev_raidz_io_verify() */
+#endif
+
 /*
  * Virtual device vector for RAID-Z.
  *
@@ -695,9 +699,8 @@ vdev_raidz_reconst_p_func(void *dbuf, void *sbuf, size_t size, void *private)
 	uint64_t *dst = dbuf;
 	uint64_t *src = sbuf;
 	int cnt = size / sizeof (src[0]);
-	int i;
 
-	for (i = 0; i < cnt; i++) {
+	for (int i = 0; i < cnt; i++) {
 		dst[i] ^= src[i];
 	}
 
@@ -713,9 +716,8 @@ vdev_raidz_reconst_q_pre_func(void *dbuf, void *sbuf, size_t size,
 	uint64_t *src = sbuf;
 	uint64_t mask;
 	int cnt = size / sizeof (dst[0]);
-	int i;
 
-	for (i = 0; i < cnt; i++, dst++, src++) {
+	for (int i = 0; i < cnt; i++, dst++, src++) {
 		VDEV_RAIDZ_64MUL_2(*dst, mask);
 		*dst ^= *src;
 	}
@@ -730,9 +732,8 @@ vdev_raidz_reconst_q_pre_tail_func(void *buf, size_t size, void *private)
 	uint64_t *dst = buf;
 	uint64_t mask;
 	int cnt = size / sizeof (dst[0]);
-	int i;
 
-	for (i = 0; i < cnt; i++, dst++) {
+	for (int i = 0; i < cnt; i++, dst++) {
 		/* same operation as vdev_raidz_reconst_q_pre_func() on dst */
 		VDEV_RAIDZ_64MUL_2(*dst, mask);
 	}
@@ -751,9 +752,8 @@ vdev_raidz_reconst_q_post_func(void *buf, size_t size, void *private)
 	struct reconst_q_struct *rq = private;
 	uint64_t *dst = buf;
 	int cnt = size / sizeof (dst[0]);
-	int i;
 
-	for (i = 0; i < cnt; i++, dst++, rq->q++) {
+	for (int i = 0; i < cnt; i++, dst++, rq->q++) {
 		int j;
 		uint8_t *b;
 
@@ -781,9 +781,8 @@ vdev_raidz_reconst_pq_func(void *xbuf, void *ybuf, size_t size, void *private)
 	struct reconst_pq_struct *rpq = private;
 	uint8_t *xd = xbuf;
 	uint8_t *yd = ybuf;
-	int i;
 
-	for (i = 0; i < size;
+	for (int i = 0; i < size;
 	    i++, rpq->p++, rpq->q++, rpq->pxy++, rpq->qxy++, xd++, yd++) {
 		*xd = vdev_raidz_exp2(*rpq->p ^ *rpq->pxy, rpq->aexp) ^
 		    vdev_raidz_exp2(*rpq->q ^ *rpq->qxy, rpq->bexp);
@@ -798,9 +797,8 @@ vdev_raidz_reconst_pq_tail_func(void *xbuf, size_t size, void *private)
 {
 	struct reconst_pq_struct *rpq = private;
 	uint8_t *xd = xbuf;
-	int i;
 
-	for (i = 0; i < size;
+	for (int i = 0; i < size;
 	    i++, rpq->p++, rpq->q++, rpq->pxy++, rpq->qxy++, xd++) {
 		/* same operation as vdev_raidz_reconst_pq_func() on xd */
 		*xd = vdev_raidz_exp2(*rpq->p ^ *rpq->pxy, rpq->aexp) ^
@@ -852,7 +850,6 @@ vdev_raidz_reconstruct_q(raidz_map_t *rm, int *tgts, int ntgts)
 	int x = tgts[0];
 	int c, exp;
 	abd_t *dst, *src;
-	struct reconst_q_struct rq;
 
 	ASSERT(ntgts == 1);
 
@@ -884,9 +881,8 @@ vdev_raidz_reconstruct_q(raidz_map_t *rm, int *tgts, int ntgts)
 	src = rm->rm_col[VDEV_RAIDZ_Q].rc_abd;
 	dst = rm->rm_col[x].rc_abd;
 	exp = 255 - (rm->rm_cols - 1 - x);
-	rq.q = abd_to_buf(src);
-	rq.exp = exp;
 
+	struct reconst_q_struct rq = { abd_to_buf(src), exp };
 	(void) abd_iterate_func(dst, 0, rm->rm_col[x].rc_size,
 	    vdev_raidz_reconst_q_post_func, &rq);
 
@@ -902,7 +898,6 @@ vdev_raidz_reconstruct_pq(raidz_map_t *rm, int *tgts, int ntgts)
 	int x = tgts[0];
 	int y = tgts[1];
 	abd_t *xd, *yd;
-	struct reconst_pq_struct rpq;
 
 	ASSERT(ntgts == 2);
 	ASSERT(x < y);
@@ -965,12 +960,7 @@ vdev_raidz_reconstruct_pq(raidz_map_t *rm, int *tgts, int ntgts)
 	bexp = vdev_raidz_log2[vdev_raidz_exp2(b, tmp)];
 
 	ASSERT3U(xsize, >=, ysize);
-	rpq.p = p;
-	rpq.q = q;
-	rpq.pxy = pxy;
-	rpq.qxy = qxy;
-	rpq.aexp = aexp;
-	rpq.bexp = bexp;
+	struct reconst_pq_struct rpq = { p, q, pxy, qxy, aexp, bexp };
 
 	(void) abd_iterate_func2(xd, yd, 0, 0, ysize,
 	    vdev_raidz_reconst_pq_func, &rpq);
@@ -1641,6 +1631,39 @@ vdev_raidz_child_done(zio_t *zio)
 	rc->rc_skipped = 0;
 }
 
+static void
+vdev_raidz_io_verify(zio_t *zio, raidz_map_t *rm, int col)
+{
+#ifdef ZFS_DEBUG
+	vdev_t *vd = zio->io_vd;
+	vdev_t *tvd = vd->vdev_top;
+
+	range_seg_t logical_rs, physical_rs;
+	logical_rs.rs_start = zio->io_offset;
+	logical_rs.rs_end = logical_rs.rs_start +
+	    vdev_raidz_asize(zio->io_vd, zio->io_size);
+
+	raidz_col_t *rc = &rm->rm_col[col];
+	vdev_t *cvd = vd->vdev_child[rc->rc_devidx];
+
+	vdev_xlate(cvd, &logical_rs, &physical_rs);
+	ASSERT3U(rc->rc_offset, ==, physical_rs.rs_start);
+	ASSERT3U(rc->rc_offset, <, physical_rs.rs_end);
+	/*
+	 * It would be nice to assert that rs_end is equal
+	 * to rc_offset + rc_size but there might be an
+	 * optional I/O at the end that is not accounted in
+	 * rc_size.
+	 */
+	if (physical_rs.rs_end > rc->rc_offset + rc->rc_size) {
+		ASSERT3U(physical_rs.rs_end, ==, rc->rc_offset +
+		    rc->rc_size + (1 << tvd->vdev_ashift));
+	} else {
+		ASSERT3U(physical_rs.rs_end, ==, rc->rc_offset + rc->rc_size);
+	}
+#endif
+}
+
 /*
  * Start an IO operation on a RAIDZ VDev
  *
@@ -1679,6 +1702,12 @@ vdev_raidz_io_start(zio_t *zio)
 		for (c = 0; c < rm->rm_cols; c++) {
 			rc = &rm->rm_col[c];
 			cvd = vd->vdev_child[rc->rc_devidx];
+
+			/*
+			 * Verify physical to logical translation.
+			 */
+			vdev_raidz_io_verify(zio, rm, c);
+
 			zio_nowait(zio_vdev_child_io(zio, NULL, cvd,
 			    rc->rc_offset, rc->rc_abd, rc->rc_size,
 			    zio->io_type, zio->io_priority, 0,
@@ -1766,9 +1795,9 @@ raidz_checksum_error(zio_t *zio, raidz_col_t *rc, abd_t *bad_data)
 		zbc.zbc_has_cksum = 0;
 		zbc.zbc_injected = rm->rm_ecksuminjected;
 
-		zfs_ereport_post_checksum(zio->io_spa, vd, zio,
-		    rc->rc_offset, rc->rc_size, rc->rc_abd, bad_data,
-		    &zbc);
+		zfs_ereport_post_checksum(zio->io_spa, vd,
+		    &zio->io_bookmark, zio, rc->rc_offset, rc->rc_size,
+		    rc->rc_abd, bad_data, &zbc);
 	}
 }
 
@@ -1781,11 +1810,10 @@ raidz_checksum_verify(zio_t *zio)
 {
 	zio_bad_cksum_t zbc;
 	raidz_map_t *rm = zio->io_vsd;
-	int ret;
 
 	bzero(&zbc, sizeof (zio_bad_cksum_t));
 
-	ret = zio_checksum_error(zio, &zbc);
+	int ret = zio_checksum_error(zio, &zbc);
 	if (ret != 0 && zbc.zbc_injected != 0)
 		rm->rm_ecksuminjected = 1;
 
@@ -1841,9 +1869,9 @@ raidz_parity_verify(zio_t *zio, raidz_map_t *rm)
 static int
 vdev_raidz_worst_error(raidz_map_t *rm)
 {
-	int c, error = 0;
+	int error = 0;
 
-	for (c = 0; c < rm->rm_cols; c++)
+	for (int c = 0; c < rm->rm_cols; c++)
 		error = zio_worst_error(error, rm->rm_col[c].rc_error);
 
 	return (error);
@@ -2246,17 +2274,23 @@ vdev_raidz_io_done(zio_t *zio)
 
 		if (!(zio->io_flags & ZIO_FLAG_SPECULATIVE)) {
 			for (c = 0; c < rm->rm_cols; c++) {
+				vdev_t *cvd;
 				rc = &rm->rm_col[c];
+				cvd = vd->vdev_child[rc->rc_devidx];
 				if (rc->rc_error == 0) {
 					zio_bad_cksum_t zbc;
 					zbc.zbc_has_cksum = 0;
 					zbc.zbc_injected =
 					    rm->rm_ecksuminjected;
 
+					mutex_enter(&cvd->vdev_stat_lock);
+					cvd->vdev_stat.vs_checksum_errors++;
+					mutex_exit(&cvd->vdev_stat_lock);
+
 					zfs_ereport_start_checksum(
-					    zio->io_spa,
-					    vd->vdev_child[rc->rc_devidx],
-					    zio, rc->rc_offset, rc->rc_size,
+					    zio->io_spa, cvd,
+					    &zio->io_bookmark, zio,
+					    rc->rc_offset, rc->rc_size,
 					    (void *)(uintptr_t)c, &zbc);
 				}
 			}
@@ -2337,6 +2371,37 @@ vdev_raidz_need_resilver(vdev_t *vd, uint64_t offset, size_t psize)
 	return (B_FALSE);
 }
 
+static void
+vdev_raidz_xlate(vdev_t *cvd, const range_seg_t *in, range_seg_t *res)
+{
+	vdev_t *raidvd = cvd->vdev_parent;
+	ASSERT(raidvd->vdev_ops == &vdev_raidz_ops);
+
+	uint64_t width = raidvd->vdev_children;
+	uint64_t tgt_col = cvd->vdev_id;
+	uint64_t ashift = raidvd->vdev_top->vdev_ashift;
+
+	/* make sure the offsets are block-aligned */
+	ASSERT0(in->rs_start % (1 << ashift));
+	ASSERT0(in->rs_end % (1 << ashift));
+	uint64_t b_start = in->rs_start >> ashift;
+	uint64_t b_end = in->rs_end >> ashift;
+
+	uint64_t start_row = 0;
+	if (b_start > tgt_col) /* avoid underflow */
+		start_row = ((b_start - tgt_col - 1) / width) + 1;
+
+	uint64_t end_row = 0;
+	if (b_end > tgt_col)
+		end_row = ((b_end - tgt_col - 1) / width) + 1;
+
+	res->rs_start = start_row << ashift;
+	res->rs_end = end_row << ashift;
+
+	ASSERT3U(res->rs_start, <=, in->rs_start);
+	ASSERT3U(res->rs_end - res->rs_start, <=, in->rs_end - in->rs_start);
+}
+
 vdev_ops_t vdev_raidz_ops = {
 	vdev_raidz_open,
 	vdev_raidz_close,
@@ -2347,6 +2412,8 @@ vdev_ops_t vdev_raidz_ops = {
 	vdev_raidz_need_resilver,
 	NULL,
 	NULL,
+	NULL,
+	vdev_raidz_xlate,
 	VDEV_TYPE_RAIDZ,	/* name of this vdev type */
 	B_FALSE			/* not a leaf vdev */
 };

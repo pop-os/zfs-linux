@@ -56,7 +56,7 @@ Index: zfs/lib/libzfs/libzfs_util.c
 ===================================================================
 --- zfs.orig/lib/libzfs/libzfs_util.c
 +++ zfs/lib/libzfs/libzfs_util.c
-@@ -1354,7 +1354,7 @@ int
+@@ -1131,7 +1131,7 @@ int
  zcmd_alloc_dst_nvlist(libzfs_handle_t *hdl, zfs_cmd_t *zc, size_t len)
  {
  	if (len == 0)

@@ -21,7 +21,7 @@
 /*
  * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2011 Nexenta Systems, Inc. All rights reserved.
- * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
+ * Copyright (c) 2012, 2018 by Delphix. All rights reserved.
  */
 
 #include <sys/zio.h>
@@ -32,9 +32,7 @@
 
 #include "zfs_prop.h"
 
-#if defined(_KERNEL)
-#include <sys/systm.h>
-#else
+#if !defined(_KERNEL)
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -81,6 +79,8 @@ zpool_prop_init(void)
 	    ZFS_TYPE_POOL, "<size>", "FREE");
 	zprop_register_number(ZPOOL_PROP_FREEING, "freeing", 0, PROP_READONLY,
 	    ZFS_TYPE_POOL, "<size>", "FREEING");
+	zprop_register_number(ZPOOL_PROP_CHECKPOINT, "checkpoint", 0,
+	    PROP_READONLY, ZFS_TYPE_POOL, "<size>", "CKPOINT");
 	zprop_register_number(ZPOOL_PROP_LEAKED, "leaked", 0, PROP_READONLY,
 	    ZFS_TYPE_POOL, "<size>", "LEAKED");
 	zprop_register_number(ZPOOL_PROP_ALLOCATED, "allocated", 0,
@@ -93,6 +93,8 @@ zpool_prop_init(void)
 	    ZFS_TYPE_POOL, "<size>", "CAP");
 	zprop_register_number(ZPOOL_PROP_GUID, "guid", 0, PROP_READONLY,
 	    ZFS_TYPE_POOL, "<guid>", "GUID");
+	zprop_register_number(ZPOOL_PROP_LOAD_GUID, "load_guid", 0,
+	    PROP_READONLY, ZFS_TYPE_POOL, "<load_guid>", "LOAD_GUID");
 	zprop_register_number(ZPOOL_PROP_HEALTH, "health", 0, PROP_READONLY,
 	    ZFS_TYPE_POOL, "<state>", "HEALTH");
 	zprop_register_number(ZPOOL_PROP_DEDUPRATIO, "dedupratio", 0,
@@ -128,6 +130,9 @@ zpool_prop_init(void)
 	zprop_register_index(ZPOOL_PROP_FAILUREMODE, "failmode",
 	    ZIO_FAILURE_MODE_WAIT, PROP_DEFAULT, ZFS_TYPE_POOL,
 	    "wait | continue | panic", "FAILMODE", failuremode_table);
+	zprop_register_index(ZPOOL_PROP_AUTOTRIM, "autotrim",
+	    SPA_AUTOTRIM_OFF, PROP_DEFAULT, ZFS_TYPE_POOL,
+	    "on | off", "AUTOTRIM", boolean_table);
 
 	/* hidden properties */
 	zprop_register_hidden(ZPOOL_PROP_NAME, "name", PROP_TYPE_STRING,
@@ -169,6 +174,12 @@ boolean_t
 zpool_prop_readonly(zpool_prop_t prop)
 {
 	return (zpool_prop_table[prop].pd_attr == PROP_READONLY);
+}
+
+boolean_t
+zpool_prop_setonce(zpool_prop_t prop)
+{
+	return (zpool_prop_table[prop].pd_attr == PROP_ONETIME);
 }
 
 const char *
@@ -244,7 +255,7 @@ zpool_prop_align_right(zpool_prop_t prop)
 }
 #endif
 
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 /* zpool property functions */
 EXPORT_SYMBOL(zpool_prop_init);
 EXPORT_SYMBOL(zpool_prop_get_type);

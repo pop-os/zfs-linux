@@ -23,6 +23,7 @@
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2015 by Delphix. All rights reserved.
  * Copyright 2014 Nexenta Systems, Inc.  All rights reserved.
+ * Copyright (c) 2019 Datto Inc.
  */
 
 #include <stdio.h>
@@ -32,6 +33,8 @@
 #include <stddef.h>
 #include <libintl.h>
 #include <libzfs.h>
+#include <libzutil.h>
+#include <sys/mntent.h>
 
 #include "libzfs_impl.h"
 
@@ -138,11 +141,12 @@ zfs_iter_filesystems(zfs_handle_t *zhp, zfs_iter_f func, void *data)
  */
 int
 zfs_iter_snapshots(zfs_handle_t *zhp, boolean_t simple, zfs_iter_f func,
-    void *data)
+    void *data, uint64_t min_txg, uint64_t max_txg)
 {
 	zfs_cmd_t zc = {"\0"};
 	zfs_handle_t *nzhp;
 	int ret;
+	nvlist_t *range_nvl = NULL;
 
 	if (zhp->zfs_type == ZFS_TYPE_SNAPSHOT ||
 	    zhp->zfs_type == ZFS_TYPE_BOOKMARK)
@@ -152,6 +156,24 @@ zfs_iter_snapshots(zfs_handle_t *zhp, boolean_t simple, zfs_iter_f func,
 
 	if (zcmd_alloc_dst_nvlist(zhp->zfs_hdl, &zc, 0) != 0)
 		return (-1);
+
+	if (min_txg != 0) {
+		range_nvl = fnvlist_alloc();
+		fnvlist_add_uint64(range_nvl, SNAP_ITER_MIN_TXG, min_txg);
+	}
+	if (max_txg != 0) {
+		if (range_nvl == NULL)
+			range_nvl = fnvlist_alloc();
+		fnvlist_add_uint64(range_nvl, SNAP_ITER_MAX_TXG, max_txg);
+	}
+
+	if (range_nvl != NULL &&
+	    zcmd_write_src_nvlist(zhp->zfs_hdl, &zc, range_nvl) != 0) {
+		zcmd_free_nvlists(&zc);
+		fnvlist_free(range_nvl);
+		return (-1);
+	}
+
 	while ((ret = zfs_do_list_ioctl(zhp, ZFS_IOC_SNAPSHOT_LIST_NEXT,
 	    &zc)) == 0) {
 
@@ -164,10 +186,12 @@ zfs_iter_snapshots(zfs_handle_t *zhp, boolean_t simple, zfs_iter_f func,
 
 		if ((ret = func(nzhp, data)) != 0) {
 			zcmd_free_nvlists(&zc);
+			fnvlist_free(range_nvl);
 			return (ret);
 		}
 	}
 	zcmd_free_nvlists(&zc);
+	fnvlist_free(range_nvl);
 	return ((ret < 0) ? ret : 0);
 }
 
@@ -191,6 +215,7 @@ zfs_iter_bookmarks(zfs_handle_t *zhp, zfs_iter_f func, void *data)
 	fnvlist_add_boolean(props, zfs_prop_to_name(ZFS_PROP_GUID));
 	fnvlist_add_boolean(props, zfs_prop_to_name(ZFS_PROP_CREATETXG));
 	fnvlist_add_boolean(props, zfs_prop_to_name(ZFS_PROP_CREATION));
+	fnvlist_add_boolean(props, zfs_prop_to_name(ZFS_PROP_IVSET_GUID));
 
 	if ((err = lzc_get_bookmarks(zhp->zfs_name, props, &bmarks)) != 0)
 		goto out;
@@ -279,7 +304,8 @@ zfs_snapshot_compare(const void *larg, const void *rarg)
 }
 
 int
-zfs_iter_snapshots_sorted(zfs_handle_t *zhp, zfs_iter_f callback, void *data)
+zfs_iter_snapshots_sorted(zfs_handle_t *zhp, zfs_iter_f callback, void *data,
+    uint64_t min_txg, uint64_t max_txg)
 {
 	int ret = 0;
 	zfs_node_t *node;
@@ -289,7 +315,8 @@ zfs_iter_snapshots_sorted(zfs_handle_t *zhp, zfs_iter_f callback, void *data)
 	avl_create(&avl, zfs_snapshot_compare,
 	    sizeof (zfs_node_t), offsetof(zfs_node_t, zn_avlnode));
 
-	ret = zfs_iter_snapshots(zhp, B_FALSE, zfs_sort_snaps, &avl);
+	ret = zfs_iter_snapshots(zhp, B_FALSE, zfs_sort_snaps, &avl, min_txg,
+	    max_txg);
 
 	for (node = avl_first(&avl); node != NULL; node = AVL_NEXT(&avl, node))
 		ret |= callback(node->zn_handle, data);
@@ -392,7 +419,7 @@ zfs_iter_snapspec(zfs_handle_t *fs_zhp, const char *spec_orig,
 			}
 
 			err = zfs_iter_snapshots_sorted(fs_zhp,
-			    snapspec_cb, &ssa);
+			    snapspec_cb, &ssa, 0, 0);
 			if (ret == 0)
 				ret = err;
 			if (ret == 0 && (!ssa.ssa_seenfirst ||
@@ -422,13 +449,17 @@ zfs_iter_snapspec(zfs_handle_t *fs_zhp, const char *spec_orig,
 
 /*
  * Iterate over all children, snapshots and filesystems
+ * Process snapshots before filesystems because they are nearer the input
+ * handle: this is extremely important when used with zfs_iter_f functions
+ * looking for data, following the logic that we would like to find it as soon
+ * and as close as possible.
  */
 int
 zfs_iter_children(zfs_handle_t *zhp, zfs_iter_f func, void *data)
 {
 	int ret;
 
-	if ((ret = zfs_iter_snapshots(zhp, B_FALSE, func, data)) != 0)
+	if ((ret = zfs_iter_snapshots(zhp, B_FALSE, func, data, 0, 0)) != 0)
 		return (ret);
 
 	return (zfs_iter_filesystems(zhp, func, data));
@@ -494,7 +525,7 @@ iter_dependents_cb(zfs_handle_t *zhp, void *arg)
 		err = zfs_iter_filesystems(zhp, iter_dependents_cb, ida);
 		if (err == 0)
 			err = zfs_iter_snapshots(zhp, B_FALSE,
-			    iter_dependents_cb, ida);
+			    iter_dependents_cb, ida, 0, 0);
 		ida->stack = isf.next;
 	}
 
@@ -517,4 +548,51 @@ zfs_iter_dependents(zfs_handle_t *zhp, boolean_t allowrecursion,
 	ida.data = data;
 	ida.first = B_TRUE;
 	return (iter_dependents_cb(zfs_handle_dup(zhp), &ida));
+}
+
+/*
+ * Iterate over mounted children of the specified dataset
+ */
+int
+zfs_iter_mounted(zfs_handle_t *zhp, zfs_iter_f func, void *data)
+{
+	char mnt_prop[ZFS_MAXPROPLEN];
+	struct mnttab entry;
+	zfs_handle_t *mtab_zhp;
+	size_t namelen = strlen(zhp->zfs_name);
+	FILE *mnttab;
+	int err = 0;
+
+	if ((mnttab = fopen(MNTTAB, "r")) == NULL)
+		return (ENOENT);
+
+	while (err == 0 && getmntent(mnttab, &entry) == 0) {
+		/* Ignore non-ZFS entries */
+		if (strcmp(entry.mnt_fstype, MNTTYPE_ZFS) != 0)
+			continue;
+
+		/* Ignore datasets not within the provided dataset */
+		if (strncmp(entry.mnt_special, zhp->zfs_name, namelen) != 0 ||
+		    (entry.mnt_special[namelen] != '/' &&
+		    entry.mnt_special[namelen] != '@'))
+			continue;
+
+		if ((mtab_zhp = zfs_open(zhp->zfs_hdl, entry.mnt_special,
+		    ZFS_TYPE_FILESYSTEM)) == NULL)
+			continue;
+
+		/* Ignore legacy mounts as they are user managed */
+		verify(zfs_prop_get(mtab_zhp, ZFS_PROP_MOUNTPOINT, mnt_prop,
+		    sizeof (mnt_prop), NULL, NULL, 0, B_FALSE) == 0);
+		if (strcmp(mnt_prop, "legacy") == 0) {
+			zfs_close(mtab_zhp);
+			continue;
+		}
+
+		err = func(mtab_zhp, data);
+	}
+
+	fclose(mnttab);
+
+	return (err);
 }

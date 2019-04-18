@@ -46,6 +46,7 @@
 #include <sys/zfs_ioctl.h>
 #include <sys/vdev_impl.h>
 #include <sys/dmu_objset.h>
+#include <sys/dsl_dataset.h>
 #include <sys/fs/zfs.h>
 
 uint32_t zio_injection_enabled = 0;
@@ -123,7 +124,7 @@ freq_triggered(uint32_t frequency)
  * Returns true if the given record matches the I/O in progress.
  */
 static boolean_t
-zio_match_handler(zbookmark_phys_t *zb, uint64_t type,
+zio_match_handler(const zbookmark_phys_t *zb, uint64_t type, int dva,
     zinject_record_t *record, int error)
 {
 	/*
@@ -147,8 +148,10 @@ zio_match_handler(zbookmark_phys_t *zb, uint64_t type,
 	    zb->zb_level == record->zi_level &&
 	    zb->zb_blkid >= record->zi_start &&
 	    zb->zb_blkid <= record->zi_end &&
-	    error == record->zi_error)
+	    (record->zi_dvas == 0 || (record->zi_dvas & (1ULL << dva))) &&
+	    error == record->zi_error) {
 		return (freq_triggered(record->zi_freq));
+	}
 
 	return (B_FALSE);
 }
@@ -179,6 +182,68 @@ zio_handle_panic_injection(spa_t *spa, char *tag, uint64_t type)
 }
 
 /*
+ * Inject a decryption failure. Decryption failures can occur in
+ * both the ARC and the ZIO layers.
+ */
+int
+zio_handle_decrypt_injection(spa_t *spa, const zbookmark_phys_t *zb,
+    uint64_t type, int error)
+{
+	int ret = 0;
+	inject_handler_t *handler;
+
+	rw_enter(&inject_lock, RW_READER);
+
+	for (handler = list_head(&inject_handlers); handler != NULL;
+	    handler = list_next(&inject_handlers, handler)) {
+
+		if (spa != handler->zi_spa ||
+		    handler->zi_record.zi_cmd != ZINJECT_DECRYPT_FAULT)
+			continue;
+
+		if (zio_match_handler(zb, type, ZI_NO_DVA,
+		    &handler->zi_record, error)) {
+			ret = error;
+			break;
+		}
+	}
+
+	rw_exit(&inject_lock);
+	return (ret);
+}
+
+/*
+ * If this is a physical I/O for a vdev child determine which DVA it is
+ * for. We iterate backwards through the DVAs matching on the offset so
+ * that we end up with ZI_NO_DVA (-1) if we don't find a match.
+ */
+static int
+zio_match_dva(zio_t *zio)
+{
+	int i = ZI_NO_DVA;
+
+	if (zio->io_bp != NULL && zio->io_vd != NULL &&
+	    zio->io_child_type == ZIO_CHILD_VDEV) {
+		for (i = BP_GET_NDVAS(zio->io_bp) - 1; i >= 0; i--) {
+			dva_t *dva = &zio->io_bp->blk_dva[i];
+			uint64_t off = DVA_GET_OFFSET(dva);
+			vdev_t *vd = vdev_lookup_top(zio->io_spa,
+			    DVA_GET_VDEV(dva));
+
+			/* Compensate for vdev label added to leaves */
+			if (zio->io_vd->vdev_ops->vdev_op_leaf)
+				off += VDEV_LABEL_START_SIZE;
+
+			if (zio->io_vd == vd && zio->io_offset == off)
+				break;
+		}
+	}
+
+	return (i);
+}
+
+
+/*
  * Determine if the I/O in question should return failure.  Returns the errno
  * to be returned to the caller.
  */
@@ -204,15 +269,14 @@ zio_handle_fault_injection(zio_t *zio, int error)
 
 	for (handler = list_head(&inject_handlers); handler != NULL;
 	    handler = list_next(&inject_handlers, handler)) {
-
 		if (zio->io_spa != handler->zi_spa ||
 		    handler->zi_record.zi_cmd != ZINJECT_DATA_FAULT)
 			continue;
 
-		/* If this handler matches, return EIO */
+		/* If this handler matches, return the specified error */
 		if (zio_match_handler(&zio->io_logical->io_bookmark,
 		    zio->io_bp ? BP_GET_TYPE(zio->io_bp) : DMU_OT_NONE,
-		    &handler->zi_record, error)) {
+		    zio_match_dva(zio), &handler->zi_record, error)) {
 			ret = error;
 			break;
 		}
@@ -271,9 +335,24 @@ zio_handle_label_injection(zio_t *zio, int error)
 	return (ret);
 }
 
+/*ARGSUSED*/
+static int
+zio_inject_bitflip_cb(void *data, size_t len, void *private)
+{
+	ASSERTV(zio_t *zio = private);
+	uint8_t *buffer = data;
+	uint_t byte = spa_get_random(len);
 
-int
-zio_handle_device_injection(vdev_t *vd, zio_t *zio, int error)
+	ASSERT(zio->io_type == ZIO_TYPE_READ);
+
+	/* flip a single random bit in an abd data buffer */
+	buffer[byte] ^= 1 << spa_get_random(8);
+
+	return (1);	/* stop after first flip */
+}
+
+static int
+zio_handle_device_injection_impl(vdev_t *vd, zio_t *zio, int err1, int err2)
 {
 	inject_handler_t *handler;
 	int ret = 0;
@@ -311,7 +390,8 @@ zio_handle_device_injection(vdev_t *vd, zio_t *zio, int error)
 			    handler->zi_record.zi_iotype != zio->io_type)
 				continue;
 
-			if (handler->zi_record.zi_error == error) {
+			if (handler->zi_record.zi_error == err1 ||
+			    handler->zi_record.zi_error == err2) {
 				/*
 				 * limit error injection if requested
 				 */
@@ -322,7 +402,7 @@ zio_handle_device_injection(vdev_t *vd, zio_t *zio, int error)
 				 * For a failed open, pretend like the device
 				 * has gone away.
 				 */
-				if (error == ENXIO)
+				if (err1 == ENXIO)
 					vd->vdev_stat.vs_aux =
 					    VDEV_AUX_OPEN_FAILED;
 
@@ -335,7 +415,21 @@ zio_handle_device_injection(vdev_t *vd, zio_t *zio, int error)
 				    zio != NULL)
 					zio->io_flags |= ZIO_FLAG_IO_RETRY;
 
-				ret = error;
+				/*
+				 * EILSEQ means flip a bit after a read
+				 */
+				if (handler->zi_record.zi_error == EILSEQ) {
+					if (zio == NULL)
+						break;
+
+					/* locate buffer data and flip a bit */
+					(void) abd_iterate_func(zio->io_abd, 0,
+					    zio->io_size, zio_inject_bitflip_cb,
+					    zio);
+					break;
+				}
+
+				ret = handler->zi_record.zi_error;
 				break;
 			}
 			if (handler->zi_record.zi_error == ENXIO) {
@@ -348,6 +442,18 @@ zio_handle_device_injection(vdev_t *vd, zio_t *zio, int error)
 	rw_exit(&inject_lock);
 
 	return (ret);
+}
+
+int
+zio_handle_device_injection(vdev_t *vd, zio_t *zio, int error)
+{
+	return (zio_handle_device_injection_impl(vd, zio, error, INT_MAX));
+}
+
+int
+zio_handle_device_injections(vdev_t *vd, zio_t *zio, int err1, int err2)
+{
+	return (zio_handle_device_injection_impl(vd, zio, err1, err2));
 }
 
 /*
@@ -430,10 +536,6 @@ zio_handle_io_delay(zio_t *zio)
 	vdev_t *vd = zio->io_vd;
 	inject_handler_t *min_handler = NULL;
 	hrtime_t min_target = 0;
-	inject_handler_t *handler;
-	hrtime_t idle;
-	hrtime_t busy;
-	hrtime_t target;
 
 	rw_enter(&inject_lock, RW_READER);
 
@@ -486,7 +588,7 @@ zio_handle_io_delay(zio_t *zio)
 	 */
 	mutex_enter(&inject_delay_mtx);
 
-	for (handler = list_head(&inject_handlers);
+	for (inject_handler_t *handler = list_head(&inject_handlers);
 	    handler != NULL; handler = list_next(&inject_handlers, handler)) {
 		if (handler->zi_record.zi_cmd != ZINJECT_DELAY_IO)
 			continue;
@@ -538,10 +640,10 @@ zio_handle_io_delay(zio_t *zio)
 		 * each lane will become idle, we use that value to
 		 * determine when this request should complete.
 		 */
-		idle = handler->zi_record.zi_timer + gethrtime();
-		busy = handler->zi_record.zi_timer +
+		hrtime_t idle = handler->zi_record.zi_timer + gethrtime();
+		hrtime_t busy = handler->zi_record.zi_timer +
 		    handler->zi_lanes[handler->zi_next_lane];
-		target = MAX(idle, busy);
+		hrtime_t target = MAX(idle, busy);
 
 		if (min_handler == NULL) {
 			min_handler = handler;
@@ -591,6 +693,63 @@ zio_handle_io_delay(zio_t *zio)
 	return (min_target);
 }
 
+static int
+zio_calculate_range(const char *pool, zinject_record_t *record)
+{
+	dsl_pool_t *dp;
+	dsl_dataset_t *ds;
+	objset_t *os = NULL;
+	dnode_t *dn = NULL;
+	int error;
+
+	/*
+	 * Obtain the dnode for object using pool, objset, and object
+	 */
+	error = dsl_pool_hold(pool, FTAG, &dp);
+	if (error)
+		return (error);
+
+	error = dsl_dataset_hold_obj(dp, record->zi_objset, FTAG, &ds);
+	dsl_pool_rele(dp, FTAG);
+	if (error)
+		return (error);
+
+	error = dmu_objset_from_ds(ds, &os);
+	dsl_dataset_rele(ds, FTAG);
+	if (error)
+		return (error);
+
+	error = dnode_hold(os, record->zi_object, FTAG, &dn);
+	if (error)
+		return (error);
+
+	/*
+	 * Translate the range into block IDs
+	 */
+	if (record->zi_start != 0 || record->zi_end != -1ULL) {
+		record->zi_start >>= dn->dn_datablkshift;
+		record->zi_end >>= dn->dn_datablkshift;
+	}
+	if (record->zi_level > 0) {
+		if (record->zi_level >= dn->dn_nlevels) {
+			dnode_rele(dn, FTAG);
+			return (SET_ERROR(EDOM));
+		}
+
+		if (record->zi_start != 0 || record->zi_end != 0) {
+			int shift = dn->dn_indblkshift - SPA_BLKPTRSHIFT;
+
+			for (int level = record->zi_level; level > 0; level--) {
+				record->zi_start >>= shift;
+				record->zi_end >>= shift;
+			}
+		}
+	}
+
+	dnode_rele(dn, FTAG);
+	return (0);
+}
+
 /*
  * Create a new handler for the given record.  We add it to the list, adding
  * a reference to the spa_t in the process.  We increment zio_injection_enabled,
@@ -628,6 +787,15 @@ zio_inject_fault(char *name, int flags, int *id, zinject_record_t *record)
 		 */
 		if (record->zi_nlanes >= UINT16_MAX)
 			return (SET_ERROR(EINVAL));
+	}
+
+	/*
+	 * If the supplied range was in bytes -- calculate the actual blkid
+	 */
+	if (flags & ZINJECT_CALC_RANGE) {
+		error = zio_calculate_range(name, record);
+		if (error != 0)
+			return (error);
 	}
 
 	if (!(flags & ZINJECT_NULL)) {
@@ -787,7 +955,7 @@ zio_inject_fini(void)
 	rw_destroy(&inject_lock);
 }
 
-#if defined(_KERNEL) && defined(HAVE_SPL)
+#if defined(_KERNEL)
 EXPORT_SYMBOL(zio_injection_enabled);
 EXPORT_SYMBOL(zio_inject_fault);
 EXPORT_SYMBOL(zio_inject_list_next);

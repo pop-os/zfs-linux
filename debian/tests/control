@@ -1,4 +1,4 @@
-Tests: kernel-smoke-test
+Tests: kernel-smoke-test, kernel-ztest
 Restrictions: needs-root, isolation-machine
 Depends:
  zfsutils-linux [ amd64 arm64 ppc64el s390x ],
@@ -10,6 +10,14 @@ Depends:
 Tests: dkms-zfs-test
 Restrictions: needs-root, allow-stderr
 Depends: dkms,
+ linux-headers-amd64 [amd64],
+ linux-headers-arm64 [arm64],
+ linux-headers-powerpc64le [ppc64el],
+ linux-headers-s390x [s390x],
+
+Tests: binary-debs-modules, binary-debs-modules-udeb
+Restrictions: needs-root, allow-stderr,
+Depends: @builddeps@,
  linux-headers-amd64 [amd64],
  linux-headers-arm64 [arm64],
  linux-headers-powerpc64le [ppc64el],

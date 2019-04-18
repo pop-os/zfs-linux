@@ -13,8 +13,8 @@ Index: zfs/etc/systemd/system/zfs-zed.service.in
 ===================================================================
 --- zfs.orig/etc/systemd/system/zfs-zed.service.in
 +++ zfs/etc/systemd/system/zfs-zed.service.in
-@@ -5,7 +5,7 @@ After=zfs-import-cache.service
- After=zfs-import-scan.service
+@@ -3,7 +3,7 @@ Description=ZFS Event Daemon (zed)
+ Documentation=man:zed(8)
  
  [Service]
 -ExecStart=@sbindir@/zed -F

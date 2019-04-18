@@ -44,10 +44,6 @@
 
 verify_runnable "global"
 
-if is_32bit; then
-	log_unsupported "Test case runs slowly on 32 bit"
-fi
-
 volsize=$(zfs get -H -o value volsize $TESTPOOL/$TESTVOL)
 
 function cleanup
@@ -58,7 +54,6 @@ function cleanup
 	ismounted $TESTDIR $NEWFS_DEFAULT_FS
 	(( $? == 0 )) && log_must umount $TESTDIR
 
-	[[ -e $TESTDIR ]] && rm -rf $TESTDIR
 	zfs set volsize=$volsize $TESTPOOL/$TESTVOL
 }
 
@@ -74,7 +69,6 @@ log_must zfs set volsize=128m $TESTPOOL/$TESTVOL
 echo "y" | newfs -v ${ZVOL_RDEVDIR}/$TESTPOOL/$TESTVOL >/dev/null 2>&1
 (( $? != 0 )) && log_fail "Unable to newfs(1M) $TESTPOOL/$TESTVOL"
 
-log_must mkdir $TESTDIR
 log_must mount ${ZVOL_DEVDIR}/$TESTPOOL/$TESTVOL $TESTDIR
 
 typeset -i fn=0
@@ -111,7 +105,6 @@ if [ $retval -ne 0 ] ; then
 		# e2fsprogs-1.43.3 (Fedora 25 and older): returns 4
 		# e2fsprogs-1.43.4 (Fedora 26): returns 8
 		#
-		# https://github.com/zfsonlinux/zfs/issues/6297
 		if [ $retval -ne 4 -a $retval -ne 8 ] ; then
 			log_fail "fsck exited with wrong value $retval"
 		fi

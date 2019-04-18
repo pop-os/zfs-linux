@@ -110,11 +110,19 @@ extern "C" {
 #define	ESC_ZFS_CONFIG_SYNC		"config_sync"
 #define	ESC_ZFS_SCRUB_START		"scrub_start"
 #define	ESC_ZFS_SCRUB_FINISH		"scrub_finish"
+#define	ESC_ZFS_SCRUB_ABORT		"scrub_abort"
+#define	ESC_ZFS_SCRUB_RESUME		"scrub_resume"
+#define	ESC_ZFS_SCRUB_PAUSED		"scrub_paused"
 #define	ESC_ZFS_VDEV_SPARE		"vdev_spare"
 #define	ESC_ZFS_VDEV_AUTOEXPAND		"vdev_autoexpand"
 #define	ESC_ZFS_BOOTFS_VDEV_ATTACH	"bootfs_vdev_attach"
 #define	ESC_ZFS_POOL_REGUID		"pool_reguid"
 #define	ESC_ZFS_HISTORY_EVENT		"history_event"
+#define	ESC_ZFS_TRIM_START		"trim_start"
+#define	ESC_ZFS_TRIM_FINISH		"trim_finish"
+#define	ESC_ZFS_TRIM_CANCEL		"trim_cancel"
+#define	ESC_ZFS_TRIM_RESUME		"trim_resume"
+#define	ESC_ZFS_TRIM_SUSPEND		"trim_suspend"
 
 /*
  * datalink subclass definitions.

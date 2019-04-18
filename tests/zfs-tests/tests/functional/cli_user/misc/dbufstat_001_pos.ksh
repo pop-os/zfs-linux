@@ -27,14 +27,17 @@
 
 . $STF_SUITE/include/libtest.shlib
 
-set -A args  "" "-b" "-d" "-r" "-v" "-s \",\"" "-x"
+set -A args  "" "-b" "-d" "-r" "-v" "-s \",\"" "-x" "-n"
 
-log_assert "dbufstat.py generates output and doesn't return an error code"
+log_assert "dbufstat generates output and doesn't return an error code"
 
 typeset -i i=0
 while [[ $i -lt ${#args[*]} ]]; do
-        log_must eval "dbufstat.py ${args[i]} > /dev/null"
+        log_must eval "sudo dbufstat ${args[i]} > /dev/null"
         ((i = i + 1))
 done
 
-log_pass "dbufstat.py generates output and doesn't return an error code"
+# A simple test of dbufstat filter functionality
+log_must eval "sudo dbufstat -F object=10,dbc=1,pool=$TESTPOOL > /dev/null"
+
+log_pass "dbufstat generates output and doesn't return an error code"

@@ -27,9 +27,7 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/systm.h>
 #include <sys/sysmacros.h>
-#include <sys/resource.h>
 #include <sys/vfs.h>
 #include <sys/vnode.h>
 #include <sys/sid.h>
@@ -38,7 +36,6 @@
 #include <sys/kmem.h>
 #include <sys/cmn_err.h>
 #include <sys/errno.h>
-#include <sys/unistd.h>
 #include <sys/sdt.h>
 #include <sys/fs/zfs.h>
 #include <sys/mode.h>
@@ -54,7 +51,6 @@
 #include <sys/sa.h>
 #include <sys/trace_acl.h>
 #include <sys/zpl.h>
-#include "fs/fs_subr.h"
 
 #define	ALLOW	ACE_ACCESS_ALLOWED_ACE_TYPE
 #define	DENY	ACE_ACCESS_DENIED_ACE_TYPE
@@ -97,6 +93,8 @@
     ZFS_ACL_OBJ_ACE)
 
 #define	ALL_MODE_EXECS (S_IXUSR | S_IXGRP | S_IXOTH)
+
+#define	IDMAP_WK_CREATOR_OWNER_UID	2147483648U
 
 static uint16_t
 zfs_ace_v0_get_type(void *acep)
@@ -1054,8 +1052,8 @@ zfs_mode_compute(uint64_t fmode, zfs_acl_t *aclp,
  * Read an external acl object.  If the intent is to modify, always
  * create a new acl and leave any cached acl in place.
  */
-static int
-zfs_acl_node_read(znode_t *zp, boolean_t have_lock, zfs_acl_t **aclpp,
+int
+zfs_acl_node_read(struct znode *zp, boolean_t have_lock, zfs_acl_t **aclpp,
     boolean_t will_modify)
 {
 	zfs_acl_t	*aclp;
@@ -1883,12 +1881,12 @@ zfs_acl_ids_free(zfs_acl_ids_t *acl_ids)
 }
 
 boolean_t
-zfs_acl_ids_overquota(zfsvfs_t *zfsvfs, zfs_acl_ids_t *acl_ids)
+zfs_acl_ids_overquota(zfsvfs_t *zv, zfs_acl_ids_t *acl_ids, uint64_t projid)
 {
-	return (zfs_fuid_overquota(zfsvfs, B_FALSE, acl_ids->z_fuid) ||
-	    zfs_fuid_overquota(zfsvfs, B_TRUE, acl_ids->z_fgid) ||
-	    zfs_fuid_overobjquota(zfsvfs, B_FALSE, acl_ids->z_fuid) ||
-	    zfs_fuid_overobjquota(zfsvfs, B_TRUE, acl_ids->z_fgid));
+	return (zfs_id_overquota(zv, DMU_USERUSED_OBJECT, acl_ids->z_fuid) ||
+	    zfs_id_overquota(zv, DMU_GROUPUSED_OBJECT, acl_ids->z_fgid) ||
+	    (projid != ZFS_DEFAULT_PROJID && projid != ZFS_INVALID_PROJID &&
+	    zfs_id_overquota(zv, DMU_PROJECTUSED_OBJECT, projid)));
 }
 
 /*
@@ -2204,7 +2202,7 @@ zfs_zaccess_dataset_check(znode_t *zp, uint32_t v4_mode)
  * placed into the working_mode, giving the caller a mask of denied
  * accesses.  Returns:
  *	0		if all AoI granted
- *	EACCESS 	if the denied mask is non-zero
+ *	EACCES 		if the denied mask is non-zero
  *	other error	if abnormal failure (e.g., IO error)
  *
  * A secondary usage of the function is to determine if any of the
@@ -2471,7 +2469,7 @@ slow:
 /*
  * Determine whether Access should be granted/denied.
  *
- * The least priv subsytem is always consulted as a basic privilege
+ * The least priv subsystem is always consulted as a basic privilege
  * can define any form of access.
  */
 int

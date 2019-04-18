@@ -1,21 +1,17 @@
 #!/bin/sh
 set -xe
-apt-get update -y
-DEB_HOST_ARCH=$(dpkg --print-architecture)
-zfsver=$(apt-cache show zfs-dkms | grep Version: | head -n1 | sed -e 's@Version: \(.*\)-.*@\1@')
 
+DEB_HOST_ARCH=$(dpkg --print-architecture)
 if ! (echo "amd64 arm64 ppc64el s390x" | grep -o $DEB_HOST_ARCH); then
 	exit 0
 fi
-
-apt-get install spl-dkms --no-install-recommends -y
 
 # NOTE: zfs-dkms will pull zfsutils-linux if you enable apt to install
 # recommended packages. Systemd units of zfsutils-linux will cause
 # installation failure.
 apt-get install zfs-dkms --no-install-recommends -y
+zfsver=$(dpkg -s zfs-dkms | grep Version: | head -n1 | sed -e 's@Version: \(.*\)-.*@\1@')
 
 for kver in $(ls /lib/modules); do
-dkms build spl/$zfsver -k $kver
 dkms build zfs/$zfsver -k $kver
 done
