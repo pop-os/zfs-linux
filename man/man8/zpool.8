@@ -27,7 +27,7 @@
 .\" Copyright 2017 Nexenta Systems, Inc.
 .\" Copyright (c) 2017 Open-E, Inc. All Rights Reserved.
 .\"
-.Dd November 29, 2018
+.Dd May 2, 2019
 .Dt ZPOOL 8 SMM
 .Os Linux
 .Sh NAME
@@ -296,13 +296,13 @@ For more information, see the
 .Sx Intent Log
 section.
 .It Sy dedup
-A device dedicated solely for dedup data.
+A device dedicated solely for deduplication tables.
 The redundancy of this device should match the redundancy of the other normal
 devices in the pool. If more than one dedup device is specified, then
 allocations are load-balanced between those devices.
 .It Sy special
 A device dedicated solely for allocating various kinds of internal metadata,
-and optionally small file data.
+and optionally small file blocks.
 The redundancy of this device should match the redundancy of the other normal
 devices in the pool. If more than one special device is specified, then
 allocations are load-balanced between those devices.
@@ -560,15 +560,15 @@ current state of the pool won't be scanned during a scrub.
 .Ss Special Allocation Class
 The allocations in the special class are dedicated to specific block types.
 By default this includes all metadata, the indirect blocks of user data, and
-any dedup data.  The class can also be provisioned to accept a limited
-percentage of small file data blocks.
+any deduplication tables.  The class can also be provisioned to accept
+small file blocks.
 .Pp
-A pool must always have at least one general (non-specified) vdev before
+A pool must always have at least one normal (non-dedup/special) vdev before
 other devices can be assigned to the special class. If the special class
 becomes full, then allocations intended for it will spill back into the
 normal class.
 .Pp
-Dedup data can be excluded from the special class by setting the
+Deduplication tables can be excluded from the special class by setting the
 .Sy zfs_ddt_data_is_special
 zfs module parameter to false (0).
 .Pp
@@ -806,6 +806,9 @@ such that it is available even if the pool becomes faulted.
 An administrator can provide additional information about a pool using this
 property.
 .It Sy dedupditto Ns = Ns Ar number
+This property is deprecated.  In a future release, it will no longer have any
+effect.
+.Pp
 Threshold for the number of block ditto copies.
 If the reference count for a deduplicated block increases above this number, a
 new ditto copy of this block is automatically stored.
@@ -2186,6 +2189,10 @@ If a scrub is paused, the
 resumes it.
 If a resilver is in progress, ZFS does not allow a scrub to be started until the
 resilver completes.
+.Pp
+Note that, due to changes in pool data on a live system, it is possible for
+scrubs to progress slightly beyond 100% completion. During this period, no
+completion time estimate will be provided.
 .Bl -tag -width Ds
 .It Fl s
 Stop scrubbing.
@@ -2209,7 +2216,9 @@ again.
 .Xc
 Starts a resilver. If an existing resilver is already running it will be
 restarted from the beginning. Any drives that were scheduled for a deferred
-resilver will be added to the new one.
+resilver will be added to the new one. This requires the
+.Sy resilver_defer
+feature.
 .It Xo
 .Nm
 .Cm trim
@@ -2734,8 +2743,8 @@ option in
 .Bl -tag -width "ZPOOL_VDEV_NAME_GUID"
 .It Ev ZPOOL_VDEV_NAME_GUID
 Cause
-.Nm zpool subcommands to output vdev guids by default.  This behavior
-is identical to the
+.Nm zpool
+subcommands to output vdev guids by default.  This behavior is identical to the
 .Nm zpool status -g
 command line option.
 .El

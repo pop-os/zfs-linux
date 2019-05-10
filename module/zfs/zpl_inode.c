@@ -493,7 +493,7 @@ zpl_get_link_common(struct dentry *dentry, struct inode *ip, char **link)
 	fstrans_cookie_t cookie;
 	cred_t *cr = CRED();
 	struct iovec iov;
-	uio_t uio;
+	uio_t uio = { { 0 }, 0 };
 	int error;
 
 	crhold(cr);
@@ -503,9 +503,8 @@ zpl_get_link_common(struct dentry *dentry, struct inode *ip, char **link)
 
 	uio.uio_iov = &iov;
 	uio.uio_iovcnt = 1;
-	uio.uio_skip = 0;
-	uio.uio_resid = (MAXPATHLEN - 1);
 	uio.uio_segflg = UIO_SYSSPACE;
+	uio.uio_resid = (MAXPATHLEN - 1);
 
 	cookie = spl_fstrans_mark();
 	error = -zfs_readlink(ip, &uio, cr);
@@ -636,7 +635,7 @@ zpl_truncate_range(struct inode *ip, loff_t start, loff_t end)
 	crhold(cr);
 
 	bf.l_type = F_WRLCK;
-	bf.l_whence = 0;
+	bf.l_whence = SEEK_SET;
 	bf.l_start = start;
 	bf.l_len = end - start;
 	bf.l_pid = 0;

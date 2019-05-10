@@ -822,6 +822,7 @@ zfs_write(struct inode *ip, uio_t *uio, int ioflag, cred_t *cr)
 			uio->uio_fault_disable = B_TRUE;
 			error = dmu_write_uio_dbuf(sa_get_db(zp->z_sa_hdl),
 			    uio, nbytes, tx);
+			uio->uio_fault_disable = B_FALSE;
 			if (error == EFAULT) {
 				dmu_tx_commit(tx);
 				if (uio_prefaultpages(MIN(n, max_blksz), uio)) {
@@ -1291,7 +1292,7 @@ zfs_lookup(struct inode *dip, char *nm, struct inode **ipp, int flags,
  *		excl	- flag indicating exclusive or non-exclusive mode.
  *		mode	- mode to open file with.
  *		cr	- credentials of caller.
- *		flag	- large file flag [UNUSED].
+ *		flag	- file flag.
  *		vsecp	- ACL to be set
  *
  *	OUT:	ipp	- inode of created or trunc'd entry.
@@ -2656,6 +2657,12 @@ zfs_getattr_fast(struct inode *ip, struct kstat *sp)
 	mutex_enter(&zp->z_lock);
 
 	generic_fillattr(ip, sp);
+	/*
+	 * +1 link count for root inode with visible '.zfs' directory.
+	 */
+	if ((zp->z_id == zfsvfs->z_root) && zfs_show_ctldir(zp))
+		if (sp->nlink < ZFS_LINK_MAX)
+			sp->nlink++;
 
 	sa_object_size(zp->z_sa_hdl, &blksize, &nblocks);
 	sp->blksize = blksize;
@@ -4867,19 +4874,19 @@ convoff(struct inode *ip, flock64_t *lckdat, int  whence, offset_t offset)
 	vattr_t vap;
 	int error;
 
-	if ((lckdat->l_whence == 2) || (whence == 2)) {
+	if ((lckdat->l_whence == SEEK_END) || (whence == SEEK_END)) {
 		if ((error = zfs_getattr(ip, &vap, 0, CRED())))
 			return (error);
 	}
 
 	switch (lckdat->l_whence) {
-	case 1:
+	case SEEK_CUR:
 		lckdat->l_start += offset;
 		break;
-	case 2:
+	case SEEK_END:
 		lckdat->l_start += vap.va_size;
 		/* FALLTHRU */
-	case 0:
+	case SEEK_SET:
 		break;
 	default:
 		return (SET_ERROR(EINVAL));
@@ -4889,13 +4896,13 @@ convoff(struct inode *ip, flock64_t *lckdat, int  whence, offset_t offset)
 		return (SET_ERROR(EINVAL));
 
 	switch (whence) {
-	case 1:
+	case SEEK_CUR:
 		lckdat->l_start -= offset;
 		break;
-	case 2:
+	case SEEK_END:
 		lckdat->l_start -= vap.va_size;
 		/* FALLTHRU */
-	case 0:
+	case SEEK_SET:
 		break;
 	default:
 		return (SET_ERROR(EINVAL));
@@ -4916,7 +4923,7 @@ convoff(struct inode *ip, flock64_t *lckdat, int  whence, offset_t offset)
  *		bfp	- section of file to free/alloc.
  *		flag	- current file open mode flags.
  *		offset	- current file offset.
- *		cr	- credentials of caller [UNUSED].
+ *		cr	- credentials of caller.
  *
  *	RETURN:	0 on success, error code on failure.
  *
@@ -4950,7 +4957,7 @@ zfs_space(struct inode *ip, int cmd, flock64_t *bfp, int flag,
 		return (SET_ERROR(EROFS));
 	}
 
-	if ((error = convoff(ip, bfp, 0, offset))) {
+	if ((error = convoff(ip, bfp, SEEK_SET, offset))) {
 		ZFS_EXIT(zfsvfs);
 		return (error);
 	}

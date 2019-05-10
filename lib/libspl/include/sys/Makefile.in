@@ -92,6 +92,10 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/ax_restore_flags.m4 \
 	$(top_srcdir)/config/ax_save_flags.m4 \
 	$(top_srcdir)/config/find_system_library.m4 \
+	$(top_srcdir)/config/gettext.m4 \
+	$(top_srcdir)/config/host-cpu-c-abi.m4 \
+	$(top_srcdir)/config/iconv.m4 \
+	$(top_srcdir)/config/intlmacosx.m4 \
 	$(top_srcdir)/config/kernel-access-ok-type.m4 \
 	$(top_srcdir)/config/kernel-acl-refcount.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
@@ -189,6 +193,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
 	$(top_srcdir)/config/kernel-timer.m4 \
 	$(top_srcdir)/config/kernel-tmpfile.m4 \
+	$(top_srcdir)/config/kernel-totalhigh_pages.m4 \
 	$(top_srcdir)/config/kernel-totalram-pages-func.m4 \
 	$(top_srcdir)/config/kernel-truncate-range.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
@@ -202,15 +207,20 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-wait.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
 	$(top_srcdir)/config/kernel-zlib.m4 \
-	$(top_srcdir)/config/kernel.m4 $(top_srcdir)/config/libtool.m4 \
+	$(top_srcdir)/config/kernel.m4 $(top_srcdir)/config/lib-ld.m4 \
+	$(top_srcdir)/config/lib-link.m4 \
+	$(top_srcdir)/config/lib-prefix.m4 \
+	$(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/ltoptions.m4 \
 	$(top_srcdir)/config/ltsugar.m4 \
 	$(top_srcdir)/config/ltversion.m4 \
 	$(top_srcdir)/config/lt~obsolete.m4 \
 	$(top_srcdir)/config/mount-helper.m4 \
-	$(top_srcdir)/config/pkg.m4 \
+	$(top_srcdir)/config/nls.m4 $(top_srcdir)/config/pkg.m4 \
+	$(top_srcdir)/config/po.m4 $(top_srcdir)/config/progtest.m4 \
 	$(top_srcdir)/config/toolchain-simd.m4 \
 	$(top_srcdir)/config/user-dracut.m4 \
+	$(top_srcdir)/config/user-gettext.m4 \
 	$(top_srcdir)/config/user-libaio.m4 \
 	$(top_srcdir)/config/user-libblkid.m4 \
 	$(top_srcdir)/config/user-libexec.m4 \
@@ -405,6 +415,9 @@ FGREP = @FGREP@
 FRAME_LARGER_THAN = @FRAME_LARGER_THAN@
 GCOV = @GCOV@
 GENHTML = @GENHTML@
+GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@
+GMSGFMT = @GMSGFMT@
+GMSGFMT_015 = @GMSGFMT_015@
 GREP = @GREP@
 HAVE_ALIEN = @HAVE_ALIEN@
 HAVE_DPKG = @HAVE_DPKG@
@@ -416,6 +429,8 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+INTLLIBS = @INTLLIBS@
+INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 KERNEL_DEBUG_CFLAGS = @KERNEL_DEBUG_CFLAGS@
 KERNEL_DEBUG_CPPFLAGS = @KERNEL_DEBUG_CPPFLAGS@
 KERNEL_MAKE = @KERNEL_MAKE@
@@ -424,6 +439,8 @@ LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBAIO = @LIBAIO@
 LIBBLKID = @LIBBLKID@
+LIBICONV = @LIBICONV@
+LIBINTL = @LIBINTL@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBSSL = @LIBSSL@
@@ -438,11 +455,16 @@ LINUX_SYMBOLS = @LINUX_SYMBOLS@
 LINUX_VERSION = @LINUX_VERSION@
 LIPO = @LIPO@
 LN_S = @LN_S@
+LTLIBICONV = @LTLIBICONV@
+LTLIBINTL = @LTLIBINTL@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
+MSGFMT = @MSGFMT@
+MSGMERGE = @MSGMERGE@
+MSGMERGE_FOR_MSGFMT_OPTION = @MSGMERGE_FOR_MSGFMT_OPTION@
 MULTIARCH_LIBDIR = @MULTIARCH_LIBDIR@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -465,6 +487,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
+POSUB = @POSUB@
 PYTHON = @PYTHON@
 PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
 PYTHON_EXEC_PREFIX = @PYTHON_EXEC_PREFIX@
@@ -500,8 +523,12 @@ SRPM_DEFINE_KMOD = @SRPM_DEFINE_KMOD@
 SRPM_DEFINE_UTIL = @SRPM_DEFINE_UTIL@
 STRIP = @STRIP@
 TARGET_ASM_DIR = @TARGET_ASM_DIR@
+USE_NLS = @USE_NLS@
 VENDOR = @VENDOR@
 VERSION = @VERSION@
+XGETTEXT = @XGETTEXT@
+XGETTEXT_015 = @XGETTEXT_015@
+XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
 ZFS_CONFIG = @ZFS_CONFIG@
 ZFS_INIT_SYSTEMD = @ZFS_INIT_SYSTEMD@
 ZFS_INIT_SYSV = @ZFS_INIT_SYSV@
