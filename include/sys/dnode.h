@@ -267,8 +267,8 @@ typedef struct dnode_phys {
 	};
 } dnode_phys_t;
 
-#define	DN_SPILL_BLKPTR(dnp)	(blkptr_t *)((char *)(dnp) + \
-	(((dnp)->dn_extra_slots + 1) << DNODE_SHIFT) - (1 << SPA_BLKPTRSHIFT))
+#define	DN_SPILL_BLKPTR(dnp)	((blkptr_t *)((char *)(dnp) + \
+	(((dnp)->dn_extra_slots + 1) << DNODE_SHIFT) - (1 << SPA_BLKPTRSHIFT)))
 
 struct dnode {
 	/*
@@ -420,7 +420,8 @@ void dnode_sync(dnode_t *dn, dmu_tx_t *tx);
 void dnode_allocate(dnode_t *dn, dmu_object_type_t ot, int blocksize, int ibs,
     dmu_object_type_t bonustype, int bonuslen, int dn_slots, dmu_tx_t *tx);
 void dnode_reallocate(dnode_t *dn, dmu_object_type_t ot, int blocksize,
-    dmu_object_type_t bonustype, int bonuslen, int dn_slots, dmu_tx_t *tx);
+    dmu_object_type_t bonustype, int bonuslen, int dn_slots,
+    boolean_t keep_spill, dmu_tx_t *tx);
 void dnode_free(dnode_t *dn, dmu_tx_t *tx);
 void dnode_byteswap(dnode_phys_t *dnp);
 void dnode_buf_byteswap(void *buf, size_t size);
@@ -589,11 +590,6 @@ extern dnode_stats_t dnode_stats;
 
 #ifdef ZFS_DEBUG
 
-/*
- * There should be a ## between the string literal and fmt, to make it
- * clear that we're joining two strings together, but that piece of shit
- * gcc doesn't support that preprocessor token.
- */
 #define	dprintf_dnode(dn, fmt, ...) do { \
 	if (zfs_flags & ZFS_DEBUG_DPRINTF) { \
 	char __db_buf[32]; \
