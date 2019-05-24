@@ -770,8 +770,7 @@
 /* kernel exports FPU functions */
 #undef KERNEL_EXPORTS_X86_FPU
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* make_request_fn() returns blk_qc_t */
@@ -779,9 +778,6 @@
 
 /* hardened module_param_call */
 #undef MODULE_PARAM_CALL_CONST
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
