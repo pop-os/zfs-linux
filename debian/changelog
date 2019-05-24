@@ -1,8 +1,8 @@
-zfs-linux (0.8.0~rc5-1) UNRELEASED; urgency=medium
+zfs-linux (0.8.0-1) UNRELEASED; urgency=medium
 
-  * New upstream version 0.8.0~rc5
+  * New upstream version 0.8.0
 
- -- Mo Zhou <cdluminate@gmail.com>  Fri, 10 May 2019 01:42:38 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 24 May 2019 03:04:15 +0000
 
 zfs-linux (0.8.0~rc4-1) experimental; urgency=medium
 
