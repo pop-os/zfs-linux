@@ -11,7 +11,7 @@ zfs-linux (0.8.0-1) experimental; urgency=medium
   * Enforce version alignment between zfsutils-linux/libs. (Closes: #928118)
   * Remove unused lintian overrides for zfsutils-linux.
 
- -- Mo Zhou <cdluminate@gmail.com>  Wed, 29 May 2019 08:43:36 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Wed, 29 May 2019 08:59:35 +0000
 
 zfs-linux (0.8.0~rc4-1) experimental; urgency=medium
 
