@@ -193,7 +193,11 @@ Description: OpenZFS root filesystem capabilities for Linux - dracut
 Package: zfsutils-linux
 Section: contrib/admin
 Architecture: linux-any
-Depends: python3, ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}
+Depends: python3, ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends},
+         libnvpair1linux (= ${binary:Version}),
+         libuutil1linux (= ${binary:Version}),
+         libzfs2linux (= ${binary:Version}),
+         libzpool2linux (= ${binary:Version}),
 Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
 Breaks: spl-dkms (<< 0.8.0~rc1), spl (<< 0.7.9-2), zfs-dkms (<< ${binary:Version}),
         zfs-dkms (>> ${binary:Version})
