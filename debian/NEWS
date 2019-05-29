@@ -1,4 +1,4 @@
-zfs-linux (0.8.0-1) UNRELEASED; urgency=medium
+zfs-linux (0.8.0-1) experimental; urgency=medium
 
   ZFS 0.8.0 introduced the following NEW features:
 

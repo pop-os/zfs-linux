@@ -1,8 +1,17 @@
-zfs-linux (0.8.0-1) UNRELEASED; urgency=medium
+zfs-linux (0.8.0-1) experimental; urgency=medium
 
+  [ Stoiko Ivanov ]
+  * zfsutils-linux: persist hostid in postinst script
+
+  [ Mo Zhou ]
   * New upstream version 0.8.0
+  * Rebase 0001-Prevent-manual-builds-in-the-DKMS-source.patch
+  * Refresh 2000-increase-default-zcmd-allocation-to-256K.patch
+  * debian/NEWS: add news for 0.8.0
+  * Enforce version alignment between zfsutils-linux/libs. (Closes: #928118)
+  * Remove unused lintian overrides for zfsutils-linux.
 
- -- Mo Zhou <cdluminate@gmail.com>  Fri, 24 May 2019 03:04:15 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Wed, 29 May 2019 08:43:36 +0000
 
 zfs-linux (0.8.0~rc4-1) experimental; urgency=medium
 
