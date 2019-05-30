@@ -1,3 +1,9 @@
+zfs-linux (0.8.0-2) experimental; urgency=high
+
+  * Revert ec4f9b8 to avoid potential dataloss. (See: Github#8816)
+
+ -- Mo Zhou <cdluminate@gmail.com>  Thu, 30 May 2019 02:19:31 +0000
+
 zfs-linux (0.8.0-1) experimental; urgency=medium
 
   [ Stoiko Ivanov ]
