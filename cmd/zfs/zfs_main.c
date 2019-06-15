@@ -28,6 +28,7 @@
  * Copyright 2016 Igor Kozhukhov <ikozhukhov@gmail.com>.
  * Copyright 2016 Nexenta Systems, Inc.
  * Copyright (c) 2019 Datto Inc.
+ * Copyright (c) 2019, loli10K <ezomori.nozomu@gmail.com>
  */
 
 #include <assert.h>
@@ -2238,7 +2239,7 @@ zfs_do_upgrade(int argc, char **argv)
 	boolean_t showversions = B_FALSE;
 	int ret = 0;
 	upgrade_cbdata_t cb = { 0 };
-	signed char c;
+	int c;
 	int flags = ZFS_ITER_ARGS_CAN_BE_PATHS;
 
 	/* check options */
@@ -3932,7 +3933,7 @@ static int
 zfs_do_snapshot(int argc, char **argv)
 {
 	int ret = 0;
-	signed char c;
+	int c;
 	nvlist_t *props;
 	snap_cbdata_t sd = { 0 };
 	boolean_t multiple_snaps = B_FALSE;
@@ -6621,10 +6622,13 @@ share_mount(int op, int argc, char **argv)
 
 		/*
 		 * libshare isn't mt-safe, so only do the operation in parallel
-		 * if we're mounting.
+		 * if we're mounting. Additionally, the key-loading option must
+		 * be serialized so that we can prompt the user for their keys
+		 * in a consistent manner.
 		 */
 		zfs_foreach_mountpoint(g_zfs, cb.cb_handles, cb.cb_used,
-		    share_mount_one_cb, &share_mount_state, op == OP_MOUNT);
+		    share_mount_one_cb, &share_mount_state,
+		    op == OP_MOUNT && !(flags & MS_CRYPT));
 		ret = share_mount_state.sm_status;
 
 		for (int i = 0; i < cb.cb_used; i++)
@@ -7522,7 +7526,7 @@ zfs_do_channel_program(int argc, char **argv)
 	}
 
 	if ((zhp = zpool_open(g_zfs, poolname)) == NULL) {
-		(void) fprintf(stderr, gettext("cannot open pool '%s'"),
+		(void) fprintf(stderr, gettext("cannot open pool '%s'\n"),
 		    poolname);
 		if (fd != 0)
 			(void) close(fd);
