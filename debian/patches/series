@@ -4,4 +4,3 @@ enable-zed.patch
 1004-zed-service-bindir.patch
 2000-increase-default-zcmd-allocation-to-256K.patch
 init-debian-openrc-workaround.patch
-zfs-gh8816-revert-ec4f9b8.patch
