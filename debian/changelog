@@ -1,3 +1,10 @@
+zfs-linux (0.8.1-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.8.1
+  * Remove zfs-gh8816-revert-ec4f9b8.patch, already merged.
+
+ -- Mo Zhou <cdluminate@gmail.com>  Mon, 17 Jun 2019 12:24:59 +0800
+
 zfs-linux (0.8.0-2) experimental; urgency=high
 
   * Revert ec4f9b8 to avoid potential dataloss. (See: Github#8816)
