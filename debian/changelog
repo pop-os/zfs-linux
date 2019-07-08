@@ -11,8 +11,9 @@ zfs-linux (0.8.1-2) UNRELEASED; urgency=medium
   * Cherry-pick patches from ubuntu diff: 0.8.1-1ubuntu5
   * Skip dkms/modules tests for Ubuntu as it has drivers built into the kernel.
   * Refresh patches.
+  * Add python3-distutils to B-D.
 
- -- Mo Zhou <cdluminate@gmail.com>  Mon, 08 Jul 2019 04:15:57 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Mon, 08 Jul 2019 04:28:41 +0000
 
 zfs-linux (0.8.1-1) experimental; urgency=medium
 
