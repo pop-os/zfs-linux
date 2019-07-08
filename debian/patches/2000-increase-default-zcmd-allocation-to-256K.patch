@@ -52,10 +52,10 @@ this fix is a more generic fix to cover all zcmd cases.
 
 Signed-off-by: Colin Ian King <colin.king@canonical.com>
 
-Index: zfs/lib/libzfs/libzfs_util.c
+Index: zfs-linux/lib/libzfs/libzfs_util.c
 ===================================================================
---- zfs.orig/lib/libzfs/libzfs_util.c
-+++ zfs/lib/libzfs/libzfs_util.c
+--- zfs-linux.orig/lib/libzfs/libzfs_util.c
++++ zfs-linux/lib/libzfs/libzfs_util.c
 @@ -1134,7 +1134,7 @@ int
  zcmd_alloc_dst_nvlist(libzfs_handle_t *hdl, zfs_cmd_t *zc, size_t len)
  {

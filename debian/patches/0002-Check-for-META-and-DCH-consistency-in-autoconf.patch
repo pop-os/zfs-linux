@@ -1,7 +1,7 @@
-Index: zfs/config/zfs-meta.m4
+Index: zfs-linux/config/zfs-meta.m4
 ===================================================================
---- zfs.orig/config/zfs-meta.m4
-+++ zfs/config/zfs-meta.m4
+--- zfs-linux.orig/config/zfs-meta.m4
++++ zfs-linux/config/zfs-meta.m4
 @@ -1,9 +1,10 @@
  dnl #
  dnl # DESCRIPTION:

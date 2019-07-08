@@ -3,10 +3,10 @@ Author: Mo Zhou <lumin@debian.org>
 Last-update: 20181026
 Forward: https://github.com/zfsonlinux/zfs/issues/8063
 
-Index: zfs/etc/init.d/zfs-import.in
+Index: zfs-linux/etc/init.d/zfs-import.in
 ===================================================================
---- zfs.orig/etc/init.d/zfs-import.in
-+++ zfs/etc/init.d/zfs-import.in
+--- zfs-linux.orig/etc/init.d/zfs-import.in
++++ zfs-linux/etc/init.d/zfs-import.in
 @@ -309,8 +309,7 @@ do_start()
  
  # ----------------------------------------------------
@@ -17,10 +17,10 @@ Index: zfs/etc/init.d/zfs-import.in
  	case "$1" in
  		start)
  			do_start
-Index: zfs/etc/init.d/zfs-mount.in
+Index: zfs-linux/etc/init.d/zfs-mount.in
 ===================================================================
---- zfs.orig/etc/init.d/zfs-mount.in
-+++ zfs/etc/init.d/zfs-mount.in
+--- zfs-linux.orig/etc/init.d/zfs-mount.in
++++ zfs-linux/etc/init.d/zfs-mount.in
 @@ -199,8 +199,7 @@ do_stop()
  
  # ----------------------------------------------------
@@ -31,10 +31,10 @@ Index: zfs/etc/init.d/zfs-mount.in
  	case "$1" in
  		start)
  			do_start
-Index: zfs/etc/init.d/zfs-share.in
+Index: zfs-linux/etc/init.d/zfs-share.in
 ===================================================================
---- zfs.orig/etc/init.d/zfs-share.in
-+++ zfs/etc/init.d/zfs-share.in
+--- zfs-linux.orig/etc/init.d/zfs-share.in
++++ zfs-linux/etc/init.d/zfs-share.in
 @@ -58,7 +58,7 @@ do_stop()
  
  # ----------------------------------------------------
@@ -44,10 +44,10 @@ Index: zfs/etc/init.d/zfs-share.in
  	case "$1" in
  		start)
  			do_start
-Index: zfs/etc/init.d/zfs-zed.in
+Index: zfs-linux/etc/init.d/zfs-zed.in
 ===================================================================
---- zfs.orig/etc/init.d/zfs-zed.in
-+++ zfs/etc/init.d/zfs-zed.in
+--- zfs-linux.orig/etc/init.d/zfs-zed.in
++++ zfs-linux/etc/init.d/zfs-zed.in
 @@ -98,7 +98,7 @@ do_reload()
  
  # ----------------------------------------------------
