@@ -7,10 +7,10 @@ Forwarded: no
 Reviewed-By: Petter Reinholdtsen <pere@hungry.com>
 Last-Update: 2017-10-06
 
-Index: zfs/config/dkms.m4
+Index: zfs-linux/config/dkms.m4
 ===================================================================
 --- /dev/null
-+++ zfs/config/dkms.m4
++++ zfs-linux/config/dkms.m4
 @@ -0,0 +1,14 @@
 +dnl #
 +dnl # Prevent manual building in DKMS source tree.
@@ -26,10 +26,10 @@ Index: zfs/config/dkms.m4
 +		AC_MSG_RESULT([not found])
 +        ])
 +])
-Index: zfs/config/user.m4
+Index: zfs-linux/config/user.m4
 ===================================================================
---- zfs.orig/config/user.m4
-+++ zfs/config/user.m4
+--- zfs-linux.orig/config/user.m4
++++ zfs-linux/config/user.m4
 @@ -2,6 +2,7 @@ dnl #
  dnl # Default ZFS user configuration
  dnl #

@@ -1,3 +1,22 @@
+zfs-linux (0.8.1-2) experimental; urgency=medium
+
+  [ Colin Ian King ]
+  * Ensure libc6-dev or libc-dev is installed when building zfs-dkms.
+  * Ensure any previous ZFS/SPL modules are removed before loading
+    new ZFS/SPL modules to ensure correct drivers are being tested.
+    Changes in debian/tests/kernel-smoke-test
+  * Fix timeout issue in LXD: 3100-remove-libzfs-module-timeout.patch
+
+  [ Mo Zhou ]
+  * Cherry-pick patches from ubuntu diff: 0.8.1-1ubuntu5 .
+  * Skip autopkgtest: dkms/modules tests for Ubuntu.
+  * Avoid lintian warning by using explicit await trigger.
+  * Override more lintian warnings.
+  * Remove insserv confliction as the circular depends has been fixed;
+    libpython3-stdlib (<< 3.6.4) ships distutils. (Closes: #931515)
+
+ -- Mo Zhou <cdluminate@gmail.com>  Tue, 09 Jul 2019 07:29:27 +0000
+
 zfs-linux (0.8.1-1) experimental; urgency=medium
 
   * New upstream version 0.8.1

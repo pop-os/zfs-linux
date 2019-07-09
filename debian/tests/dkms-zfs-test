@@ -1,6 +1,10 @@
 #!/bin/sh
 set -xe
 
+if ! dpkg-vendor --is Debian; then
+	return 0
+fi
+
 DEB_HOST_ARCH=$(dpkg --print-architecture)
 if ! (echo "amd64 arm64 ppc64el s390x" | grep -o $DEB_HOST_ARCH); then
 	exit 0

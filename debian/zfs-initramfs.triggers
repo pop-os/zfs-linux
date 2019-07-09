@@ -1,1 +1,1 @@
-activate update-initramfs
+activate-await update-initramfs

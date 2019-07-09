@@ -146,7 +146,7 @@ Description: wrapper for libzfs_core C library (documentation)
 Package: zfs-dkms
 Architecture: all
 Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}, ${perl:Depends},
- file, python3-distutils,
+ file, python3-distutils | libpython3-stdlib (<< 3.6.4), libc6-dev | libc-dev,
 Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), linux-libc-dev (<< 5.2~), linux-libc-dev (>= 2.6.32~),
 Breaks: spl-dkms (<< 0.8.0~rc1),
 Replaces: spl-dkms,
@@ -205,7 +205,7 @@ Replaces: spl-dkms, spl (<< 0.7.9-2)
 Suggests: nfs-kernel-server,
           samba-common-bin (>= 3.0.23),
           zfs-initramfs | zfs-dracut
-Conflicts: zfs, zfs-fuse, insserv (<< 1.18)
+Conflicts: zfs, zfs-fuse,
 Provides: zfsutils
 Description: command-line tools to manage OpenZFS filesystems
  The Z file system is a pooled filesystem designed for maximum data
