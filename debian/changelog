@@ -10,11 +10,12 @@ zfs-linux (0.8.1-2) UNRELEASED; urgency=medium
   [ Mo Zhou ]
   * Cherry-pick patches from ubuntu diff: 0.8.1-1ubuntu5 .
   * Skip autopkgtest: dkms/modules tests for Ubuntu.
-  * Add python3-distutils to B-D.
   * Avoid lintian warning by using explicit await trigger.
   * Override more lintian warnings.
+  * Remove insserv confliction as the circular depends has been fixed;
+    libpython3-stdlib (<< 3.6.4) ships distutils. (Closes: #931515)
 
- -- Mo Zhou <cdluminate@gmail.com>  Mon, 08 Jul 2019 06:00:25 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Tue, 09 Jul 2019 06:08:35 +0000
 
 zfs-linux (0.8.1-1) experimental; urgency=medium
 
