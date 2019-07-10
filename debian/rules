@@ -26,6 +26,10 @@ pmodules = $(PACKAGE)-modules-$(non_epoch_version)
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
+NUM_CPUS = $(shell nproc 2>/dev/null)
+PARALLEL = $(subst parallel=,,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+NJOBS    = -j$(or $(PARALLEL),$(NUM_CPUS),1)
+
 %:
 	dh $@ --with autoreconf,dkms,python3,systemd,sphinxdoc
 
@@ -208,7 +212,7 @@ override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configur
 	dh_testroot
 	dh_prep
 
-	$(MAKE) -C $(CURDIR)/module modules
+	$(MAKE) $(NJOBS) -C $(CURDIR)/module modules
 
 	dh_installdirs -p${pmodules}-di
 	dh_install -p${pmodules}-di
@@ -221,7 +225,7 @@ override_dh_binary-modules: override_dh_prep-deb-files override_dh_configure_mod
 	dh_testroot
 	dh_prep
 
-	$(MAKE) -C $(CURDIR)/module modules
+	$(MAKE) $(NJOBS) -C $(CURDIR)/module modules
 
 	dh_install -p${pmodules}
 	dh_installdocs -p${pmodules}
