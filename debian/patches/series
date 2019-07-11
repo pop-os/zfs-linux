@@ -5,3 +5,4 @@ enable-zed.patch
 2000-increase-default-zcmd-allocation-to-256K.patch
 init-debian-openrc-workaround.patch
 3100-remove-libzfs-module-timeout.patch
+force-verbose-rules.patch
