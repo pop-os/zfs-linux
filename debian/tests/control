@@ -18,6 +18,7 @@ Depends: dkms,
 Tests: binary-debs-modules, binary-debs-modules-udeb
 Restrictions: needs-root, allow-stderr,
 Depends: @builddeps@,
+ fakeroot,
  linux-headers-amd64 [amd64],
  linux-headers-arm64 [arm64],
  linux-headers-powerpc64le [ppc64el],
