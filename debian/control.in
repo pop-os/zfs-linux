@@ -22,7 +22,7 @@ Build-Depends: debhelper-compat (= 10),
                python3-all-dev,
                uuid-dev,
                zlib1g-dev
-Standards-Version: 4.3.0
+Standards-Version: 4.4.0
 Homepage: https://zfsonlinux.org/
 Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
