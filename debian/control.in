@@ -257,7 +257,7 @@ Depends: acl,
 Breaks: zfsutils-linux (<= 0.7.9-2)
 Replaces: zfsutils-linux (<= 0.7.9-2)
 Conflicts: zutils
-Description: OpenZFS test infrastructure an support scripts
+Description: OpenZFS test infrastructure and support scripts
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
