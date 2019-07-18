@@ -6,3 +6,4 @@ enable-zed.patch
 init-debian-openrc-workaround.patch
 3100-remove-libzfs-module-timeout.patch
 force-verbose-rules.patch
+linux-5.0-simd-compat.patch
