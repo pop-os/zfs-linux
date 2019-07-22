@@ -7,3 +7,4 @@ executable-not-elf-or-script usr/share/zfs/zfs-tests/tests/functional/cli_root/z
 executable-not-elf-or-script usr/share/zfs/zfs-tests/tests/functional/alloc_class/alloc_class.kshlib
 executable-not-elf-or-script usr/share/zfs/zfs-tests/tests/functional/alloc_class/alloc_class.cfg
 executable-not-elf-or-script usr/share/zfs/zfs-tests/tests/functional/removal/removal.kshlib
+command-in-sbin-has-manpage-in-incorrect-section

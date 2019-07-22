@@ -31,9 +31,9 @@ usr/share/man/man8/fsck.zfs.8
 usr/share/man/man8/mount.zfs.8
 usr/share/man/man8/vdev_id.8
 usr/share/man/man8/zdb.8
-usr/share/man/man8/zfs.8
 usr/share/man/man8/zfs-mount-generator.8
 usr/share/man/man8/zfs-program.8
+usr/share/man/man8/zfs.8
 usr/share/man/man8/zgenhostid.8
 usr/share/man/man8/zpool.8
 usr/share/man/man8/zstreamdump.8

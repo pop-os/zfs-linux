@@ -5,7 +5,7 @@ Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.d
 Uploaders: Aron Xu <aron@debian.org>,
            Petter Reinholdtsen <pere@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>,
-           Mo Zhou <cdluminate@gmail.com>,
+           Mo Zhou <cdluminate@gmail.com>
 Build-Depends: debhelper-compat (= 10),
                dh-python,
                dkms (>> 2.1.1.2-5),
@@ -16,13 +16,13 @@ Build-Depends: debhelper-compat (= 10),
                libtool,
                lsb-release,
                po-debconf,
+               python3-all-dev,
                python3-cffi,
                python3-setuptools,
                python3-sphinx,
-               python3-all-dev,
                uuid-dev,
                zlib1g-dev
-Standards-Version: 4.3.0
+Standards-Version: 4.4.0
 Homepage: https://zfsonlinux.org/
 Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
@@ -101,10 +101,10 @@ Description: OpenZFS pool library for Linux
 Package: python3-pyzfs
 Section: contrib/python
 Architecture: linux-any
-Depends: ${misc:Depends},
-         ${python3:Depends},
-         python3-cffi,
-         zfsutils-linux (= ${binary:Version})
+Depends: python3-cffi,
+         zfsutils-linux (= ${binary:Version}),
+         ${misc:Depends},
+         ${python3:Depends}
 Description: wrapper for libzfs_core C library
  libzfs_core is intended to be a stable interface for programmatic
  administration of ZFS. This wrapper provides one-to-one wrappers for
@@ -122,11 +122,8 @@ Description: wrapper for libzfs_core C library
 Package: pyzfs-doc
 Section: contrib/doc
 Architecture: all
-Depends:
- ${sphinxdoc:Depends},
- ${misc:Depends}
-Recommends:
- python3-pyzfs
+Depends: ${misc:Depends}, ${sphinxdoc:Depends}
+Recommends: python3-pyzfs
 Description: wrapper for libzfs_core C library (documentation)
  libzfs_core is intended to be a stable interface for programmatic
  administration of ZFS. This wrapper provides one-to-one wrappers for
@@ -145,11 +142,16 @@ Description: wrapper for libzfs_core C library (documentation)
 
 Package: zfs-dkms
 Architecture: all
-Depends: dkms (>> 2.1.1.2-5), lsb-release, ${misc:Depends}, ${perl:Depends},
- file, python3-distutils | libpython3-stdlib (<< 3.6.4), libc6-dev | libc-dev,
+Depends: dkms (>> 2.1.1.2-5),
+         file,
+         libc6-dev | libc-dev,
+         lsb-release,
+         python3-distutils | libpython3-stdlib (<< 3.6.4),
+         ${misc:Depends},
+         ${perl:Depends}
 Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), linux-libc-dev (<< 5.2~), linux-libc-dev (>= 2.6.32~),
-Breaks: spl-dkms (<< 0.8.0~rc1),
-Replaces: spl-dkms,
+Breaks: spl-dkms (<< 0.8.0~rc1)
+Replaces: spl-dkms
 Provides: zfs-modules
 Description: OpenZFS filesystem kernel modules for Linux
  The Z file system is a pooled filesystem designed for maximum data
@@ -193,19 +195,24 @@ Description: OpenZFS root filesystem capabilities for Linux - dracut
 Package: zfsutils-linux
 Section: contrib/admin
 Architecture: linux-any
-Depends: python3, ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends},
-         libnvpair1linux (= ${binary:Version}),
+Depends: libnvpair1linux (= ${binary:Version}),
          libuutil1linux (= ${binary:Version}),
          libzfs2linux (= ${binary:Version}),
          libzpool2linux (= ${binary:Version}),
+         python3,
+         ${misc:Depends},
+         ${python3:Depends},
+         ${shlibs:Depends}
 Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
-Breaks: spl-dkms (<< 0.8.0~rc1), spl (<< 0.7.9-2), zfs-dkms (<< ${binary:Version}),
+Breaks: spl (<< 0.7.9-2),
+        spl-dkms (<< 0.8.0~rc1),
+        zfs-dkms (<< ${binary:Version}),
         zfs-dkms (>> ${binary:Version})
-Replaces: spl-dkms, spl (<< 0.7.9-2)
+Replaces: spl (<< 0.7.9-2), spl-dkms
 Suggests: nfs-kernel-server,
           samba-common-bin (>= 3.0.23),
           zfs-initramfs | zfs-dracut
-Conflicts: zfs, zfs-fuse,
+Conflicts: zfs, zfs-fuse
 Provides: zfsutils
 Description: command-line tools to manage OpenZFS filesystems
  The Z file system is a pooled filesystem designed for maximum data
@@ -250,7 +257,7 @@ Depends: acl,
 Breaks: zfsutils-linux (<= 0.7.9-2)
 Replaces: zfsutils-linux (<= 0.7.9-2)
 Conflicts: zutils
-Description: OpenZFS test infrastructure an support scripts
+Description: OpenZFS test infrastructure and support scripts
  The Z file system is a pooled filesystem designed for maximum data
  integrity, supporting data snapshots, multiple copies, and data
  checksums.
@@ -262,7 +269,7 @@ Description: OpenZFS test infrastructure an support scripts
 Package: spl
 Section: contrib/metapackages
 Architecture: all
-Depends: ${misc:Depends},
+Depends: ${misc:Depends}
 Suggests: zfs-test
 Description: Solaris Porting Layer user-space utilities for Linux (dummy)
  The Solaris Porting Layer (SPL) is a Linux kernel module which provides
@@ -281,7 +288,7 @@ Description: Solaris Porting Layer user-space utilities for Linux (dummy)
 Package: spl-dkms
 Section: contrib/metapackages
 Architecture: all
-Depends: ${misc:Depends}, zfs-dkms
+Depends: zfs-dkms, ${misc:Depends}
 Description: Solaris Porting Layer kernel modules for Linux (dummy)
  The Solaris Porting Layer (SPL) is a Linux kernel module which provides
  many of the Solaris kernel APIs. This shim layer makes it possible to
