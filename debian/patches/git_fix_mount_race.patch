@@ -1,0 +1,238 @@
+From ab5036df1ccbe1b18c1ce6160b5829e8039d94ce Mon Sep 17 00:00:00 2001
+From: Tomohiro Kusumi <kusumi.tomohiro@gmail.com>
+Date: Wed, 10 Jul 2019 01:31:46 +0900
+Subject: [PATCH] Fix race in parallel mount's thread dispatching algorithm
+
+Strategy of parallel mount is as follows.
+
+1) Initial thread dispatching is to select sets of mount points that
+ don't have dependencies on other sets, hence threads can/should run
+ lock-less and shouldn't race with other threads for other sets. Each
+ thread dispatched corresponds to top level directory which may or may
+ not have datasets to be mounted on sub directories.
+
+2) Subsequent recursive thread dispatching for each thread from 1)
+ is to mount datasets for each set of mount points. The mount points
+ within each set have dependencies (i.e. child directories), so child
+ directories are processed only after parent directory completes.
+
+The problem is that the initial thread dispatching in
+zfs_foreach_mountpoint() can be multi-threaded when it needs to be
+single-threaded, and this puts threads under race condition. This race
+appeared as mount/unmount issues on ZoL for ZoL having different
+timing regarding mount(2) execution due to fork(2)/exec(2) of mount(8).
+`zfs unmount -a` which expects proper mount order can't unmount if the
+mounts were reordered by the race condition.
+
+There are currently two known patterns of input list `handles` in
+`zfs_foreach_mountpoint(..,handles,..)` which cause the race condition.
+
+1) #8833 case where input is `/a /a /a/b` after sorting.
+ The problem is that libzfs_path_contains() can't correctly handle an
+ input list with two same top level directories.
+ There is a race between two POSIX threads A and B,
+  * ThreadA for "/a" for test1 and "/a/b"
+  * ThreadB for "/a" for test0/a
+ and in case of #8833, ThreadA won the race. Two threads were created
+ because "/a" wasn't considered as `"/a" contains "/a"`.
+
+2) #8450 case where input is `/ /var/data /var/data/test` after sorting.
+ The problem is that libzfs_path_contains() can't correctly handle an
+ input list containing "/".
+ There is a race between two POSIX threads A and B,
+  * ThreadA for "/" and "/var/data/test"
+  * ThreadB for "/var/data"
+ and in case of #8450, ThreadA won the race. Two threads were created
+ because "/var/data" wasn't considered as `"/" contains "/var/data"`.
+ In other words, if there is (at least one) "/" in the input list,
+ the initial thread dispatching must be single-threaded since every
+ directory is a child of "/", meaning they all directly or indirectly
+ depend on "/".
+
+In both cases, the first non_descendant_idx() call fails to correctly
+determine "path1-contains-path2", and as a result the initial thread
+dispatching creates another thread when it needs to be single-threaded.
+Fix a conditional in libzfs_path_contains() to consider above two.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed by: Sebastien Roy <sebastien.roy@delphix.com>
+Signed-off-by: Tomohiro Kusumi <kusumi.tomohiro@gmail.com>
+Closes #8450
+Closes #8833
+Closes #8878
+---
+ lib/libzfs/libzfs_mount.c                     |   6 +-
+ tests/runfiles/linux.run                      |   3 +-
+ .../functional/cli_root/zfs_mount/Makefile.am |   1 +
+ .../cli_root/zfs_mount/zfs_mount_test_race.sh | 116 ++++++++++++++++++
+ 4 files changed, 123 insertions(+), 3 deletions(-)
+ create mode 100755 tests/zfs-tests/tests/functional/cli_root/zfs_mount/zfs_mount_test_race.sh
+
+Index: zfs-linux-0.8.1/lib/libzfs/libzfs_mount.c
+===================================================================
+--- zfs-linux-0.8.1.orig/lib/libzfs/libzfs_mount.c
++++ zfs-linux-0.8.1/lib/libzfs/libzfs_mount.c
+@@ -1302,12 +1302,14 @@ mountpoint_cmp(const void *arga, const v
+ }
+ 
+ /*
+- * Return true if path2 is a child of path1.
++ * Return true if path2 is a child of path1 or path2 equals path1 or
++ * path1 is "/" (path2 is always a child of "/").
+  */
+ static boolean_t
+ libzfs_path_contains(const char *path1, const char *path2)
+ {
+-	return (strstr(path2, path1) == path2 && path2[strlen(path1)] == '/');
++	return (strcmp(path1, path2) == 0 || strcmp(path1, "/") == 0 ||
++	    (strstr(path2, path1) == path2 && path2[strlen(path1)] == '/'));
+ }
+ 
+ /*
+Index: zfs-linux-0.8.1/tests/runfiles/linux.run
+===================================================================
+--- zfs-linux-0.8.1.orig/tests/runfiles/linux.run
++++ zfs-linux-0.8.1/tests/runfiles/linux.run
+@@ -182,7 +182,8 @@ tests = ['zfs_mount_001_pos', 'zfs_mount
+     'zfs_mount_007_pos', 'zfs_mount_008_pos', 'zfs_mount_009_neg',
+     'zfs_mount_010_neg', 'zfs_mount_011_neg', 'zfs_mount_012_neg',
+     'zfs_mount_all_001_pos', 'zfs_mount_encrypted', 'zfs_mount_remount',
+-    'zfs_multi_mount', 'zfs_mount_all_fail', 'zfs_mount_all_mountpoints']
++    'zfs_multi_mount', 'zfs_mount_all_fail', 'zfs_mount_all_mountpoints',
++    'zfs_mount_test_race']
+ tags = ['functional', 'cli_root', 'zfs_mount']
+ 
+ [tests/functional/cli_root/zfs_program]
+Index: zfs-linux-0.8.1/tests/zfs-tests/tests/functional/cli_root/zfs_mount/Makefile.am
+===================================================================
+--- zfs-linux-0.8.1.orig/tests/zfs-tests/tests/functional/cli_root/zfs_mount/Makefile.am
++++ zfs-linux-0.8.1/tests/zfs-tests/tests/functional/cli_root/zfs_mount/Makefile.am
+@@ -19,6 +19,7 @@ dist_pkgdata_SCRIPTS = \
+ 	zfs_mount_all_mountpoints.ksh \
+ 	zfs_mount_encrypted.ksh \
+ 	zfs_mount_remount.ksh \
++	zfs_mount_test_race.sh \
+ 	zfs_multi_mount.ksh
+ 
+ dist_pkgdata_DATA = \
+Index: zfs-linux-0.8.1/tests/zfs-tests/tests/functional/cli_root/zfs_mount/zfs_mount_test_race.sh
+===================================================================
+--- /dev/null
++++ zfs-linux-0.8.1/tests/zfs-tests/tests/functional/cli_root/zfs_mount/zfs_mount_test_race.sh
+@@ -0,0 +1,116 @@
++#!/bin/ksh
++
++#
++# This file and its contents are supplied under the terms of the
++# Common Development and Distribution License ("CDDL"), version 1.0.
++# You may only use this file in accordance with the terms of version
++# 1.0 of the CDDL.
++#
++# A full copy of the text of the CDDL should have accompanied this
++# source.  A copy of the CDDL is also available via the Internet at
++# http://www.illumos.org/license/CDDL.
++#
++
++#
++# Copyright (c) 2019 by Tomohiro Kusumi. All rights reserved.
++#
++
++. $STF_SUITE/include/libtest.shlib
++. $STF_SUITE/tests/functional/cli_root/zfs_mount/zfs_mount.cfg
++
++#
++# DESCRIPTION:
++# Verify parallel mount ordering is consistent.
++#
++# There was a bug in initial thread dispatching algorithm which put threads
++# under race condition which resulted in undefined mount order.  The purpose
++# of this test is to verify `zfs unmount -a` succeeds (not `zfs mount -a`
++# succeeds, it always does) after `zfs mount -a`, which could fail if threads
++# race.  See github.com/zfsonlinux/zfs/issues/{8450,8833,8878} for details.
++#
++# STRATEGY:
++# 1. Create pools and filesystems.
++# 2. Set same mount point for >1 datasets.
++# 3. Unmount all datasets.
++# 4. Mount all datasets.
++# 5. Unmount all datasets (verify this succeeds).
++#
++
++verify_runnable "both"
++
++TMPDIR=${TMPDIR:-$TEST_BASE_DIR}
++MNTPT=$TMPDIR/zfs_mount_test_race_mntpt
++DISK1="$TMPDIR/zfs_mount_test_race_disk1"
++DISK2="$TMPDIR/zfs_mount_test_race_disk2"
++
++TESTPOOL1=zfs_mount_test_race_tp1
++TESTPOOL2=zfs_mount_test_race_tp2
++
++export __ZFS_POOL_RESTRICT="$TESTPOOL1 $TESTPOOL2"
++log_must zfs $unmountall
++unset __ZFS_POOL_RESTRICT
++
++function cleanup
++{
++	zpool destroy $TESTPOOL1
++	zpool destroy $TESTPOOL2
++	rm -rf $MNTPT
++	rm -rf /$TESTPOOL1
++	rm -rf /$TESTPOOL2
++	rm -f $DISK1
++	rm -f $DISK2
++	export __ZFS_POOL_RESTRICT="$TESTPOOL1 $TESTPOOL2"
++	log_must zfs $mountall
++	unset __ZFS_POOL_RESTRICT
++}
++log_onexit cleanup
++
++log_note "Verify parallel mount ordering is consistent"
++
++log_must truncate -s $MINVDEVSIZE $DISK1
++log_must truncate -s $MINVDEVSIZE $DISK2
++
++log_must zpool create -f $TESTPOOL1 $DISK1
++log_must zpool create -f $TESTPOOL2 $DISK2
++
++log_must zfs create $TESTPOOL1/$TESTFS1
++log_must zfs create $TESTPOOL2/$TESTFS2
++
++log_must zfs set mountpoint=none $TESTPOOL1
++log_must zfs set mountpoint=$MNTPT $TESTPOOL1/$TESTFS1
++
++# Note that unmount can fail (due to race condition on `zfs mount -a`) with or
++# without `canmount=off`.  The race has nothing to do with canmount property,
++# but turn it off for convenience of mount layout used in this test case.
++log_must zfs set canmount=off $TESTPOOL2
++log_must zfs set mountpoint=$MNTPT $TESTPOOL2
++
++# At this point, layout of datasets in two pools will look like below.
++# Previously, on next `zfs mount -a`, pthreads assigned to TESTFS1 and TESTFS2
++# could race, and TESTFS2 usually (actually always) won in ZoL.  Note that the
++# problem is how two or more threads could initially be assigned to the same
++# top level directory, not this specific layout.  This layout is just an example
++# that can reproduce race, and is also the layout reported in #8833.
++#
++# NAME                  MOUNTED  MOUNTPOINT
++# ----------------------------------------------
++# /$TESTPOOL1           no       none
++# /$TESTPOOL1/$TESTFS1  yes      $MNTPT
++# /$TESTPOOL2           no       $MNTPT
++# /$TESTPOOL2/$TESTFS2  yes      $MNTPT/$TESTFS2
++
++# Apparently two datasets must be mounted.
++log_must ismounted $TESTPOOL1/$TESTFS1
++log_must ismounted $TESTPOOL2/$TESTFS2
++# This unmount always succeeds, because potential race hasn't happened yet.
++log_must zfs unmount -a
++# This mount always succeeds, whether threads are under race condition or not.
++log_must zfs mount -a
++
++# Verify datasets are mounted (TESTFS2 fails if the race broke mount order).
++log_must ismounted $TESTPOOL1/$TESTFS1
++log_must ismounted $TESTPOOL2/$TESTFS2
++# Verify unmount succeeds (fails if the race broke mount order).
++log_must zfs unmount -a
++
++log_pass "Verify parallel mount ordering is consistent passed"
