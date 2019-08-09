@@ -8,3 +8,4 @@ init-debian-openrc-workaround.patch
 force-verbose-rules.patch
 linux-5.0-simd-compat.patch
 git_fix_mount_race.patch
+Fix-CONFIG_X86_DEBUG_FPU-build-failure.patch
