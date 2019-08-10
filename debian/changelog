@@ -4,11 +4,14 @@ zfs-linux (0.8.1-4) UNRELEASED; urgency=medium
   * Cherry-pick commit to fix a race condition when canmount=off
     (LP: #1837717) (synced from 0.8.1-1ubuntu8).
 
+  [ Fabian Grünbichler ]
+  * cherry-pick compat fix for CONFIG_X86_DEBUG_FPU (Closes: #934282)
+
   [ Mo Zhou ]
   * Drop lib{attr,selinux}1-dev from B-D; add lib{aio,udev,elf}-dev to B-D.
     (LP: #1837544) (See https://github.com/zfsonlinux/zfs/issues/9036)
 
- -- Mo Zhou <cdluminate@gmail.com>  Fri, 02 Aug 2019 01:07:39 +0000
+ -- Mo Zhou <cdluminate@gmail.com>  Sat, 10 Aug 2019 02:25:38 +0000
 
 zfs-linux (0.8.1-3) unstable; urgency=medium
 
