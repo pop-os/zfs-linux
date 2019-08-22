@@ -40,7 +40,6 @@ override_dh_autoreconf:
 	dh_autoreconf
 
 override_dh_auto_configure:
-	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(LINUX_NEXT)~\), linux-libc-dev \(>= $(LINUX_MIN)~\),/" debian/control.in > debian/control
 ifeq ($(BUILD_UDEB), true)
 	cat debian/control.udeb.in >> debian/control
 endif
@@ -58,6 +57,9 @@ endif
 	  --with-systemdpresetdir=/lib/systemd/system-preset \
 	  --with-systemdgeneratordir=/lib/systemd/system-generators \
 	  --with-config=user
+
+override_dh_gencontrol:
+	dh_gencontrol -- -Vlinux:Recommends="linux-libc-dev (<< $(LINUX_NEXT)~), linux-libc-dev (>= $(LINUX_MIN)~),"
 
 override_dh_auto_build:
 	@# Get a bare copy of the source code for DKMS.
@@ -157,7 +159,6 @@ override_dh_auto_clean:
 	dh_auto_clean
 	debconf-updatepo
 	@if test -e META.orig; then mv META.orig META; fi
-	sed "s/@LINUX_COMPAT@/linux-libc-dev \(<< $(LINUX_NEXT)~\), linux-libc-dev \(>= $(LINUX_MIN)~\),/" debian/control.in > debian/control
 ifeq ($(BUILD_UDEB), true)
 	cat debian/control.udeb.in >> debian/control
 endif
