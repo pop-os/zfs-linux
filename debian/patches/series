@@ -1,9 +1,10 @@
 0001-Prevent-manual-builds-in-the-DKMS-source.patch
 0002-Check-for-META-and-DCH-consistency-in-autoconf.patch
+0003-relocate-zvol_wait.patch
 enable-zed.patch
 1004-zed-service-bindir.patch
 init-debian-openrc-workaround.patch
 3100-remove-libzfs-module-timeout.patch
 force-verbose-rules.patch
 #linux-5.0-simd-compat.patch # Causing #940932, see also https://github.com/zfsonlinux/zfs/issues/9346
-Fix-CONFIG_X86_DEBUG_FPU-build-failure.patch
+#Fix-CONFIG_X86_DEBUG_FPU-build-failure.patch # Contributing to #940932, see also https://github.com/zfsonlinux/zfs/issues/9346
