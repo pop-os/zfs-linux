@@ -202,7 +202,6 @@ Depends: libnvpair1linux (= ${binary:Version}),
          libzpool2linux (= ${binary:Version}),
          python3,
          ${misc:Depends},
-         ${python3:Depends},
          ${shlibs:Depends}
 Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
 Breaks: spl (<< 0.7.9-2),
