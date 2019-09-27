@@ -1,3 +1,11 @@
+zfs-linux (0.8.2-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.8.2
+  * Deprecate control.in and use ${linux:Recommends} for the dynamic part.
+  * French debconf templates translation by Julien Patriarca (Closes: #934631)
+
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 27 Sep 2019 09:13:45 +0800
+
 zfs-linux (0.8.1-4) unstable; urgency=medium
 
   [ Didier Roche ]
