@@ -150,7 +150,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
-	$(top_srcdir)/config/kernel-spinlock.m4 \
 	$(top_srcdir)/config/kernel-submit_bio.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
 	$(top_srcdir)/config/kernel-timer.m4 \
@@ -209,7 +208,7 @@ PROGRAMS = $(pkgexec_PROGRAMS)
 am_hkdf_test_OBJECTS = hkdf_test.$(OBJEXT)
 hkdf_test_OBJECTS = $(am_hkdf_test_OBJECTS)
 hkdf_test_LDADD = $(LDADD)
-hkdf_test_DEPENDENCIES = $(top_srcdir)/lib/libzpool/libzpool.la
+hkdf_test_DEPENDENCIES = $(top_builddir)/lib/libzpool/libzpool.la
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
@@ -541,7 +540,7 @@ AM_CPPFLAGS = -D_GNU_SOURCE -D_REENTRANT -D_FILE_OFFSET_BITS=64 \
 	$(CODE_COVERAGE_CPPFLAGS) -I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib/libspl/include
 AM_LDFLAGS = $(DEBUG_LDFLAGS) $(ASAN_LDFLAGS)
-LDADD = $(top_srcdir)/lib/libzpool/libzpool.la
+LDADD = $(top_builddir)/lib/libzpool/libzpool.la
 AUTOMAKE_OPTIONS = subdir-objects
 dist_pkgdata_SCRIPTS = \
 	setup.ksh \

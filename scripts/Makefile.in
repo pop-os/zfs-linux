@@ -143,7 +143,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
-	$(top_srcdir)/config/kernel-spinlock.m4 \
 	$(top_srcdir)/config/kernel-submit_bio.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
 	$(top_srcdir)/config/kernel-timer.m4 \
@@ -776,7 +775,7 @@ all-local:
 		-e '\|^export SBIN_DIR=|s|$$|@abs_top_builddir@/bin|' \
 		-e '\|^export ZTS_DIR=|s|$$|@abs_top_srcdir@/tests|' \
 		-e '\|^export SCRIPT_DIR=|s|$$|@abs_top_srcdir@/scripts|' \
-		common.sh.in >common.sh
+		$(abs_top_srcdir)/scripts/common.sh.in >common.sh
 	-echo "$$EXTRA_ENVIRONMENT" >>common.sh
 
 clean-local:
@@ -787,7 +786,8 @@ install-data-hook:
 		-e '\|^export SBIN_DIR=|s|$$|@sbindir@|' \
 		-e '\|^export ZTS_DIR=|s|$$|@datadir@/@PACKAGE@|' \
 		-e '\|^export SCRIPT_DIR=|s|$$|@datadir@/@PACKAGE@|' \
-		common.sh.in >$(DESTDIR)$(datadir)/@PACKAGE@/common.sh
+		$(abs_top_srcdir)/scripts/common.sh.in \
+		>$(DESTDIR)$(datadir)/@PACKAGE@/common.sh
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

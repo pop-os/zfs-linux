@@ -169,7 +169,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
-	$(top_srcdir)/config/kernel-spinlock.m4 \
 	$(top_srcdir)/config/kernel-submit_bio.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
 	$(top_srcdir)/config/kernel-timer.m4 \
@@ -1267,7 +1266,7 @@ deb-kmod: deb-local rpm-kmod
 	arch=`$(RPM) -qp $${name}-kmod-$${version}.src.rpm --qf %{arch} | tail -1`; \
 	debarch=`$(DPKG) --print-architecture`; \
 	pkg1=kmod-$${name}*$${version}.$${arch}.rpm; \
-	fakeroot $(ALIEN) --bump=0 --scripts --to-deb --target=$$debarch $$pkg1; \
+	fakeroot $(ALIEN) --bump=0 --scripts --to-deb --target=$$debarch $$pkg1 || exit 1; \
 	$(RM) $$pkg1
 
 deb-dkms: deb-local rpm-dkms
@@ -1276,7 +1275,7 @@ deb-dkms: deb-local rpm-dkms
 	arch=`$(RPM) -qp $${name}-dkms-$${version}.src.rpm --qf %{arch} | tail -1`; \
 	debarch=`$(DPKG) --print-architecture`; \
 	pkg1=$${name}-dkms-$${version}.$${arch}.rpm; \
-	fakeroot $(ALIEN) --bump=0 --scripts --to-deb --target=$$debarch $$pkg1; \
+	fakeroot $(ALIEN) --bump=0 --scripts --to-deb --target=$$debarch $$pkg1 || exit 1; \
 	$(RM) $$pkg1
 
 deb-utils: deb-local rpm-utils
@@ -1291,7 +1290,7 @@ deb-utils: deb-local rpm-utils
 	pkg5=libzpool2-$${version}.$${arch}.rpm; \
 	pkg6=libzfs2-devel-$${version}.$${arch}.rpm; \
 	pkg7=$${name}-test-$${version}.$${arch}.rpm; \
-	pkg8=$${name}-dracut-$${version}.$${arch}.rpm; \
+	pkg8=$${name}-dracut-$${version}.noarch.rpm; \
 	pkg9=$${name}-initramfs-$${version}.$${arch}.rpm; \
 	pkg10=`ls python*-pyzfs-$${version}* | tail -1`; \
 	path_prepend=`mktemp -d /tmp/intercept.XXX`; \
@@ -1303,7 +1302,7 @@ deb-utils: deb-local rpm-utils
 	env PATH=$${path_prepend}:$${PATH} \
 	fakeroot $(ALIEN) --bump=0 --scripts --to-deb --target=$$debarch \
 	    $$pkg1 $$pkg2 $$pkg3 $$pkg4 $$pkg5 $$pkg6 $$pkg7 \
-	    $$pkg8 $$pkg9 $$pkg10; \
+	    $$pkg8 $$pkg9 $$pkg10 || exit 1; \
 	$(RM) $${path_prepend}/dh_shlibdeps; \
 	rmdir $${path_prepend}; \
 	$(RM) $$pkg1 $$pkg2 $$pkg3 $$pkg4 $$pkg5 $$pkg6 $$pkg7 \
@@ -1358,7 +1357,8 @@ distclean-local::
 		-type f -print | xargs $(RM)
 
 all-local:
-	-${top_srcdir}/scripts/zfs-tests.sh -c
+	-[ -x ${top_builddir}/scripts/zfs-tests.sh ] && \
+	    ${top_builddir}/scripts/zfs-tests.sh -c
 
 dist-hook: gitrev
 	cp ${top_srcdir}/include/zfs_gitrev.h $(distdir)/include; \

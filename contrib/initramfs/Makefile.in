@@ -143,7 +143,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
-	$(top_srcdir)/config/kernel-spinlock.m4 \
 	$(top_srcdir)/config/kernel-submit_bio.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
 	$(top_srcdir)/config/kernel-timer.m4 \
@@ -901,15 +900,20 @@ uninstall-am: uninstall-initrdSCRIPTS
 
 
 install-initrdSCRIPTS: $(EXTRA_DIST)
-	for d in conf.d conf-hooks.d hooks scripts scripts/local-top; do \
-	  $(MKDIR_P) $(DESTDIR)$(initrddir)/$$d; \
-	  cp $(top_srcdir)/contrib/initramfs/$$d/zfs \
-	    $(DESTDIR)$(initrddir)/$$d/; \
+	for d in conf.d conf-hooks.d scripts/local-top; do \
+		$(MKDIR_P) $(DESTDIR)$(initrddir)/$$d; \
+		cp $(top_srcdir)/contrib/initramfs/$$d/zfs \
+		    $(DESTDIR)$(initrddir)/$$d/; \
 	done
-	if [ -f etc/init.d/zfs ]; then \
-	  $(MKDIR_P) $(DESTDIR)$(DEFAULT_INITCONF_DIR); \
-	  cp $(top_srcdir)/etc/init.d/zfs \
-	    $(DESTDIR)$(DEFAULT_INITCONF_DIR)/; \
+	for d in hooks scripts; do \
+		$(MKDIR_P) $(DESTDIR)$(initrddir)/$$d; \
+		cp $(top_builddir)/contrib/initramfs/$$d/zfs \
+		    $(DESTDIR)$(initrddir)/$$d/; \
+	done
+	if [ -f $(top_builddir)/etc/init.d/zfs ]; then \
+		$(MKDIR_P) $(DESTDIR)$(DEFAULT_INITCONF_DIR); \
+		cp $(top_builddir)/etc/init.d/zfs \
+		    $(DESTDIR)$(DEFAULT_INITCONF_DIR)/; \
 	fi
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

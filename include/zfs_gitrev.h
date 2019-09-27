@@ -1,1 +1,1 @@
-#define	ZFS_META_GITREV "zfs-0.8.1-0-gc7d2212"
+#define	ZFS_META_GITREV "zfs-0.8.2-0-g1222e92-dirty"
