@@ -1184,7 +1184,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  getzoneid@Base 0.8.2
  getzoneidbyname@Base 0.8.2
  getzonenamebyid@Base 0.8.2
- (arch=amd64)gf_clmul_mod_lt@Base 0.8.2
+ (arch=amd64 arm64)gf_clmul_mod_lt@Base 0.8.2
  gmac_alloc_ctx@Base 0.8.2
  gmac_init_ctx@Base 0.8.2
  gswq@Base 0.8.2
