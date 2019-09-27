@@ -32,8 +32,8 @@ libzfs.so.2 libzfs2linux #MINVER#
  atomic_and_64_nv@Base 0.8.2
  atomic_and_8@Base 0.8.2
  atomic_and_8_nv@Base 0.8.2
- (arch=s390x)atomic_and_long@Base 0.8.2-1
- (arch=s390x)atomic_and_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el)atomic_and_long@Base 0.8.2-1
+ (arch=s390x ppc64el)atomic_and_long_nv@Base 0.8.2-1
  atomic_and_uchar@Base 0.8.2
  atomic_and_uchar_nv@Base 0.8.2
  atomic_and_uint@Base 0.8.2
@@ -60,8 +60,8 @@ libzfs.so.2 libzfs2linux #MINVER#
  atomic_dec_64_nv@Base 0.8.2
  atomic_dec_8@Base 0.8.2
  atomic_dec_8_nv@Base 0.8.2
- (arch=s390x)atomic_dec_long@Base 0.8.2-1
- (arch=s390x)atomic_dec_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el)atomic_dec_long@Base 0.8.2-1
+ (arch=s390x ppc64el)atomic_dec_long_nv@Base 0.8.2-1
  atomic_dec_uchar@Base 0.8.2
  atomic_dec_uchar_nv@Base 0.8.2
  atomic_dec_uint@Base 0.8.2
@@ -78,8 +78,8 @@ libzfs.so.2 libzfs2linux #MINVER#
  atomic_inc_64_nv@Base 0.8.2
  atomic_inc_8@Base 0.8.2
  atomic_inc_8_nv@Base 0.8.2
- (arch=s390x)atomic_inc_long@Base 0.8.2-1
- (arch=s390x)atomic_inc_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el)atomic_inc_long@Base 0.8.2-1
+ (arch=s390x ppc64el)atomic_inc_long_nv@Base 0.8.2-1
  atomic_inc_uchar@Base 0.8.2
  atomic_inc_uchar_nv@Base 0.8.2
  atomic_inc_uint@Base 0.8.2
@@ -88,7 +88,7 @@ libzfs.so.2 libzfs2linux #MINVER#
  atomic_inc_ulong_nv@Base 0.8.2
  atomic_inc_ushort@Base 0.8.2
  atomic_inc_ushort_nv@Base 0.8.2
- (arch=s390x)atomic_lock@Base 0.8.2-1
+ (arch=s390x ppc64el)atomic_lock@Base 0.8.2-1
  atomic_or_16@Base 0.8.2
  atomic_or_16_nv@Base 0.8.2
  atomic_or_32@Base 0.8.2
@@ -97,8 +97,8 @@ libzfs.so.2 libzfs2linux #MINVER#
  atomic_or_64_nv@Base 0.8.2
  atomic_or_8@Base 0.8.2
  atomic_or_8_nv@Base 0.8.2
- (arch=s390x)atomic_or_long@Base 0.8.2-1
- (arch=s390x)atomic_or_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el)atomic_or_long@Base 0.8.2-1
+ (arch=s390x ppc64el)atomic_or_long_nv@Base 0.8.2-1
  atomic_or_uchar@Base 0.8.2
  atomic_or_uchar_nv@Base 0.8.2
  atomic_or_uint@Base 0.8.2
@@ -151,11 +151,11 @@ libzfs.so.2 libzfs2linux #MINVER#
  avl_swap@Base 0.8.2
  avl_walk@Base 0.8.2
  buf@Base 0.8.2
- (arch=s390x)cas32@Base 0.8.2-1
- (arch=s390x)cas64@Base 0.8.2-1
- (arch=s390x)cas8@Base 0.8.2-1
- (arch=s390x)caslong@Base 0.8.2-1
- (arch=s390x)casptr@Base 0.8.2-1
+ (arch=s390x ppc64el)cas32@Base 0.8.2-1
+ (arch=s390x ppc64el)cas64@Base 0.8.2-1
+ (arch=s390x ppc64el)cas8@Base 0.8.2-1
+ (arch=s390x ppc64el)caslong@Base 0.8.2-1
+ (arch=s390x ppc64el)casptr@Base 0.8.2-1
  changelist_free@Base 0.8.2
  changelist_gather@Base 0.8.2
  changelist_haszonedchild@Base 0.8.2
