@@ -6,9 +6,9 @@ zfs-linux (0.8.2-1) UNRELEASED; urgency=medium
   * Remove merged patches:
      - 2000-increase-default-zcmd-allocation-to-256K.patch
      - git_fix_mount_race.patch
-  * Disable patch:
-     - linux-5.0-simd-compat.patch which causes #940932 under some
-       certain conditions. https://github.com/zfsonlinux/zfs/issues/9346
+  * Disable linux-5.0-simd-compat.patch due to its incorrect assumption that
+    may lead to system instability when SIMD is enabled. (Closes: #940932) 
+    See also https://github.com/zfsonlinux/zfs/issues/9346
 
  -- Mo Zhou <cdluminate@gmail.com>  Fri, 27 Sep 2019 09:31:24 +0800
 
