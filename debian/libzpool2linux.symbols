@@ -7,13 +7,13 @@ libzpool.so.2 libzpool2linux #MINVER#
  SHA1Init@Base 0.8.2
  SHA1Update@Base 0.8.2
  SHA256Init@Base 0.8.2
- SHA256TransformBlocks@Base 0.8.2
+ (arch=amd64)SHA256TransformBlocks@Base 0.8.2
  SHA2Final@Base 0.8.2
  SHA2Init@Base 0.8.2
  SHA2Update@Base 0.8.2
  SHA384Init@Base 0.8.2
  SHA512Init@Base 0.8.2
- SHA512TransformBlocks@Base 0.8.2
+ (arch=amd64)SHA512TransformBlocks@Base 0.8.2
  SKEIN1024_IV_1024@Base 0.8.2
  SKEIN1024_IV_384@Base 0.8.2
  SKEIN1024_IV_512@Base 0.8.2
@@ -48,17 +48,19 @@ libzpool.so.2 libzpool2linux #MINVER#
  Skein_512_Output@Base 0.8.2
  Skein_512_Process_Block@Base 0.8.2
  Skein_512_Update@Base 0.8.2
+ (arch=s390x)Skein_Get64_LSB_First@Base 0.8.2-1
+ (arch=s390x)Skein_Put64_LSB_First@Base 0.8.2-1
  __dbuf_stats_hash_table_data@Base 0.8.2
  __dmu_object_info_from_dnode@Base 0.8.2
  __dprintf@Base 0.8.2
  __set_error@Base 0.8.2
  __spl_pf_fstrans_check@Base 0.8.2
  __zfs_dbgmsg@Base 0.8.2
- _key_expansion_128@Base 0.8.2
- _key_expansion_192a@Base 0.8.2
- _key_expansion_192b@Base 0.8.2
- _key_expansion_256a@Base 0.8.2
- _key_expansion_256b@Base 0.8.2
+ (arch=amd64)_key_expansion_128@Base 0.8.2
+ (arch=amd64)_key_expansion_192a@Base 0.8.2
+ (arch=amd64)_key_expansion_192b@Base 0.8.2
+ (arch=amd64)_key_expansion_256a@Base 0.8.2
+ (arch=amd64)_key_expansion_256b@Base 0.8.2
  _sol_getmntent@Base 0.8.2
  abd_alloc@Base 0.8.2
  abd_alloc_for_io@Base 0.8.2
@@ -103,18 +105,18 @@ libzpool.so.2 libzpool2linux #MINVER#
  abd_take_ownership_of_buf@Base 0.8.2
  abd_to_buf@Base 0.8.2
  abd_zero_off@Base 0.8.2
- aes_aesni_impl@Base 0.8.2
+ (arch=amd64)aes_aesni_impl@Base 0.8.2
  aes_all_impl@Base 0.8.2
  aes_alloc_keysched@Base 0.8.2
  aes_copy_block@Base 0.8.2
- aes_decrypt_amd64@Base 0.8.2
+ (arch=amd64)aes_decrypt_amd64@Base 0.8.2
  aes_decrypt_block@Base 0.8.2
  aes_decrypt_contiguous_blocks@Base 0.8.2
- aes_decrypt_intel@Base 0.8.2
- aes_encrypt_amd64@Base 0.8.2
+ (arch=amd64)aes_decrypt_intel@Base 0.8.2
+ (arch=amd64)aes_encrypt_amd64@Base 0.8.2
  aes_encrypt_block@Base 0.8.2
  aes_encrypt_contiguous_blocks@Base 0.8.2
- aes_encrypt_intel@Base 0.8.2
+ (arch=amd64)aes_encrypt_intel@Base 0.8.2
  aes_generic_impl@Base 0.8.2
  aes_impl_get_ops@Base 0.8.2
  aes_impl_init@Base 0.8.2
@@ -122,7 +124,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  aes_init_keysched@Base 0.8.2
  aes_mod_fini@Base 0.8.2
  aes_mod_init@Base 0.8.2
- aes_x86_64_impl@Base 0.8.2
+ (arch=amd64)aes_x86_64_impl@Base 0.8.2
  aes_xor_block@Base 0.8.2
  aggsum_add@Base 0.8.2
  aggsum_compare@Base 0.8.2
@@ -215,6 +217,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_and_64_nv@Base 0.8.2
  atomic_and_8@Base 0.8.2
  atomic_and_8_nv@Base 0.8.2
+ (arch=s390x)atomic_and_long@Base 0.8.2-1
+ (arch=s390x)atomic_and_long_nv@Base 0.8.2-1
  atomic_and_uchar@Base 0.8.2
  atomic_and_uchar_nv@Base 0.8.2
  atomic_and_uint@Base 0.8.2
@@ -241,6 +245,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_dec_64_nv@Base 0.8.2
  atomic_dec_8@Base 0.8.2
  atomic_dec_8_nv@Base 0.8.2
+ (arch=s390x)atomic_dec_long@Base 0.8.2-1
+ (arch=s390x)atomic_dec_long_nv@Base 0.8.2-1
  atomic_dec_uchar@Base 0.8.2
  atomic_dec_uchar_nv@Base 0.8.2
  atomic_dec_uint@Base 0.8.2
@@ -257,6 +263,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_inc_64_nv@Base 0.8.2
  atomic_inc_8@Base 0.8.2
  atomic_inc_8_nv@Base 0.8.2
+ (arch=s390x)atomic_inc_long@Base 0.8.2-1
+ (arch=s390x)atomic_inc_long_nv@Base 0.8.2-1
  atomic_inc_uchar@Base 0.8.2
  atomic_inc_uchar_nv@Base 0.8.2
  atomic_inc_uint@Base 0.8.2
@@ -265,6 +273,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_inc_ulong_nv@Base 0.8.2
  atomic_inc_ushort@Base 0.8.2
  atomic_inc_ushort_nv@Base 0.8.2
+ (arch=s390x)atomic_lock@Base 0.8.2-1
  atomic_or_16@Base 0.8.2
  atomic_or_16_nv@Base 0.8.2
  atomic_or_32@Base 0.8.2
@@ -273,6 +282,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_or_64_nv@Base 0.8.2
  atomic_or_8@Base 0.8.2
  atomic_or_8_nv@Base 0.8.2
+ (arch=s390x)atomic_or_long@Base 0.8.2-1
+ (arch=s390x)atomic_or_long_nv@Base 0.8.2-1
  atomic_or_uchar@Base 0.8.2
  atomic_or_uchar_nv@Base 0.8.2
  atomic_or_uint@Base 0.8.2
@@ -361,6 +372,11 @@ libzpool.so.2 libzpool2linux #MINVER#
  byteswap_uint64_array@Base 0.8.2
  byteswap_uint8_array@Base 0.8.2
  calculate_ccm_mac@Base 0.8.2
+ (arch=s390x)cas32@Base 0.8.2-1
+ (arch=s390x)cas64@Base 0.8.2-1
+ (arch=s390x)cas8@Base 0.8.2-1
+ (arch=s390x)caslong@Base 0.8.2-1
+ (arch=s390x)casptr@Base 0.8.2-1
  cbc_alloc_ctx@Base 0.8.2
  cbc_decrypt_contiguous_blocks@Base 0.8.2
  cbc_encrypt_contiguous_blocks@Base 0.8.2
@@ -1088,8 +1104,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  fletcher_2_incremental_native@Base 0.8.2
  fletcher_2_native@Base 0.8.2
  fletcher_4_abd_ops@Base 0.8.2
- fletcher_4_avx2_ops@Base 0.8.2
- fletcher_4_avx512f_ops@Base 0.8.2
+ (arch=amd64)fletcher_4_avx2_ops@Base 0.8.2
+ (arch=amd64)fletcher_4_avx512f_ops@Base 0.8.2
  fletcher_4_byteswap@Base 0.8.2
  fletcher_4_fini@Base 0.8.2
  fletcher_4_impl_set@Base 0.8.2
@@ -1098,8 +1114,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  fletcher_4_init@Base 0.8.2
  fletcher_4_native@Base 0.8.2
  fletcher_4_native_varsize@Base 0.8.2
- fletcher_4_sse2_ops@Base 0.8.2
- fletcher_4_ssse3_ops@Base 0.8.2
+ (arch=amd64)fletcher_4_sse2_ops@Base 0.8.2
+ (arch=amd64)fletcher_4_ssse3_ops@Base 0.8.2
  fletcher_4_superscalar4_ops@Base 0.8.2
  fletcher_4_superscalar_ops@Base 0.8.2
  fletcher_init@Base 0.8.2
@@ -1152,8 +1168,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  gcm_init_ctx@Base 0.8.2
  gcm_mode_decrypt_contiguous_blocks@Base 0.8.2
  gcm_mode_encrypt_contiguous_blocks@Base 0.8.2
- gcm_mul_pclmulqdq@Base 0.8.2
- gcm_pclmulqdq_impl@Base 0.8.2
+ (arch=amd64)gcm_mul_pclmulqdq@Base 0.8.2
+ (arch=amd64)gcm_pclmulqdq_impl@Base 0.8.2
  gcm_set_kmflag@Base 0.8.2
  get_child_receive_stats@Base 0.8.2
  get_clones_stat@Base 0.8.2
@@ -1167,7 +1183,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  getzoneid@Base 0.8.2
  getzoneidbyname@Base 0.8.2
  getzonenamebyid@Base 0.8.2
- gf_clmul_mod_lt@Base 0.8.2
+ (arch=amd64)gf_clmul_mod_lt@Base 0.8.2
  gmac_alloc_ctx@Base 0.8.2
  gmac_init_ctx@Base 0.8.2
  gswq@Base 0.8.2
@@ -1665,10 +1681,10 @@ libzpool.so.2 libzpool2linux #MINVER#
  reference_history@Base 0.8.2
  reference_tracking_enable@Base 0.8.2
  remap_blkptr_cb@Base 0.8.2
- rijndael_key_setup_dec_amd64@Base 0.8.2
- rijndael_key_setup_dec_intel@Base 0.8.2
- rijndael_key_setup_enc_amd64@Base 0.8.2
- rijndael_key_setup_enc_intel@Base 0.8.2
+ (arch=amd64)rijndael_key_setup_dec_amd64@Base 0.8.2
+ (arch=amd64)rijndael_key_setup_dec_intel@Base 0.8.2
+ (arch=amd64)rijndael_key_setup_enc_amd64@Base 0.8.2
+ (arch=amd64)rijndael_key_setup_enc_intel@Base 0.8.2
  rootdir@Base 0.8.2
  rrm_destroy@Base 0.8.2
  rrm_enter@Base 0.8.2
@@ -1749,7 +1765,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  send_holes_without_birth_time@Base 0.8.2
  seq_printf@Base 0.8.2
  set_global_var@Base 0.8.2
- sha1_block_data_order@Base 0.8.2
+ (arch=amd64)sha1_block_data_order@Base 0.8.2
  sha1_mod_fini@Base 0.8.2
  sha1_mod_init@Base 0.8.2
  sha2_mod_fini@Base 0.8.2
@@ -2275,9 +2291,9 @@ libzpool.so.2 libzpool2linux #MINVER#
  vdev_queue_length@Base 0.8.2
  vdev_queue_offset_compare@Base 0.8.2
  vdev_queue_timestamp_compare@Base 0.8.2
- vdev_raidz_avx2_impl@Base 0.8.2
- vdev_raidz_avx512bw_impl@Base 0.8.2
- vdev_raidz_avx512f_impl@Base 0.8.2
+ (arch=amd64)vdev_raidz_avx2_impl@Base 0.8.2
+ (arch=amd64)vdev_raidz_avx512bw_impl@Base 0.8.2
+ (arch=amd64)vdev_raidz_avx512f_impl@Base 0.8.2
  vdev_raidz_generate_parity@Base 0.8.2
  vdev_raidz_impl_set@Base 0.8.2
  vdev_raidz_log2@Base 0.8.2
@@ -2292,8 +2308,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  vdev_raidz_pow2@Base 0.8.2
  vdev_raidz_reconstruct@Base 0.8.2
  vdev_raidz_scalar_impl@Base 0.8.2
- vdev_raidz_sse2_impl@Base 0.8.2
- vdev_raidz_ssse3_impl@Base 0.8.2
+ (arch=amd64)vdev_raidz_sse2_impl@Base 0.8.2
+ (arch=amd64)vdev_raidz_ssse3_impl@Base 0.8.2
  vdev_readable@Base 0.8.2
  vdev_rele@Base 0.8.2
  vdev_removal_max_span@Base 0.8.2
