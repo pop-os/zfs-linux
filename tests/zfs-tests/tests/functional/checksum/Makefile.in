@@ -153,7 +153,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
-	$(top_srcdir)/config/kernel-spinlock.m4 \
 	$(top_srcdir)/config/kernel-submit_bio.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
 	$(top_srcdir)/config/kernel-timer.m4 \
@@ -213,18 +212,18 @@ PROGRAMS = $(pkgexec_PROGRAMS)
 am_edonr_test_OBJECTS = edonr_test.$(OBJEXT)
 edonr_test_OBJECTS = $(am_edonr_test_OBJECTS)
 edonr_test_LDADD = $(LDADD)
-edonr_test_DEPENDENCIES = $(top_srcdir)/lib/libicp/libicp.la
+edonr_test_DEPENDENCIES = $(top_builddir)/lib/libicp/libicp.la
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
 am_sha2_test_OBJECTS = sha2_test.$(OBJEXT)
 sha2_test_OBJECTS = $(am_sha2_test_OBJECTS)
 sha2_test_LDADD = $(LDADD)
-sha2_test_DEPENDENCIES = $(top_srcdir)/lib/libicp/libicp.la
+sha2_test_DEPENDENCIES = $(top_builddir)/lib/libicp/libicp.la
 am_skein_test_OBJECTS = skein_test.$(OBJEXT)
 skein_test_OBJECTS = $(am_skein_test_OBJECTS)
 skein_test_LDADD = $(LDADD)
-skein_test_DEPENDENCIES = $(top_srcdir)/lib/libicp/libicp.la
+skein_test_DEPENDENCIES = $(top_builddir)/lib/libicp/libicp.la
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -555,7 +554,7 @@ AM_CPPFLAGS = -D_GNU_SOURCE -D_REENTRANT -D_FILE_OFFSET_BITS=64 \
 	-DSYSCONFDIR=\"$(sysconfdir)\" $(DEBUG_CPPFLAGS) \
 	$(CODE_COVERAGE_CPPFLAGS) -I$(top_srcdir)/include
 AM_LDFLAGS = $(DEBUG_LDFLAGS) $(ASAN_LDFLAGS)
-LDADD = $(top_srcdir)/lib/libicp/libicp.la
+LDADD = $(top_builddir)/lib/libicp/libicp.la
 AUTOMAKE_OPTIONS = subdir-objects
 dist_pkgdata_SCRIPTS = \
 	setup.ksh \

@@ -143,7 +143,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
-	$(top_srcdir)/config/kernel-spinlock.m4 \
 	$(top_srcdir)/config/kernel-submit_bio.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
 	$(top_srcdir)/config/kernel-timer.m4 \
@@ -492,7 +491,7 @@ top_srcdir = @top_srcdir@
 udevdir = @udevdir@
 udevruledir = @udevruledir@
 zfsexecdir = @zfsexecdir@
-dist_man_MANS = zhack.1 ztest.1 raidz_test.1
+dist_man_MANS = zhack.1 ztest.1 raidz_test.1 zvol_wait.1
 EXTRA_DIST = cstyle.1
 all: all-am
 

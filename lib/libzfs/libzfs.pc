@@ -5,8 +5,8 @@ includedir=${prefix}/include
 
 Name: libzfs
 Description: LibZFS library
-Version: 0.8.1
+Version: 0.8.2
 URL: http://zfsonlinux.org
 Requires: libzfs_core
 Cflags: -I${includedir}/libzfs -I${includedir}/libspl
-Libs: -L${libdir} -lzfs
+Libs: -L${libdir} -lzfs -lnvpair
