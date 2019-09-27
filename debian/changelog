@@ -1,10 +1,16 @@
 zfs-linux (0.8.2-1) UNRELEASED; urgency=medium
 
-  * New upstream version 0.8.2
+  * New upstream version 0.8.2 (Closes: #941019)
   * Deprecate control.in and use ${linux:Recommends} for the dynamic part.
   * French debconf templates translation by Julien Patriarca (Closes: #934631)
+  * Remove merged patches:
+     - 2000-increase-default-zcmd-allocation-to-256K.patch
+     - git_fix_mount_race.patch
+  * Disable patch:
+     - linux-5.0-simd-compat.patch which causes #940932 under some
+       certain conditions. https://github.com/zfsonlinux/zfs/issues/9346
 
- -- Mo Zhou <cdluminate@gmail.com>  Fri, 27 Sep 2019 09:13:45 +0800
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 27 Sep 2019 09:31:24 +0800
 
 zfs-linux (0.8.1-4) unstable; urgency=medium
 
