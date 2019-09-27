@@ -2,10 +2,8 @@
 0002-Check-for-META-and-DCH-consistency-in-autoconf.patch
 enable-zed.patch
 1004-zed-service-bindir.patch
-2000-increase-default-zcmd-allocation-to-256K.patch
 init-debian-openrc-workaround.patch
 3100-remove-libzfs-module-timeout.patch
 force-verbose-rules.patch
-linux-5.0-simd-compat.patch
-git_fix_mount_race.patch
+#linux-5.0-simd-compat.patch # Causing #940932, see also https://github.com/zfsonlinux/zfs/issues/9346
 Fix-CONFIG_X86_DEBUG_FPU-build-failure.patch

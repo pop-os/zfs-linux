@@ -150,7 +150,7 @@ Depends: dkms (>> 2.1.1.2-5),
          python3-distutils | libpython3-stdlib (<< 3.6.4),
          ${misc:Depends},
          ${perl:Depends}
-Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), linux-libc-dev (<< 5.2~), linux-libc-dev (>= 2.6.32~),
+Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), ${linux:Recommends}
 Breaks: spl-dkms (<< 0.8.0~rc1)
 Replaces: spl-dkms
 Provides: zfs-modules
@@ -202,7 +202,6 @@ Depends: libnvpair1linux (= ${binary:Version}),
          libzpool2linux (= ${binary:Version}),
          python3,
          ${misc:Depends},
-         ${python3:Depends},
          ${shlibs:Depends}
 Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
 Breaks: spl (<< 0.7.9-2),

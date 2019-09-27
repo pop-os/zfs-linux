@@ -1,3 +1,22 @@
+zfs-linux (0.8.2-1) unstable; urgency=medium
+
+  * New upstream version 0.8.2 (Closes: #941019)
+  * Deprecate control.in and use ${linux:Recommends} for the dynamic part.
+  * French debconf templates translation by Julien Patriarca (Closes: #934631)
+  * Remove merged patches:
+     - 2000-increase-default-zcmd-allocation-to-256K.patch
+     - git_fix_mount_race.patch
+  * Disable linux-5.0-simd-compat.patch due to its incorrect assumption that
+    may lead to system instability when SIMD is enabled. (Closes: #940932) 
+    See also https://github.com/zfsonlinux/zfs/issues/9346
+  * Install new service that waits on zvol links to be created (gh#8975).
+  * Remove unused control variable ${python3:Depends} for zfsutils-linux.
+  * Track symbols for lib{nvpair1,uutil1,zfs2,zpool2}.
+  * lintian: Override source: excessive-debhelper-overrides
+  * lintian: Remove unused overrides for zfs-test.
+
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 27 Sep 2019 12:35:34 +0800
+
 zfs-linux (0.8.1-4) unstable; urgency=medium
 
   [ Didier Roche ]

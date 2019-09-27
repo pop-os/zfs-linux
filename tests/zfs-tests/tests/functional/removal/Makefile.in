@@ -159,7 +159,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
-	$(top_srcdir)/config/kernel-spinlock.m4 \
 	$(top_srcdir)/config/kernel-submit_bio.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
 	$(top_srcdir)/config/kernel-timer.m4 \
@@ -511,7 +510,7 @@ zfsexecdir = @zfsexecdir@
 dist_pkgdata_SCRIPTS = \
 	cleanup.ksh removal_all_vdev.ksh removal_check_space.ksh \
 	removal_condense_export.ksh removal_multiple_indirection.ksh \
-	removal_remap_deadlists.ksh removal_remap.ksh \
+	removal_remap_deadlists.ksh removal_nopwrite.ksh removal_remap.ksh \
 	removal_reservation.ksh removal_resume_export.ksh \
 	removal_sanity.ksh removal_with_add.ksh removal_with_create_fs.ksh \
 	removal_with_dedup.ksh removal_with_errors.ksh \
