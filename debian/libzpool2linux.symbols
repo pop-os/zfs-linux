@@ -217,8 +217,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_and_64_nv@Base 0.8.2
  atomic_and_8@Base 0.8.2
  atomic_and_8_nv@Base 0.8.2
- (arch=s390x ppc64el)atomic_and_long@Base 0.8.2-1
- (arch=s390x ppc64el)atomic_and_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)atomic_and_long@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)atomic_and_long_nv@Base 0.8.2-1
  atomic_and_uchar@Base 0.8.2
  atomic_and_uchar_nv@Base 0.8.2
  atomic_and_uint@Base 0.8.2
@@ -245,8 +245,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_dec_64_nv@Base 0.8.2
  atomic_dec_8@Base 0.8.2
  atomic_dec_8_nv@Base 0.8.2
- (arch=s390x ppc64el)atomic_dec_long@Base 0.8.2-1
- (arch=s390x ppc64el)atomic_dec_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)atomic_dec_long@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)atomic_dec_long_nv@Base 0.8.2-1
  atomic_dec_uchar@Base 0.8.2
  atomic_dec_uchar_nv@Base 0.8.2
  atomic_dec_uint@Base 0.8.2
@@ -263,8 +263,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_inc_64_nv@Base 0.8.2
  atomic_inc_8@Base 0.8.2
  atomic_inc_8_nv@Base 0.8.2
- (arch=s390x ppc64el)atomic_inc_long@Base 0.8.2-1
- (arch=s390x ppc64el)atomic_inc_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)atomic_inc_long@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)atomic_inc_long_nv@Base 0.8.2-1
  atomic_inc_uchar@Base 0.8.2
  atomic_inc_uchar_nv@Base 0.8.2
  atomic_inc_uint@Base 0.8.2
@@ -273,7 +273,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_inc_ulong_nv@Base 0.8.2
  atomic_inc_ushort@Base 0.8.2
  atomic_inc_ushort_nv@Base 0.8.2
- (arch=s390x ppc64el)atomic_lock@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)atomic_lock@Base 0.8.2-1
  atomic_or_16@Base 0.8.2
  atomic_or_16_nv@Base 0.8.2
  atomic_or_32@Base 0.8.2
@@ -282,8 +282,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_or_64_nv@Base 0.8.2
  atomic_or_8@Base 0.8.2
  atomic_or_8_nv@Base 0.8.2
- (arch=s390x ppc64el)atomic_or_long@Base 0.8.2-1
- (arch=s390x ppc64el)atomic_or_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)atomic_or_long@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)atomic_or_long_nv@Base 0.8.2-1
  atomic_or_uchar@Base 0.8.2
  atomic_or_uchar_nv@Base 0.8.2
  atomic_or_uint@Base 0.8.2
@@ -372,11 +372,11 @@ libzpool.so.2 libzpool2linux #MINVER#
  byteswap_uint64_array@Base 0.8.2
  byteswap_uint8_array@Base 0.8.2
  calculate_ccm_mac@Base 0.8.2
- (arch=s390x ppc64el)cas32@Base 0.8.2-1
- (arch=s390x ppc64el)cas64@Base 0.8.2-1
- (arch=s390x ppc64el)cas8@Base 0.8.2-1
- (arch=s390x ppc64el)caslong@Base 0.8.2-1
- (arch=s390x ppc64el)casptr@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)cas32@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)cas64@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)cas8@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)caslong@Base 0.8.2-1
+ (arch=s390x ppc64el arm64)casptr@Base 0.8.2-1
  cbc_alloc_ctx@Base 0.8.2
  cbc_decrypt_contiguous_blocks@Base 0.8.2
  cbc_encrypt_contiguous_blocks@Base 0.8.2
@@ -1103,6 +1103,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  fletcher_2_incremental_byteswap@Base 0.8.2
  fletcher_2_incremental_native@Base 0.8.2
  fletcher_2_native@Base 0.8.2
+ (arch=arm64)fletcher_4_aarch64_neon_ops@Base 0.8.2
  fletcher_4_abd_ops@Base 0.8.2
  (arch=amd64)fletcher_4_avx2_ops@Base 0.8.2
  (arch=amd64)fletcher_4_avx512f_ops@Base 0.8.2
@@ -2294,6 +2295,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  (arch=amd64)vdev_raidz_avx2_impl@Base 0.8.2
  (arch=amd64)vdev_raidz_avx512bw_impl@Base 0.8.2
  (arch=amd64)vdev_raidz_avx512f_impl@Base 0.8.2
+ (arch=arm64)vdev_raidz_aarch64_neon_impl@Base 0.8.2
+ (arch=arm64)vdev_raidz_aarch64_neonx2_impl@Base 0.8.2
  vdev_raidz_generate_parity@Base 0.8.2
  vdev_raidz_impl_set@Base 0.8.2
  vdev_raidz_log2@Base 0.8.2
