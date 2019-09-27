@@ -26,8 +26,8 @@ libuutil.so.1 libuutil1linux #MINVER#
  atomic_and_64_nv@Base 0.8.2
  atomic_and_8@Base 0.8.2
  atomic_and_8_nv@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf armel)atomic_and_long@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf armel)atomic_and_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_and_long@Base 0.8.2
+ (arch=s390x ppc64el arm64 armhf armel)atomic_and_long_nv@Base 0.8.2
  atomic_and_uchar@Base 0.8.2
  atomic_and_uchar_nv@Base 0.8.2
  atomic_and_uint@Base 0.8.2
@@ -54,8 +54,8 @@ libuutil.so.1 libuutil1linux #MINVER#
  atomic_dec_64_nv@Base 0.8.2
  atomic_dec_8@Base 0.8.2
  atomic_dec_8_nv@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf armel)atomic_dec_long@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf armel)atomic_dec_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_dec_long@Base 0.8.2
+ (arch=s390x ppc64el arm64 armhf armel)atomic_dec_long_nv@Base 0.8.2
  atomic_dec_uchar@Base 0.8.2
  atomic_dec_uchar_nv@Base 0.8.2
  atomic_dec_uint@Base 0.8.2
@@ -72,8 +72,8 @@ libuutil.so.1 libuutil1linux #MINVER#
  atomic_inc_64_nv@Base 0.8.2
  atomic_inc_8@Base 0.8.2
  atomic_inc_8_nv@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf armel)atomic_inc_long@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf armel)atomic_inc_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_inc_long@Base 0.8.2
+ (arch=s390x ppc64el arm64 armhf armel)atomic_inc_long_nv@Base 0.8.2
  atomic_inc_uchar@Base 0.8.2
  atomic_inc_uchar_nv@Base 0.8.2
  atomic_inc_uint@Base 0.8.2
@@ -82,7 +82,7 @@ libuutil.so.1 libuutil1linux #MINVER#
  atomic_inc_ulong_nv@Base 0.8.2
  atomic_inc_ushort@Base 0.8.2
  atomic_inc_ushort_nv@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf armel)atomic_lock@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_lock@Base 0.8.2
  atomic_or_16@Base 0.8.2
  atomic_or_16_nv@Base 0.8.2
  atomic_or_32@Base 0.8.2
@@ -91,8 +91,8 @@ libuutil.so.1 libuutil1linux #MINVER#
  atomic_or_64_nv@Base 0.8.2
  atomic_or_8@Base 0.8.2
  atomic_or_8_nv@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf armel)atomic_or_long@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf armel)atomic_or_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_or_long@Base 0.8.2
+ (arch=s390x ppc64el arm64 armhf armel)atomic_or_long_nv@Base 0.8.2
  atomic_or_uchar@Base 0.8.2
  atomic_or_uchar_nv@Base 0.8.2
  atomic_or_uint@Base 0.8.2
@@ -145,11 +145,11 @@ libuutil.so.1 libuutil1linux #MINVER#
  avl_swap@Base 0.8.2
  avl_walk@Base 0.8.2
  buf@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf armel)cas32@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf armel)cas64@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf armel)cas8@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf armel)caslong@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf armel)casptr@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)cas32@Base 0.8.2
+ (arch=s390x ppc64el arm64 armhf armel)cas64@Base 0.8.2
+ (arch=s390x ppc64el arm64 armhf armel)cas8@Base 0.8.2
+ (arch=s390x ppc64el arm64 armhf armel)caslong@Base 0.8.2
+ (arch=s390x ppc64el arm64 armhf armel)casptr@Base 0.8.2
  get_system_hostid@Base 0.8.2
  getexecname@Base 0.8.2
  getextmntent@Base 0.8.2
