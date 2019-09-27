@@ -217,8 +217,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_and_64_nv@Base 0.8.2
  atomic_and_8@Base 0.8.2
  atomic_and_8_nv@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf)atomic_and_long@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf)atomic_and_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_and_long@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_and_long_nv@Base 0.8.2-1
  atomic_and_uchar@Base 0.8.2
  atomic_and_uchar_nv@Base 0.8.2
  atomic_and_uint@Base 0.8.2
@@ -245,8 +245,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_dec_64_nv@Base 0.8.2
  atomic_dec_8@Base 0.8.2
  atomic_dec_8_nv@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf)atomic_dec_long@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf)atomic_dec_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_dec_long@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_dec_long_nv@Base 0.8.2-1
  atomic_dec_uchar@Base 0.8.2
  atomic_dec_uchar_nv@Base 0.8.2
  atomic_dec_uint@Base 0.8.2
@@ -263,8 +263,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_inc_64_nv@Base 0.8.2
  atomic_inc_8@Base 0.8.2
  atomic_inc_8_nv@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf)atomic_inc_long@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf)atomic_inc_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_inc_long@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_inc_long_nv@Base 0.8.2-1
  atomic_inc_uchar@Base 0.8.2
  atomic_inc_uchar_nv@Base 0.8.2
  atomic_inc_uint@Base 0.8.2
@@ -273,7 +273,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_inc_ulong_nv@Base 0.8.2
  atomic_inc_ushort@Base 0.8.2
  atomic_inc_ushort_nv@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf)atomic_lock@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_lock@Base 0.8.2-1
  atomic_or_16@Base 0.8.2
  atomic_or_16_nv@Base 0.8.2
  atomic_or_32@Base 0.8.2
@@ -282,8 +282,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_or_64_nv@Base 0.8.2
  atomic_or_8@Base 0.8.2
  atomic_or_8_nv@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf)atomic_or_long@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf)atomic_or_long_nv@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_or_long@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)atomic_or_long_nv@Base 0.8.2-1
  atomic_or_uchar@Base 0.8.2
  atomic_or_uchar_nv@Base 0.8.2
  atomic_or_uint@Base 0.8.2
@@ -372,11 +372,11 @@ libzpool.so.2 libzpool2linux #MINVER#
  byteswap_uint64_array@Base 0.8.2
  byteswap_uint8_array@Base 0.8.2
  calculate_ccm_mac@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf)cas32@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf)cas64@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf)cas8@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf)caslong@Base 0.8.2-1
- (arch=s390x ppc64el arm64 armhf)casptr@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)cas32@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)cas64@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)cas8@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)caslong@Base 0.8.2-1
+ (arch=s390x ppc64el arm64 armhf armel)casptr@Base 0.8.2-1
  cbc_alloc_ctx@Base 0.8.2
  cbc_decrypt_contiguous_blocks@Base 0.8.2
  cbc_encrypt_contiguous_blocks@Base 0.8.2
