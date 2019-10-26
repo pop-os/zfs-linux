@@ -3,7 +3,7 @@
 0003-relocate-zvol_wait.patch
 enable-zed.patch
 1004-zed-service-bindir.patch
-init-debian-openrc-workaround.patch
+#init-debian-openrc-workaround.patch
 3100-remove-libzfs-module-timeout.patch
 force-verbose-rules.patch
 #linux-5.0-simd-compat.patch # Causing #940932, see also https://github.com/zfsonlinux/zfs/issues/9346
