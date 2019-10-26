@@ -207,13 +207,13 @@ Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
 Breaks: spl (<< 0.7.9-2),
         spl-dkms (<< 0.8.0~rc1),
         zfs-dkms (<< ${binary:Version}),
-        zfs-dkms (>> ${binary:Version})
+        zfs-dkms (>> ${binary:Version}),
+        openrc
 Replaces: spl (<< 0.7.9-2), spl-dkms
 Suggests: nfs-kernel-server,
           samba-common-bin (>= 3.0.23),
           zfs-initramfs | zfs-dracut
 Conflicts: zfs, zfs-fuse
-Breaks: openrc
 Provides: zfsutils
 Description: command-line tools to manage OpenZFS filesystems
  The Z file system is a pooled filesystem designed for maximum data
