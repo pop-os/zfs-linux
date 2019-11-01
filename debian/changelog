@@ -1,3 +1,19 @@
+zfs-linux (0.8.2-3) UNRELEASED; urgency=medium
+
+  [ Aron Xu ]
+  * Drop OpenRC support due to the difficulties of merging upstream
+
+  [ Mo Zhou ]
+  * Also trigger update-initramfs by zfs-dkms in case that of zfs-initramfs
+    was somehow missed. (Closes: #941859)
+  * Amend broken autopkgtest for binary module package build.
+  * Have zfs-dkms Suggest: debhelper (Closes: #909183)
+  * Try to load zfs.ko before starting services at postinst. This fixes a
+    long-standing problem where fresh installs may fail during postinst.
+    (Closes: #921305, #927003)
+
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 01 Nov 2019 15:16:20 +0800
+
 zfs-linux (0.8.2-2) unstable; urgency=medium
 
   [ Antonio Russo ]
