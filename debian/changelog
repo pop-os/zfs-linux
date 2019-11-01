@@ -10,9 +10,11 @@ zfs-linux (0.8.2-3) UNRELEASED; urgency=medium
   * Have zfs-dkms Suggest: debhelper (Closes: #909183)
   * Try to load zfs.ko before starting services at postinst. This fixes a
     long-standing problem where fresh installs may fail during postinst.
-    (Closes: #921305, #927003)
+    (Closes: #921305, #927003, #940238)
+  * Patch /etc/defaults/zfs, adding a notice for systemd user.
+    (Closes: #901436)
 
- -- Mo Zhou <cdluminate@gmail.com>  Fri, 01 Nov 2019 15:16:20 +0800
+ -- Mo Zhou <cdluminate@gmail.com>  Fri, 01 Nov 2019 15:48:45 +0800
 
 zfs-linux (0.8.2-2) unstable; urgency=medium
 
