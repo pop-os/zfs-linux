@@ -1,6 +1,6 @@
 Description: add a notice to /etc/defaults/zfs
 Author: lumin@debian.org
-Forwarded: pending
+Forwarded: https://github.com/zfsonlinux/zfs/pull/9544
 diff --git a/etc/init.d/zfs.in b/etc/init.d/zfs.in
 index 7998569b..8bdf5303 100644
 --- a/etc/init.d/zfs.in
