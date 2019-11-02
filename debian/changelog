@@ -1,4 +1,4 @@
-zfs-linux (0.8.2-3) UNRELEASED; urgency=medium
+zfs-linux (0.8.2-3) unstable; urgency=medium
 
   [ Aron Xu ]
   * Drop OpenRC support due to the difficulties of merging upstream
@@ -13,8 +13,9 @@ zfs-linux (0.8.2-3) UNRELEASED; urgency=medium
     (Closes: #921305, #927003, #940238)
   * Patch /etc/defaults/zfs, adding a notice for systemd user.
     (Closes: #901436)
+  * Update lintian overrides.
 
- -- Mo Zhou <cdluminate@gmail.com>  Fri, 01 Nov 2019 15:48:45 +0800
+ -- Mo Zhou <cdluminate@gmail.com>  Sat, 02 Nov 2019 13:00:41 +0800
 
 zfs-linux (0.8.2-2) unstable; urgency=medium
 
