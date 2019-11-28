@@ -8,6 +8,7 @@ force-verbose-rules.patch
 etc-defaults-zfs-notice.patch
 4501-fix-var-lib-race.patch
 4600-diff_cb-does-not-handle-large-dnodes.patch
+d5a4951-fix-automount-for-root-filesystems.patch
 
 #init-debian-openrc-workaround.patch
 #linux-5.0-simd-compat.patch # Causing #940932, see also https://github.com/zfsonlinux/zfs/issues/9346

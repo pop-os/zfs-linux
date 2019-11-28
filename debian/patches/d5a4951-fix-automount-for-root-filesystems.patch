@@ -1,0 +1,33 @@
+From d5a4951e7dd44cd45482570def8719689b73fc43 Mon Sep 17 00:00:00 2001
+From: Brian Behlendorf <behlendorf1@llnl.gov>
+Date: Mon, 30 Sep 2019 13:28:46 -0700
+Subject: [PATCH] Fix automount for root filesystems
+
+Commit 093bb64 resolved an automount failures for chroot'd processes
+but inadvertently broke automounting for root filesystems where the
+vfs_mntpoint is NULL.  Resolve the issue by checking for NULL in order
+to generate the correct path.
+
+Signed-off-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Issue #9381
+---
+ module/os/linux/zfs/zfs_ctldir.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+Modified-By: lumin@debian.org
+Modification: change the path of the file to be patched.
+
+diff --git a/module/zfs/zfs_ctldir.c b/module/zfs/zfs_ctldir.c
+index 1e61ef06d00..3b2a6eb8273 100644
+--- a/module/zfs/zfs_ctldir.c
++++ b/module/zfs/zfs_ctldir.c
+@@ -1053,7 +1053,8 @@ zfsctl_snapshot_mount(struct path *path, int flags)
+ 	 * on mount.zfs(8).
+ 	 */
+ 	snprintf(full_path, MAXPATHLEN, "%s/.zfs/snapshot/%s",
+-	    zfsvfs->z_vfs->vfs_mntpoint, dname(dentry));
++	    zfsvfs->z_vfs->vfs_mntpoint ? zfsvfs->z_vfs->vfs_mntpoint : "",
++	    dname(dentry));
+ 
+ 	/*
+ 	 * Multiple concurrent automounts of a snapshot are never allowed.
