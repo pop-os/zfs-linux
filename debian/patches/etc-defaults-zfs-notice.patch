@@ -1,10 +1,10 @@
 Description: add a notice to /etc/defaults/zfs
 Author: lumin@debian.org
 Forwarded: https://github.com/zfsonlinux/zfs/pull/9544
-diff --git a/etc/init.d/zfs.in b/etc/init.d/zfs.in
-index 7998569b..8bdf5303 100644
---- a/etc/init.d/zfs.in
-+++ b/etc/init.d/zfs.in
+Index: zfs-linux-0.8.2/etc/init.d/zfs.in
+===================================================================
+--- zfs-linux-0.8.2.orig/etc/init.d/zfs.in
++++ zfs-linux-0.8.2/etc/init.d/zfs.in
 @@ -1,5 +1,11 @@
  # ZoL userland configuration.
  
@@ -16,3 +16,4 @@ index 7998569b..8bdf5303 100644
 +
  # To enable a boolean setting, set it to yes, on, true, or 1.
  # Anything else will be interpreted as unset.
+ 
