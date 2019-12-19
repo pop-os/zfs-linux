@@ -1,12 +1,5 @@
 zfs-linux (0.8.2-4) UNRELEASED; urgency=medium
 
-  [ Mo Zhou ]
-  * Autopkgtest: Remove the vendor tests from binary-debs* tests
-    and the dkms-zfs-test.
-  * Merge 2 upstreamed patches from ubuntu diff (0.8.2-3ubuntu1)
-    + 4501-fix-var-lib-race.patch
-    + 4600-diff_cb-does-not-handle-large-dnodes.patch
-
   [ Colin Ian King ]
   * etc-defaults-zfs-notice.patch: fix "unexpected end of diff" by refreshing
 
@@ -19,7 +12,15 @@ zfs-linux (0.8.2-4) UNRELEASED; urgency=medium
     - Upstream 0c46813805f4 "Check for unlinked znodes after igrab()"
     (Closes: #946610)
 
- -- Mo Zhou <cdluminate@gmail.com>  Thu, 19 Dec 2019 11:49:22 +0800
+  [ Mo Zhou ]
+  * Autopkgtest: Remove the vendor tests from binary-debs* tests
+    and the dkms-zfs-test.
+  * Merge 2 upstreamed patches from ubuntu diff (0.8.2-3ubuntu1)
+    + 4501-fix-var-lib-race.patch
+    + 4600-diff_cb-does-not-handle-large-dnodes.patch
+  * Don't restart zfs-{import*,mount} on/after upgrade. (Closes: #923377)
+
+ -- Mo Zhou <cdluminate@gmail.com>  Thu, 19 Dec 2019 15:54:51 +0800
 
 zfs-linux (0.8.2-3) unstable; urgency=medium
 
