@@ -168,12 +168,16 @@ override_dh_install:
 	dh_install --fail-missing
 
 override_dh_installinit:
-	dh_installinit -R --name zfs-import
-	dh_installinit -R --name zfs-mount
+	dh_installinit -r --no-restart-after-upgrade --name zfs-import
+	dh_installinit -r --no-restart-after-upgrade --name zfs-mount
 	dh_installinit -R --name zfs-share
 	dh_installinit -R --name zfs-zed
 	mkdir -p debian/zfsutils-linux/lib/systemd/system
 	ln -sr /dev/null debian/zfsutils-linux/lib/systemd/system/zfs-import.service
+
+override_dh_systemd_start:
+	dh_systemd_start -r --no-restart-after-upgrade --name zfs-impot-cache
+	dh_systemd_start -r --no-restart-after-upgrade --name zfs-impot-scan
 
 override_dh_installdocs:
 	dh_installdocs
