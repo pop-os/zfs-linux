@@ -11,5 +11,6 @@ etc-defaults-zfs-notice.patch
 initramfs-setup-keymapping-and-video-for-prompts.patch
 3206-Break-out-of-zfs_zget-early-if-unlinked-znode.patch
 3207-Check-for-unlinked-znodes-after-igrab.patch
+fix-automount-for-root-filesystems.patch
 
 #unapplied/init-debian-openrc-workaround.patch # OpenRC users can apply this locally
