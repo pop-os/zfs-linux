@@ -11,3 +11,4 @@ command-in-sbin-has-manpage-in-incorrect-section
 package-supports-alternative-init-but-no-init.d-script lib/systemd/system/zfs-import-cache.service
 package-supports-alternative-init-but-no-init.d-script lib/systemd/system/zfs-import-scan.service
 breaks-without-version openrc
+spelling-error-in-manpage
