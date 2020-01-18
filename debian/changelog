@@ -72,7 +72,7 @@ zfs-linux (0.8.2-1) unstable; urgency=medium
      - 2000-increase-default-zcmd-allocation-to-256K.patch
      - git_fix_mount_race.patch
   * Disable linux-5.0-simd-compat.patch due to its incorrect assumption that
-    may lead to system instability when SIMD is enabled. (Closes: #940932) 
+    may lead to system instability when SIMD is enabled. (Closes: #940932)
     See also https://github.com/zfsonlinux/zfs/issues/9346
   * Install new service that waits on zvol links to be created (gh#8975).
   * Remove unused control variable ${python3:Depends} for zfsutils-linux.
