@@ -1,3 +1,6 @@
 arch-dependent-file-in-usr-share
 script-not-executable usr/share/zfs/common.sh
 command-in-sbin-has-manpage-in-incorrect-section
+arch-dep-package-has-big-usr-share
+manpage-without-executable
+spelling-error-in-manpage

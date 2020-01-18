@@ -12,3 +12,9 @@ package-supports-alternative-init-but-no-init.d-script lib/systemd/system/zfs-im
 package-supports-alternative-init-but-no-init.d-script lib/systemd/system/zfs-import-scan.service
 breaks-without-version openrc
 spelling-error-in-manpage
+manpage-without-executable usr/share/man/man8/vdev_id.8.gz
+manpage-without-executable usr/share/man/man8/zfs-mount-generator.8.gz
+manpage-without-executable usr/share/man/man8/zfs-program.8.gz
+package-supports-alternative-init-but-no-init.d-script lib/systemd/system/zfs-volume-wait.service
+systemd-service-file-missing-documentation-key lib/systemd/system/zfs-volume-wait.service
+zfsutils-linux: extra-license-file usr/share/doc/zfsutils-linux/LICENSE.gz
