@@ -1,12 +1,15 @@
 zfs-linux (0.8.2-5) UNRELEASED; urgency=medium
 
-  * Remove old SIMD patches; Move the openrc patch to "unapplied" dir.
-  * Update my mail address in control and copyright.
+  * Remove old+unused SIMD patches; Move the openrc patch to "unapplied" dir.
   * Correct zpool scrubing oneliner in crontab. (Closes: #946748)
     Thanks to Dirk Heinrichs. Reviewed by Richard Laager.
   * Cherry-pick: fix-automount-for-root-filesystems.patch (Closes: #945585)
+  * Add patch headers to patches without them.
+  * Override a series of lintian Info.
+  * Bump Standards-Version to 4.4.1 (no change).
+  * Update my mail address in control and copyright.
 
- -- Mo Zhou <lumin@debian.org>  Tue, 14 Jan 2020 13:49:58 +0800
+ -- Mo Zhou <lumin@debian.org>  Sat, 18 Jan 2020 15:14:56 +0800
 
 zfs-linux (0.8.2-4) unstable; urgency=medium
 
