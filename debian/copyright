@@ -195,7 +195,8 @@ Copyright:
  2013, Turbo Fredriksson <turbo@bayour.com>
  2012-2013, Richard Laager <rlaager@wiktel.com>
  2011-2013, Darik Horn <dajhorn@vanadac.com>
- 2018, Mo Zhou <lumin@debian.org>
+ 2018-2019, Mo Zhou <cdluminate@gmail.com>
+ 2018-2020, Mo Zhou <lumin@debian.org>
 License: GPL-2+
 
 Files: debian/po/*

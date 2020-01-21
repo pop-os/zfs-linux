@@ -1,3 +1,6 @@
+Description: force libtool to produce verbose output
+Author: Mo Zhou
+Forwarded: no need
 --- a/config/Rules.am
 +++ b/config/Rules.am
 @@ -5,7 +5,7 @@

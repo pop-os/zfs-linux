@@ -1,1 +1,3 @@
 libnvpair1linux: package-name-doesnt-match-sonames
+libnvpair1linux: extra-license-file usr/share/doc/libnvpair1linux/LICENSE.gz
+libnvpair1linux: symbols-file-missing-build-depends-package-field

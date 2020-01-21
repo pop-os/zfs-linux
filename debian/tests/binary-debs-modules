@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
+if ! test -r ./configure; then
+       sh autogen.sh
+fi
+
 getKVERS(){
 	ver="$(ls -1 /usr/src/ | grep -P 'linux-headers-[\d\.]+' | sort -r | head -n1 | sed -e 's@.*linux-headers-\(.*\)-.*@\1@g')"
 	echo "$ver"

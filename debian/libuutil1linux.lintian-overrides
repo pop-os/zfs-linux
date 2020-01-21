@@ -1,1 +1,4 @@
 libuutil1linux: package-name-doesnt-match-sonames
+libuutil1linux: extra-license-file usr/share/doc/libuutil1linux/LICENSE.gz
+libuutil1linux: symbols-file-missing-build-depends-package-field
+

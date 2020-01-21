@@ -1,3 +1,5 @@
+Description: relocate the executable path
+Forwarded: no need
 Index: etc/systemd/system/zfs-volume-wait.service.in
 ===================================================================
 --- a/etc/systemd/system/zfs-volume-wait.service.in

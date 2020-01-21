@@ -1,3 +1,5 @@
+Description: check for META and dch consistency in autoconf
+Forwarded: no need
 Index: zfs-linux/config/zfs-meta.m4
 ===================================================================
 --- zfs-linux.orig/config/zfs-meta.m4
