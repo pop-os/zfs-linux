@@ -127,7 +127,7 @@
 /* BIO_RW_FAILFAST_* are defined */
 #undef HAVE_BIO_RW_FAILFAST_DTD
 
-/* bio_set_dev() exists */
+/* bio_set_dev() is available */
 #undef HAVE_BIO_SET_DEV
 
 /* bio_set_dev() GPL-only */
@@ -272,9 +272,6 @@
 /* d_set_d_op() is available */
 #undef HAVE_D_SET_D_OP
 
-/* elevator_change() is available */
-#undef HAVE_ELEVATOR_CHANGE
-
 /* eops->encode_fh() wants child and parent inodes */
 #undef HAVE_ENCODE_FH_WITH_INODE
 
@@ -401,6 +398,9 @@
 /* kernel has asm/fpu/api.h */
 #undef HAVE_KERNEL_FPU_API_HEADER
 
+/* kernel fpu internal */
+#undef HAVE_KERNEL_FPU_INTERNAL
+
 /* uncached_acl_sentinel() exists */
 #undef HAVE_KERNEL_GET_ACL_HANDLE_CACHE
 
@@ -488,6 +488,9 @@
 /* Noting that make_request_fn() returns blk_qc_t */
 #undef HAVE_MAKE_REQUEST_FN_RET_QC
 
+/* Noting that make_request_fn() returns void */
+#undef HAVE_MAKE_REQUEST_FN_RET_VOID
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -515,7 +518,7 @@
 /* Define if host toolchain supports PCLMULQDQ */
 #undef HAVE_PCLMULQDQ
 
-/* yes */
+/* PDE_DATA is available */
 #undef HAVE_PDE_DATA
 
 /* iops->permission() exists */
@@ -590,7 +593,7 @@
 /* iops->set_acl() exists */
 #undef HAVE_SET_ACL
 
-/* posix_acl_release() is usable */
+/* set_cached_acl() is usable */
 #undef HAVE_SET_CACHED_ACL_USABLE
 
 /* set_nlink() is available */
@@ -777,7 +780,7 @@
    */
 #undef LT_OBJDIR
 
-/* make_request_fn() returns blk_qc_t */
+/* make_request_fn() return type */
 #undef MAKE_REQUEST_FN_RET
 
 /* hardened module_param_call */
@@ -872,6 +875,12 @@
 
 /* Define the project release date. */
 #undef ZFS_META_DATA
+
+/* Define the maximum compatible kernel version. */
+#undef ZFS_META_KVER_MAX
+
+/* Define the minimum compatible kernel version. */
+#undef ZFS_META_KVER_MIN
 
 /* Define the project license. */
 #undef ZFS_META_LICENSE
