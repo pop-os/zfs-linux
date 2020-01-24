@@ -27,7 +27,7 @@
 #
 
 #
-# Copyright (c) 2014, 2015 by Delphix. All rights reserved.
+# Copyright (c) 2014, 2019 by Delphix. All rights reserved.
 #
 
 
@@ -68,7 +68,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/iconv.m4 \
 	$(top_srcdir)/config/intlmacosx.m4 \
 	$(top_srcdir)/config/kernel-access-ok-type.m4 \
-	$(top_srcdir)/config/kernel-acl-refcount.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-aio-fsync.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
@@ -94,18 +93,15 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations.m4 \
 	$(top_srcdir)/config/kernel-clear-inode.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
+	$(top_srcdir)/config/kernel-config-defined.m4 \
 	$(top_srcdir)/config/kernel-create-nameidata.m4 \
 	$(top_srcdir)/config/kernel-ctl-table-name.m4 \
 	$(top_srcdir)/config/kernel-current-time.m4 \
 	$(top_srcdir)/config/kernel-current_bio_tail.m4 \
-	$(top_srcdir)/config/kernel-d-make-root.m4 \
-	$(top_srcdir)/config/kernel-d-obtain-alias.m4 \
-	$(top_srcdir)/config/kernel-d-prune-aliases.m4 \
 	$(top_srcdir)/config/kernel-declare-event-class.m4 \
 	$(top_srcdir)/config/kernel-dentry-operations.m4 \
 	$(top_srcdir)/config/kernel-dirty-inode.m4 \
 	$(top_srcdir)/config/kernel-discard-granularity.m4 \
-	$(top_srcdir)/config/kernel-elevator-change.m4 \
 	$(top_srcdir)/config/kernel-encode-fh-inode.m4 \
 	$(top_srcdir)/config/kernel-evict-inode.m4 \
 	$(top_srcdir)/config/kernel-fallocate.m4 \
@@ -141,8 +137,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-lookup-bdev.m4 \
 	$(top_srcdir)/config/kernel-lookup-nameidata.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
+	$(top_srcdir)/config/kernel-make-request-fn.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
-	$(top_srcdir)/config/kernel-mk-request-fn.m4 \
 	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
 	$(top_srcdir)/config/kernel-mod-param.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
@@ -167,8 +163,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-totalram-pages-func.m4 \
 	$(top_srcdir)/config/kernel-truncate-range.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
-	$(top_srcdir)/config/kernel-urange-sleep.m4 \
 	$(top_srcdir)/config/kernel-userns-capabilities.m4 \
+	$(top_srcdir)/config/kernel-usleep_range.m4 \
 	$(top_srcdir)/config/kernel-vfs-direct_IO.m4 \
 	$(top_srcdir)/config/kernel-vfs-fsync.m4 \
 	$(top_srcdir)/config/kernel-vfs-getattr.m4 \
@@ -414,6 +410,7 @@ SRPM_DEFINE_KMOD = @SRPM_DEFINE_KMOD@
 SRPM_DEFINE_UTIL = @SRPM_DEFINE_UTIL@
 STRIP = @STRIP@
 TARGET_ASM_DIR = @TARGET_ASM_DIR@
+TEST_JOBS = @TEST_JOBS@
 USE_NLS = @USE_NLS@
 VENDOR = @VENDOR@
 VERSION = @VERSION@
@@ -426,6 +423,8 @@ ZFS_INIT_SYSV = @ZFS_INIT_SYSV@
 ZFS_META_ALIAS = @ZFS_META_ALIAS@
 ZFS_META_AUTHOR = @ZFS_META_AUTHOR@
 ZFS_META_DATA = @ZFS_META_DATA@
+ZFS_META_KVER_MAX = @ZFS_META_KVER_MAX@
+ZFS_META_KVER_MIN = @ZFS_META_KVER_MIN@
 ZFS_META_LICENSE = @ZFS_META_LICENSE@
 ZFS_META_LT_AGE = @ZFS_META_LT_AGE@
 ZFS_META_LT_CURRENT = @ZFS_META_LT_CURRENT@
@@ -508,8 +507,9 @@ udevdir = @udevdir@
 udevruledir = @udevruledir@
 zfsexecdir = @zfsexecdir@
 dist_pkgdata_SCRIPTS = \
-	cleanup.ksh removal_all_vdev.ksh removal_check_space.ksh \
-	removal_condense_export.ksh removal_multiple_indirection.ksh \
+	cleanup.ksh removal_all_vdev.ksh removal_cancel.ksh \
+	removal_check_space.ksh removal_condense_export.ksh \
+	removal_multiple_indirection.ksh \
 	removal_remap_deadlists.ksh removal_nopwrite.ksh removal_remap.ksh \
 	removal_reservation.ksh removal_resume_export.ksh \
 	removal_sanity.ksh removal_with_add.ksh removal_with_create_fs.ksh \
@@ -520,7 +520,7 @@ dist_pkgdata_SCRIPTS = \
 	removal_with_send.ksh removal_with_send_recv.ksh \
 	removal_with_snapshot.ksh removal_with_write.ksh \
 	removal_with_zdb.ksh remove_mirror.ksh remove_mirror_sanity.ksh \
-	remove_raidz.ksh remove_expanded.ksh
+	remove_raidz.ksh remove_expanded.ksh remove_indirect.ksh
 
 dist_pkgdata_DATA = \
 	removal.kshlib

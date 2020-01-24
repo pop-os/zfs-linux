@@ -1,4 +1,4 @@
-#! /bin/ksh -p
+#!/bin/ksh -p
 #
 # CDDL HEADER START
 #
@@ -18,26 +18,14 @@
 # information: Portions Copyright [yyyy] [name of copyright owner]
 #
 # CDDL HEADER END
-#
 
 #
-# Copyright (c) 2015 by Lawrence Livermore National Security, LLC.
-# All rights reserved.
+# Copyright (c) 2019, Datto Inc. All rights reserved.
 #
 
 . $STF_SUITE/include/libtest.shlib
+. $STF_SUITE/tests/functional/resilver/resilver.cfg
 
-set -A args  "" "-b" "-d" "-r" "-v" "-s \",\"" "-x" "-n"
+verify_runnable "global"
 
-log_assert "dbufstat generates output and doesn't return an error code"
-
-typeset -i i=0
-while [[ $i -lt ${#args[*]} ]]; do
-        log_must eval "sudo dbufstat ${args[i]} > /dev/null"
-        ((i = i + 1))
-done
-
-# A simple test of dbufstat filter functionality
-log_must eval "sudo dbufstat -F object=10,dbc=1,pool=$TESTPOOL > /dev/null"
-
-log_pass "dbufstat generates output and doesn't return an error code"
+log_pass
