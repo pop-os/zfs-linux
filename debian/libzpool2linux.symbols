@@ -461,6 +461,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  cv_timedwait@Base 0.8.2
  cv_timedwait_hires@Base 0.8.2
  cv_wait@Base 0.8.2
+ cv_wait_sig@Base 0.8.3
  dataset_namecheck@Base 0.8.2
  dataset_nestcheck@Base 0.8.2
  dbuf_add_ref@Base 0.8.2
@@ -1056,9 +1057,9 @@ libzpool.so.2 libzpool2linux #MINVER#
  dsl_prop_unset_hasrecvd@Base 0.8.2
  dsl_props_set@Base 0.8.2
  dsl_props_set_sync_impl@Base 0.8.2
- dsl_resilver_restart@Base 0.8.2
  dsl_scan@Base 0.8.2
  dsl_scan_active@Base 0.8.2
+ dsl_scan_assess_vdev@Base 0.8.3
  dsl_scan_cancel@Base 0.8.2
  dsl_scan_ddt_entry@Base 0.8.2
  dsl_scan_ds_clone_swapped@Base 0.8.2
@@ -1071,12 +1072,15 @@ libzpool.so.2 libzpool2linux #MINVER#
  dsl_scan_io_queue_vdev_xfer@Base 0.8.2
  dsl_scan_is_paused_scrub@Base 0.8.2
  dsl_scan_prefetch_cb@Base 0.8.2
+ dsl_scan_resilver_scheduled@Base 0.8.3
  dsl_scan_resilvering@Base 0.8.2
+ dsl_scan_restart_resilver@Base 0.8.3
  dsl_scan_scrubbing@Base 0.8.2
  dsl_scan_sync@Base 0.8.2
  dsl_scrub_set_pause_resume@Base 0.8.2
  dsl_sync_task@Base 0.8.2
  dsl_sync_task_nowait@Base 0.8.2
+ dsl_sync_task_sig@Base 0.8.3
  dsl_sync_task_sync@Base 0.8.2
  dva_get_dsize_sync@Base 0.8.2
  ecb_alloc_ctx@Base 0.8.2
@@ -1473,6 +1477,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  membar_enter@Base 0.8.2
  membar_exit@Base 0.8.2
  membar_producer@Base 0.8.2
+ metaslab_active_mask_verify@Base 0.8.3
  metaslab_aliquot@Base 0.8.2
  metaslab_alloc@Base 0.8.2
  metaslab_alloc_dva@Base 0.8.2
@@ -1500,6 +1505,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  metaslab_debug_unload@Base 0.8.2
  metaslab_df_alloc_threshold@Base 0.8.2
  metaslab_df_free_pct@Base 0.8.2
+ metaslab_df_max_search@Base 0.8.3
+ metaslab_df_use_largest_segment@Base 0.8.3
  metaslab_disable@Base 0.8.2
  metaslab_enable@Base 0.8.2
  metaslab_fastwrite_mark@Base 0.8.2
@@ -1672,11 +1679,6 @@ libzpool.so.2 libzpool2linux #MINVER#
  range_tree_vacate@Base 0.8.2
  range_tree_verify_not_present@Base 0.8.2
  range_tree_walk@Base 0.8.2
- rangelock_enter@Base 0.8.2
- rangelock_exit@Base 0.8.2
- rangelock_fini@Base 0.8.2
- rangelock_init@Base 0.8.2
- rangelock_reduce@Base 0.8.2
  recv_clone_name@Base 0.8.2
  redo_register_provider@Base 0.8.2
  reference_history@Base 0.8.2
@@ -1789,6 +1791,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  spa_async_request@Base 0.8.2
  spa_async_resume@Base 0.8.2
  spa_async_suspend@Base 0.8.2
+ spa_async_tasks@Base 0.8.3
  spa_aux_activate@Base 0.8.2
  spa_aux_add@Base 0.8.2
  spa_aux_exists@Base 0.8.2
@@ -1934,8 +1937,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  spa_load_state@Base 0.8.2
  spa_load_verify_data@Base 0.8.2
  spa_load_verify_dryrun@Base 0.8.2
- spa_load_verify_maxinflight@Base 0.8.2
  spa_load_verify_metadata@Base 0.8.2
+ spa_load_verify_shift@Base 0.8.3
  spa_log_class@Base 0.8.2
  spa_log_error@Base 0.8.2
  spa_lookup@Base 0.8.2
@@ -2126,6 +2129,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  txg_wait_callbacks@Base 0.8.2
  txg_wait_open@Base 0.8.2
  txg_wait_synced@Base 0.8.2
+ txg_wait_synced_sig@Base 0.8.3
  u8_number_of_bytes@Base 0.8.2
  u8_strcmp@Base 0.8.2
  u8_textprep_str@Base 0.8.2
@@ -2171,6 +2175,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  vdev_checkpoint_sm_object@Base 0.8.2
  vdev_children_are_offline@Base 0.8.2
  vdev_clear@Base 0.8.2
+ vdev_clear_resilver_deferred@Base 0.8.3
  vdev_clear_stats@Base 0.8.2
  vdev_close@Base 0.8.2
  vdev_compact_children@Base 0.8.2
@@ -2190,6 +2195,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  vdev_deadman@Base 0.8.2
  vdev_default_asize@Base 0.8.2
  vdev_default_xlate@Base 0.8.2
+ vdev_defer_resilver@Base 0.8.3
  vdev_deflated_space@Base 0.8.2
  vdev_degrade@Base 0.8.2
  vdev_destroy_spacemaps@Base 0.8.2
@@ -2248,7 +2254,6 @@ libzpool.so.2 libzpool2linux #MINVER#
  vdev_indirect_should_condense@Base 0.8.2
  vdev_indirect_sync_obsolete@Base 0.8.2
  vdev_initialize@Base 0.8.2
- vdev_initialize_range_add@Base 0.8.2
  vdev_initialize_restart@Base 0.8.2
  vdev_initialize_stop@Base 0.8.2
  vdev_initialize_stop_all@Base 0.8.2
@@ -2323,7 +2328,6 @@ libzpool.so.2 libzpool2linux #MINVER#
  vdev_resilver_needed@Base 0.8.2
  vdev_root_ops@Base 0.8.2
  vdev_scan_stat_init@Base 0.8.2
- vdev_set_deferred_resilver@Base 0.8.2
  vdev_set_min_asize@Base 0.8.2
  vdev_set_state@Base 0.8.2
  vdev_space_update@Base 0.8.2
@@ -2502,7 +2506,6 @@ libzpool.so.2 libzpool2linux #MINVER#
  zfs_async_block_max_blocks@Base 0.8.2
  zfs_attr_table@Base 0.8.2
  zfs_autoimport_disable@Base 0.8.2
- zfs_blkptr_verify@Base 0.8.2
  zfs_ccw_retry_interval@Base 0.8.2
  zfs_checksum_events_per_second@Base 0.8.2
  zfs_commit_timeout_pct@Base 0.8.2
@@ -2652,6 +2655,11 @@ libzpool.so.2 libzpool2linux #MINVER#
  zfs_prop_values@Base 0.8.2
  zfs_prop_visible@Base 0.8.2
  zfs_prop_written@Base 0.8.2
+ zfs_rangelock_enter@Base 0.8.3
+ zfs_rangelock_exit@Base 0.8.3
+ zfs_rangelock_fini@Base 0.8.3
+ zfs_rangelock_init@Base 0.8.3
+ zfs_rangelock_reduce@Base 0.8.3
  zfs_ratelimit@Base 0.8.2
  zfs_ratelimit_fini@Base 0.8.2
  zfs_ratelimit_init@Base 0.8.2
@@ -2697,6 +2705,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  zfs_spa_discard_memory_limit@Base 0.8.2
  zfs_spa_version_map@Base 0.8.2
  zfs_special_class_metadata_reserve_pct@Base 0.8.2
+ zfs_special_devs@Base 0.8.3
  zfs_strcmp_pathname@Base 0.8.2
  zfs_strip_partition@Base 0.8.2
  zfs_strip_partition_path@Base 0.8.2
@@ -2772,6 +2781,9 @@ libzpool.so.2 libzpool2linux #MINVER#
  zil_itx_destroy@Base 0.8.2
  zil_lwb_add_block@Base 0.8.2
  zil_lwb_add_txg@Base 0.8.2
+ zil_max_copied_data@Base 0.8.3
+ zil_max_log_data@Base 0.8.3
+ zil_maxblocksize@Base 0.8.3
  zil_nocacheflush@Base 0.8.2
  zil_open@Base 0.8.2
  zil_parse@Base 0.8.2
@@ -2845,6 +2857,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  zio_do_crypt_abd@Base 0.8.2
  zio_do_crypt_data@Base 0.8.2
  zio_dva_throttle_enabled@Base 0.8.2
+ zio_exclude_metadata@Base 0.8.3
  zio_execute@Base 0.8.2
  zio_execute_stack_check@Base 0.8.2
  zio_fini@Base 0.8.2
