@@ -69,7 +69,7 @@ function verify_assertion #slices
 		echo "y" | newfs -v $t > /dev/null 2>&1
 		(( $? !=0 )) && \
 			log_fail "newfs over exported pool " \
-				"failes unexpected."
+				"fails unexpectedly."
 	done
 
 	return 0
@@ -107,7 +107,6 @@ while (( i < ${#vdevs[*]} )); do
 	create_pool $TESTPOOL1 ${vdevs[i]} $vslices spare $sslices
 	log_must zpool export $TESTPOOL1
 	verify_assertion "$rawtargets"
-	cleanup_devices $vslices $sslices
 
 	(( i = i + 1 ))
 done

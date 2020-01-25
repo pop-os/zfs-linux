@@ -62,7 +62,7 @@
  * elements of the cache are therefore exactly the same size.  So
  * when adjusting the cache size following a cache miss, its simply
  * a matter of choosing a single page to evict.  In our model, we
- * have variable sized cache blocks (rangeing from 512 bytes to
+ * have variable sized cache blocks (ranging from 512 bytes to
  * 128K bytes).  We therefore choose a set of blocks to evict to make
  * space for a cache miss that approximates as closely as possible
  * the space used by the new block.
@@ -262,7 +262,7 @@
  * The L1ARC has a slightly different system for storing encrypted data.
  * Raw (encrypted + possibly compressed) data has a few subtle differences from
  * data that is just compressed. The biggest difference is that it is not
- * possible to decrypt encrypted data (or visa versa) if the keys aren't loaded.
+ * possible to decrypt encrypted data (or vice-versa) if the keys aren't loaded.
  * The other difference is that encryption cannot be treated as a suggestion.
  * If a caller would prefer compressed data, but they actually wind up with
  * uncompressed data the worst thing that could happen is there might be a
@@ -296,6 +296,7 @@
 #include <sys/vmsystm.h>
 #include <sys/zpl.h>
 #include <linux/page_compat.h>
+#include <linux/mod_compat.h>
 #endif
 #include <sys/callb.h>
 #include <sys/kstat.h>
@@ -2152,7 +2153,7 @@ arc_buf_fill(arc_buf_t *buf, spa_t *spa, const zbookmark_phys_t *zb,
 	}
 
 	/*
-	 * Adjust encrypted and authenticated headers to accomodate
+	 * Adjust encrypted and authenticated headers to accommodate
 	 * the request if needed. Dnode blocks (ARC_FILL_IN_PLACE) are
 	 * allowed to fail decryption due to keys not being loaded
 	 * without being marked as an IO error.
@@ -2221,7 +2222,7 @@ arc_buf_fill(arc_buf_t *buf, spa_t *spa, const zbookmark_phys_t *zb,
 		if (arc_buf_is_shared(buf)) {
 			ASSERT(ARC_BUF_COMPRESSED(buf));
 
-			/* We need to give the buf it's own b_data */
+			/* We need to give the buf its own b_data */
 			buf->b_flags &= ~ARC_BUF_FLAG_SHARED;
 			buf->b_data =
 			    arc_get_data_buf(hdr, HDR_GET_LSIZE(hdr), buf);
@@ -2837,7 +2838,7 @@ arc_can_share(arc_buf_hdr_t *hdr, arc_buf_t *buf)
 	 * sufficient to make this guarantee, however it's possible
 	 * (specifically in the rare L2ARC write race mentioned in
 	 * arc_buf_alloc_impl()) there will be an existing uncompressed buf that
-	 * is sharable, but wasn't at the time of its allocation. Rather than
+	 * is shareable, but wasn't at the time of its allocation. Rather than
 	 * allow a new shared uncompressed buf to be created and then shuffle
 	 * the list around to make it the last element, this simply disallows
 	 * sharing if the new buf isn't the first to be added.
@@ -2896,7 +2897,7 @@ arc_buf_alloc_impl(arc_buf_hdr_t *hdr, spa_t *spa, const zbookmark_phys_t *zb,
 
 	/*
 	 * Only honor requests for compressed bufs if the hdr is actually
-	 * compressed. This must be overriden if the buffer is encrypted since
+	 * compressed. This must be overridden if the buffer is encrypted since
 	 * encrypted buffers cannot be decompressed.
 	 */
 	if (encrypted) {
@@ -2917,7 +2918,8 @@ arc_buf_alloc_impl(arc_buf_hdr_t *hdr, spa_t *spa, const zbookmark_phys_t *zb,
 	/*
 	 * If the hdr's data can be shared then we share the data buffer and
 	 * set the appropriate bit in the hdr's b_flags to indicate the hdr is
-	 * allocate a new buffer to store the buf's data.
+	 * sharing it's b_pabd with the arc_buf_t. Otherwise, we allocate a new
+	 * buffer to store the buf's data.
 	 *
 	 * There are two additional restrictions here because we're sharing
 	 * hdr -> buf instead of the usual buf -> hdr. First, the hdr can't be
@@ -2925,10 +2927,17 @@ arc_buf_alloc_impl(arc_buf_hdr_t *hdr, spa_t *spa, const zbookmark_phys_t *zb,
 	 * an arc_write() then the hdr's data buffer will be released when the
 	 * write completes, even though the L2ARC write might still be using it.
 	 * Second, the hdr's ABD must be linear so that the buf's user doesn't
-	 * need to be ABD-aware.
+	 * need to be ABD-aware.  It must be allocated via
+	 * zio_[data_]buf_alloc(), not as a page, because we need to be able
+	 * to abd_release_ownership_of_buf(), which isn't allowed on "linear
+	 * page" buffers because the ABD code needs to handle freeing them
+	 * specially.
 	 */
-	boolean_t can_share = arc_can_share(hdr, buf) && !HDR_L2_WRITING(hdr) &&
-	    hdr->b_l1hdr.b_pabd != NULL && abd_is_linear(hdr->b_l1hdr.b_pabd);
+	boolean_t can_share = arc_can_share(hdr, buf) &&
+	    !HDR_L2_WRITING(hdr) &&
+	    hdr->b_l1hdr.b_pabd != NULL &&
+	    abd_is_linear(hdr->b_l1hdr.b_pabd) &&
+	    !abd_is_linear_page(hdr->b_l1hdr.b_pabd);
 
 	/* Set up b_data and sharing */
 	if (can_share) {
@@ -3192,7 +3201,7 @@ arc_buf_remove(arc_buf_hdr_t *hdr, arc_buf_t *buf)
 }
 
 /*
- * Free up buf->b_data and pull the arc_buf_t off of the the arc_buf_hdr_t's
+ * Free up buf->b_data and pull the arc_buf_t off of the arc_buf_hdr_t's
  * list and free it.
  */
 static void
@@ -3651,7 +3660,7 @@ arc_hdr_realloc_crypt(arc_buf_hdr_t *hdr, boolean_t need_crypt)
 /*
  * This function is used by the send / receive code to convert a newly
  * allocated arc_buf_t to one that is suitable for a raw encrypted write. It
- * is also used to allow the root objset block to be uupdated without altering
+ * is also used to allow the root objset block to be updated without altering
  * its embedded MACs. Both block types will always be uncompressed so we do not
  * have to worry about compression type or psize.
  */
@@ -3731,7 +3740,6 @@ arc_alloc_compressed_buf(spa_t *spa, void *tag, uint64_t psize, uint64_t lsize,
 		 * disk, it's easiest if we just set up sharing between the
 		 * buf and the hdr.
 		 */
-		ASSERT(!abd_is_linear(hdr->b_l1hdr.b_pabd));
 		arc_hdr_free_abd(hdr, B_FALSE);
 		arc_share_buf(hdr, buf);
 	}
@@ -6181,7 +6189,7 @@ top:
 
 	/*
 	 * Determine if we have an L1 cache hit or a cache miss. For simplicity
-	 * we maintain encrypted data seperately from compressed / uncompressed
+	 * we maintain encrypted data separately from compressed / uncompressed
 	 * data. If the user is requesting raw encrypted data and we don't have
 	 * that in the header we will read from disk to guarantee that we can
 	 * get it even if the encryption keys aren't loaded.
@@ -7547,8 +7555,10 @@ arc_state_multilist_index_func(multilist_t *ml, void *obj)
 
 /*
  * Called during module initialization and periodically thereafter to
- * apply reasonable changes to the exposed performance tunings.  Non-zero
- * zfs_* values which differ from the currently set values will be applied.
+ * apply reasonable changes to the exposed performance tunings.  Can also be
+ * called explicitly by param_set_arc_*() functions when ARC tunables are
+ * updated manually.  Non-zero zfs_* values which differ from the currently set
+ * values will be applied.
  */
 static void
 arc_tuning_update(void)
@@ -8554,7 +8564,6 @@ l2arc_read_done(zio_t *zio)
 		zio->io_private = hdr;
 		arc_read_done(zio);
 	} else {
-		mutex_exit(hash_lock);
 		/*
 		 * Buffer didn't survive caching.  Increment stats and
 		 * reissue to the original storage device.
@@ -8579,10 +8588,24 @@ l2arc_read_done(zio_t *zio)
 
 			ASSERT(!pio || pio->io_child_type == ZIO_CHILD_LOGICAL);
 
-			zio_nowait(zio_read(pio, zio->io_spa, zio->io_bp,
+			zio = zio_read(pio, zio->io_spa, zio->io_bp,
 			    abd, zio->io_size, arc_read_done,
 			    hdr, zio->io_priority, cb->l2rcb_flags,
-			    &cb->l2rcb_zb));
+			    &cb->l2rcb_zb);
+
+			/*
+			 * Original ZIO will be freed, so we need to update
+			 * ARC header with the new ZIO pointer to be used
+			 * by zio_change_priority() in arc_read().
+			 */
+			for (struct arc_callback *acb = hdr->b_l1hdr.b_acb;
+			    acb != NULL; acb = acb->acb_next)
+				acb->acb_zio_head = zio;
+
+			mutex_exit(hash_lock);
+			zio_nowait(zio);
+		} else {
+			mutex_exit(hash_lock);
 		}
 	}
 
@@ -9369,6 +9392,35 @@ l2arc_stop(void)
 }
 
 #if defined(_KERNEL)
+static int
+param_set_arc_long(const char *buf, zfs_kernel_param_t *kp)
+{
+	int error;
+
+	error = param_set_long(buf, kp);
+	if (error < 0)
+		return (SET_ERROR(error));
+
+	arc_tuning_update();
+
+	return (0);
+}
+
+static int
+param_set_arc_int(const char *buf, zfs_kernel_param_t *kp)
+{
+	int error;
+
+	error = param_set_int(buf, kp);
+	if (error < 0)
+		return (SET_ERROR(error));
+
+	arc_tuning_update();
+
+	return (0);
+}
+
+
 EXPORT_SYMBOL(arc_buf_size);
 EXPORT_SYMBOL(arc_write);
 EXPORT_SYMBOL(arc_read);
@@ -9378,20 +9430,25 @@ EXPORT_SYMBOL(arc_add_prune_callback);
 EXPORT_SYMBOL(arc_remove_prune_callback);
 
 /* BEGIN CSTYLED */
-module_param(zfs_arc_min, ulong, 0644);
+module_param_call(zfs_arc_min, param_set_arc_long, param_get_long,
+	&zfs_arc_min, 0644);
 MODULE_PARM_DESC(zfs_arc_min, "Min arc size");
 
-module_param(zfs_arc_max, ulong, 0644);
+module_param_call(zfs_arc_max, param_set_arc_long, param_get_long,
+	&zfs_arc_max, 0644);
 MODULE_PARM_DESC(zfs_arc_max, "Max arc size");
 
-module_param(zfs_arc_meta_limit, ulong, 0644);
+module_param_call(zfs_arc_meta_limit, param_set_arc_long, param_get_long,
+	&zfs_arc_meta_limit, 0644);
 MODULE_PARM_DESC(zfs_arc_meta_limit, "Meta limit for arc size");
 
-module_param(zfs_arc_meta_limit_percent, ulong, 0644);
+module_param_call(zfs_arc_meta_limit_percent, param_set_arc_long,
+	param_get_long, &zfs_arc_meta_limit_percent, 0644);
 MODULE_PARM_DESC(zfs_arc_meta_limit_percent,
 	"Percent of arc size for arc meta limit");
 
-module_param(zfs_arc_meta_min, ulong, 0644);
+module_param_call(zfs_arc_meta_min, param_set_arc_long, param_get_long,
+	&zfs_arc_meta_min, 0644);
 MODULE_PARM_DESC(zfs_arc_meta_min, "Min arc metadata");
 
 module_param(zfs_arc_meta_prune, int, 0644);
@@ -9404,20 +9461,23 @@ MODULE_PARM_DESC(zfs_arc_meta_adjust_restarts,
 module_param(zfs_arc_meta_strategy, int, 0644);
 MODULE_PARM_DESC(zfs_arc_meta_strategy, "Meta reclaim strategy");
 
-module_param(zfs_arc_grow_retry, int, 0644);
+module_param_call(zfs_arc_grow_retry, param_set_arc_int, param_get_int,
+	&zfs_arc_grow_retry, 0644);
 MODULE_PARM_DESC(zfs_arc_grow_retry, "Seconds before growing arc size");
 
 module_param(zfs_arc_p_dampener_disable, int, 0644);
 MODULE_PARM_DESC(zfs_arc_p_dampener_disable, "disable arc_p adapt dampener");
 
-module_param(zfs_arc_shrink_shift, int, 0644);
+module_param_call(zfs_arc_shrink_shift, param_set_arc_int, param_get_int,
+	&zfs_arc_shrink_shift, 0644);
 MODULE_PARM_DESC(zfs_arc_shrink_shift, "log2(fraction of arc to reclaim)");
 
 module_param(zfs_arc_pc_percent, uint, 0644);
 MODULE_PARM_DESC(zfs_arc_pc_percent,
 	"Percent of pagecache to reclaim arc to");
 
-module_param(zfs_arc_p_min_shift, int, 0644);
+module_param_call(zfs_arc_p_min_shift, param_set_arc_int, param_get_int,
+	&zfs_arc_p_min_shift, 0644);
 MODULE_PARM_DESC(zfs_arc_p_min_shift, "arc_c shift to calc min/max arc_p");
 
 module_param(zfs_arc_average_blocksize, int, 0444);
@@ -9426,7 +9486,8 @@ MODULE_PARM_DESC(zfs_arc_average_blocksize, "Target average block size");
 module_param(zfs_compressed_arc_enabled, int, 0644);
 MODULE_PARM_DESC(zfs_compressed_arc_enabled, "Disable compressed arc buffers");
 
-module_param(zfs_arc_min_prefetch_ms, int, 0644);
+module_param_call(zfs_arc_min_prefetch_ms, param_set_arc_int, param_get_int,
+	&zfs_arc_min_prefetch_ms, 0644);
 MODULE_PARM_DESC(zfs_arc_min_prefetch_ms, "Min life of prefetch block in ms");
 
 module_param(zfs_arc_min_prescient_prefetch_ms, int, 0644);
@@ -9460,14 +9521,17 @@ MODULE_PARM_DESC(l2arc_feed_again, "Turbo L2ARC warmup");
 module_param(l2arc_norw, int, 0644);
 MODULE_PARM_DESC(l2arc_norw, "No reads during writes");
 
-module_param(zfs_arc_lotsfree_percent, int, 0644);
+module_param_call(zfs_arc_lotsfree_percent, param_set_arc_int, param_get_int,
+	&zfs_arc_lotsfree_percent, 0644);
 MODULE_PARM_DESC(zfs_arc_lotsfree_percent,
 	"System free memory I/O throttle in bytes");
 
-module_param(zfs_arc_sys_free, ulong, 0644);
+module_param_call(zfs_arc_sys_free, param_set_arc_long, param_get_long,
+	&zfs_arc_sys_free, 0644);
 MODULE_PARM_DESC(zfs_arc_sys_free, "System free memory target size in bytes");
 
-module_param(zfs_arc_dnode_limit, ulong, 0644);
+module_param_call(zfs_arc_dnode_limit, param_set_arc_long, param_get_long,
+	&zfs_arc_dnode_limit, 0644);
 MODULE_PARM_DESC(zfs_arc_dnode_limit, "Minimum bytes of dnodes in arc");
 
 module_param(zfs_arc_dnode_limit_percent, ulong, 0644);

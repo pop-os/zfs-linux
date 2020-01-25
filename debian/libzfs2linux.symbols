@@ -6,6 +6,7 @@ libzfs.so.2 libzfs2linux #MINVER#
  SHA384Init@Base 0.8.2
  SHA512Init@Base 0.8.2
  _sol_getmntent@Base 0.8.2
+ aok@Base 0.8.3
  atomic_add_16@Base 0.8.2
  atomic_add_16_nv@Base 0.8.2
  atomic_add_32@Base 0.8.2
@@ -466,6 +467,7 @@ libzfs.so.2 libzfs2linux #MINVER#
  zfs_snapshot_nvl@Base 0.8.2
  zfs_spa_version@Base 0.8.2
  zfs_spa_version_map@Base 0.8.2
+ zfs_special_devs@Base 0.8.3
  zfs_standard_error@Base 0.8.2
  zfs_standard_error_fmt@Base 0.8.2
  zfs_strcmp_pathname@Base 0.8.2

@@ -1,3 +1,13 @@
+zfs-linux (0.8.3-1) unstable; urgency=medium
+
+  * New upstream version 0.8.3
+  * Remove the seven upstreamed/cherry-picked patches.
+  * Mark zfs-import.service as not-installed.
+  * Refresh symbol control files.
+  * Add NEWS entry about SIMD and parallel KABI checks.
+
+ -- Mo Zhou <lumin@debian.org>  Sat, 25 Jan 2020 15:58:35 +0800
+
 zfs-linux (0.8.2-5) unstable; urgency=medium
 
   * Remove old+unused SIMD patches; Move the openrc patch to "unapplied" dir.

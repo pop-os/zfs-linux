@@ -1,3 +1,17 @@
+zfs-linux (0.8.3-1) unstable; urgency=medium
+
+  The SIMD acceleration has been fixed in this upstream release.
+  Users could use the following two commands to double check:
+
+    $ cat /sys/module/zfs/parameters/zfs_vdev_raidz_impl 
+    $ cat /sys/module/zcommon/parameters/zfs_fletcher_4_impl
+
+  Another notable change is the parallelization of the KABI checks
+  during the configure stage, which may significantly boost the
+  postinst stage of zfs-dkms that builds the kernel module.
+
+ -- Mo Zhou <lumin@debian.org>  Sat, 25 Jan 2020 13:26:02 +0800
+
 zfs-linux (0.8.0-1) experimental; urgency=medium
 
   ZFS 0.8.0 introduced the following NEW features:
