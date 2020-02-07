@@ -81,9 +81,9 @@ Depends: ${misc:Depends}, ${shlibs:Depends}
 Breaks: libzfs2
 Replaces: libzfs2
 Description: OpenZFS filesystem library for Linux
- The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data
- checksums.
+ OpenZFS is a storage platform that encompasses the functionality of
+ traditional filesystems and volume managers. It supports data checksums,
+ compression, encryption, snapshots, and more.
  .
  The OpenZFS library provides support for managing OpenZFS filesystems.
 
@@ -94,9 +94,9 @@ Depends: ${misc:Depends}, ${shlibs:Depends}
 Breaks: libzpool2
 Replaces: libzpool2
 Description: OpenZFS pool library for Linux
- The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data
- checksums.
+ OpenZFS is a storage platform that encompasses the functionality of
+ traditional filesystems and volume managers. It supports data checksums,
+ compression, encryption, snapshots, and more.
  .
  This zpool library provides support for managing zpools.
 
@@ -158,9 +158,9 @@ Breaks: spl-dkms (<< 0.8.0~rc1)
 Replaces: spl-dkms
 Provides: zfs-modules
 Description: OpenZFS filesystem kernel modules for Linux
- The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data
- checksums.
+ OpenZFS is a storage platform that encompasses the functionality of
+ traditional filesystems and volume managers. It supports data checksums,
+ compression, encryption, snapshots, and more.
  .
  This DKMS package includes the SPA, DMU, ZVOL, and ZPL components of
  OpenZFS.
@@ -175,9 +175,9 @@ Depends: busybox-initramfs | busybox-static | busybox,
 Breaks: zfsutils-linux (<= 0.7.11-2)
 Replaces: zfsutils-linux (<= 0.7.11-2)
 Description: OpenZFS root filesystem capabilities for Linux - initramfs
- The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data
- checksums.
+ OpenZFS is a storage platform that encompasses the functionality of
+ traditional filesystems and volume managers. It supports data checksums,
+ compression, encryption, snapshots, and more.
  .
  This package adds OpenZFS to the system initramfs with a hook
  for the initramfs-tools infrastructure.
@@ -189,9 +189,9 @@ Depends: dracut,
          zfsutils-linux (>= ${binary:Version}),
          ${misc:Depends}
 Description: OpenZFS root filesystem capabilities for Linux - dracut
- The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data
- checksums.
+ OpenZFS is a storage platform that encompasses the functionality of
+ traditional filesystems and volume managers. It supports data checksums,
+ compression, encryption, snapshots, and more.
  .
  This package adds OpenZFS to the system initramfs with a hook
  for the dracut infrastructure.
@@ -219,9 +219,9 @@ Suggests: nfs-kernel-server,
 Conflicts: zfs, zfs-fuse
 Provides: zfsutils
 Description: command-line tools to manage OpenZFS filesystems
- The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data
- checksums.
+ OpenZFS is a storage platform that encompasses the functionality of
+ traditional filesystems and volume managers. It supports data checksums,
+ compression, encryption, snapshots, and more.
  .
  This package provides the zfs and zpool commands to create and administer
  OpenZFS filesystems.
@@ -234,9 +234,9 @@ Depends: zfs-modules | zfs-dkms,
          ${misc:Depends},
          ${shlibs:Depends}
 Description: OpenZFS Event Daemon
- The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data
- checksums.
+ OpenZFS is a storage platform that encompasses the functionality of
+ traditional filesystems and volume managers. It supports data checksums,
+ compression, encryption, snapshots, and more.
  .
  This package provides the OpenZFS Event Daemon (zed).
 
@@ -262,9 +262,9 @@ Breaks: zfsutils-linux (<= 0.7.9-2)
 Replaces: zfsutils-linux (<= 0.7.9-2)
 Conflicts: zutils
 Description: OpenZFS test infrastructure and support scripts
- The Z file system is a pooled filesystem designed for maximum data
- integrity, supporting data snapshots, multiple copies, and data
- checksums.
+ OpenZFS is a storage platform that encompasses the functionality of
+ traditional filesystems and volume managers. It supports data checksums,
+ compression, encryption, snapshots, and more.
  .
  This package provides the OpenZFS test infrastructure for destructively
  testing and validating a system using OpenZFS. It is entirely optional
