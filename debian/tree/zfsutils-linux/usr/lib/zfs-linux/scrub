@@ -1,9 +1,12 @@
 #!/bin/sh -eu
 
-# Scrub all healthy pools.
+# Scrub all healthy pools that are not already scrubbing.
 zpool list -H -o health,name 2>&1 | \
 	awk 'BEGIN {FS="\t"} {if ($1 ~ /^ONLINE/) print $2}' | \
 while read pool
 do
-	zpool scrub "$pool"
+	if ! zpool status "$pool" | grep -q "scrub in progress"
+	then
+		zpool scrub "$pool"
+	fi
 done
