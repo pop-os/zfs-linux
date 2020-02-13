@@ -3,7 +3,13 @@
 0003-relocate-zvol_wait.patch
 enable-zed.patch
 1004-zed-service-bindir.patch
+2100-zfs-load-module.patch
 3100-remove-libzfs-module-timeout.patch
 force-verbose-rules.patch
+
+#2200-add-zfs-0.6.x-ioctl-compat-shim.patch # Ubuntu
+#3302-Use-obj-m-instead-of-subdir-m.patch # Ubuntu
+#4000-zsys-support.patch # Ubuntu
+#4500-fix-generator-invalid-cache.patch # Ubuntu
 
 #unapplied/init-debian-openrc-workaround.patch # OpenRC users can apply this locally
