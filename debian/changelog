@@ -1,3 +1,16 @@
+zfs-linux (0.8.3-2) UNRELEASED; urgency=medium
+
+  [ Richard Laager ]
+  * cron: Do not error if already scrubbing
+
+  [ Mo Zhou ]
+  * Reword ZFS Description, thanks to Richard Laager (Closes: #949911)
+  * Import patches from Ubuntu delta (0.8.3-1ubuntu3).
+    + Apply 2100-zfs-load-module.patch and add this new service.
+    + The rest Ubuntu specific patches are left in the comment.
+
+ -- Mo Zhou <lumin@debian.org>  Thu, 13 Feb 2020 18:56:16 +0800
+
 zfs-linux (0.8.3-1) unstable; urgency=medium
 
   * New upstream version 0.8.3
