@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Native ZFS for Linux
+Upstream-Name: OpenZFS on Linux and FreeBSD
 Upstream-Contact: Brian Behlendorf <behlendorf1@llnl.gov>
-Source: https://github.com/zfsonlinux/zfs/
+Source: https://github.com/openzfs/zfs
 Disclaimer:
  This work was produced at the Lawrence Livermore National Laboratory
  (LLNL) under Contract No. DE-AC52-07NA27344 (Contract 44) between
