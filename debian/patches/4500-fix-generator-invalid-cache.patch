@@ -26,7 +26,7 @@ Index: zfs-linux-0.8.3/etc/systemd/system-generators/zfs-mount-generator.in
  # in /boot.
 @@ -295,9 +298,6 @@ initzsys() {
    all_pools="$(zpool list | awk '{if (NR>1) print $1}')"
-   ${ZSYS} boot prepare
+   ${ZSYS} boot-prepare
  
 -  PROPS="name,mountpoint,canmount,atime,relatime,devices,exec,readonly"
 -  PROPS="${PROPS},setuid,nbmand"

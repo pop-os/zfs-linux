@@ -1,0 +1,153 @@
+From ff5587d651371ab496f7962e85fe2c337fdb8a59 Mon Sep 17 00:00:00 2001
+From: Brian Behlendorf <behlendorf1@llnl.gov>
+Date: Wed, 26 Feb 2020 12:42:33 -0800
+Subject: [PATCH] Linux 5.6 compat: ktime_get_raw_ts64()
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+The getrawmonotonic() and getrawmonotonic64() interfaces have been
+fully retired.  Update gethrtime() to use the replacement interface
+ktime_get_raw_ts64() which was introduced in the 4.18 kernel.
+
+Reviewed-by: Tony Hutter <hutter2@llnl.gov>
+Signed-off-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Closes #10052
+Closes #10064
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+---
+ config/kernel-ktime.m4                      | 55 +++++++++++++++++++++
+ config/kernel-ktime_get_coarse_real_ts64.m4 | 23 ---------
+ config/kernel.m4                            |  4 +-
+ include/spl/sys/time.h                      |  5 ++
+ 4 files changed, 62 insertions(+), 25 deletions(-)
+ create mode 100644 config/kernel-ktime.m4
+ delete mode 100644 config/kernel-ktime_get_coarse_real_ts64.m4
+
+Index: zfs-linux-0.8.3/config/kernel-ktime.m4
+===================================================================
+--- /dev/null
++++ zfs-linux-0.8.3/config/kernel-ktime.m4
+@@ -0,0 +1,55 @@
++dnl #
++dnl # 4.18: ktime_get_coarse_real_ts64() replaces current_kernel_time64().
++dnl #
++AC_DEFUN([ZFS_AC_KERNEL_SRC_KTIME_GET_COARSE_REAL_TS64], [
++	ZFS_LINUX_TEST_SRC([ktime_get_coarse_real_ts64], [
++		#include <linux/mm.h>
++	], [
++		struct timespec64 ts;
++		ktime_get_coarse_real_ts64(&ts);
++	])
++])
++
++AC_DEFUN([ZFS_AC_KERNEL_KTIME_GET_COARSE_REAL_TS64], [
++	AC_MSG_CHECKING([whether ktime_get_coarse_real_ts64() exists])
++	ZFS_LINUX_TEST_RESULT([ktime_get_coarse_real_ts64], [
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_KTIME_GET_COARSE_REAL_TS64, 1,
++		    [ktime_get_coarse_real_ts64() exists])
++	], [
++		AC_MSG_RESULT(no)
++	])
++])
++
++dnl #
++dnl # 4.18: ktime_get_raw_ts64() replaces getrawmonotonic64().
++dnl #
++AC_DEFUN([ZFS_AC_KERNEL_SRC_KTIME_GET_RAW_TS64], [
++	ZFS_LINUX_TEST_SRC([ktime_get_raw_ts64], [
++		#include <linux/mm.h>
++	], [
++		struct timespec64 ts;
++		ktime_get_raw_ts64(&ts);
++	])
++])
++
++AC_DEFUN([ZFS_AC_KERNEL_KTIME_GET_RAW_TS64], [
++	AC_MSG_CHECKING([whether ktime_get_raw_ts64() exists])
++	ZFS_LINUX_TEST_RESULT([ktime_get_raw_ts64], [
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_KTIME_GET_RAW_TS64, 1,
++		    [ktime_get_raw_ts64() exists])
++	], [
++		AC_MSG_RESULT(no)
++	])
++])
++
++AC_DEFUN([ZFS_AC_KERNEL_SRC_KTIME], [
++	ZFS_AC_KERNEL_SRC_KTIME_GET_COARSE_REAL_TS64
++	ZFS_AC_KERNEL_SRC_KTIME_GET_RAW_TS64
++])
++
++AC_DEFUN([ZFS_AC_KERNEL_KTIME], [
++	ZFS_AC_KERNEL_KTIME_GET_COARSE_REAL_TS64
++	ZFS_AC_KERNEL_KTIME_GET_RAW_TS64
++])
+Index: zfs-linux-0.8.3/config/kernel-ktime_get_coarse_real_ts64.m4
+===================================================================
+--- zfs-linux-0.8.3.orig/config/kernel-ktime_get_coarse_real_ts64.m4
++++ /dev/null
+@@ -1,23 +0,0 @@
+-dnl #
+-dnl # 4.18: ktime_get_coarse_real_ts64() added.  Use it in place of
+-dnl # current_kernel_time64().
+-dnl #
+-AC_DEFUN([ZFS_AC_KERNEL_SRC_KTIME_GET_COARSE_REAL_TS64], [
+-	ZFS_LINUX_TEST_SRC([ktime_get_coarse_real_ts64], [
+-		#include <linux/mm.h>
+-	], [
+-		struct timespec64 ts;
+-		ktime_get_coarse_real_ts64(&ts);
+-	])
+-])
+-
+-AC_DEFUN([ZFS_AC_KERNEL_KTIME_GET_COARSE_REAL_TS64], [
+-	AC_MSG_CHECKING([whether ktime_get_coarse_real_ts64() exists])
+-	ZFS_LINUX_TEST_RESULT([ktime_get_coarse_real_ts64], [
+-		AC_MSG_RESULT(yes)
+-		AC_DEFINE(HAVE_KTIME_GET_COARSE_REAL_TS64, 1,
+-		    [ktime_get_coarse_real_ts64() exists])
+-	], [
+-		AC_MSG_RESULT(no)
+-	])
+-])
+Index: zfs-linux-0.8.3/config/kernel.m4
+===================================================================
+--- zfs-linux-0.8.3.orig/config/kernel.m4
++++ zfs-linux-0.8.3/config/kernel.m4
+@@ -138,7 +138,7 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
+ 	ZFS_AC_KERNEL_SRC_CURRENT_TIME
+ 	ZFS_AC_KERNEL_SRC_USERNS_CAPABILITIES
+ 	ZFS_AC_KERNEL_SRC_IN_COMPAT_SYSCALL
+-	ZFS_AC_KERNEL_SRC_KTIME_GET_COARSE_REAL_TS64
++	ZFS_AC_KERNEL_SRC_KTIME
+ 	ZFS_AC_KERNEL_SRC_TOTALRAM_PAGES_FUNC
+ 	ZFS_AC_KERNEL_SRC_TOTALHIGH_PAGES
+ 	ZFS_AC_KERNEL_SRC_KSTRTOUL
+@@ -256,7 +256,7 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_RESULT], [
+ 	ZFS_AC_KERNEL_CURRENT_TIME
+ 	ZFS_AC_KERNEL_USERNS_CAPABILITIES
+ 	ZFS_AC_KERNEL_IN_COMPAT_SYSCALL
+-	ZFS_AC_KERNEL_KTIME_GET_COARSE_REAL_TS64
++	ZFS_AC_KERNEL_KTIME
+ 	ZFS_AC_KERNEL_TOTALRAM_PAGES_FUNC
+ 	ZFS_AC_KERNEL_TOTALHIGH_PAGES
+ 	ZFS_AC_KERNEL_KSTRTOUL
+Index: zfs-linux-0.8.3/include/spl/sys/time.h
+===================================================================
+--- zfs-linux-0.8.3.orig/include/spl/sys/time.h
++++ zfs-linux-0.8.3/include/spl/sys/time.h
+@@ -105,8 +105,13 @@ gethrestime_sec(void)
+ static inline hrtime_t
+ gethrtime(void)
+ {
++#if defined(HAVE_KTIME_GET_RAW_TS64)
++	struct timespec64 ts;
++	ktime_get_raw_ts64(&ts);
++#else
+ 	struct timespec ts;
+ 	getrawmonotonic(&ts);
++#endif
+ 	return (((hrtime_t)ts.tv_sec * NSEC_PER_SEC) + ts.tv_nsec);
+ }
+ 

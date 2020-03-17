@@ -12,7 +12,28 @@ Index: zfs-linux-0.8.3/contrib/initramfs/scripts/zfs.in
 ===================================================================
 --- zfs-linux-0.8.3.orig/contrib/initramfs/scripts/zfs.in
 +++ zfs-linux-0.8.3/contrib/initramfs/scripts/zfs.in
-@@ -495,16 +495,13 @@ clone_snap()
+@@ -71,6 +71,20 @@ get_fs_value()
+ 	"${ZFS}" get -H -ovalue $value "$fs" 2> /dev/null
+ }
+ 
++# Get a ZFS filesystem property value with the source stripped from the value
++get_fs_value_without_source()
++{
++	value="$(get_fs_value $@)"
++	echo "${value%%:*}"
++}
++
++# Get a ZFS filesystem property source for a given key
++get_fs_source()
++{
++	value="$(get_fs_value $@)"
++	echo "${value#*:}"
++}
++
+ # Find the 'bootfs' property on pool $1.
+ # If the property does not contain '/', then ignore this
+ # pool by exporting it again.
+@@ -495,16 +509,17 @@ clone_snap()
  	local snap="$1"
  	local destfs="$2"
  	local mountpoint="$3"
@@ -20,6 +41,10 @@ Index: zfs-linux-0.8.3/contrib/initramfs/scripts/zfs.in
  
  	[ "$quiet" != "y" ] && zfs_log_begin_msg "Cloning '$snap' to '$destfs'"
  
++	if [ -n "${mountpoint}" ]; then
++		additional_parameters="${additional_parameters} -o mountpoint=${mountpoint}"
++	fi
++
  	# Clone the snapshot into a dataset we can boot from
 -	# + We don't want this filesystem to be automatically mounted, we
 -	#   want control over this here and nowhere else.
@@ -28,17 +53,17 @@ Index: zfs-linux-0.8.3/contrib/initramfs/scripts/zfs.in
 -	ZFS_CMD="${ZFS} clone -o canmount=noauto -o mountpoint=none"
 -	ZFS_CMD="${ZFS_CMD} -o org.zol:mountpoint=${mountpoint}"
 +	ZFS_CMD="${ZFS} clone"
-+	ZFS_CMD="${ZFS_CMD} -o canmount=noauto -o mountpoint=${mountpoint} ${additional_parameters}"
++	ZFS_CMD="${ZFS_CMD} -o canmount=noauto ${additional_parameters}"
  	ZFS_CMD="${ZFS_CMD} $snap $destfs"
  	ZFS_STDERR="$(${ZFS_CMD} 2>&1)"
  	ZFS_ERROR="$?"
-@@ -616,6 +613,15 @@ setup_snapshot_booting()
+@@ -616,6 +631,15 @@ setup_snapshot_booting()
  	snapname="${snap##*@}"
  	ZFS_BOOTFS="${rootfs}_${snapname}"
  
 +	# Detect if we are on a zsys system, which will generates an unique UUID
 +	# and override ZFS_BOOTFS
-+	use_zsys=$(get_fs_value "${rootfs}" com.ubuntu.zsys:bootfs)
++	use_zsys=$(get_fs_value_without_source "${rootfs}" com.ubuntu.zsys:bootfs)
 +	if [ "$use_zsys" = "yes" ]; then
 +		zsys_uid=`uid`
 +		ZFS_BOOTFS="${rootfs%_*}_${zsys_uid}" # we strip old uid and add new one
@@ -48,7 +73,7 @@ Index: zfs-linux-0.8.3/contrib/initramfs/scripts/zfs.in
  	if ! grep -qiE '(^|[^\\](\\\\)* )(rollback)=(on|yes|1)( |$)' /proc/cmdline
  	then
  		# If the destination dataset for the clone
-@@ -645,10 +651,18 @@ setup_snapshot_booting()
+@@ -645,10 +669,18 @@ setup_snapshot_booting()
  			#       rpool/ROOT/debian/boot@snap2	=> rpool/ROOT/debian_snap2/boot
  			#       rpool/ROOT/debian/usr@snap2	=> rpool/ROOT/debian_snap2/usr
  			#       rpool/ROOT/debian/var@snap2	=> rpool/ROOT/debian_snap2/var
@@ -67,7 +92,7 @@ Index: zfs-linux-0.8.3/contrib/initramfs/scripts/zfs.in
  			[ -n "$subfs" ] && destfs="${destfs}$subfs" # + sub fs.
  
  			# Get the mountpoint of the filesystem, to be used
-@@ -665,9 +679,33 @@ setup_snapshot_booting()
+@@ -665,9 +697,38 @@ setup_snapshot_booting()
  				fi
  			fi
  
@@ -91,8 +116,13 @@ Index: zfs-linux-0.8.3/contrib/initramfs/scripts/zfs.in
 +				clone_additional_parameters="-o org.zol:mountpoint=${mountpoint}"
 +				mountpoint=none
 +			else
-+				[ "$(get_fs_value "$s" com.ubuntu.zsys:bootfs)" != "yes" ] && continue
++				[ "$(get_fs_value_without_source "$s" com.ubuntu.zsys:bootfs)" != "yes" ] && continue
 +				clone_additional_parameters="-o com.ubuntu.zsys:bootfs=yes"
++				# Only set mountpoint explicitely if it was locally set
++				# Keep the possibility to have mountpoint inherited for manual zfs snapshots without zsys involved, which
++				# will have an empty user propertie
++				local mountpoint_source="$(get_fs_source "$s" com.ubuntu.zsys:mountpoint)"
++				[ -n "${mountpoint_source}" -a "${mountpoint_source}" != "local" ] && mountpoint=""
 +			fi
 +
  			# Clone the snapshot into its own
@@ -102,7 +132,7 @@ Index: zfs-linux-0.8.3/contrib/initramfs/scripts/zfs.in
  			    retval=$((retval + 1))
  		fi
  	done
-@@ -930,6 +968,8 @@ mountroot()
+@@ -930,6 +991,8 @@ mountroot()
  		# Booting from a snapshot?
  		# Will overwrite the ZFS_BOOTFS variable like so:
  		#   rpool/ROOT/debian@snap2 => rpool/ROOT/debian_snap2
@@ -111,7 +141,7 @@ Index: zfs-linux-0.8.3/contrib/initramfs/scripts/zfs.in
  		echo "${ZFS_BOOTFS}" | grep -q '@' && \
  		    setup_snapshot_booting "${ZFS_BOOTFS}"
  	fi
-@@ -967,8 +1007,16 @@ mountroot()
+@@ -967,8 +1030,16 @@ mountroot()
  	# Go through the complete list (recursively) of all filesystems below
  	# the real root dataset
  	filesystems=$("${ZFS}" list -oname -tfilesystem -H -r "${ZFS_BOOTFS}")
@@ -121,14 +151,14 @@ Index: zfs-linux-0.8.3/contrib/initramfs/scripts/zfs.in
 +	# Some datasets under ROOT/ can be mounted on top of persistent datasets
 +	# that are hosted elsewhere in the pool. Those are thus only mounted at
 +	# early boot.
-+	use_zsys=$(get_fs_value "${ZFS_BOOTFS}" com.ubuntu.zsys:bootfs)
++	use_zsys=$(get_fs_value_without_source "${ZFS_BOOTFS}" com.ubuntu.zsys:bootfs)
  	for fs in $filesystems $ZFS_INITRD_ADDITIONAL_DATASETS
  	do
-+		[ "$use_zsys" = "yes" -a "$(get_fs_value "$fs" com.ubuntu.zsys:bootfs)" != "yes" ] && continue
++		[ "$use_zsys" = "yes" -a "$(get_fs_value_without_source "$fs" com.ubuntu.zsys:bootfs)" != "yes" ] && continue
  		mount_fs "$fs"
  	done
  
-@@ -1007,3 +1055,8 @@ mountroot()
+@@ -1007,3 +1078,8 @@ mountroot()
  		[ "$quiet" != "y" ] && zfs_log_end_msg
  	fi
  }
@@ -154,7 +184,7 @@ Index: zfs-linux-0.8.3/etc/systemd/system-generators/zfs-mount-generator.in
    ln -s "../${mountfile}" "${req_dir}"
  }
  
-+ZSYS="@sbindir@/zsys"
++ZSYS="@sbindir@/zsysd"
 +ZFS="@sbindir@/zfs"
 +ZPOOL="@sbindir@/zpool"
 +initial_pools=""
@@ -189,7 +219,7 @@ Index: zfs-linux-0.8.3/etc/systemd/system-generators/zfs-mount-generator.in
 +  initial_pools="$(${ZPOOL} list | awk '{if (NR>1) print $1}')"
 +  ${ZPOOL} import -f -a -N -o cachefile=none 2>/dev/null
 +  all_pools="$(zpool list | awk '{if (NR>1) print $1}')"
-+  ${ZSYS} boot prepare
++  ${ZSYS} boot-prepare
 +
 +  PROPS="name,mountpoint,canmount,atime,relatime,devices,exec,readonly"
 +  PROPS="${PROPS},setuid,nbmand"
