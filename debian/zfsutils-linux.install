@@ -12,6 +12,7 @@ lib/systemd/system/zfs-share.service
 lib/systemd/system/zfs-volume-wait.service
 lib/systemd/system/zfs-volumes.target
 lib/systemd/system/zfs.target
+lib/systemd/system/zfs-load-module.service
 lib/udev/
 sbin/fsck.zfs
 sbin/mount.zfs
