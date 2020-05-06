@@ -3,6 +3,7 @@ dont-symlink-zed-scripts.patch
 0001-Prevent-manual-builds-in-the-DKMS-source.patch
 0002-Check-for-META-and-DCH-consistency-in-autoconf.patch
 0003-relocate-zvol_wait.patch
+0004-prefer-python3-tests.patch
 enable-zed.patch
 1004-zed-service-bindir.patch
 2100-zfs-load-module.patch
