@@ -3,6 +3,7 @@ dont-symlink-zed-scripts.patch
 0001-Prevent-manual-builds-in-the-DKMS-source.patch
 0002-Check-for-META-and-DCH-consistency-in-autoconf.patch
 0003-relocate-zvol_wait.patch
+0004-prefer-python3-tests.patch
 enable-zed.patch
 1004-zed-service-bindir.patch
 2100-zfs-load-module.patch
@@ -12,9 +13,4 @@ enable-zed.patch
 #4000-zsys-support.patch
 #4500-fix-generator-invalid-cache.patch
 force-verbose-rules.patch
-4550-Linux-5.5-compat-blkg_tryget.patch
-4600-Linux-5.6-compat-struct-proc_ops.patch
-4601-Linux-5.6-compat-timestamp_truncate.patch
-4602-Linux-5.6-compat-ktime_get_raw_ts64.patch
-4603-Linux-5.6-compat-time_t.patch
 #zfs-mount-container-start.patch

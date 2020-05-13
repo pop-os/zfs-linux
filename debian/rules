@@ -31,7 +31,7 @@ PARALLEL = $(subst parallel=,,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 NJOBS    = -j$(or $(PARALLEL),$(NUM_CPUS),1)
 
 %:
-	dh $@ --with autoreconf,dkms,python3,systemd,sphinxdoc
+	dh $@ --with autoreconf,dkms,python3,sphinxdoc
 
 override_dh_autoreconf:
 	@# Embed the downstream version in the module.
@@ -53,6 +53,7 @@ endif
 	  --with-zfsexecdir=/usr/lib/zfs-linux \
 	  --enable-systemd \
 	  --enable-pyzfs \
+	  --with-python=python3 \
 	  --with-systemdunitdir=/lib/systemd/system \
 	  --with-systemdpresetdir=/lib/systemd/system-preset \
 	  --with-systemdgeneratordir=/lib/systemd/system-generators \

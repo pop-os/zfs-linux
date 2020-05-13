@@ -23,7 +23,7 @@ Build-Depends: debhelper-compat (= 10),
                python3-sphinx,
                uuid-dev,
                zlib1g-dev
-Standards-Version: 4.4.1
+Standards-Version: 4.5.0
 Homepage: https://zfsonlinux.org/
 Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
@@ -244,6 +244,7 @@ Package: zfs-test
 Section: contrib/admin
 Architecture: linux-any
 Depends: acl,
+         attr,
          bc,
          fio,
          ksh,
@@ -258,6 +259,7 @@ Depends: acl,
          zfsutils-linux (>=${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
+Recommends: nfs-kernel-server
 Breaks: zfsutils-linux (<= 0.7.9-2)
 Replaces: zfsutils-linux (<= 0.7.9-2)
 Conflicts: zutils

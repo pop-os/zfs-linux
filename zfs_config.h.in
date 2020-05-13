@@ -142,6 +142,15 @@
 /* blkdev_reread_part() is available */
 #undef HAVE_BLKDEV_REREAD_PART
 
+/* blkg_tryget() is available */
+#undef HAVE_BLKG_TRYGET
+
+/* blkg_tryget() GPL-only */
+#undef HAVE_BLKG_TRYGET_GPL_ONLY
+
+/* blk_alloc_queue() expects request function */
+#undef HAVE_BLK_ALLOC_QUEUE_REQUEST_FN
+
 /* blk queue backing_dev_info is dynamic */
 #undef HAVE_BLK_QUEUE_BDI_DYNAMIC
 
@@ -374,6 +383,9 @@
 /* inode->i_*time's are timespec64 */
 #undef HAVE_INODE_TIMESPEC64_TIMES
 
+/* timestamp_truncate() exists */
+#undef HAVE_INODE_TIMESTAMP_TRUNCATE
+
 /* iops->truncate_range() exists */
 #undef HAVE_INODE_TRUNCATE_RANGE
 
@@ -436,6 +448,9 @@
 
 /* ktime_get_coarse_real_ts64() exists */
 #undef HAVE_KTIME_GET_COARSE_REAL_TS64
+
+/* ktime_get_raw_ts64() exists */
+#undef HAVE_KTIME_GET_RAW_TS64
 
 /* kuid_t/kgid_t in use */
 #undef HAVE_KUIDGID_T
@@ -500,6 +515,9 @@
 /* Define to 1 if you have the `mlockall' function. */
 #undef HAVE_MLOCKALL
 
+/* Define if host toolchain supports MOVBE */
+#undef HAVE_MOVBE
+
 /* new_sync_read()/new_sync_write() are available */
 #undef HAVE_NEW_SYNC_READ
 
@@ -544,6 +562,9 @@
 
 /* posix_acl_valid() wants user namespace */
 #undef HAVE_POSIX_ACL_VALID_WITH_NS
+
+/* proc_ops structure exists */
+#undef HAVE_PROC_OPS_STRUCT
 
 /* iops->put_link() cookie */
 #undef HAVE_PUT_LINK_COOKIE
@@ -776,8 +797,7 @@
 /* kernel exports FPU functions */
 #undef KERNEL_EXPORTS_X86_FPU
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* make_request_fn() return type */
@@ -785,9 +805,6 @@
 
 /* hardened module_param_call */
 #undef MODULE_PARAM_CALL_CONST
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
@@ -803,6 +820,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

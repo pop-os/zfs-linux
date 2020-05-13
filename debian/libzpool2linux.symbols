@@ -126,6 +126,8 @@ libzpool.so.2 libzpool2linux #MINVER#
  aes_mod_init@Base 0.8.2
  (arch=amd64)aes_x86_64_impl@Base 0.8.2
  aes_xor_block@Base 0.8.2
+ (arch=amd64)aesni_gcm_decrypt@Base 0.8.4
+ (arch=amd64)aesni_gcm_encrypt@Base 0.8.4
  aggsum_add@Base 0.8.2
  aggsum_compare@Base 0.8.2
  aggsum_fini@Base 0.8.2
@@ -320,6 +322,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  atomic_swap_uint@Base 0.8.2
  atomic_swap_ulong@Base 0.8.2
  atomic_swap_ushort@Base 0.8.2
+ (arch=amd64)atomic_toggle_boolean_nv@Base 0.8.4
  avl_add@Base 0.8.2
  avl_create@Base 0.8.2
  avl_destroy@Base 0.8.2
@@ -391,6 +394,7 @@ libzpool.so.2 libzpool2linux #MINVER#
  ccm_mode_encrypt_contiguous_blocks@Base 0.8.2
  ccm_validate_args@Base 0.8.2
  cityhash4@Base 0.8.2
+ (arch=amd64)clear_fpu_regs_avx@Base 0.8.4
  cmn_err@Base 0.8.2
  common_submit_request@Base 0.8.2
  crgetgid@Base 0.8.2
@@ -1163,19 +1167,25 @@ libzpool.so.2 libzpool2linux #MINVER#
  fzap_upgrade@Base 0.8.2
  gcm_all_impl@Base 0.8.2
  gcm_alloc_ctx@Base 0.8.2
+ (arch=amd64)gcm_avx_can_use_movbe@Base 0.8.4
  gcm_decrypt_final@Base 0.8.2
  gcm_encrypt_final@Base 0.8.2
  gcm_generic_impl@Base 0.8.2
+ (arch=amd64)gcm_ghash_avx@Base 0.8.4
+ (arch=amd64)gcm_gmult_avx@Base 0.8.4
+ (arch=amd64)gcm_gmult_clmul@Base 0.8.4
  gcm_impl_get_ops@Base 0.8.2
  gcm_impl_init@Base 0.8.2
  gcm_impl_set@Base 0.8.2
  gcm_init@Base 0.8.2
  gcm_init_ctx@Base 0.8.2
+ (arch=amd64)gcm_init_htab_avx@Base 0.8.4
  gcm_mode_decrypt_contiguous_blocks@Base 0.8.2
  gcm_mode_encrypt_contiguous_blocks@Base 0.8.2
  (arch=amd64)gcm_mul_pclmulqdq@Base 0.8.2
  (arch=amd64)gcm_pclmulqdq_impl@Base 0.8.2
  gcm_set_kmflag@Base 0.8.2
+ (arch=amd64)gcm_xor_avx@Base 0.8.4
  get_child_receive_stats@Base 0.8.2
  get_clones_stat@Base 0.8.2
  get_clones_stat_impl@Base 0.8.2
