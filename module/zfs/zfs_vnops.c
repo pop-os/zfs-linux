@@ -485,7 +485,7 @@ zfs_read(struct inode *ip, uio_t *uio, int ioflag, cred_t *cr)
 	/*
 	 * Lock the range against changes.
 	 */
-	locked_range_t *lr = zfs_rangelock_enter(&zp->z_rangelock,
+	zfs_locked_range_t *lr = zfs_rangelock_enter(&zp->z_rangelock,
 	    uio->uio_loffset, uio->uio_resid, RL_READER);
 
 	/*
@@ -666,7 +666,7 @@ zfs_write(struct inode *ip, uio_t *uio, int ioflag, cred_t *cr)
 	/*
 	 * If in append mode, set the io offset pointer to eof.
 	 */
-	locked_range_t *lr;
+	zfs_locked_range_t *lr;
 	if (ioflag & FAPPEND) {
 		/*
 		 * Obtain an appending range lock to guarantee file append
@@ -829,6 +829,15 @@ zfs_write(struct inode *ip, uio_t *uio, int ioflag, cred_t *cr)
 			uio->uio_fault_disable = B_FALSE;
 			if (error == EFAULT) {
 				dmu_tx_commit(tx);
+				/*
+				 * Account for partial writes before
+				 * continuing the loop.
+				 * Update needs to occur before the next
+				 * uio_prefaultpages, or prefaultpages may
+				 * error, and we may break the loop early.
+				 */
+				if (tx_bytes != uio->uio_resid)
+					n -= tx_bytes - uio->uio_resid;
 				if (uio_prefaultpages(MIN(n, max_blksz), uio)) {
 					break;
 				}
@@ -3415,8 +3424,8 @@ top:
 
 	if (mask & (ATTR_MTIME | ATTR_SIZE)) {
 		ZFS_TIME_ENCODE(&vap->va_mtime, mtime);
-		ZTOI(zp)->i_mtime = zpl_inode_timespec_trunc(vap->va_mtime,
-		    ZTOI(zp)->i_sb->s_time_gran);
+		ZTOI(zp)->i_mtime = zpl_inode_timestamp_truncate(
+		    vap->va_mtime, ZTOI(zp));
 
 		SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_MTIME(zfsvfs), NULL,
 		    mtime, sizeof (mtime));
@@ -3424,8 +3433,8 @@ top:
 
 	if (mask & (ATTR_CTIME | ATTR_SIZE)) {
 		ZFS_TIME_ENCODE(&vap->va_ctime, ctime);
-		ZTOI(zp)->i_ctime = zpl_inode_timespec_trunc(vap->va_ctime,
-		    ZTOI(zp)->i_sb->s_time_gran);
+		ZTOI(zp)->i_ctime = zpl_inode_timestamp_truncate(vap->va_ctime,
+		    ZTOI(zp));
 		SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_CTIME(zfsvfs), NULL,
 		    ctime, sizeof (ctime));
 	}
@@ -4517,7 +4526,7 @@ zfs_putpage(struct inode *ip, struct page *pp, struct writeback_control *wbc)
 	redirty_page_for_writepage(wbc, pp);
 	unlock_page(pp);
 
-	locked_range_t *lr = zfs_rangelock_enter(&zp->z_rangelock,
+	zfs_locked_range_t *lr = zfs_rangelock_enter(&zp->z_rangelock,
 	    pgoff, pglen, RL_WRITER);
 	lock_page(pp);
 

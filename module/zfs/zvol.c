@@ -122,7 +122,7 @@ struct zvol_state {
 	uint32_t		zv_open_count;	/* open counts */
 	uint32_t		zv_changed;	/* disk changed */
 	zilog_t			*zv_zilog;	/* ZIL handle */
-	rangelock_t		zv_rangelock;	/* for range locking */
+	zfs_rangelock_t		zv_rangelock;	/* for range locking */
 	dnode_t			*zv_dn;		/* dnode hold */
 	dev_t			zv_dev;		/* device id */
 	struct gendisk		*zv_disk;	/* generic disk */
@@ -720,7 +720,7 @@ zvol_log_write(zvol_state_t *zv, dmu_tx_t *tx, uint64_t offset,
 typedef struct zv_request {
 	zvol_state_t	*zv;
 	struct bio	*bio;
-	locked_range_t	*lr;
+	zfs_locked_range_t	*lr;
 } zv_request_t;
 
 static void
@@ -1703,11 +1703,10 @@ zvol_alloc(dev_t dev, const char *name)
 
 	mutex_init(&zv->zv_state_lock, NULL, MUTEX_DEFAULT, NULL);
 
-	zv->zv_queue = blk_alloc_queue(GFP_ATOMIC);
+	zv->zv_queue = blk_generic_alloc_queue(zvol_request, NUMA_NO_NODE);
 	if (zv->zv_queue == NULL)
 		goto out_kmem;
 
-	blk_queue_make_request(zv->zv_queue, zvol_request);
 	blk_queue_set_write_cache(zv->zv_queue, B_TRUE, B_TRUE);
 
 	/* Limit read-ahead to a single page to prevent over-prefetching. */

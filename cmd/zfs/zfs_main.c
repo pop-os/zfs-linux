@@ -4144,6 +4144,16 @@ zfs_do_send(int argc, char **argv)
 		}
 	}
 
+	if (flags.dedup) {
+		(void) fprintf(stderr,
+		    gettext("WARNING: deduplicated send is "
+		    "deprecated, and will be removed in a\n"
+		    "future release. (In the future, the flag will be "
+		    "accepted, but a\n"
+		    "regular, non-deduplicated stream will be "
+		    "generated.)\n\n"));
+	}
+
 	argc -= optind;
 	argv += optind;
 
@@ -5954,7 +5964,7 @@ typedef struct holds_cbdata {
 	size_t		cb_max_taglen;
 } holds_cbdata_t;
 
-#define	STRFTIME_FMT_STR "%a %b %e %k:%M %Y"
+#define	STRFTIME_FMT_STR "%a %b %e %H:%M %Y"
 #define	DATETIME_BUF_LEN (32)
 /*
  *
