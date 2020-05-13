@@ -9,11 +9,9 @@ Author: Chris Dos <chris@chrisdos.com>
 Bug-Debian: https://bugs.debian.org/849813
 Bug-Debian: https://bugs.debian.org/826994
 Forwarded: no
-Index: zfs-linux/etc/systemd/system/zfs-zed.service.in
-===================================================================
---- zfs-linux.orig/etc/systemd/system/zfs-zed.service.in
-+++ zfs-linux/etc/systemd/system/zfs-zed.service.in
-@@ -3,7 +3,7 @@ Description=ZFS Event Daemon (zed)
+--- a/etc/systemd/system/zfs-zed.service.in
++++ b/etc/systemd/system/zfs-zed.service.in
+@@ -3,7 +3,7 @@
  Documentation=man:zed(8)
  
  [Service]
@@ -22,11 +20,9 @@ Index: zfs-linux/etc/systemd/system/zfs-zed.service.in
  Restart=on-abort
  
  [Install]
-Index: zfs-linux/etc/init.d/zfs-functions.in
-===================================================================
---- zfs-linux.orig/etc/init.d/zfs-functions.in
-+++ zfs-linux/etc/init.d/zfs-functions.in
-@@ -89,7 +89,7 @@ fi
+--- a/etc/zfs/zfs-functions.in
++++ b/etc/zfs/zfs-functions.in
+@@ -89,7 +89,7 @@
  
  # Paths to what we need
  ZFS="@sbindir@/zfs"
