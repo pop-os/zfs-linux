@@ -1,3 +1,14 @@
+zfs-linux (0.8.4-1) UNRELEASED; urgency=medium
+
+  [ Antonio Russo ]
+  * Let zfs-test use installed python3
+  * Add dependencies for zfs-test
+
+  [ Mo Zhou ]
+  * New upstream version 0.8.4
+
+ -- Mo Zhou <lumin@debian.org>  Wed, 13 May 2020 09:44:38 +0800
+
 zfs-linux (0.8.3-2) unstable; urgency=medium
 
   [ Richard Laager ]
