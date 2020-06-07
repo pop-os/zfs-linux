@@ -10,11 +10,11 @@ Description: Regenerate cache file if empty
 Author: Didier Roche <didrocks@ubuntu.com>
 Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/zfs-linux/+bug/1845606
 Forwarded: Not-needed
-Index: zfs-linux-0.8.3/etc/systemd/system-generators/zfs-mount-generator.in
+Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
 ===================================================================
---- zfs-linux-0.8.3.orig/etc/systemd/system-generators/zfs-mount-generator.in
-+++ zfs-linux-0.8.3/etc/systemd/system-generators/zfs-mount-generator.in
-@@ -278,6 +278,9 @@ on_exit() {
+--- zfs-linux-0.8.4.orig/etc/systemd/system-generators/zfs-mount-generator.in
++++ zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
+@@ -451,6 +451,9 @@ on_exit() {
      done
  }
  
@@ -24,7 +24,7 @@ Index: zfs-linux-0.8.3/etc/systemd/system-generators/zfs-mount-generator.in
  # TODO: we should move that in its own script, and use a systemd service as a fallback.
  # We need to condition this on current vs previous dataset (across the whole system), so
  # in /boot.
-@@ -295,9 +298,6 @@ initzsys() {
+@@ -468,9 +471,6 @@ initzsys() {
    all_pools="$(zpool list | awk '{if (NR>1) print $1}')"
    ${ZSYS} boot-prepare
  
@@ -34,9 +34,9 @@ Index: zfs-linux-0.8.3/etc/systemd/system-generators/zfs-mount-generator.in
    for cachefile in "${FSLIST}/"* ; do
      pool=`basename $cachefile`
      fs_pools="${fs_pools} ${pool}"
-@@ -309,6 +309,17 @@ initzsys
+@@ -481,6 +481,17 @@ initzsys() {
+ initzsys
  
- # Feed each line into process_line
  for cachefile in "${FSLIST}/"* ; do
 +  # FIXME: we need to ensure that pools are imported because some pools, like 
 +  # bpool, should be imported and mounted before /boot/grub (via fstab).
@@ -49,6 +49,6 @@ Index: zfs-linux-0.8.3/etc/systemd/system-generators/zfs-mount-generator.in
 +    ${ZFS} list -H -t filesystem -o $PROPS -r "${pool}" > "${cachefile}"
 +  fi
 +
-   while read -r fs ; do
-     process_line "${fs}"
-   done < "${cachefile}"
+   # Sort cachefile's lines by canmount, "on" before "noauto"
+   # and feed each line into process_line
+   sort -t "$(printf '\t')" -k 3 -r "${cachefile}" | \
