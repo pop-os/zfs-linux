@@ -1,3 +1,10 @@
+zfs-linux (0.8.4-2) UNRELEASED; urgency=medium
+
+  * Sync with Ubuntu delta 0.8.4-1ubuntu4.
+  * Fix FTBFS with sphinx (Closes: #962276).
+
+ -- Mo Zhou <lumin@debian.org>  Wed, 10 Jun 2020 14:00:41 +0800
+
 zfs-linux (0.8.4-1) unstable; urgency=medium
 
   [ Antonio Russo ]
