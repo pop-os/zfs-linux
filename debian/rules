@@ -10,8 +10,6 @@ LINUX_NEXT := $(shell awk -F'[ .]' '/Linux-Maximum:/{print $$2 "." $$3+1}' META)
 DKMSFILES := module include config zfs.release.in autogen.sh META AUTHORS \
 		COPYRIGHT LICENSE README.md
 
-SPHINX_BUILD = $(shell dpkg -L python3-sphinx | grep "sphinx-build$$")
-
 ifndef BUILD_UDEB
 BUILD_UDEB=false
 endif
@@ -183,7 +181,7 @@ override_dh_systemd_start:
 override_dh_installdocs:
 	dh_installdocs
 ifeq (,$(findstring nodoc, $(DEB_BUILD_OPTIONS)))
-	http_proxy='127.0.0.1:9' $(SPHINX_BUILD) -N -bhtml "$(CURDIR)/contrib/pyzfs/docs/source/" debian/pyzfs-doc/usr/share/doc/pyzfs-doc/html/
+	http_proxy='127.0.0.1:9' sphinx-build -N -bhtml "$(CURDIR)/contrib/pyzfs/docs/source/" debian/pyzfs-doc/usr/share/doc/pyzfs-doc/html/
 endif
 
 # ------------

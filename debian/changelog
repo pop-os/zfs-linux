@@ -1,3 +1,26 @@
+zfs-linux (0.8.4-2) unstable; urgency=medium
+
+  * Sync with Ubuntu delta 0.8.4-1ubuntu10.
+    + Sync 4000-zsys-support.patch from 0.8.4-1ubuntu10.
+    + Backport upstream patches fixing a dependency loop when encryption
+      via Luks (like swap) is enabled. (LP: #1875577)
+      Patch: git_fix_dependency_loop_encryption{1,2}.patch
+    + Add Linux 5.8 compat fix (4520-Linux-5.8-compat-__vmalloc.patch)
+    + Remove 4500-fix-generator-invalid-cache.patch following Ubuntu
+    + Make keystore encryption or direct ZFS encryption closer, and make
+      the service chain more robust. (4000-mount-encrypted-dataset-fix.patch)
+    + Add risc-v 64 bit support, requires implementing risc-v setjmp/longjmp
+      and adding some relevant #defines (4521-enable-risc-v-isa.patch)
+    + 4620-zfs-vol-wait-fix-locked-encrypted-vols.patch
+      zfs-volume-wait.service systemd unit does not start if the encrypted
+      zvol is locked. The /sbin/zvol_wait should not wait for links when the
+      volume has property keystatus=unavailable. Add a check for this.
+    + Thanks to Ubuntu developers. Let's hope for a smaller debdiff.
+  * Fix FTBFS with sphinx (Closes: #962276).
+  * Rebase git_fix_dependency_loop_encryption1.patch and refresh the rest.
+
+ -- Mo Zhou <lumin@debian.org>  Thu, 23 Jul 2020 22:26:35 +0800
+
 zfs-linux (0.8.4-1) unstable; urgency=medium
 
   [ Antonio Russo ]
