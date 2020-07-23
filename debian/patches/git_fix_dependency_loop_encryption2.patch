@@ -21,7 +21,7 @@ Closes: #10356
 
 --- a/etc/systemd/system-generators/zfs-mount-generator.in
 +++ b/etc/systemd/system-generators/zfs-mount-generator.in
-@@ -212,6 +212,10 @@
+@@ -218,6 +218,10 @@
  [Service]
  Type=oneshot
  RemainAfterExit=yes
@@ -30,5 +30,5 @@ Closes: #10356
 +StandardOutput=null
 +StandardError=null
  ExecStart=${keyloadcmd}
- ExecStop=@sbindir@/zfs unload-key '${dataset}'"   > "${dest_norm}/${keyloadunit}"
+ ExecStop=${keyunloadcmd}"   > "${dest_norm}/${keyloadunit}"
      fi

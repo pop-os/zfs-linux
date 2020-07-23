@@ -10,6 +10,7 @@ enable-zed.patch
 #2200-add-zfs-0.6.x-ioctl-compat-shim.patch
 3100-remove-libzfs-module-timeout.patch
 #3302-Use-obj-m-instead-of-subdir-m.patch
+4000-mount-encrypted-dataset-fix.patch
 #4000-zsys-support.patch
 #4100-disable-bpool-upgrade.patch
 force-verbose-rules.patch

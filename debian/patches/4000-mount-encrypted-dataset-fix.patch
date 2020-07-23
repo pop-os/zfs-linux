@@ -30,11 +30,9 @@ Author: Jean-Baptiste Lallement <jean.baptiste@ubuntu.com>
 Author: Didier Roche <didrocks@ubuntu.com>
 Forwarded: https://github.com/openzfs/zfs/pull/10477
 Last-Update: 2020-06-19
-Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
-===================================================================
 --- a/etc/systemd/system-generators/zfs-mount-generator.in
 +++ b/etc/systemd/system-generators/zfs-mount-generator.in
-@@ -115,6 +115,7 @@ process_line() {
+@@ -115,6 +115,7 @@
    wants="zfs-import.target"
    requires=""
    requiredmounts=""
@@ -42,7 +40,7 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
    wantedby=""
    requiredby=""
    noauto="off"
-@@ -172,6 +173,12 @@ set -eu;\
+@@ -172,6 +173,12 @@
  keystatus=\"\$\$(@sbindir@/zfs get -H -o value keystatus \"${dataset}\")\";\
  [ \"\$\$keystatus\" = \"unavailable\" ] || exit 0;\
  ${keyloadscript}'"
@@ -55,7 +53,7 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
  
  
  
-@@ -191,7 +198,6 @@ Documentation=man:zfs-mount-generator(8)
+@@ -191,7 +198,6 @@
  DefaultDependencies=no
  Wants=${wants}
  After=${after}
@@ -63,7 +61,7 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
  ${requires}
  ${keymountdep}
  
-@@ -199,11 +205,12 @@ ${keymountdep}
+@@ -199,11 +205,12 @@
  Type=oneshot
  RemainAfterExit=yes
  ExecStart=${keyloadcmd}
@@ -78,7 +76,7 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
      after="${after} ${keyloadunit}"
    fi
  
-@@ -414,6 +421,7 @@ Documentation=man:zfs-mount-generator(8)
+@@ -414,6 +421,7 @@
  Before=${before}
  After=${after}
  Wants=${wants}

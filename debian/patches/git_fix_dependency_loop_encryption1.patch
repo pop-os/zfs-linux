@@ -37,7 +37,7 @@ Signed-off-by: Richard Laager <rlaager@wiktel.com>
    p_mountpoint="${2}"
    p_canmount="${3}"
    p_atime="${4}"
-@@ -139,6 +141,18 @@
+@@ -140,6 +142,18 @@
      requiredmounts="RequiresMountsFor=${p_systemd_requiresmountsfor}"
    fi
  
