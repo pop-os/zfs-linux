@@ -19,11 +19,9 @@ Signed-off-by: Richard Laager <rlaager@wiktel.com>
  etc/systemd/system/zfs-mount.service.in            |  1 -
  2 files changed, 14 insertions(+), 1 deletion(-)
 
-Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
-===================================================================
---- zfs-linux-0.8.4.orig/etc/systemd/system-generators/zfs-mount-generator.in
-+++ zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
-@@ -74,6 +74,7 @@ else
+--- a/etc/systemd/system-generators/zfs-mount-generator.in
++++ b/etc/systemd/system-generators/zfs-mount-generator.in
+@@ -72,6 +72,7 @@
    do_fail "zero or three arguments required"
  fi
  
@@ -31,7 +29,7 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
  
  # All needed information about each ZFS is available from
  # zfs list -H -t filesystem -o <properties>
-@@ -90,6 +91,7 @@ process_line() {
+@@ -88,6 +89,7 @@
    # shellcheck disable=SC2086
    set -- $1
    dataset="${1}"
@@ -39,7 +37,7 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
    p_mountpoint="${2}"
    p_canmount="${3}"
    p_atime="${4}"
-@@ -141,6 +143,18 @@ process_line() {
+@@ -139,6 +141,18 @@
      requiredmounts="RequiresMountsFor=${p_systemd_requiresmountsfor}"
    fi
  
@@ -58,15 +56,13 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
    # Handle encryption
    if [ -n "${p_encroot}" ] &&
        [ "${p_encroot}" != "-" ] ; then
-Index: zfs-linux-0.8.4/etc/systemd/system/zfs-mount.service.in
-===================================================================
---- zfs-linux-0.8.4.orig/etc/systemd/system/zfs-mount.service.in
-+++ zfs-linux-0.8.4/etc/systemd/system/zfs-mount.service.in
-@@ -6,7 +6,6 @@ After=systemd-udev-settle.service
+--- a/etc/systemd/system/zfs-mount.service.in
++++ b/etc/systemd/system/zfs-mount.service.in
+@@ -6,7 +6,6 @@
  After=zfs-import.target
  After=systemd-remount-fs.service
  Before=local-fs.target
 -Before=systemd-random-seed.service
- After=zfs-load-module.service
- ConditionPathExists=/sys/module/zfs
-
+ 
+ [Service]
+ Type=oneshot
