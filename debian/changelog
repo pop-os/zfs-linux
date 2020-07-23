@@ -1,4 +1,4 @@
-zfs-linux (0.8.4-2) UNRELEASED; urgency=medium
+zfs-linux (0.8.4-2) unstable; urgency=medium
 
   * Sync with Ubuntu delta 0.8.4-1ubuntu10.
     + Sync 4000-zsys-support.patch from 0.8.4-1ubuntu10.
@@ -17,8 +17,9 @@ zfs-linux (0.8.4-2) UNRELEASED; urgency=medium
       volume has property keystatus=unavailable. Add a check for this.
     + Thanks to Ubuntu developers. Let's hope for a smaller debdiff.
   * Fix FTBFS with sphinx (Closes: #962276).
+  * Rebase git_fix_dependency_loop_encryption1.patch and refresh the rest.
 
- -- Mo Zhou <lumin@debian.org>  Wed, 10 Jun 2020 14:00:41 +0800
+ -- Mo Zhou <lumin@debian.org>  Thu, 23 Jul 2020 22:26:35 +0800
 
 zfs-linux (0.8.4-1) unstable; urgency=medium
 
