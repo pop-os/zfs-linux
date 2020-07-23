@@ -19,11 +19,9 @@ Closes: #10356
  etc/systemd/system-generators/zfs-mount-generator.in | 4 ++++
  1 file changed, 4 insertions(+)
 
-Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
-===================================================================
---- zfs-linux-0.8.4.orig/etc/systemd/system-generators/zfs-mount-generator.in
-+++ zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
-@@ -280,6 +280,10 @@ ${automount_loadkey_extra_args}
+--- a/etc/systemd/system-generators/zfs-mount-generator.in
++++ b/etc/systemd/system-generators/zfs-mount-generator.in
+@@ -212,6 +212,10 @@
  [Service]
  Type=oneshot
  RemainAfterExit=yes
@@ -32,5 +30,5 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
 +StandardOutput=null
 +StandardError=null
  ExecStart=${keyloadcmd}
- ExecStop=${keyunloadcmd}"   > "${dest_norm}/${keyloadunit}"
+ ExecStop=@sbindir@/zfs unload-key '${dataset}'"   > "${dest_norm}/${keyloadunit}"
      fi

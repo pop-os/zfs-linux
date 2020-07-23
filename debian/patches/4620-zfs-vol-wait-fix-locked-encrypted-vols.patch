@@ -9,11 +9,9 @@ Forwarded: no
 Reviewed-By: Colin Ian King <colin.king@canonical.com>
 Last-Update: 2020-07-22
 
-Index: zfs-linux-0.8.3/cmd/zvol_wait/zvol_wait
-===================================================================
---- zfs-linux-0.8.3.orig/cmd/zvol_wait/zvol_wait
-+++ zfs-linux-0.8.3/cmd/zvol_wait/zvol_wait
-@@ -24,6 +24,14 @@ filter_out_deleted_zvols() {
+--- a/cmd/zvol_wait/zvol_wait
++++ b/cmd/zvol_wait/zvol_wait
+@@ -24,6 +24,14 @@
  	done
  }
  
@@ -28,7 +26,7 @@ Index: zfs-linux-0.8.3/cmd/zvol_wait/zvol_wait
  list_zvols() {
  	zfs list -t volume -H -o name,volmode,receive_resume_token |
  		while read -r zvol_line; do
-@@ -71,7 +79,7 @@ while [ "$outer_loop" -lt 20 ]; do
+@@ -71,7 +79,7 @@
  	while [ "$inner_loop" -lt 30 ]; do
  		inner_loop=$((inner_loop + 1))
  

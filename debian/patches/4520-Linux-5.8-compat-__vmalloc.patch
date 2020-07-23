@@ -27,11 +27,9 @@ Closes #10422
  module/spl/spl-kmem.c                | 16 +++++++---------
  5 files changed, 46 insertions(+), 11 deletions(-)
 
-Index: zfs-linux-0.8.4/config/kernel.m4
-===================================================================
---- zfs-linux-0.8.4.orig/config/kernel.m4
-+++ zfs-linux-0.8.4/config/kernel.m4
-@@ -44,6 +44,7 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
+--- a/config/kernel.m4
++++ b/config/kernel.m4
+@@ -44,6 +44,7 @@
  	ZFS_AC_KERNEL_SRC_RWSEM
  	ZFS_AC_KERNEL_SRC_SCHED
  	ZFS_AC_KERNEL_SRC_USLEEP_RANGE
@@ -39,7 +37,7 @@ Index: zfs-linux-0.8.4/config/kernel.m4
  	ZFS_AC_KERNEL_SRC_KMEM_CACHE
  	ZFS_AC_KERNEL_SRC_WAIT
  	ZFS_AC_KERNEL_SRC_INODE_TIMES
-@@ -162,6 +163,7 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_RESULT], [
+@@ -162,6 +163,7 @@
  	ZFS_AC_KERNEL_RWSEM
  	ZFS_AC_KERNEL_SCHED
  	ZFS_AC_KERNEL_USLEEP_RANGE
@@ -47,11 +45,9 @@ Index: zfs-linux-0.8.4/config/kernel.m4
  	ZFS_AC_KERNEL_KMEM_CACHE
  	ZFS_AC_KERNEL_WAIT
  	ZFS_AC_KERNEL_INODE_TIMES
-Index: zfs-linux-0.8.4/include/spl/sys/kmem.h
-===================================================================
---- zfs-linux-0.8.4.orig/include/spl/sys/kmem.h
-+++ zfs-linux-0.8.4/include/spl/sys/kmem.h
-@@ -170,6 +170,15 @@ extern void *spl_kmem_zalloc(size_t sz,
+--- a/include/spl/sys/kmem.h
++++ b/include/spl/sys/kmem.h
+@@ -170,6 +170,15 @@
  extern void spl_kmem_free(const void *ptr, size_t sz);
  
  /*
@@ -67,11 +63,9 @@ Index: zfs-linux-0.8.4/include/spl/sys/kmem.h
   * The following functions are only available for internal use.
   */
  extern void *spl_kmem_alloc_impl(size_t size, int flags, int node);
-Index: zfs-linux-0.8.4/module/spl/spl-kmem-cache.c
-===================================================================
---- zfs-linux-0.8.4.orig/module/spl/spl-kmem-cache.c
-+++ zfs-linux-0.8.4/module/spl/spl-kmem-cache.c
-@@ -203,7 +203,7 @@ kv_alloc(spl_kmem_cache_t *skc, int size
+--- a/module/spl/spl-kmem-cache.c
++++ b/module/spl/spl-kmem-cache.c
+@@ -203,7 +203,7 @@
  		ASSERT(ISP2(size));
  		ptr = (void *)__get_free_pages(lflags, get_order(size));
  	} else {
@@ -80,7 +74,7 @@ Index: zfs-linux-0.8.4/module/spl/spl-kmem-cache.c
  	}
  
  	/* Resulting allocated memory will be page aligned */
-@@ -1242,7 +1242,7 @@ spl_cache_grow(spl_kmem_cache_t *skc, in
+@@ -1242,7 +1242,7 @@
  	 * allocation.
  	 *
  	 * However, this can't be applied to KVM_VMEM due to a bug that
@@ -89,11 +83,9 @@ Index: zfs-linux-0.8.4/module/spl/spl-kmem-cache.c
  	 */
  	if (!(skc->skc_flags & KMC_VMEM)) {
  		rc = __spl_cache_grow(skc, flags | KM_NOSLEEP);
-Index: zfs-linux-0.8.4/module/spl/spl-kmem.c
-===================================================================
---- zfs-linux-0.8.4.orig/module/spl/spl-kmem.c
-+++ zfs-linux-0.8.4/module/spl/spl-kmem.c
-@@ -172,7 +172,7 @@ spl_kmem_alloc_impl(size_t size, int fla
+--- a/module/spl/spl-kmem.c
++++ b/module/spl/spl-kmem.c
+@@ -172,7 +172,7 @@
  		 * kmem_zalloc() callers.
  		 *
  		 * For vmem_alloc() and vmem_zalloc() callers it is permissible
@@ -102,7 +94,7 @@ Index: zfs-linux-0.8.4/module/spl/spl-kmem.c
  		 * is strongly discouraged because a global lock must be
  		 * acquired.  Contention on this lock can significantly
  		 * impact performance so frequently manipulating the virtual
-@@ -180,8 +180,7 @@ spl_kmem_alloc_impl(size_t size, int fla
+@@ -180,8 +180,7 @@
  		 */
  		if ((size > spl_kmem_alloc_max) || use_vmem) {
  			if (flags & KM_VMEM) {
@@ -112,7 +104,7 @@ Index: zfs-linux-0.8.4/module/spl/spl-kmem.c
  			} else {
  				return (NULL);
  			}
-@@ -194,7 +193,7 @@ spl_kmem_alloc_impl(size_t size, int fla
+@@ -194,7 +193,7 @@
  
  		/*
  		 * For vmem_alloc() and vmem_zalloc() callers retry immediately
@@ -121,10 +113,8 @@ Index: zfs-linux-0.8.4/module/spl/spl-kmem.c
  		 */
  		if ((flags & KM_VMEM) && (use_vmem == 0))  {
  			use_vmem = 1;
-Index: zfs-linux-0.8.4/config/kernel-kmem.m4
-===================================================================
 --- /dev/null
-+++ zfs-linux-0.8.4/config/kernel-kmem.m4
++++ b/config/kernel-kmem.m4
 @@ -0,0 +1,24 @@
 +dnl #
 +dnl # 5.8 API,

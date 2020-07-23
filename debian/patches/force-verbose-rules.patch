@@ -1,10 +1,8 @@
 Description: force libtool to produce verbose output
 Author: Mo Zhou
 Forwarded: no need
-Index: zfs-linux-0.8.3/config/Rules.am
-===================================================================
---- zfs-linux-0.8.3.orig/config/Rules.am
-+++ zfs-linux-0.8.3/config/Rules.am
+--- a/config/Rules.am
++++ b/config/Rules.am
 @@ -5,7 +5,7 @@
  
  DEFAULT_INCLUDES = -include ${top_builddir}/zfs_config.h
