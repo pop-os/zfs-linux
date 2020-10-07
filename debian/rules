@@ -52,6 +52,7 @@ endif
 	  --enable-systemd \
 	  --enable-pyzfs \
 	  --with-python=python3 \
+	  --with-pkgconfigdir='/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig' \
 	  --with-systemdunitdir=/lib/systemd/system \
 	  --with-systemdpresetdir=/lib/systemd/system-preset \
 	  --with-systemdgeneratordir=/lib/systemd/system-generators \
@@ -118,9 +119,6 @@ override_dh_auto_install:
 	@# Run autogen on the stripped source tree
 	cd '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)'; ./autogen.sh
 	rm -fr '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/autom4te.cache'
-
-	mkdir -p '$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)'
-	mv -t '$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)' '$(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/pkgconfig'
 
 	for i in `ls $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/*.so`; do \
 		ln -s '/lib/$(DEB_HOST_MULTIARCH)/'`readlink $${i}` '$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/'`basename $${i}`; \
