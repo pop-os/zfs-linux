@@ -1,3 +1,13 @@
+zfs-linux (0.8.5-1) UNRELEASED; urgency=medium
+
+  [ Aron Xu ]
+  * Schedule pool TRIM on every first Sunday of month
+
+  [ Mo Zhou ]
+  * New upstream version 0.8.5 (Oct 6 2020 UTC)
+
+ -- Mo Zhou <lumin@debian.org>  Wed, 07 Oct 2020 10:50:18 +0800
+
 zfs-linux (0.8.4-2) unstable; urgency=medium
 
   * Sync with Ubuntu delta 0.8.4-1ubuntu10.
