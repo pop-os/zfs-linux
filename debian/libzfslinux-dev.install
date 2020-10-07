@@ -1,4 +1,4 @@
 lib/*.a usr/lib/
+lib/pkgconfig/*.pc  usr/lib/pkgconfig/
 usr/include
 usr/lib/*.so
-lib/pkgconfig/*.pc  usr/lib/pkgconfig/

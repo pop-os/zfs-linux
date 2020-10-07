@@ -8,6 +8,9 @@ zfs-linux (0.8.5-1) UNRELEASED; urgency=medium
   * Remove merged patches and refresh the remaining ones.
   * Update installation path for libzfslinux-dev pkgconfig files.
 
+  [ Antonio Russo ]
+  * wrap-and-sort
+
  -- Mo Zhou <lumin@debian.org>  Wed, 07 Oct 2020 11:51:34 +0800
 
 zfs-linux (0.8.4-2) unstable; urgency=medium
