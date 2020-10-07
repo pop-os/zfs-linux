@@ -4,9 +4,11 @@ zfs-linux (0.8.5-1) UNRELEASED; urgency=medium
   * Schedule pool TRIM on every first Sunday of month
 
   [ Mo Zhou ]
-  * New upstream version 0.8.5 (Oct 6 2020 UTC)
+  * New upstream version 0.8.5 (Oct 6 2020 UTC) (Closes: #966565, #968550)
+  * Remove merged patches and refresh the remaining ones.
+  * Update installation path for libzfslinux-dev pkgconfig files.
 
- -- Mo Zhou <lumin@debian.org>  Wed, 07 Oct 2020 10:50:18 +0800
+ -- Mo Zhou <lumin@debian.org>  Wed, 07 Oct 2020 11:51:34 +0800
 
 zfs-linux (0.8.4-2) unstable; urgency=medium
 
