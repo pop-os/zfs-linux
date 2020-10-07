@@ -671,6 +671,9 @@
 /* Define to 1 if you have the `strlcpy' function. */
 #undef HAVE_STRLCPY
 
+/* submit_bio is member of struct block_device_operations */
+#undef HAVE_SUBMIT_BIO_IN_BLOCK_DEVICE_OPERATIONS
+
 /* super_setup_bdi_name() exits */
 #undef HAVE_SUPER_SETUP_BDI_NAME
 
@@ -736,6 +739,9 @@
 
 /* fops->read/write_iter() are available */
 #undef HAVE_VFS_RW_ITERATE
+
+/* __vmalloc page flags exists */
+#undef HAVE_VMALLOC_PAGE_KERNEL
 
 /* yes */
 #undef HAVE_WAIT_ON_BIT_ACTION
@@ -863,9 +869,6 @@
 /* enum node_stat_item contains NR_INACTIVE_FILE */
 #undef ZFS_ENUM_NODE_STAT_ITEM_NR_INACTIVE_FILE
 
-/* enum node_stat_item contains NR_SLAB_RECLAIMABLE */
-#undef ZFS_ENUM_NODE_STAT_ITEM_NR_SLAB_RECLAIMABLE
-
 /* enum zone_stat_item contains NR_FILE_PAGES */
 #undef ZFS_ENUM_ZONE_STAT_ITEM_NR_FILE_PAGES
 
@@ -874,9 +877,6 @@
 
 /* enum zone_stat_item contains NR_INACTIVE_FILE */
 #undef ZFS_ENUM_ZONE_STAT_ITEM_NR_INACTIVE_FILE
-
-/* enum zone_stat_item contains NR_SLAB_RECLAIMABLE */
-#undef ZFS_ENUM_ZONE_STAT_ITEM_NR_SLAB_RECLAIMABLE
 
 /* global_node_page_state() exists */
 #undef ZFS_GLOBAL_NODE_PAGE_STATE
