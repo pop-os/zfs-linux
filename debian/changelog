@@ -11,6 +11,7 @@ zfs-linux (0.8.5-1) UNRELEASED; urgency=medium
   [ Antonio Russo ]
   * wrap-and-sort
   * Update version-dependent paths in lintian overrides
+  * Update kernel compatibility
 
  -- Mo Zhou <lumin@debian.org>  Wed, 07 Oct 2020 11:51:34 +0800
 
