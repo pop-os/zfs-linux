@@ -145,6 +145,7 @@ ifeq ($(BUILD_UDEB), true)
 	dh_makeshlibs -V -plibnvpair3linux --add-udeb=libnvpair3-udeb
 	dh_makeshlibs -V -plibuutil3linux --add-udeb=libuutil3-udeb
 	dh_makeshlibs -V -plibzfs4linux --add-udeb=libzfs4-udeb
+	dh_makeshlibs -V -plibzfsbootenv1linux --add-udeb=libzfsbootenv1-udeb
 	dh_makeshlibs -V -plibzpool4linux --add-udeb=libzpool4-udeb
 	dh_makeshlibs -V -pzfsutils-linux --add-udeb=zfsutils-udeb
 endif
@@ -155,6 +156,7 @@ ifeq ($(BUILD_UDEB), true)
 	dh_strip -plibnvpair3-udeb
 	dh_strip -plibuutil3-udeb
 	dh_strip -plibzfs4-udeb
+	dh_strip -plibzfsbootenv1-udeb
 	dh_strip -plibzpool4-udeb
 	dh_strip -pzfsutils-udeb
 endif
