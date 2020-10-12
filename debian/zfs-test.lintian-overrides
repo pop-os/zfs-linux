@@ -4,3 +4,4 @@ command-in-sbin-has-manpage-in-incorrect-section
 arch-dep-package-has-big-usr-share
 manpage-without-executable
 spelling-error-in-manpage
+national-encoding usr/share/zfs/zfs-tests/tests/functional/channel_program/lua_core/tst.lib_table.lua
