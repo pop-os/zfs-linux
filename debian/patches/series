@@ -1,3 +1,4 @@
+update-meta.patch
 #unapplied/init-debian-openrc-workaround.patch # OpenRC users can apply this locally
 dont-symlink-zed-scripts.patch
 0001-Prevent-manual-builds-in-the-DKMS-source.patch
