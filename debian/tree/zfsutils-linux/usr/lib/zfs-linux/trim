@@ -1,0 +1,12 @@
+#!/bin/sh -eu
+
+# TRIM all healthy pools that are not already trimming.
+zpool list -H -o health,name 2>&1 | \
+	awk 'BEGIN {FS="\t"} {if ($1 ~ /^ONLINE/) print $2}' | \
+while read pool
+do
+	if ! zpool status "$pool" | grep -q "trimming"
+	then
+		zpool trim "$pool"
+	fi
+done

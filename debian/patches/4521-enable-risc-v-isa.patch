@@ -62,7 +62,7 @@
  #endif
 --- a/module/lua/ldo.c
 +++ b/module/lua/ldo.c
-@@ -62,6 +62,8 @@
+@@ -80,6 +80,8 @@
  #define JMP_BUF_CNT	12
  #elif defined(__s390x__)
  #define JMP_BUF_CNT	18

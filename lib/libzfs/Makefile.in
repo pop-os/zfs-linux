@@ -173,6 +173,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
 	$(top_srcdir)/config/kernel-kmap-atomic-args.m4 \
 	$(top_srcdir)/config/kernel-kmem-cache.m4 \
+	$(top_srcdir)/config/kernel-kmem-vmalloc.m4 \
 	$(top_srcdir)/config/kernel-kstrtoul.m4 \
 	$(top_srcdir)/config/kernel-ktime.m4 \
 	$(top_srcdir)/config/kernel-kuid-helpers.m4 \
@@ -680,7 +681,7 @@ AM_CPPFLAGS = -D_GNU_SOURCE -D_REENTRANT -D_FILE_OFFSET_BITS=64 \
 	-DSYSCONFDIR=\"$(sysconfdir)\" $(DEBUG_CPPFLAGS) \
 	$(CODE_COVERAGE_CPPFLAGS)
 AM_LDFLAGS = $(DEBUG_LDFLAGS) $(ASAN_LDFLAGS)
-libzfs_pcdir = $(datarootdir)/pkgconfig
+libzfs_pcdir = $(libdir)/pkgconfig
 libzfs_pc_DATA = libzfs.pc libzfs_core.pc
 lib_LTLIBRARIES = libzfs.la
 USER_C = \
