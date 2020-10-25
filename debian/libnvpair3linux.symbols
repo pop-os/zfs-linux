@@ -1,5 +1,6 @@
-libnvpair.so.1 libnvpair1linux #MINVER#
+libnvpair.so.3 libnvpair3linux #MINVER#
 * Build-Depends-Package: libzfslinux-dev
+ aok@Base 2.0
  dump_nvlist@Base 0.8.2
  fnvlist_add_boolean@Base 0.8.2
  fnvlist_add_boolean_array@Base 0.8.2
@@ -74,6 +75,7 @@ libnvpair.so.1 libnvpair1linux #MINVER#
  fnvpair_value_uint32@Base 0.8.2
  fnvpair_value_uint64@Base 0.8.2
  fnvpair_value_uint8@Base 0.8.2
+ libspl_assertf@Base 2.0
  nv_alloc_fini@Base 0.8.2
  nv_alloc_init@Base 0.8.2
  nv_alloc_nosleep@Base 0.8.2
