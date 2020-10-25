@@ -11,6 +11,7 @@ Build-Depends: debhelper-compat (= 10),
                libaio-dev,
                libblkid-dev,
                libelf-dev,
+               libpam0g-dev,
                libssl-dev | libssl1.0-dev,
                libtool,
                libudev-dev,
@@ -39,6 +40,18 @@ Description: Solaris name-value library for Linux
  This library provides routines for packing and unpacking nv pairs for
  transporting data across process boundaries, transporting between
  kernel and userland, and possibly saving onto disk files.
+
+Package: libpam-zfs
+Section: contrib/admin
+Architecture: linux-any
+Depends: libpam-runtime, ${misc:Depends}, ${shlibs:Depends}
+Description: PAM module for managing encryption keys for ZFS
+ OpenZFS is a storage platform that encompasses the functionality of
+ traditional filesystems and volume managers. It supports data checksums,
+ compression, encryption, snapshots, and more.
+ .
+ This provides a Pluggable Authentication Module (PAM) that automatically
+ unlocks encrypted ZFS datasets upon login.
 
 Package: libuutil1linux
 Section: contrib/libs

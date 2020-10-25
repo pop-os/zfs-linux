@@ -52,6 +52,7 @@ endif
 	  --enable-systemd \
 	  --enable-pyzfs \
 	  --with-python=python3 \
+	  --with-pammoduledir='/lib/$(DEB_HOST_MULTIARCH)/security' \
 	  --with-pkgconfigdir='/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig' \
 	  --with-systemdunitdir=/lib/systemd/system \
 	  --with-systemdpresetdir=/lib/systemd/system-preset \
@@ -168,7 +169,7 @@ ifeq ($(BUILD_UDEB), true)
 endif
 
 override_dh_install:
-	find . -name lib*.la -delete
+	find debian/tmp/lib -name *.la -delete
 	dh_install --fail-missing
 
 override_dh_installinit:
