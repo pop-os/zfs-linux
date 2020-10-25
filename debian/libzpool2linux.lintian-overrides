@@ -1,3 +1,0 @@
-libzpool2linux: package-name-doesnt-match-sonames
-libzpool2linux: extra-license-file usr/share/doc/libzpool2linux/LICENSE.gz
-
