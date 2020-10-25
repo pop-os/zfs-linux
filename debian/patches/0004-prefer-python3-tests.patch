@@ -22,7 +22,7 @@
  log_must touch /$TESTPOOL/$TESTFS2/attrs
 -log_must eval "python -c 'print \"a\" * 4096' | \
 +log_must eval "python3 -c 'print \"a\" * 4096' | \
- 	attr -s bigval /$TESTPOOL/$TESTFS2/attrs"
+ 	set_xattr_stdin bigval /$TESTPOOL/$TESTFS2/attrs"
  log_must zfs set compression=off xattr=on $TESTPOOL/$TESTFS2
  
 --- a/tests/zfs-tests/tests/functional/rsend/send_realloc_dnode_size.ksh
@@ -31,8 +31,8 @@
  # 4. Create an empty file and add xattrs to it to exercise reclaiming a
  #    dnode that requires more than 1 slot for its bonus buffer (Zol #7433)
  log_must zfs set compression=on xattr=sa $POOL/fs
--log_must eval "python -c 'print \"a\" * 512' | attr -s bigval /$POOL/fs/attrs"
-+log_must eval "python3 -c 'print \"a\" * 512' | attr -s bigval /$POOL/fs/attrs"
+-log_must eval "python -c 'print \"a\" * 512' |
++log_must eval "python3 -c 'print \"a\" * 512' |
+     set_xattr_stdin bigval /$POOL/fs/attrs"
  log_must zfs snapshot $POOL/fs@d
  
- # 5. Generate initial and incremental streams
