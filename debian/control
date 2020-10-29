@@ -151,7 +151,7 @@ Depends: dkms (>> 2.1.1.2-5),
          python3-distutils | libpython3-stdlib (<< 3.6.4),
          ${misc:Depends},
          ${perl:Depends}
-Recommends: zfs-zed, zfsutils-linux (>= ${binary:Version}), ${linux:Recommends}
+Recommends: zfs-zed, zfsutils-linux (>= ${source:Version}), ${linux:Recommends}
 # suggests debhelper because e.g. `dkms mkdeb -m zfs -v 0.8.2` needs dh_testdir (#909183)
 Suggests: debhelper
 Breaks: spl-dkms (<< 0.8.0~rc1)
@@ -170,7 +170,7 @@ Architecture: all
 Depends: busybox-initramfs | busybox-static | busybox,
          initramfs-tools,
          zfs-modules | zfs-dkms,
-         zfsutils-linux (>= ${binary:Version}),
+         zfsutils-linux (>= ${source:Version}),
          ${misc:Depends}
 Breaks: zfsutils-linux (<= 0.7.11-2)
 Replaces: zfsutils-linux (<= 0.7.11-2)
@@ -186,7 +186,7 @@ Package: zfs-dracut
 Architecture: all
 Depends: dracut,
          zfs-modules | zfs-dkms,
-         zfsutils-linux (>= ${binary:Version}),
+         zfsutils-linux (>= ${source:Version}),
          ${misc:Depends}
 Description: OpenZFS root filesystem capabilities for Linux - dracut
  OpenZFS is a storage platform that encompasses the functionality of
@@ -210,8 +210,8 @@ Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
 Breaks: openrc,
         spl (<< 0.7.9-2),
         spl-dkms (<< 0.8.0~rc1),
-        zfs-dkms (<< ${binary:Version}),
-        zfs-dkms (>> ${binary:Version})
+        zfs-dkms (<< ${source:Version}),
+        zfs-dkms (>> ${source:Version}...)
 Replaces: spl (<< 0.7.9-2), spl-dkms
 Suggests: nfs-kernel-server,
           samba-common-bin (>= 3.0.23),
