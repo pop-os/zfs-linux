@@ -1,4 +1,3 @@
-update-meta.patch
 #unapplied/init-debian-openrc-workaround.patch # OpenRC users can apply this locally
 dont-symlink-zed-scripts.patch
 0001-Prevent-manual-builds-in-the-DKMS-source.patch
@@ -18,6 +17,3 @@ force-verbose-rules.patch
 #4510-silently-ignore-modprobe-failure.patch
 4521-enable-risc-v-isa.patch
 4620-zfs-vol-wait-fix-locked-encrypted-vols.patch
-0001-Correctly-handle-the-x32-ABI.patch
-0002-Always-use-lld-for-formatting-time_ts.patch
-
