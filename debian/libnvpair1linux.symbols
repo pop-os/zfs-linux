@@ -1,4 +1,5 @@
 libnvpair.so.1 libnvpair1linux #MINVER#
+* Build-Depends-Package: libzfslinux-dev
  dump_nvlist@Base 0.8.2
  fnvlist_add_boolean@Base 0.8.2
  fnvlist_add_boolean_array@Base 0.8.2

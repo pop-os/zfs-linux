@@ -1,4 +1,5 @@
 libzfs.so.2 libzfs2linux #MINVER#
+* Build-Depends-Package: libzfslinux-dev
  SHA256Init@Base 0.8.2
  SHA2Final@Base 0.8.2
  SHA2Init@Base 0.8.2
