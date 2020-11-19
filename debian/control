@@ -5,7 +5,8 @@ Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.d
 Uploaders: Aron Xu <aron@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>,
            Mo Zhou <lumin@debian.org>
-Build-Depends: debhelper-compat (= 10),
+Build-Depends: abigail-tools,
+               debhelper-compat (= 10),
                dh-python,
                dkms (>> 2.1.1.2-5),
                libaio-dev,
