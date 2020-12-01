@@ -4,7 +4,6 @@ binary-without-manpage usr/sbin/dbufstat
 binary-without-manpage usr/sbin/arc_summary
 manpage-has-errors-from-man
 manpage-has-bad-whatis-entry
-manpage-has-errors-from-man
 appstream-metadata-missing-modalias-provide
 command-in-sbin-has-manpage-in-incorrect-section
 package-supports-alternative-init-but-no-init.d-script lib/systemd/system/zfs-import-cache.service
