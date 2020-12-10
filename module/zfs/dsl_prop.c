@@ -22,7 +22,7 @@
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 by Delphix. All rights reserved.
  * Copyright (c) 2013 Martin Matuska. All rights reserved.
- * Copyright 2015, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 #include <sys/zfs_context.h>
@@ -73,7 +73,7 @@ int
 dsl_prop_get_dd(dsl_dir_t *dd, const char *propname,
     int intsz, int numints, void *buf, char *setpoint, boolean_t snapshot)
 {
-	int err = ENOENT;
+	int err;
 	dsl_dir_t *target = dd;
 	objset_t *mos = dd->dd_pool->dp_meta_objset;
 	zfs_prop_t prop;
@@ -98,8 +98,10 @@ dsl_prop_get_dd(dsl_dir_t *dd, const char *propname,
 	 */
 	for (; dd != NULL; dd = dd->dd_parent) {
 		if (dd != target || snapshot) {
-			if (!inheritable)
+			if (!inheritable) {
+				err = SET_ERROR(ENOENT);
 				break;
+			}
 			inheriting = B_TRUE;
 		}
 
@@ -151,8 +153,8 @@ dsl_prop_get_dd(dsl_dir_t *dd, const char *propname,
 	if (err == ENOENT)
 		err = dodefault(prop, intsz, numints, buf);
 
-	strfree(inheritstr);
-	strfree(recvdstr);
+	kmem_strfree(inheritstr);
+	kmem_strfree(recvdstr);
 
 	return (err);
 }
@@ -191,7 +193,7 @@ dsl_prop_get_ds(dsl_dataset_t *ds, const char *propname,
 			char *inheritstr = kmem_asprintf("%s%s", propname,
 			    ZPROP_INHERIT_SUFFIX);
 			err = zap_contains(mos, zapobj, inheritstr);
-			strfree(inheritstr);
+			kmem_strfree(inheritstr);
 			if (err != 0 && err != ENOENT)
 				return (err);
 		}
@@ -202,7 +204,7 @@ dsl_prop_get_ds(dsl_dataset_t *ds, const char *propname,
 			    ZPROP_RECVD_SUFFIX);
 			err = zap_lookup(mos, zapobj, recvdstr,
 			    intsz, numints, buf);
-			strfree(recvdstr);
+			kmem_strfree(recvdstr);
 			if (err != ENOENT) {
 				if (setpoint != NULL && err == 0)
 					(void) strlcpy(setpoint,
@@ -285,7 +287,7 @@ dsl_prop_register(dsl_dataset_t *ds, const char *propname,
 	dsl_prop_record_t *pr;
 	dsl_prop_cb_record_t *cbr;
 	int err;
-	ASSERTV(dsl_pool_t *dp = dd->dd_pool);
+	dsl_pool_t *dp __maybe_unused = dd->dd_pool;
 
 	ASSERT(dsl_pool_config_held(dp));
 
@@ -426,7 +428,7 @@ dsl_prop_predict(dsl_dir_t *dd, const char *propname,
 		panic("unexpected property source: %d", source);
 	}
 
-	strfree(recvdstr);
+	kmem_strfree(recvdstr);
 
 	if (err == ENOENT)
 		return (0);
@@ -759,8 +761,8 @@ dsl_prop_set_sync_impl(dsl_dataset_t *ds, const char *propname,
 		cmn_err(CE_PANIC, "unexpected property source: %d", source);
 	}
 
-	strfree(inheritstr);
-	strfree(recvdstr);
+	kmem_strfree(inheritstr);
+	kmem_strfree(recvdstr);
 
 	/*
 	 * If we are left with an empty snap zap we can destroy it.
@@ -858,13 +860,7 @@ dsl_prop_inherit(const char *dsname, const char *propname,
 	return (error);
 }
 
-typedef struct dsl_props_set_arg {
-	const char *dpsa_dsname;
-	zprop_source_t dpsa_source;
-	nvlist_t *dpsa_props;
-} dsl_props_set_arg_t;
-
-static int
+int
 dsl_props_set_check(void *arg, dmu_tx_t *tx)
 {
 	dsl_props_set_arg_t *dpsa = arg;
@@ -942,7 +938,7 @@ dsl_props_set_sync_impl(dsl_dataset_t *ds, zprop_source_t source,
 	}
 }
 
-static void
+void
 dsl_props_set_sync(void *arg, dmu_tx_t *tx)
 {
 	dsl_props_set_arg_t *dpsa = arg;
@@ -1039,7 +1035,7 @@ dsl_prop_get_all_impl(objset_t *mos, uint64_t propobj,
 				valstr = kmem_asprintf("%s%s", propname,
 				    ZPROP_INHERIT_SUFFIX);
 				err = zap_contains(mos, propobj, valstr);
-				strfree(valstr);
+				kmem_strfree(valstr);
 				if (err == 0)
 					continue;
 				if (err != ENOENT)

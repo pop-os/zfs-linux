@@ -30,8 +30,6 @@
 #include <errno.h>
 #include <string.h>
 
-typedef enum boolean { B_FALSE, B_TRUE } boolean_t;
-
 static void
 usage(char *progname)
 {
@@ -104,7 +102,7 @@ main(int argc, char *argv[])
 
 		/*
 		 * The argument supplied doesn't exist. Copy the path, and
-		 * remove the trailing slash if presnt.
+		 * remove the trailing slash if present.
 		 */
 		if ((arg = strdup(argv[0])) == NULL)
 			fail("strdup", 1);

@@ -319,14 +319,15 @@ def lzc_bookmark(bookmarks):
     Create bookmarks.
 
     :param bookmarks: a dict that maps names of wanted bookmarks to names of
-        existing snapshots.
+        existing snapshots or bookmarks.
     :type bookmarks: dict of bytes to bytes
     :raises BookmarkFailure: if any of the bookmarks can not be created for any
         reason.
 
     The bookmarks `dict` maps from name of the bookmark
     (e.g. :file:`{pool}/{fs}#{bmark}`) to the name of the snapshot
-    (e.g. :file:`{pool}/{fs}@{snap}`).  All the bookmarks and snapshots must
+    (e.g. :file:`{pool}/{fs}@{snap}`) or existint bookmark
+    :file:`{pool}/{fs}@{snap}`. All the bookmarks and snapshots must
     be in the same pool.
     '''
     errlist = {}
@@ -1560,22 +1561,6 @@ def lzc_promote(name):
     '''
     ret = _lib.lzc_promote(name, _ffi.NULL, _ffi.NULL)
     errors.lzc_promote_translate_error(ret, name)
-
-
-@_uncommitted()
-def lzc_remap(name):
-    '''
-    Remaps the ZFS dataset.
-
-    :param bytes name: the name of the dataset to remap.
-    :raises NameInvalid: if the dataset name is invalid.
-    :raises NameTooLong: if the dataset name is too long.
-    :raises DatasetNotFound: if the dataset does not exist.
-    :raises FeatureNotSupported: if the pool containing the dataset does not
-        have the *obsolete_counts* feature enabled.
-    '''
-    ret = _lib.lzc_remap(name)
-    errors.lzc_remap_translate_error(ret, name)
 
 
 @_uncommitted()

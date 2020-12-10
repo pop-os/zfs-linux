@@ -54,9 +54,7 @@ verify_runnable "both"
 
 function cleanup
 {
-	echo cleanup
-	[[ -e $TESTDIR ]] && \
-		log_must rm -rf $TESTDIR/* > /dev/null 2>&1
+	rm -fr $TESTDIR/*
 }
 
 log_assert "Create and read back files with using different checksum algorithms"
@@ -64,6 +62,7 @@ log_assert "Create and read back files with using different checksum algorithms"
 log_onexit cleanup
 
 WRITESZ=1048576
+NWRITES=5
 
 # Get a list of vdevs in our pool
 set -A array $(get_disklist_fullpath)
@@ -77,7 +76,7 @@ while [[ $i -lt ${#CHECKSUM_TYPES[*]} ]]; do
 	type=${CHECKSUM_TYPES[i]}
 	log_must zfs set checksum=$type $TESTPOOL
 	log_must file_write -o overwrite -f $TESTDIR/test_$type \
-	    -b $WRITESZ -c 5 -d R
+	    -b $WRITESZ -c $NWRITES -d R
 	(( i = i + 1 ))
 done
 
@@ -98,7 +97,7 @@ while [[ $j -lt ${#CHECKSUM_TYPES[*]} ]]; do
 	type=${CHECKSUM_TYPES[$j]}
 	log_must zfs set checksum=$type $TESTPOOL
 	log_must file_write -o overwrite -f $TESTDIR/test_$type \
-	    -b $WRITESZ -c 5 -d R
+	    -b $WRITESZ -c $NWRITES -d R
 
 	# Corrupt the level 0 blocks of this file
 	corrupt_blocks_at_level $TESTDIR/test_$type

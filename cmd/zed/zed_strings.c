@@ -1,6 +1,6 @@
 /*
- * This file is part of the ZFS Event Daemon (ZED)
- * for ZFS on Linux (ZoL) <http://zfsonlinux.org/>.
+ * This file is part of the ZFS Event Daemon (ZED).
+ *
  * Developed at Lawrence Livermore National Laboratory (LLNL-CODE-403049).
  * Copyright (C) 2013-2014 Lawrence Livermore National Security, LLC.
  * Refer to the ZoL git commit log for authoritative copyright attribution.
@@ -108,7 +108,7 @@ _zed_strings_node_destroy(zed_strings_node_t *np)
  * If [key] is specified, it will be used to index the node; otherwise,
  * the string [val] will be used.
  */
-zed_strings_node_t *
+static zed_strings_node_t *
 _zed_strings_node_create(const char *key, const char *val)
 {
 	zed_strings_node_t *np;

@@ -4,8 +4,8 @@
 %define not_rpm 1
 %endif
 
-# See comment in zfs.spec.in.
-%global __brp_mangle_shebangs_exclude_from arc_summary.py|arcstat.py|dbufstat.py|test-runner.py|zts-report.py
+# Exclude input files from mangling
+%global __brp_mangle_shebangs_exclude_from ^/usr/src/.*$
 
 %define module  @PACKAGE@
 %define mkconf  scripts/dkms.mkconf
@@ -18,7 +18,7 @@ Summary:        Kernel module(s) (dkms)
 
 Group:          System Environment/Kernel
 License:        @ZFS_META_LICENSE@
-URL:            http://zfsonlinux.org/
+URL:            https://github.com/openzfs/zfs
 Source0:        %{module}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch

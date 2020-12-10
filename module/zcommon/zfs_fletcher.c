@@ -137,10 +137,10 @@
 #include <sys/sysmacros.h>
 #include <sys/byteorder.h>
 #include <sys/spa.h>
+#include <sys/simd.h>
 #include <sys/zio_checksum.h>
 #include <sys/zfs_context.h>
 #include <zfs_fletcher.h>
-#include <linux/simd.h>
 
 #define	FLETCHER_MIN_SIMD_SIZE	64
 
@@ -184,7 +184,10 @@ static const fletcher_4_ops_t *fletcher_4_impls[] = {
 #if defined(__x86_64) && defined(HAVE_AVX512F)
 	&fletcher_4_avx512f_ops,
 #endif
-#if defined(__aarch64__)
+#if defined(__x86_64) && defined(HAVE_AVX512BW)
+	&fletcher_4_avx512bw_ops,
+#endif
+#if defined(__aarch64__) && !defined(__FreeBSD__)
 	&fletcher_4_aarch64_neon_ops,
 #endif
 };
@@ -883,8 +886,7 @@ zio_abd_checksum_func_t fletcher_4_abd_ops = {
 };
 
 
-#if defined(_KERNEL)
-#include <linux/mod_compat.h>
+#if defined(_KERNEL) && defined(__linux__)
 
 static int
 fletcher_4_param_get(char *buffer, zfs_kernel_param_t *unused)
