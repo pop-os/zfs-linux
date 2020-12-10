@@ -1,3 +1,16 @@
+zfs-linux (0.8.5-3) unstable; urgency=medium
+
+  [ Antonio Russo ]
+  * symbols: Build-Depends-Package on libzfslinux-dev
+
+  [ Aron Xu ]
+  * Petter to step aside, thanks for all the work, happy hacking!
+
+  [ Witold Baryluk ]
+  * Don't stop on first error in scrub and trim script (Closes: #976090)
+
+ -- Mo Zhou <lumin@debian.org>  Thu, 10 Dec 2020 14:28:50 +0800
+
 zfs-linux (0.8.5-2) unstable; urgency=medium
 
   [ Antonio Russo ]
