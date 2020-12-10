@@ -1,4 +1,3 @@
 libzpool2linux: package-name-doesnt-match-sonames
 libzpool2linux: extra-license-file usr/share/doc/libzpool2linux/LICENSE.gz
-libzpool2linux: symbols-file-missing-build-depends-package-field
 

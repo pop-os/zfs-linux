@@ -1,4 +1,5 @@
 libzpool.so.2 libzpool2linux #MINVER#
+* Build-Depends-Package: libzfslinux-dev
  EdonRFinal@Base 0.8.2
  EdonRHash@Base 0.8.2
  EdonRInit@Base 0.8.2

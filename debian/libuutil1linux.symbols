@@ -1,4 +1,5 @@
 libuutil.so.1 libuutil1linux #MINVER#
+* Build-Depends-Package: libzfslinux-dev
  _sol_getmntent@Base 0.8.2
  aok@Base 0.8.3
  atomic_add_16@Base 0.8.2
