@@ -28,8 +28,8 @@
 #include <sys/crypto/icp.h>
 #include <sys/crypto/impl.h>
 #include <sys/byteorder.h>
+#include <sys/simd.h>
 #include <modes/gcm_impl.h>
-#include <linux/simd.h>
 #ifdef CAN_USE_GCM_ASM
 #include <aes/aes_impl.h>
 #endif
@@ -59,10 +59,12 @@ boolean_t gcm_avx_can_use_movbe = B_FALSE;
 static boolean_t gcm_use_avx = B_FALSE;
 #define	GCM_IMPL_USE_AVX	(*(volatile boolean_t *)&gcm_use_avx)
 
+extern boolean_t atomic_toggle_boolean_nv(volatile boolean_t *);
+
 static inline boolean_t gcm_avx_will_work(void);
 static inline void gcm_set_avx(boolean_t);
 static inline boolean_t gcm_toggle_avx(void);
-extern boolean_t atomic_toggle_boolean_nv(volatile boolean_t *);
+static inline size_t gcm_simd_get_htab_size(boolean_t);
 
 static int gcm_mode_encrypt_contiguous_blocks_avx(gcm_ctx_t *, char *, size_t,
     crypto_data_t *, size_t);
@@ -110,13 +112,14 @@ gcm_mode_encrypt_contiguous_blocks(gcm_ctx_t *ctx, char *data, size_t length,
 		    (uint8_t *)ctx->gcm_remainder + ctx->gcm_remainder_len,
 		    length);
 		ctx->gcm_remainder_len += length;
-		ctx->gcm_copy_to = datap;
+		if (ctx->gcm_copy_to == NULL) {
+			ctx->gcm_copy_to = datap;
+		}
 		return (CRYPTO_SUCCESS);
 	}
 
 	lastp = (uint8_t *)ctx->gcm_cb;
-	if (out != NULL)
-		crypto_init_ptrs(out, &iov_or_mp, &offset);
+	crypto_init_ptrs(out, &iov_or_mp, &offset);
 
 	gops = gcm_impl_get_ops();
 	do {
@@ -152,39 +155,22 @@ gcm_mode_encrypt_contiguous_blocks(gcm_ctx_t *ctx, char *data, size_t length,
 
 		ctx->gcm_processed_data_len += block_size;
 
-		/*
-		 * The following copies a complete GCM block back to where it
-		 * came from if there was a remainder in the last call and out
-		 * is NULL. That doesn't seem to make sense. So we assert this
-		 * can't happen and leave the code in for reference.
-		 * See https://github.com/zfsonlinux/zfs/issues/9661
-		 */
-		ASSERT(out != NULL);
-		if (out == NULL) {
-			if (ctx->gcm_remainder_len > 0) {
-				bcopy(blockp, ctx->gcm_copy_to,
-				    ctx->gcm_remainder_len);
-				bcopy(blockp + ctx->gcm_remainder_len, datap,
-				    need);
-			}
-		} else {
-			crypto_get_ptrs(out, &iov_or_mp, &offset, &out_data_1,
-			    &out_data_1_len, &out_data_2, block_size);
+		crypto_get_ptrs(out, &iov_or_mp, &offset, &out_data_1,
+		    &out_data_1_len, &out_data_2, block_size);
 
-			/* copy block to where it belongs */
-			if (out_data_1_len == block_size) {
-				copy_block(lastp, out_data_1);
-			} else {
-				bcopy(lastp, out_data_1, out_data_1_len);
-				if (out_data_2 != NULL) {
-					bcopy(lastp + out_data_1_len,
-					    out_data_2,
-					    block_size - out_data_1_len);
-				}
+		/* copy block to where it belongs */
+		if (out_data_1_len == block_size) {
+			copy_block(lastp, out_data_1);
+		} else {
+			bcopy(lastp, out_data_1, out_data_1_len);
+			if (out_data_2 != NULL) {
+				bcopy(lastp + out_data_1_len,
+				    out_data_2,
+				    block_size - out_data_1_len);
 			}
-			/* update offset */
-			out->cd_offset += block_size;
 		}
+		/* update offset */
+		out->cd_offset += block_size;
 
 		/* add ciphertext to the hash */
 		GHASH(ctx, ctx->gcm_tmp, ctx->gcm_ghash, gops);
@@ -356,11 +342,13 @@ gcm_mode_decrypt_contiguous_blocks(gcm_ctx_t *ctx, char *data, size_t length,
 	if (length > 0) {
 		new_len = ctx->gcm_pt_buf_len + length;
 		new = vmem_alloc(new_len, ctx->gcm_kmflag);
+		if (new == NULL) {
+			vmem_free(ctx->gcm_pt_buf, ctx->gcm_pt_buf_len);
+			ctx->gcm_pt_buf = NULL;
+			return (CRYPTO_HOST_MEMORY);
+		}
 		bcopy(ctx->gcm_pt_buf, new, ctx->gcm_pt_buf_len);
 		vmem_free(ctx->gcm_pt_buf, ctx->gcm_pt_buf_len);
-		if (new == NULL)
-			return (CRYPTO_HOST_MEMORY);
-
 		ctx->gcm_pt_buf = new;
 		ctx->gcm_pt_buf_len = new_len;
 		bcopy(data, &ctx->gcm_pt_buf[ctx->gcm_processed_data_len],
@@ -532,11 +520,7 @@ gcm_format_initial_blocks(uchar_t *iv, ulong_t iv_len,
 	}
 }
 
-/*
- * The following function is called at encrypt or decrypt init time
- * for AES GCM mode.
- */
-int
+static int
 gcm_init(gcm_ctx_t *ctx, unsigned char *iv, size_t iv_len,
     unsigned char *auth_data, size_t auth_data_len, size_t block_size,
     int (*encrypt_block)(const void *, const uint8_t *, uint8_t *),
@@ -588,6 +572,9 @@ gcm_init(gcm_ctx_t *ctx, unsigned char *iv, size_t iv_len,
 }
 
 /*
+ * The following function is called at encrypt or decrypt init time
+ * for AES GCM mode.
+ *
  * Init the GCM context struct. Handle the cycle and avx implementations here.
  */
 int
@@ -642,6 +629,21 @@ gcm_init_ctx(gcm_ctx_t *gcm_ctx, char *param, size_t block_size,
 		    zfs_movbe_available() == B_TRUE) {
 			(void) atomic_toggle_boolean_nv(
 			    (volatile boolean_t *)&gcm_avx_can_use_movbe);
+		}
+	}
+	/* Allocate Htab memory as needed. */
+	if (gcm_ctx->gcm_use_avx == B_TRUE) {
+		size_t htab_len = gcm_simd_get_htab_size(gcm_ctx->gcm_use_avx);
+
+		if (htab_len == 0) {
+			return (CRYPTO_MECHANISM_PARAM_INVALID);
+		}
+		gcm_ctx->gcm_htab_len = htab_len;
+		gcm_ctx->gcm_Htable =
+		    (uint64_t *)kmem_alloc(htab_len, gcm_ctx->gcm_kmflag);
+
+		if (gcm_ctx->gcm_Htable == NULL) {
+			return (CRYPTO_HOST_MEMORY);
 		}
 	}
 	/* Avx and non avx context initialization differs from here on. */
@@ -704,6 +706,22 @@ gmac_init_ctx(gcm_ctx_t *gcm_ctx, char *param, size_t block_size,
 	if (ks->ops->needs_byteswap == B_TRUE) {
 		gcm_ctx->gcm_use_avx = B_FALSE;
 	}
+	/* Allocate Htab memory as needed. */
+	if (gcm_ctx->gcm_use_avx == B_TRUE) {
+		size_t htab_len = gcm_simd_get_htab_size(gcm_ctx->gcm_use_avx);
+
+		if (htab_len == 0) {
+			return (CRYPTO_MECHANISM_PARAM_INVALID);
+		}
+		gcm_ctx->gcm_htab_len = htab_len;
+		gcm_ctx->gcm_Htable =
+		    (uint64_t *)kmem_alloc(htab_len, gcm_ctx->gcm_kmflag);
+
+		if (gcm_ctx->gcm_Htable == NULL) {
+			return (CRYPTO_HOST_MEMORY);
+		}
+	}
+
 	/* Avx and non avx context initialization differs from here on. */
 	if (gcm_ctx->gcm_use_avx == B_FALSE) {
 #endif	/* ifdef CAN_USE_GCM_ASM */
@@ -970,7 +988,6 @@ gcm_impl_set(const char *val)
 }
 
 #if defined(_KERNEL) && defined(__linux__)
-#include <linux/mod_compat.h>
 
 static int
 icp_gcm_impl_set(const char *val, zfs_kernel_param_t *kp)
@@ -1034,7 +1051,7 @@ MODULE_PARM_DESC(icp_gcm_impl, "Select gcm implementation.");
 /* Clear the FPU registers since they hold sensitive internal state. */
 #define	clear_fpu_regs() clear_fpu_regs_avx()
 #define	GHASH_AVX(ctx, in, len) \
-    gcm_ghash_avx((ctx)->gcm_ghash, (const uint64_t (*)[2])(ctx)->gcm_Htable, \
+    gcm_ghash_avx((ctx)->gcm_ghash, (const uint64_t *)(ctx)->gcm_Htable, \
     in, len)
 
 #define	gcm_incr_counter_block(ctx) gcm_incr_counter_block_by(ctx, 1)
@@ -1052,8 +1069,8 @@ extern void gcm_xor_avx(const uint8_t *src, uint8_t *dst);
 extern void aes_encrypt_intel(const uint32_t rk[], int nr,
     const uint32_t pt[4], uint32_t ct[4]);
 
-extern void gcm_init_htab_avx(uint64_t Htable[16][2], const uint64_t H[2]);
-extern void gcm_ghash_avx(uint64_t ghash[2], const uint64_t Htable[16][2],
+extern void gcm_init_htab_avx(uint64_t *Htable, const uint64_t H[2]);
+extern void gcm_ghash_avx(uint64_t ghash[2], const uint64_t *Htable,
     const uint8_t *in, size_t len);
 
 extern size_t aesni_gcm_encrypt(const uint8_t *, uint8_t *, size_t,
@@ -1089,8 +1106,20 @@ gcm_toggle_avx(void)
 	}
 }
 
+static inline size_t
+gcm_simd_get_htab_size(boolean_t simd_mode)
+{
+	switch (simd_mode) {
+	case B_TRUE:
+		return (2 * 6 * 2 * sizeof (uint64_t));
+
+	default:
+		return (0);
+	}
+}
+
 /*
- * Clear senssitve data in the context.
+ * Clear sensitive data in the context.
  *
  * ctx->gcm_remainder may contain a plaintext remainder. ctx->gcm_H and
  * ctx->gcm_Htable contain the hash sub key which protects authentication.
@@ -1104,7 +1133,6 @@ gcm_clear_ctx(gcm_ctx_t *ctx)
 {
 	bzero(ctx->gcm_remainder, sizeof (ctx->gcm_remainder));
 	bzero(ctx->gcm_H, sizeof (ctx->gcm_H));
-	bzero(ctx->gcm_Htable, sizeof (ctx->gcm_Htable));
 	bzero(ctx->gcm_J0, sizeof (ctx->gcm_J0));
 	bzero(ctx->gcm_tmp, sizeof (ctx->gcm_tmp));
 }
@@ -1186,13 +1214,6 @@ gcm_mode_encrypt_contiguous_blocks_avx(gcm_ctx_t *ctx, char *data,
 		GHASH_AVX(ctx, tmp, block_size);
 		clear_fpu_regs();
 		kfpu_end();
-		/*
-		 * We don't follow gcm_mode_encrypt_contiguous_blocks() here
-		 * but assert that out is not null.
-		 * See gcm_mode_encrypt_contiguous_blocks() above and
-		 * https://github.com/zfsonlinux/zfs/issues/9661
-		 */
-		ASSERT(out != NULL);
 		rv = crypto_put_output_data(tmp, out, block_size);
 		out->cd_offset += block_size;
 		gcm_incr_counter_block(ctx);
@@ -1214,13 +1235,11 @@ gcm_mode_encrypt_contiguous_blocks_avx(gcm_ctx_t *ctx, char *data,
 			rv = CRYPTO_FAILED;
 			goto out_nofpu;
 		}
-		if (out != NULL) {
-			rv = crypto_put_output_data(ct_buf, out, chunk_size);
-			if (rv != CRYPTO_SUCCESS) {
-				goto out_nofpu;
-			}
-			out->cd_offset += chunk_size;
+		rv = crypto_put_output_data(ct_buf, out, chunk_size);
+		if (rv != CRYPTO_SUCCESS) {
+			goto out_nofpu;
 		}
+		out->cd_offset += chunk_size;
 		datap += chunk_size;
 		ctx->gcm_processed_data_len += chunk_size;
 	}
@@ -1236,13 +1255,11 @@ gcm_mode_encrypt_contiguous_blocks_avx(gcm_ctx_t *ctx, char *data,
 			rv = CRYPTO_FAILED;
 			goto out;
 		}
-		if (out != NULL) {
-			rv = crypto_put_output_data(ct_buf, out, done);
-			if (rv != CRYPTO_SUCCESS) {
-				goto out;
-			}
-			out->cd_offset += done;
+		rv = crypto_put_output_data(ct_buf, out, done);
+		if (rv != CRYPTO_SUCCESS) {
+			goto out;
 		}
+		out->cd_offset += done;
 		ctx->gcm_processed_data_len += done;
 		datap += done;
 		bleft -= done;
@@ -1262,13 +1279,11 @@ gcm_mode_encrypt_contiguous_blocks_avx(gcm_ctx_t *ctx, char *data,
 
 		gcm_xor_avx(datap, tmp);
 		GHASH_AVX(ctx, tmp, block_size);
-		if (out != NULL) {
-			rv = crypto_put_output_data(tmp, out, block_size);
-			if (rv != CRYPTO_SUCCESS) {
-				goto out;
-			}
-			out->cd_offset += block_size;
+		rv = crypto_put_output_data(tmp, out, block_size);
+		if (rv != CRYPTO_SUCCESS) {
+			goto out;
 		}
+		out->cd_offset += block_size;
 		gcm_incr_counter_block(ctx);
 		ctx->gcm_processed_data_len += block_size;
 		datap += block_size;

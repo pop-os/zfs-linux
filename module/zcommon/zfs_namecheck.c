@@ -171,7 +171,7 @@ dataset_nestcheck(const char *path)
  * Where each component is made up of alphanumeric characters plus the following
  * characters:
  *
- *	[-_.:%]
+ *	[-_.: %]
  *
  * We allow '%' here as we use that character internally to create unique
  * names for temporary clones (for online recv).
@@ -182,6 +182,8 @@ int
 entity_namecheck(const char *path, namecheck_err_t *why, char *what)
 {
 	const char *end;
+
+	EQUIV(why == NULL, what == NULL);
 
 	/*
 	 * Make sure the name is not too long.
@@ -311,6 +313,44 @@ dataset_namecheck(const char *path, namecheck_err_t *why, char *what)
 }
 
 /*
+ * Assert path is a valid bookmark name
+ */
+int
+bookmark_namecheck(const char *path, namecheck_err_t *why, char *what)
+{
+	int ret = entity_namecheck(path, why, what);
+
+	if (ret == 0 && strchr(path, '#') == NULL) {
+		if (why != NULL) {
+			*why = NAME_ERR_NO_POUND;
+			*what = '#';
+		}
+		return (-1);
+	}
+
+	return (ret);
+}
+
+/*
+ * Assert path is a valid snapshot name
+ */
+int
+snapshot_namecheck(const char *path, namecheck_err_t *why, char *what)
+{
+	int ret = entity_namecheck(path, why, what);
+
+	if (ret == 0 && strchr(path, '@') == NULL) {
+		if (why != NULL) {
+			*why = NAME_ERR_NO_AT;
+			*what = '@';
+		}
+		return (-1);
+	}
+
+	return (ret);
+}
+
+/*
  * mountpoint names must be of the following form:
  *
  *	/[component][/]*[component][/]
@@ -417,14 +457,15 @@ pool_namecheck(const char *pool, namecheck_err_t *why, char *what)
 	return (0);
 }
 
-#if defined(_KERNEL)
+EXPORT_SYMBOL(entity_namecheck);
 EXPORT_SYMBOL(pool_namecheck);
 EXPORT_SYMBOL(dataset_namecheck);
+EXPORT_SYMBOL(bookmark_namecheck);
+EXPORT_SYMBOL(snapshot_namecheck);
 EXPORT_SYMBOL(zfs_component_namecheck);
 EXPORT_SYMBOL(dataset_nestcheck);
 EXPORT_SYMBOL(get_dataset_depth);
 EXPORT_SYMBOL(zfs_max_dataset_nesting);
 
-module_param(zfs_max_dataset_nesting, int, 0644);
-MODULE_PARM_DESC(zfs_max_dataset_nesting, "Maximum depth of nested datasets");
-#endif
+ZFS_MODULE_PARAM(zfs, zfs_, max_dataset_nesting, INT, ZMOD_RW,
+	"Limit to the amount of nesting a path can have. Defaults to 50.");

@@ -21,7 +21,7 @@
 
 /*
  * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2015 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2018 by Delphix. All rights reserved.
  * Copyright (c) 2014 Integros [integros.com]
  * Copyright 2017 Joyent, Inc.
  */
@@ -180,16 +180,6 @@ spa_history_write(spa_t *spa, void *buf, uint64_t len, spa_history_phys_t *shpp,
 	return (0);
 }
 
-static char *
-spa_history_zone(void)
-{
-#ifdef _KERNEL
-	return ("linux");
-#else
-	return (NULL);
-#endif
-}
-
 /*
  * Post a history sysevent.
  *
@@ -331,7 +321,7 @@ spa_history_log_sync(void *arg, dmu_tx_t *tx)
 		 * posted as a result of the ZPOOL_HIST_CMD key being present
 		 * it would result in only one sysevent being posted with the
 		 * full command line arguments, requiring the consumer to know
-		 * how to parse and understand zfs(1M) command invocations.
+		 * how to parse and understand zfs(8) command invocations.
 		 */
 		spa_history_log_notify(spa, nvl);
 	} else if (nvlist_exists(nvl, ZPOOL_HIST_IOCTL)) {
@@ -407,13 +397,11 @@ spa_history_log_nvl(spa_t *spa, nvlist_t *nvl)
 	fnvlist_add_uint64(nvarg, ZPOOL_HIST_WHO, crgetruid(CRED()));
 
 	/* Kick this off asynchronously; errors are ignored. */
-	dsl_sync_task_nowait(spa_get_dsl(spa), spa_history_log_sync,
-	    nvarg, 0, ZFS_SPACE_CHECK_NONE, tx);
+	dsl_sync_task_nowait(spa_get_dsl(spa), spa_history_log_sync, nvarg, tx);
 	dmu_tx_commit(tx);
 
 	/* spa_history_log_sync will free nvl */
 	return (err);
-
 }
 
 /*
@@ -534,7 +522,7 @@ log_internal(nvlist_t *nvl, const char *operation, spa_t *spa,
 
 	msg = kmem_vasprintf(fmt, adx);
 	fnvlist_add_string(nvl, ZPOOL_HIST_INT_STR, msg);
-	strfree(msg);
+	kmem_strfree(msg);
 
 	fnvlist_add_string(nvl, ZPOOL_HIST_INT_NAME, operation);
 	fnvlist_add_uint64(nvl, ZPOOL_HIST_TXG, tx->tx_txg);
@@ -543,7 +531,7 @@ log_internal(nvlist_t *nvl, const char *operation, spa_t *spa,
 		spa_history_log_sync(nvl, tx);
 	} else {
 		dsl_sync_task_nowait(spa_get_dsl(spa),
-		    spa_history_log_sync, nvl, 0, ZFS_SPACE_CHECK_NONE, tx);
+		    spa_history_log_sync, nvl, tx);
 	}
 	/* spa_history_log_sync() will free nvl */
 }
@@ -622,6 +610,14 @@ spa_history_log_version(spa_t *spa, const char *operation, dmu_tx_t *tx)
 	    (u_longlong_t)spa_version(spa), ZFS_META_GITREV,
 	    u->nodename, u->release, u->version, u->machine);
 }
+
+#ifndef _KERNEL
+const char *
+spa_history_zone(void)
+{
+	return (NULL);
+}
+#endif
 
 #if defined(_KERNEL)
 EXPORT_SYMBOL(spa_history_create_obj);

@@ -39,7 +39,6 @@
 #include <sys/sa.h>
 #include <sys/sunddi.h>
 #include <sys/sa_impl.h>
-#include <sys/dnode.h>
 #include <sys/errno.h>
 #include <sys/zfs_context.h>
 
@@ -252,7 +251,7 @@ layout_num_compare(const void *arg1, const void *arg2)
 	const sa_lot_t *node1 = (const sa_lot_t *)arg1;
 	const sa_lot_t *node2 = (const sa_lot_t *)arg2;
 
-	return (AVL_CMP(node1->lot_num, node2->lot_num));
+	return (TREE_CMP(node1->lot_num, node2->lot_num));
 }
 
 static int
@@ -261,14 +260,14 @@ layout_hash_compare(const void *arg1, const void *arg2)
 	const sa_lot_t *node1 = (const sa_lot_t *)arg1;
 	const sa_lot_t *node2 = (const sa_lot_t *)arg2;
 
-	int cmp = AVL_CMP(node1->lot_hash, node2->lot_hash);
+	int cmp = TREE_CMP(node1->lot_hash, node2->lot_hash);
 	if (likely(cmp))
 		return (cmp);
 
-	return (AVL_CMP(node1->lot_instance, node2->lot_instance));
+	return (TREE_CMP(node1->lot_instance, node2->lot_instance));
 }
 
-boolean_t
+static boolean_t
 sa_layout_equal(sa_lot_t *tbf, sa_attr_type_t *attrs, int count)
 {
 	int i;
@@ -318,7 +317,7 @@ sa_get_spill(sa_handle_t *hdl)
  *
  * Operates on bulk array, first failure will abort further processing
  */
-int
+static int
 sa_attr_op(sa_handle_t *hdl, sa_bulk_attr_t *bulk, int count,
     sa_data_op_t data_op, dmu_tx_t *tx)
 {
@@ -1156,7 +1155,7 @@ sa_tear_down(objset_t *os)
 	os->os_sa = NULL;
 }
 
-void
+static void
 sa_build_idx_tab(void *hdr, void *attr_addr, sa_attr_type_t attr,
     uint16_t length, int length_idx, boolean_t var_length, void *userp)
 {
@@ -1220,7 +1219,7 @@ sa_attr_iter(objset_t *os, sa_hdr_phys_t *hdr, dmu_object_type_t type,
 }
 
 /*ARGSUSED*/
-void
+static void
 sa_byteswap_cb(void *hdr, void *attr_addr, sa_attr_type_t attr,
     uint16_t length, int length_idx, boolean_t variable_length, void *userp)
 {
@@ -1230,14 +1229,14 @@ sa_byteswap_cb(void *hdr, void *attr_addr, sa_attr_type_t attr,
 	sa_bswap_table[sa->sa_attr_table[attr].sa_byteswap](attr_addr, length);
 }
 
-void
+static void
 sa_byteswap(sa_handle_t *hdl, sa_buf_type_t buftype)
 {
 	sa_hdr_phys_t *sa_hdr_phys = SA_GET_HDR(hdl, buftype);
 	dmu_buf_impl_t *db;
 	int num_lengths = 1;
 	int i;
-	ASSERTV(sa_os_t *sa = hdl->sa_os->os_sa);
+	sa_os_t *sa __maybe_unused = hdl->sa_os->os_sa;
 
 	ASSERT(MUTEX_HELD(&sa->sa_lock));
 	if (sa_hdr_phys->sa_magic == SA_MAGIC)
@@ -1344,7 +1343,7 @@ sa_idx_tab_rele(objset_t *os, void *arg)
 static void
 sa_idx_tab_hold(objset_t *os, sa_idx_tab_t *idx_tab)
 {
-	ASSERTV(sa_os_t *sa = os->os_sa);
+	sa_os_t *sa __maybe_unused = os->os_sa;
 
 	ASSERT(MUTEX_HELD(&sa->sa_lock));
 	(void) zfs_refcount_add(&idx_tab->sa_refcount, NULL);
@@ -1462,7 +1461,7 @@ sa_buf_rele(dmu_buf_t *db, void *tag)
 	dmu_buf_rele(db, tag);
 }
 
-int
+static int
 sa_lookup_impl(sa_handle_t *hdl, sa_bulk_attr_t *bulk, int count)
 {
 	ASSERT(hdl);
@@ -1517,7 +1516,7 @@ sa_lookup_uio(sa_handle_t *hdl, sa_attr_type_t attr, uio_t *uio)
 	mutex_enter(&hdl->sa_lock);
 	if ((error = sa_attr_op(hdl, &bulk, 1, SA_LOOKUP, NULL)) == 0) {
 		error = uiomove((void *)bulk.sa_addr, MIN(bulk.sa_size,
-		    uio->uio_resid), UIO_READ, uio);
+		    uio_resid(uio)), UIO_READ, uio);
 	}
 	mutex_exit(&hdl->sa_lock);
 	return (error);
@@ -1586,7 +1585,7 @@ sa_add_projid(sa_handle_t *hdl, dmu_tx_t *tx, uint64_t projid)
 		    &ctime, 16);
 		SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_CRTIME(zfsvfs), NULL,
 		    &crtime, 16);
-		if (S_ISBLK(ZTOI(zp)->i_mode) || S_ISCHR(ZTOI(zp)->i_mode))
+		if (Z_ISBLK(ZTOTYPE(zp)) || Z_ISCHR(ZTOTYPE(zp)))
 			SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_RDEV(zfsvfs), NULL,
 			    &rdev, 8);
 	} else {
@@ -1625,7 +1624,7 @@ sa_add_projid(sa_handle_t *hdl, dmu_tx_t *tx, uint64_t projid)
 
 	zp->z_projid = projid;
 	zp->z_pflags |= ZFS_PROJID;
-	links = ZTOI(zp)->i_nlink;
+	links = ZTONLNK(zp);
 	count = 0;
 	err = 0;
 
@@ -1646,7 +1645,7 @@ sa_add_projid(sa_handle_t *hdl, dmu_tx_t *tx, uint64_t projid)
 	SA_ADD_BULK_ATTR(attrs, count, SA_ZPL_LINKS(zfsvfs), NULL, &links, 8);
 	SA_ADD_BULK_ATTR(attrs, count, SA_ZPL_PROJID(zfsvfs), NULL, &projid, 8);
 
-	if (S_ISBLK(ZTOI(zp)->i_mode) || S_ISCHR(ZTOI(zp)->i_mode))
+	if (Z_ISBLK(ZTOTYPE(zp)) || Z_ISCHR(ZTOTYPE(zp)))
 		SA_ADD_BULK_ATTR(attrs, count, SA_ZPL_RDEV(zfsvfs), NULL,
 		    &rdev, 8);
 

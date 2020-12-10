@@ -21,7 +21,7 @@
 
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2014 by Delphix. All rights reserved.
+ * Copyright (c) 2012, 2020 by Delphix. All rights reserved.
  * Copyright (c) 2016 Gvozden Nešković. All rights reserved.
  */
 
@@ -982,7 +982,7 @@ vdev_raidz_reconstruct_pq(raidz_map_t *rm, int *tgts, int ntgts)
 /* BEGIN CSTYLED */
 /*
  * In the general case of reconstruction, we must solve the system of linear
- * equations defined by the coeffecients used to generate parity as well as
+ * equations defined by the coefficients used to generate parity as well as
  * the contents of the data and parity disks. This can be expressed with
  * vectors for the original data (D) and the actual data (d) and parity (p)
  * and a matrix composed of the identity matrix (I) and a dispersal matrix (V):
@@ -996,7 +996,7 @@ vdev_raidz_reconstruct_pq(raidz_map_t *rm, int *tgts, int ntgts)
  *            ~~   ~~                     ~~     ~~
  *
  * I is simply a square identity matrix of size n, and V is a vandermonde
- * matrix defined by the coeffecients we chose for the various parity columns
+ * matrix defined by the coefficients we chose for the various parity columns
  * (1, 2, 4). Note that these values were chosen both for simplicity, speedy
  * computation as well as linear separability.
  *
@@ -1554,7 +1554,7 @@ vdev_raidz_reconstruct(raidz_map_t *rm, const int *t, int nt)
 
 static int
 vdev_raidz_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
-    uint64_t *ashift)
+    uint64_t *logical_ashift, uint64_t *physical_ashift)
 {
 	vdev_t *cvd;
 	uint64_t nparity = vd->vdev_nparity;
@@ -1583,7 +1583,9 @@ vdev_raidz_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
 
 		*asize = MIN(*asize - 1, cvd->vdev_asize - 1) + 1;
 		*max_asize = MIN(*max_asize - 1, cvd->vdev_max_asize - 1) + 1;
-		*ashift = MAX(*ashift, cvd->vdev_ashift);
+		*logical_ashift = MAX(*logical_ashift, cvd->vdev_ashift);
+		*physical_ashift = MAX(*physical_ashift,
+		    cvd->vdev_physical_ashift);
 	}
 
 	*asize *= vd->vdev_children;
@@ -1638,7 +1640,7 @@ vdev_raidz_io_verify(zio_t *zio, raidz_map_t *rm, int col)
 	vdev_t *vd = zio->io_vd;
 	vdev_t *tvd = vd->vdev_top;
 
-	range_seg_t logical_rs, physical_rs;
+	range_seg64_t logical_rs, physical_rs;
 	logical_rs.rs_start = zio->io_offset;
 	logical_rs.rs_end = logical_rs.rs_start +
 	    vdev_raidz_asize(zio->io_vd, zio->io_size);
@@ -1788,16 +1790,17 @@ raidz_checksum_error(zio_t *zio, raidz_col_t *rc, abd_t *bad_data)
 		zio_bad_cksum_t zbc;
 		raidz_map_t *rm = zio->io_vsd;
 
-		mutex_enter(&vd->vdev_stat_lock);
-		vd->vdev_stat.vs_checksum_errors++;
-		mutex_exit(&vd->vdev_stat_lock);
-
 		zbc.zbc_has_cksum = 0;
 		zbc.zbc_injected = rm->rm_ecksuminjected;
 
-		zfs_ereport_post_checksum(zio->io_spa, vd,
+		int ret = zfs_ereport_post_checksum(zio->io_spa, vd,
 		    &zio->io_bookmark, zio, rc->rc_offset, rc->rc_size,
 		    rc->rc_abd, bad_data, &zbc);
+		if (ret != EALREADY) {
+			mutex_enter(&vd->vdev_stat_lock);
+			vd->vdev_stat.vs_checksum_errors++;
+			mutex_exit(&vd->vdev_stat_lock);
+		}
 	}
 }
 
@@ -2277,21 +2280,21 @@ vdev_raidz_io_done(zio_t *zio)
 				vdev_t *cvd;
 				rc = &rm->rm_col[c];
 				cvd = vd->vdev_child[rc->rc_devidx];
-				if (rc->rc_error == 0) {
-					zio_bad_cksum_t zbc;
-					zbc.zbc_has_cksum = 0;
-					zbc.zbc_injected =
-					    rm->rm_ecksuminjected;
+				if (rc->rc_error != 0)
+					continue;
 
+				zio_bad_cksum_t zbc;
+				zbc.zbc_has_cksum = 0;
+				zbc.zbc_injected = rm->rm_ecksuminjected;
+
+				int ret = zfs_ereport_start_checksum(
+				    zio->io_spa, cvd, &zio->io_bookmark, zio,
+				    rc->rc_offset, rc->rc_size,
+				    (void *)(uintptr_t)c, &zbc);
+				if (ret != EALREADY) {
 					mutex_enter(&cvd->vdev_stat_lock);
 					cvd->vdev_stat.vs_checksum_errors++;
 					mutex_exit(&cvd->vdev_stat_lock);
-
-					zfs_ereport_start_checksum(
-					    zio->io_spa, cvd,
-					    &zio->io_bookmark, zio,
-					    rc->rc_offset, rc->rc_size,
-					    (void *)(uintptr_t)c, &zbc);
 				}
 			}
 		}
@@ -2372,7 +2375,7 @@ vdev_raidz_need_resilver(vdev_t *vd, uint64_t offset, size_t psize)
 }
 
 static void
-vdev_raidz_xlate(vdev_t *cvd, const range_seg_t *in, range_seg_t *res)
+vdev_raidz_xlate(vdev_t *cvd, const range_seg64_t *in, range_seg64_t *res)
 {
 	vdev_t *raidvd = cvd->vdev_parent;
 	ASSERT(raidvd->vdev_ops == &vdev_raidz_ops);

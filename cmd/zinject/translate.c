@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012 by Delphix. All rights reserved.
+ * Copyright (c) 2012, 2020 by Delphix. All rights reserved.
  */
 
 #include <libzfs.h>
@@ -85,8 +85,6 @@ parse_pathname(const char *inpath, char *dataset, char *relpath,
     struct stat64 *statbuf)
 {
 	struct extmnttab mp;
-	FILE *fp;
-	int match;
 	const char *rel;
 	char fullpath[MAXPATHLEN];
 
@@ -99,35 +97,7 @@ parse_pathname(const char *inpath, char *dataset, char *relpath,
 		return (-1);
 	}
 
-	if (strlen(fullpath) >= MAXPATHLEN) {
-		(void) fprintf(stderr, "invalid object; pathname too long\n");
-		return (-1);
-	}
-
-	if (stat64(fullpath, statbuf) != 0) {
-		(void) fprintf(stderr, "cannot open '%s': %s\n",
-		    fullpath, strerror(errno));
-		return (-1);
-	}
-
-#ifdef HAVE_SETMNTENT
-	if ((fp = setmntent(MNTTAB, "r")) == NULL) {
-#else
-	if ((fp = fopen(MNTTAB, "r")) == NULL) {
-#endif
-		(void) fprintf(stderr, "cannot open %s\n", MNTTAB);
-		return (-1);
-	}
-
-	match = 0;
-	while (getextmntent(fp, &mp, sizeof (mp)) == 0) {
-		if (makedev(mp.mnt_major, mp.mnt_minor) == statbuf->st_dev) {
-			match = 1;
-			break;
-		}
-	}
-
-	if (!match) {
+	if (getextmntent(fullpath, &mp, statbuf) != 0) {
 		(void) fprintf(stderr, "cannot find mountpoint for '%s'\n",
 		    fullpath);
 		return (-1);
@@ -418,7 +388,7 @@ translate_device(const char *pool, const char *device, err_type_t label_type,
 		record->zi_end = record->zi_start + VDEV_PAD_SIZE - 1;
 		break;
 	case TYPE_LABEL_PAD2:
-		record->zi_start = offsetof(vdev_label_t, vl_pad2);
+		record->zi_start = offsetof(vdev_label_t, vl_be);
 		record->zi_end = record->zi_start + VDEV_PAD_SIZE - 1;
 		break;
 	}

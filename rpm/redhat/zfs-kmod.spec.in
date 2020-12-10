@@ -1,9 +1,6 @@
 %bcond_with     debug
 %bcond_with     debuginfo
 
-# See comment in zfs.spec.in.
-%global __brp_mangle_shebangs_exclude_from arc_summary.py|arcstat.py|dbufstat.py|test-runner.py|zts-report.py
-
 Name:           @PACKAGE@-kmod
 Version:        @VERSION@
 Release:        @RELEASE@%{?dist}
@@ -11,7 +8,7 @@ Release:        @RELEASE@%{?dist}
 Summary:        Kernel module(s)
 Group:          System Environment/Kernel
 License:        @ZFS_META_LICENSE@
-URL:            http://zfsonlinux.org/
+URL:            https://github.com/openzfs/zfs
 BuildRequires:  %kernel_module_package_buildreqs
 Source0:        @PACKAGE@-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)

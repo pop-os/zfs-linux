@@ -34,10 +34,6 @@
 #include <time.h>
 #include <stdint.h>
 
-typedef unsigned char	uchar_t;
-typedef long long	longlong_t;
-typedef longlong_t	offset_t;
-
 static unsigned char bigbuffer[BIGBUFFERSIZE];
 
 /*
@@ -50,7 +46,7 @@ static void usage(char *);
 /*
  * psudo-randomize the buffer
  */
-void randomize_buffer(int block_size) {
+static void randomize_buffer(int block_size) {
 	int i;
 	char rnd = rand() & 0xff;
 	for (i = 0; i < block_size; i++)

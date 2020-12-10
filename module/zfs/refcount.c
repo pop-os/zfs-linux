@@ -24,13 +24,14 @@
  */
 
 #include <sys/zfs_context.h>
-#include <sys/refcount.h>
+#include <sys/zfs_refcount.h>
 
-#ifdef _KERNEL
-int reference_tracking_enable = FALSE; /* runs out of memory too easily */
-#else
-int reference_tracking_enable = TRUE;
-#endif
+/*
+ * Reference count tracking is disabled by default.  It's memory requirements
+ * are reasonable, however as implemented it consumes a significant amount of
+ * cpu time.  Until its performance is improved it should be manually enabled.
+ */
+int reference_tracking_enable = FALSE;
 int reference_history = 3; /* tunable */
 
 #ifdef	ZFS_DEBUG
@@ -86,7 +87,7 @@ zfs_refcount_destroy_many(zfs_refcount_t *rc, uint64_t number)
 {
 	reference_t *ref;
 
-	ASSERT(rc->rc_count == number);
+	ASSERT3U(rc->rc_count, ==, number);
 	while ((ref = list_head(&rc->rc_list))) {
 		list_remove(&rc->rc_list, ref);
 		kmem_cache_free(reference_cache, ref);
@@ -132,7 +133,7 @@ zfs_refcount_add_many(zfs_refcount_t *rc, uint64_t number, const void *holder)
 		ref->ref_number = number;
 	}
 	mutex_enter(&rc->rc_mtx);
-	ASSERT(rc->rc_count >= 0);
+	ASSERT3U(rc->rc_count, >=, 0);
 	if (rc->rc_tracked)
 		list_insert_head(&rc->rc_list, ref);
 	rc->rc_count += number;
@@ -156,7 +157,7 @@ zfs_refcount_remove_many(zfs_refcount_t *rc, uint64_t number,
 	int64_t count;
 
 	mutex_enter(&rc->rc_mtx);
-	ASSERT(rc->rc_count >= number);
+	ASSERT3U(rc->rc_count, >=, number);
 
 	if (!rc->rc_tracked) {
 		rc->rc_count -= number;

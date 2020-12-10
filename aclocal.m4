@@ -1,6 +1,6 @@
-# generated automatically by aclocal 1.16.1 -*- Autoconf -*-
+# generated automatically by aclocal 1.15.1 -*- Autoconf -*-
 
-# Copyright (C) 1996-2018 Free Software Foundation, Inc.
+# Copyright (C) 1996-2017 Free Software Foundation, Inc.
 
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -20,7 +20,7 @@ You have another version of autoconf.  It may work, but is not guaranteed to.
 If you have problems, you may need to regenerate the build system entirely.
 To do so, use the procedure documented by the package, typically 'autoreconf'.])])
 
-# Copyright (C) 2002-2018 Free Software Foundation, Inc.
+# Copyright (C) 2002-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -32,10 +32,10 @@ To do so, use the procedure documented by the package, typically 'autoreconf'.])
 # generated from the m4 files accompanying Automake X.Y.
 # (This private macro should not be called outside this file.)
 AC_DEFUN([AM_AUTOMAKE_VERSION],
-[am__api_version='1.16'
+[am__api_version='1.15'
 dnl Some users find AM_AUTOMAKE_VERSION and mistake it for a way to
 dnl require some minimum version.  Point them to the right macro.
-m4_if([$1], [1.16.1], [],
+m4_if([$1], [1.15.1], [],
       [AC_FATAL([Do not call $0, use AM_INIT_AUTOMAKE([$1]).])])dnl
 ])
 
@@ -51,14 +51,14 @@ m4_define([_AM_AUTOCONF_VERSION], [])
 # Call AM_AUTOMAKE_VERSION and AM_AUTOMAKE_VERSION so they can be traced.
 # This function is AC_REQUIREd by AM_INIT_AUTOMAKE.
 AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
-[AM_AUTOMAKE_VERSION([1.16.1])dnl
+[AM_AUTOMAKE_VERSION([1.15.1])dnl
 m4_ifndef([AC_AUTOCONF_VERSION],
   [m4_copy([m4_PACKAGE_VERSION], [AC_AUTOCONF_VERSION])])dnl
 _AM_AUTOCONF_VERSION(m4_defn([AC_AUTOCONF_VERSION]))])
 
 # Figure out how to run the assembler.                      -*- Autoconf -*-
 
-# Copyright (C) 2001-2018 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -78,7 +78,7 @@ _AM_IF_OPTION([no-dependencies],, [_AM_DEPENDENCIES([CCAS])])dnl
 
 # AM_AUX_DIR_EXPAND                                         -*- Autoconf -*-
 
-# Copyright (C) 2001-2018 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -128,9 +128,46 @@ AC_DEFUN([AM_AUX_DIR_EXPAND],
 am_aux_dir=`cd "$ac_aux_dir" && pwd`
 ])
 
+# AM_COND_IF                                            -*- Autoconf -*-
+
+# Copyright (C) 2008-2017 Free Software Foundation, Inc.
+#
+# This file is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# _AM_COND_IF
+# _AM_COND_ELSE
+# _AM_COND_ENDIF
+# --------------
+# These macros are only used for tracing.
+m4_define([_AM_COND_IF])
+m4_define([_AM_COND_ELSE])
+m4_define([_AM_COND_ENDIF])
+
+# AM_COND_IF(COND, [IF-TRUE], [IF-FALSE])
+# ---------------------------------------
+# If the shell condition COND is true, execute IF-TRUE, otherwise execute
+# IF-FALSE.  Allow automake to learn about conditional instantiating macros
+# (the AC_CONFIG_FOOS).
+AC_DEFUN([AM_COND_IF],
+[m4_ifndef([_AM_COND_VALUE_$1],
+	   [m4_fatal([$0: no such condition "$1"])])dnl
+_AM_COND_IF([$1])dnl
+if test -z "$$1_TRUE"; then :
+  m4_n([$2])[]dnl
+m4_ifval([$3],
+[_AM_COND_ELSE([$1])dnl
+else
+  $3
+])dnl
+_AM_COND_ENDIF([$1])dnl
+fi[]dnl
+])
+
 # AM_CONDITIONAL                                            -*- Autoconf -*-
 
-# Copyright (C) 1997-2018 Free Software Foundation, Inc.
+# Copyright (C) 1997-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -161,7 +198,7 @@ AC_CONFIG_COMMANDS_PRE(
 Usually this means the macro was only invoked conditionally.]])
 fi])])
 
-# Copyright (C) 1999-2018 Free Software Foundation, Inc.
+# Copyright (C) 1999-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -352,11 +389,12 @@ _AM_SUBST_NOTMAKE([am__nodep])dnl
 
 # Generate code to set up dependency tracking.              -*- Autoconf -*-
 
-# Copyright (C) 1999-2018 Free Software Foundation, Inc.
+# Copyright (C) 1999-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
+
 
 # _AM_OUTPUT_DEPENDENCY_COMMANDS
 # ------------------------------
@@ -365,41 +403,49 @@ AC_DEFUN([_AM_OUTPUT_DEPENDENCY_COMMANDS],
   # Older Autoconf quotes --file arguments for eval, but not when files
   # are listed without --file.  Let's play safe and only enable the eval
   # if we detect the quoting.
-  # TODO: see whether this extra hack can be removed once we start
-  # requiring Autoconf 2.70 or later.
-  AS_CASE([$CONFIG_FILES],
-          [*\'*], [eval set x "$CONFIG_FILES"],
-          [*], [set x $CONFIG_FILES])
+  case $CONFIG_FILES in
+  *\'*) eval set x "$CONFIG_FILES" ;;
+  *)   set x $CONFIG_FILES ;;
+  esac
   shift
-  # Used to flag and report bootstrapping failures.
-  am_rc=0
-  for am_mf
+  for mf
   do
     # Strip MF so we end up with the name of the file.
-    am_mf=`AS_ECHO(["$am_mf"]) | sed -e 's/:.*$//'`
-    # Check whether this is an Automake generated Makefile which includes
-    # dependency-tracking related rules and includes.
-    # Grep'ing the whole file directly is not great: AIX grep has a line
+    mf=`echo "$mf" | sed -e 's/:.*$//'`
+    # Check whether this is an Automake generated Makefile or not.
+    # We used to match only the files named 'Makefile.in', but
+    # some people rename them; so instead we look at the file content.
+    # Grep'ing the first line is not enough: some people post-process
+    # each Makefile.in and add a new line on top of each file to say so.
+    # Grep'ing the whole file is not good either: AIX grep has a line
     # limit of 2048, but all sed's we know have understand at least 4000.
-    sed -n 's,^am--depfiles:.*,X,p' "$am_mf" | grep X >/dev/null 2>&1 \
-      || continue
-    am_dirpart=`AS_DIRNAME(["$am_mf"])`
-    am_filepart=`AS_BASENAME(["$am_mf"])`
-    AM_RUN_LOG([cd "$am_dirpart" \
-      && sed -e '/# am--include-marker/d' "$am_filepart" \
-        | $MAKE -f - am--depfiles]) || am_rc=$?
+    if sed -n 's,^#.*generated by automake.*,X,p' "$mf" | grep X >/dev/null 2>&1; then
+      dirpart=`AS_DIRNAME("$mf")`
+    else
+      continue
+    fi
+    # Extract the definition of DEPDIR, am__include, and am__quote
+    # from the Makefile without running 'make'.
+    DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
+    test -z "$DEPDIR" && continue
+    am__include=`sed -n 's/^am__include = //p' < "$mf"`
+    test -z "$am__include" && continue
+    am__quote=`sed -n 's/^am__quote = //p' < "$mf"`
+    # Find all dependency output files, they are included files with
+    # $(DEPDIR) in their names.  We invoke sed twice because it is the
+    # simplest approach to changing $(DEPDIR) to its actual value in the
+    # expansion.
+    for file in `sed -n "
+      s/^$am__include $am__quote\(.*(DEPDIR).*\)$am__quote"'$/\1/p' <"$mf" | \
+	 sed -e 's/\$(DEPDIR)/'"$DEPDIR"'/g'`; do
+      # Make sure the directory exists.
+      test -f "$dirpart/$file" && continue
+      fdir=`AS_DIRNAME(["$file"])`
+      AS_MKDIR_P([$dirpart/$fdir])
+      # echo "creating $dirpart/$file"
+      echo '# dummy' > "$dirpart/$file"
+    done
   done
-  if test $am_rc -ne 0; then
-    AC_MSG_FAILURE([Something went wrong bootstrapping makefile fragments
-    for automatic dependency tracking.  Try re-running configure with the
-    '--disable-dependency-tracking' option to at least be able to build
-    the package (albeit without support for automatic dependency tracking).])
-  fi
-  AS_UNSET([am_dirpart])
-  AS_UNSET([am_filepart])
-  AS_UNSET([am_mf])
-  AS_UNSET([am_rc])
-  rm -f conftest-deps.mk
 }
 ])# _AM_OUTPUT_DEPENDENCY_COMMANDS
 
@@ -408,17 +454,18 @@ AC_DEFUN([_AM_OUTPUT_DEPENDENCY_COMMANDS],
 # -----------------------------
 # This macro should only be invoked once -- use via AC_REQUIRE.
 #
-# This code is only required when automatic dependency tracking is enabled.
-# This creates each '.Po' and '.Plo' makefile fragment that we'll need in
-# order to bootstrap the dependency handling code.
+# This code is only required when automatic dependency tracking
+# is enabled.  FIXME.  This creates each '.P' file that we will
+# need in order to bootstrap the dependency handling code.
 AC_DEFUN([AM_OUTPUT_DEPENDENCY_COMMANDS],
 [AC_CONFIG_COMMANDS([depfiles],
      [test x"$AMDEP_TRUE" != x"" || _AM_OUTPUT_DEPENDENCY_COMMANDS],
-     [AMDEP_TRUE="$AMDEP_TRUE" MAKE="${MAKE-make}"])])
+     [AMDEP_TRUE="$AMDEP_TRUE" ac_aux_dir="$ac_aux_dir"])
+])
 
 # Do all the work for Automake.                             -*- Autoconf -*-
 
-# Copyright (C) 1996-2018 Free Software Foundation, Inc.
+# Copyright (C) 1996-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -505,8 +552,8 @@ AC_REQUIRE([AM_PROG_INSTALL_STRIP])dnl
 AC_REQUIRE([AC_PROG_MKDIR_P])dnl
 # For better backward compatibility.  To be removed once Automake 1.9.x
 # dies out for good.  For more background, see:
-# <https://lists.gnu.org/archive/html/automake/2012-07/msg00001.html>
-# <https://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
+# <http://lists.gnu.org/archive/html/automake/2012-07/msg00001.html>
+# <http://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
 AC_SUBST([mkdir_p], ['$(MKDIR_P)'])
 # We need awk for the "check" target (and possibly the TAP driver).  The
 # system "awk" is bad on some platforms.
@@ -573,7 +620,7 @@ END
 Aborting the configuration process, to ensure you take notice of the issue.
 
 You can download and install GNU coreutils to get an 'rm' implementation
-that behaves properly: <https://www.gnu.org/software/coreutils/>.
+that behaves properly: <http://www.gnu.org/software/coreutils/>.
 
 If you want to complete the configuration process using your problematic
 'rm' anyway, export the environment variable ACCEPT_INFERIOR_RM_PROGRAM
@@ -615,7 +662,7 @@ for _am_header in $config_headers :; do
 done
 echo "timestamp for $_am_arg" >`AS_DIRNAME(["$_am_arg"])`/stamp-h[]$_am_stamp_count])
 
-# Copyright (C) 2001-2018 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -636,7 +683,7 @@ if test x"${install_sh+set}" != xset; then
 fi
 AC_SUBST([install_sh])])
 
-# Copyright (C) 2003-2018 Free Software Foundation, Inc.
+# Copyright (C) 2003-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -658,7 +705,7 @@ AC_SUBST([am__leading_dot])])
 # Add --enable-maintainer-mode option to configure.         -*- Autoconf -*-
 # From Jim Meyering
 
-# Copyright (C) 1996-2018 Free Software Foundation, Inc.
+# Copyright (C) 1996-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -693,7 +740,7 @@ AC_MSG_CHECKING([whether to enable maintainer-specific portions of Makefiles])
 
 # Check to see how 'make' treats includes.	            -*- Autoconf -*-
 
-# Copyright (C) 2001-2018 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -701,42 +748,49 @@ AC_MSG_CHECKING([whether to enable maintainer-specific portions of Makefiles])
 
 # AM_MAKE_INCLUDE()
 # -----------------
-# Check whether make has an 'include' directive that can support all
-# the idioms we need for our automatic dependency tracking code.
+# Check to see how make treats includes.
 AC_DEFUN([AM_MAKE_INCLUDE],
-[AC_MSG_CHECKING([whether ${MAKE-make} supports the include directive])
-cat > confinc.mk << 'END'
+[am_make=${MAKE-make}
+cat > confinc << 'END'
 am__doit:
-	@echo this is the am__doit target >confinc.out
+	@echo this is the am__doit target
 .PHONY: am__doit
 END
+# If we don't find an include directive, just comment out the code.
+AC_MSG_CHECKING([for style of include used by $am_make])
 am__include="#"
 am__quote=
-# BSD make does it like this.
-echo '.include "confinc.mk" # ignored' > confmf.BSD
-# Other make implementations (GNU, Solaris 10, AIX) do it like this.
-echo 'include confinc.mk # ignored' > confmf.GNU
-_am_result=no
-for s in GNU BSD; do
-  AM_RUN_LOG([${MAKE-make} -f confmf.$s && cat confinc.out])
-  AS_CASE([$?:`cat confinc.out 2>/dev/null`],
-      ['0:this is the am__doit target'],
-      [AS_CASE([$s],
-          [BSD], [am__include='.include' am__quote='"'],
-          [am__include='include' am__quote=''])])
-  if test "$am__include" != "#"; then
-    _am_result="yes ($s style)"
-    break
-  fi
-done
-rm -f confinc.* confmf.*
-AC_MSG_RESULT([${_am_result}])
-AC_SUBST([am__include])])
-AC_SUBST([am__quote])])
+_am_result=none
+# First try GNU make style include.
+echo "include confinc" > confmf
+# Ignore all kinds of additional output from 'make'.
+case `$am_make -s -f confmf 2> /dev/null` in #(
+*the\ am__doit\ target*)
+  am__include=include
+  am__quote=
+  _am_result=GNU
+  ;;
+esac
+# Now try BSD make style include.
+if test "$am__include" = "#"; then
+   echo '.include "confinc"' > confmf
+   case `$am_make -s -f confmf 2> /dev/null` in #(
+   *the\ am__doit\ target*)
+     am__include=.include
+     am__quote="\""
+     _am_result=BSD
+     ;;
+   esac
+fi
+AC_SUBST([am__include])
+AC_SUBST([am__quote])
+AC_MSG_RESULT([$_am_result])
+rm -f confinc confmf
+])
 
 # Fake the existence of programs that GNU maintainers use.  -*- Autoconf -*-
 
-# Copyright (C) 1997-2018 Free Software Foundation, Inc.
+# Copyright (C) 1997-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -775,7 +829,7 @@ fi
 
 # Helper functions for option handling.                     -*- Autoconf -*-
 
-# Copyright (C) 2001-2018 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -804,7 +858,7 @@ AC_DEFUN([_AM_SET_OPTIONS],
 AC_DEFUN([_AM_IF_OPTION],
 [m4_ifset(_AM_MANGLE_OPTION([$1]), [$2], [$3])])
 
-# Copyright (C) 1999-2018 Free Software Foundation, Inc.
+# Copyright (C) 1999-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -851,7 +905,7 @@ AC_LANG_POP([C])])
 # For backward compatibility.
 AC_DEFUN_ONCE([AM_PROG_CC_C_O], [AC_REQUIRE([AC_PROG_CC])])
 
-# Copyright (C) 1999-2018 Free Software Foundation, Inc.
+# Copyright (C) 1999-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -884,12 +938,10 @@ AC_DEFUN([AM_PATH_PYTHON],
  [
   dnl Find a Python interpreter.  Python versions prior to 2.0 are not
   dnl supported. (2.0 was released on October 16, 2000).
+  dnl FIXME: Remove the need to hard-code Python versions here.
   m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
-[python python2 python3 dnl
- python3.9 python3.8 python3.7 python3.6 python3.5 python3.4 python3.3 dnl
- python3.2 python3.1 python3.0 dnl
- python2.7 python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 dnl
- python2.0])
+[python python2 python3 python3.8 python3.7 python3.6 python3.5 python3.4 python3.3 python3.2 python3.1 python3.0 python2.7 dnl
+ python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0])
 
   AC_ARG_VAR([PYTHON], [the Python interpreter])
 
@@ -1089,7 +1141,7 @@ for i in list(range(0, 4)): minverhex = (minverhex << 8) + minver[[i]]
 sys.exit(sys.hexversion < minverhex)"
   AS_IF([AM_RUN_LOG([$1 -c "$prog"])], [$3], [$4])])
 
-# Copyright (C) 2001-2018 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1108,7 +1160,7 @@ AC_DEFUN([AM_RUN_LOG],
 
 # Check to make sure that the build environment is sane.    -*- Autoconf -*-
 
-# Copyright (C) 1996-2018 Free Software Foundation, Inc.
+# Copyright (C) 1996-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1189,7 +1241,7 @@ AC_CONFIG_COMMANDS_PRE(
 rm -f conftest.file
 ])
 
-# Copyright (C) 2009-2018 Free Software Foundation, Inc.
+# Copyright (C) 2009-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1249,7 +1301,7 @@ AC_SUBST([AM_BACKSLASH])dnl
 _AM_SUBST_NOTMAKE([AM_BACKSLASH])dnl
 ])
 
-# Copyright (C) 2001-2018 Free Software Foundation, Inc.
+# Copyright (C) 2001-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1277,7 +1329,7 @@ fi
 INSTALL_STRIP_PROGRAM="\$(install_sh) -c -s"
 AC_SUBST([INSTALL_STRIP_PROGRAM])])
 
-# Copyright (C) 2006-2018 Free Software Foundation, Inc.
+# Copyright (C) 2006-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1296,7 +1348,7 @@ AC_DEFUN([AM_SUBST_NOTMAKE], [_AM_SUBST_NOTMAKE($@)])
 
 # Check how to create a tarball.                            -*- Autoconf -*-
 
-# Copyright (C) 2004-2018 Free Software Foundation, Inc.
+# Copyright (C) 2004-2017 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1431,6 +1483,8 @@ m4_include([config/always-arch.m4])
 m4_include([config/always-compiler-options.m4])
 m4_include([config/always-python.m4])
 m4_include([config/always-pyzfs.m4])
+m4_include([config/always-sed.m4])
+m4_include([config/always-system.m4])
 m4_include([config/ax_code_coverage.m4])
 m4_include([config/ax_python_devel.m4])
 m4_include([config/ax_restore_flags.m4])
@@ -1444,34 +1498,15 @@ m4_include([config/kernel-access-ok-type.m4])
 m4_include([config/kernel-acl.m4])
 m4_include([config/kernel-aio-fsync.m4])
 m4_include([config/kernel-automount.m4])
-m4_include([config/kernel-bdev-logical-size.m4])
-m4_include([config/kernel-bdev-physical-size.m4])
 m4_include([config/kernel-bdi.m4])
-m4_include([config/kernel-bio-bvec-iter.m4])
-m4_include([config/kernel-bio-end-io-t-args.m4])
-m4_include([config/kernel-bio-failfast.m4])
-m4_include([config/kernel-bio-op.m4])
-m4_include([config/kernel-bio-rw-barrier.m4])
-m4_include([config/kernel-bio-rw-discard.m4])
-m4_include([config/kernel-bio-tryget.m4])
-m4_include([config/kernel-bio_set_dev.m4])
-m4_include([config/kernel-blk-queue-bdi.m4])
-m4_include([config/kernel-blk-queue-discard.m4])
-m4_include([config/kernel-blk-queue-flags.m4])
-m4_include([config/kernel-blk-queue-flush.m4])
-m4_include([config/kernel-blk-queue-max-hw-sectors.m4])
-m4_include([config/kernel-blk-queue-max-segments.m4])
-m4_include([config/kernel-blk-queue-unplug.m4])
-m4_include([config/kernel-blkdev-get-by-path.m4])
-m4_include([config/kernel-blkdev-reread-part.m4])
+m4_include([config/kernel-bio.m4])
+m4_include([config/kernel-blk-queue.m4])
+m4_include([config/kernel-blkdev.m4])
 m4_include([config/kernel-block-device-operations.m4])
 m4_include([config/kernel-clear-inode.m4])
 m4_include([config/kernel-commit-metadata.m4])
 m4_include([config/kernel-config-defined.m4])
-m4_include([config/kernel-create-nameidata.m4])
-m4_include([config/kernel-ctl-table-name.m4])
 m4_include([config/kernel-current-time.m4])
-m4_include([config/kernel-current_bio_tail.m4])
 m4_include([config/kernel-declare-event-class.m4])
 m4_include([config/kernel-dentry-operations.m4])
 m4_include([config/kernel-dirty-inode.m4])
@@ -1494,34 +1529,34 @@ m4_include([config/kernel-get-link.m4])
 m4_include([config/kernel-global_page_state.m4])
 m4_include([config/kernel-group-info.m4])
 m4_include([config/kernel-in-compat-syscall.m4])
+m4_include([config/kernel-inode-create.m4])
 m4_include([config/kernel-inode-getattr.m4])
 m4_include([config/kernel-inode-lock.m4])
+m4_include([config/kernel-inode-lookup.m4])
 m4_include([config/kernel-inode-set-flags.m4])
 m4_include([config/kernel-inode-set-iversion.m4])
 m4_include([config/kernel-inode-times.m4])
 m4_include([config/kernel-insert-inode-locked.m4])
-m4_include([config/kernel-invalidate-bdev-args.m4])
 m4_include([config/kernel-is_owner_or_cap.m4])
 m4_include([config/kernel-kmap-atomic-args.m4])
 m4_include([config/kernel-kmem-cache.m4])
-m4_include([config/kernel-kmem-vmalloc.m4])
+m4_include([config/kernel-kmem.m4])
 m4_include([config/kernel-kstrtoul.m4])
 m4_include([config/kernel-ktime.m4])
 m4_include([config/kernel-kuid-helpers.m4])
 m4_include([config/kernel-kuidgid.m4])
-m4_include([config/kernel-lookup-bdev.m4])
-m4_include([config/kernel-lookup-nameidata.m4])
 m4_include([config/kernel-lseek-execute.m4])
 m4_include([config/kernel-make-request-fn.m4])
 m4_include([config/kernel-misc-minor.m4])
 m4_include([config/kernel-mkdir-umode-t.m4])
 m4_include([config/kernel-mod-param.m4])
 m4_include([config/kernel-objtool.m4])
-m4_include([config/kernel-open-bdev-exclusive.m4])
 m4_include([config/kernel-pde-data.m4])
+m4_include([config/kernel-percpu.m4])
 m4_include([config/kernel-proc-operations.m4])
 m4_include([config/kernel-put-link.m4])
 m4_include([config/kernel-rename.m4])
+m4_include([config/kernel-revalidate-disk-size.m4])
 m4_include([config/kernel-rw.m4])
 m4_include([config/kernel-rwsem.m4])
 m4_include([config/kernel-sched.m4])
@@ -1531,13 +1566,11 @@ m4_include([config/kernel-setattr-prepare.m4])
 m4_include([config/kernel-sget-args.m4])
 m4_include([config/kernel-show-options.m4])
 m4_include([config/kernel-shrink.m4])
-m4_include([config/kernel-submit_bio.m4])
 m4_include([config/kernel-super-userns.m4])
 m4_include([config/kernel-timer.m4])
 m4_include([config/kernel-tmpfile.m4])
 m4_include([config/kernel-totalhigh_pages.m4])
 m4_include([config/kernel-totalram-pages-func.m4])
-m4_include([config/kernel-truncate-range.m4])
 m4_include([config/kernel-truncate-setsize.m4])
 m4_include([config/kernel-userns-capabilities.m4])
 m4_include([config/kernel-usleep_range.m4])
@@ -1564,16 +1597,18 @@ m4_include([config/pkg.m4])
 m4_include([config/po.m4])
 m4_include([config/progtest.m4])
 m4_include([config/toolchain-simd.m4])
+m4_include([config/user-clock_gettime.m4])
 m4_include([config/user-dracut.m4])
 m4_include([config/user-gettext.m4])
 m4_include([config/user-libaio.m4])
 m4_include([config/user-libblkid.m4])
+m4_include([config/user-libcrypto.m4])
 m4_include([config/user-libexec.m4])
-m4_include([config/user-libssl.m4])
 m4_include([config/user-libtirpc.m4])
 m4_include([config/user-libudev.m4])
 m4_include([config/user-libuuid.m4])
 m4_include([config/user-makedev.m4])
+m4_include([config/user-pam.m4])
 m4_include([config/user-runstatedir.m4])
 m4_include([config/user-systemd.m4])
 m4_include([config/user-sysvinit.m4])

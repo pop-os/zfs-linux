@@ -16,6 +16,7 @@
 /*
  * Copyright (c) 2014, 2017 by Delphix. All rights reserved.
  * Copyright (c) 2019, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
+ * Copyright (c) 2014, 2020 by Delphix. All rights reserved.
  */
 
 #include <sys/zfs_context.h>
@@ -26,7 +27,6 @@
 #include <sys/zio.h>
 #include <sys/zio_checksum.h>
 #include <sys/metaslab.h>
-#include <sys/refcount.h>
 #include <sys/dmu.h>
 #include <sys/vdev_indirect_mapping.h>
 #include <sys/dmu_tx.h>
@@ -420,7 +420,7 @@ vdev_indirect_should_condense(vdev_t *vd)
 	 * If nothing new has been marked obsolete, there is no
 	 * point in condensing.
 	 */
-	ASSERTV(uint64_t obsolete_sm_obj);
+	uint64_t obsolete_sm_obj __maybe_unused;
 	ASSERT0(vdev_obsolete_sm_object(vd, &obsolete_sm_obj));
 	if (vd->vdev_obsolete_sm == NULL) {
 		ASSERT0(obsolete_sm_obj);
@@ -543,7 +543,7 @@ spa_condense_indirect_commit_sync(void *arg, dmu_tx_t *tx)
 {
 	spa_condensing_indirect_t *sci = arg;
 	uint64_t txg = dmu_tx_get_txg(tx);
-	ASSERTV(spa_t *spa = dmu_tx_pool(tx)->dp_spa);
+	spa_t *spa __maybe_unused = dmu_tx_pool(tx)->dp_spa;
 
 	ASSERT(dmu_tx_is_syncing(tx));
 	ASSERT3P(sci, ==, spa->spa_condensing_indirect);
@@ -576,8 +576,7 @@ spa_condense_indirect_commit_entry(spa_t *spa,
 	 */
 	if (list_is_empty(&sci->sci_new_mapping_entries[txgoff])) {
 		dsl_sync_task_nowait(dmu_tx_pool(tx),
-		    spa_condense_indirect_commit_sync, sci,
-		    0, ZFS_SPACE_CHECK_NONE, tx);
+		    spa_condense_indirect_commit_sync, sci, tx);
 	}
 
 	vdev_indirect_mapping_entry_t *vime =
@@ -814,7 +813,7 @@ void
 vdev_indirect_sync_obsolete(vdev_t *vd, dmu_tx_t *tx)
 {
 	spa_t *spa = vd->vdev_spa;
-	ASSERTV(vdev_indirect_config_t *vic = &vd->vdev_indirect_config);
+	vdev_indirect_config_t *vic __maybe_unused = &vd->vdev_indirect_config;
 
 	ASSERT3U(vic->vic_mapping_object, !=, 0);
 	ASSERT(range_tree_space(vd->vdev_obsolete_segments) > 0);
@@ -825,7 +824,7 @@ vdev_indirect_sync_obsolete(vdev_t *vd, dmu_tx_t *tx)
 	VERIFY0(vdev_obsolete_sm_object(vd, &obsolete_sm_object));
 	if (obsolete_sm_object == 0) {
 		obsolete_sm_object = space_map_alloc(spa->spa_meta_objset,
-		    vdev_standard_sm_blksz, tx);
+		    zfs_vdev_standard_sm_blksz, tx);
 
 		ASSERT(vd->vdev_top_zap != 0);
 		VERIFY0(zap_add(vd->vdev_spa->spa_meta_objset, vd->vdev_top_zap,
@@ -883,7 +882,8 @@ void
 spa_start_indirect_condensing_thread(spa_t *spa)
 {
 	ASSERT3P(spa->spa_condense_zthr, ==, NULL);
-	spa->spa_condense_zthr = zthr_create(spa_condense_indirect_thread_check,
+	spa->spa_condense_zthr = zthr_create("z_indirect_condense",
+	    spa_condense_indirect_thread_check,
 	    spa_condense_indirect_thread, spa);
 }
 
@@ -949,11 +949,12 @@ vdev_indirect_close(vdev_t *vd)
 /* ARGSUSED */
 static int
 vdev_indirect_open(vdev_t *vd, uint64_t *psize, uint64_t *max_psize,
-    uint64_t *ashift)
+    uint64_t *logical_ashift, uint64_t *physical_ashift)
 {
 	*psize = *max_psize = vd->vdev_asize +
 	    VDEV_LABEL_START_SIZE + VDEV_LABEL_END_SIZE;
-	*ashift = vd->vdev_ashift;
+	*logical_ashift = vd->vdev_ashift;
+	*physical_ashift = vd->vdev_physical_ashift;
 	return (0);
 }
 
@@ -965,7 +966,7 @@ typedef struct remap_segment {
 	list_node_t rs_node;
 } remap_segment_t;
 
-remap_segment_t *
+static remap_segment_t *
 rs_alloc(vdev_t *vd, uint64_t offset, uint64_t asize, uint64_t split_offset)
 {
 	remap_segment_t *rs = kmem_alloc(sizeof (remap_segment_t), KM_SLEEP);
@@ -989,7 +990,7 @@ rs_alloc(vdev_t *vd, uint64_t offset, uint64_t asize, uint64_t split_offset)
  * Finally, since we are doing an allocation, it is up to the caller to
  * free the array allocated in this function.
  */
-vdev_indirect_mapping_entry_phys_t *
+static vdev_indirect_mapping_entry_phys_t *
 vdev_indirect_mapping_duplicate_adjacent_entries(vdev_t *vd, uint64_t offset,
     uint64_t asize, uint64_t *copied_entries)
 {
@@ -1297,7 +1298,7 @@ vdev_indirect_read_all(zio_t *zio)
 static void
 vdev_indirect_io_start(zio_t *zio)
 {
-	ASSERTV(spa_t *spa = zio->io_spa);
+	spa_t *spa __maybe_unused = zio->io_spa;
 	indirect_vsd_t *iv = kmem_zalloc(sizeof (*iv), KM_SLEEP);
 	list_create(&iv->iv_splits,
 	    sizeof (indirect_split_t), offsetof(indirect_split_t, is_node));
@@ -1401,7 +1402,7 @@ vdev_indirect_checksum_error(zio_t *zio,
 	zio_bad_cksum_t zbc = {{{ 0 }}};
 	abd_t *bad_abd = ic->ic_data;
 	abd_t *good_abd = is->is_good_child->ic_data;
-	zfs_ereport_post_checksum(zio->io_spa, vd, NULL, zio,
+	(void) zfs_ereport_post_checksum(zio->io_spa, vd, NULL, zio,
 	    is->is_target_offset, is->is_size, good_abd, bad_abd, &zbc);
 }
 
@@ -1472,13 +1473,14 @@ vdev_indirect_all_checksum_errors(zio_t *zio)
 
 			vdev_t *vd = ic->ic_vdev;
 
-			mutex_enter(&vd->vdev_stat_lock);
-			vd->vdev_stat.vs_checksum_errors++;
-			mutex_exit(&vd->vdev_stat_lock);
-
-			zfs_ereport_post_checksum(zio->io_spa, vd, NULL, zio,
-			    is->is_target_offset, is->is_size,
+			int ret = zfs_ereport_post_checksum(zio->io_spa, vd,
+			    NULL, zio, is->is_target_offset, is->is_size,
 			    NULL, NULL, NULL);
+			if (ret != EALREADY) {
+				mutex_enter(&vd->vdev_stat_lock);
+				vd->vdev_stat.vs_checksum_errors++;
+				mutex_exit(&vd->vdev_stat_lock);
+			}
 		}
 	}
 }
@@ -1637,7 +1639,7 @@ vdev_indirect_splits_damage(indirect_vsd_t *iv, zio_t *zio)
 			if (ic->ic_data == NULL)
 				continue;
 
-			abd_zero(ic->ic_data, ic->ic_data->abd_size);
+			abd_zero(ic->ic_data, abd_get_size(ic->ic_data));
 		}
 
 		iv->iv_attempts_max *= 2;
@@ -1857,8 +1859,6 @@ vdev_ops_t vdev_indirect_ops = {
 	.vdev_op_leaf = B_FALSE			/* leaf vdev */
 };
 
-#if defined(_KERNEL)
-EXPORT_SYMBOL(rs_alloc);
 EXPORT_SYMBOL(spa_condense_fini);
 EXPORT_SYMBOL(spa_start_indirect_condensing_thread);
 EXPORT_SYMBOL(spa_condense_indirect_start_sync);
@@ -1870,25 +1870,21 @@ EXPORT_SYMBOL(vdev_indirect_sync_obsolete);
 EXPORT_SYMBOL(vdev_obsolete_counts_are_precise);
 EXPORT_SYMBOL(vdev_obsolete_sm_object);
 
-module_param(zfs_condense_indirect_vdevs_enable, int, 0644);
-MODULE_PARM_DESC(zfs_condense_indirect_vdevs_enable,
+/* BEGIN CSTYLED */
+ZFS_MODULE_PARAM(zfs_condense, zfs_condense_, indirect_vdevs_enable, INT, ZMOD_RW,
 	"Whether to attempt condensing indirect vdev mappings");
 
-/* CSTYLED */
-module_param(zfs_condense_min_mapping_bytes, ulong, 0644);
-MODULE_PARM_DESC(zfs_condense_min_mapping_bytes,
-	"Minimum size of vdev mapping to condense");
+ZFS_MODULE_PARAM(zfs_condense, zfs_condense_, min_mapping_bytes, ULONG, ZMOD_RW,
+	"Don't bother condensing if the mapping uses less than this amount of "
+	"memory");
 
-/* CSTYLED */
-module_param(zfs_condense_max_obsolete_bytes, ulong, 0644);
-MODULE_PARM_DESC(zfs_condense_max_obsolete_bytes,
+ZFS_MODULE_PARAM(zfs_condense, zfs_condense_, max_obsolete_bytes, ULONG, ZMOD_RW,
 	"Minimum size obsolete spacemap to attempt condensing");
 
-module_param(zfs_condense_indirect_commit_entry_delay_ms, int, 0644);
-MODULE_PARM_DESC(zfs_condense_indirect_commit_entry_delay_ms,
-	"Delay while condensing vdev mapping");
+ZFS_MODULE_PARAM(zfs_condense, zfs_condense_, indirect_commit_entry_delay_ms, INT, ZMOD_RW,
+	"Used by tests to ensure certain actions happen in the middle of a "
+	"condense. A maximum value of 1 should be sufficient.");
 
-module_param(zfs_reconstruct_indirect_combinations_max, int, 0644);
-MODULE_PARM_DESC(zfs_reconstruct_indirect_combinations_max,
+ZFS_MODULE_PARAM(zfs_reconstruct, zfs_reconstruct_, indirect_combinations_max, INT, ZMOD_RW,
 	"Maximum number of combinations when reconstructing split segments");
-#endif
+/* END CSTYLED */

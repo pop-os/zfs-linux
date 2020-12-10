@@ -24,7 +24,7 @@
 # 1. Create sparse files of various size
 # 2. Snapshot and send these sparse files
 # 3. Verify these files are received correctly and we don't trigger any issue
-#    like the one described in https://github.com/zfsonlinux/zfs/pull/6760
+#    like the one described in https://github.com/openzfs/zfs/pull/6760
 #
 
 verify_runnable "both"
@@ -57,8 +57,8 @@ function write_compare_files # <sendfs> <recvfs> <offset>
 	# compare sparse files
 	recvfile="$(get_prop mountpoint $recvfs)/data.bin"
 	log_must cmp $sendfile $recvfile $offset $offset
-	sendsz=$(stat -c '%s' $sendfile)
-	recvsz=$(stat -c '%s' $recvfile)
+	sendsz=$(stat_size $sendfile)
+	recvsz=$(stat_size $recvfile)
 	if [[ $sendsz -ne $recvsz ]]; then
 		log_fail "$sendfile ($sendsz) and $recvfile ($recvsz) differ."
 	fi

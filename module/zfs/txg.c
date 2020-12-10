@@ -21,7 +21,7 @@
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Portions Copyright 2011 Martin Matuska
- * Copyright (c) 2012, 2017 by Delphix. All rights reserved.
+ * Copyright (c) 2012, 2019 by Delphix. All rights reserved.
  */
 
 #include <sys/zfs_context.h>
@@ -33,7 +33,7 @@
 #include <sys/dsl_scan.h>
 #include <sys/zil.h>
 #include <sys/callb.h>
-#include <sys/trace_txg.h>
+#include <sys/trace_zfs.h>
 
 /*
  * ZFS Transaction Groups
@@ -242,16 +242,11 @@ txg_thread_wait(tx_state_t *tx, callb_cpr_t *cpr, kcondvar_t *cv, clock_t time)
 {
 	CALLB_CPR_SAFE_BEGIN(cpr);
 
-	/*
-	 * cv_wait_sig() is used instead of cv_wait() in order to prevent
-	 * this process from incorrectly contributing to the system load
-	 * average when idle.
-	 */
 	if (time) {
-		(void) cv_timedwait_sig(cv, &tx->tx_sync_lock,
+		(void) cv_timedwait_idle(cv, &tx->tx_sync_lock,
 		    ddi_get_lbolt() + time);
 	} else {
-		cv_wait_sig(cv, &tx->tx_sync_lock);
+		cv_wait_idle(cv, &tx->tx_sync_lock);
 	}
 
 	CALLB_CPR_SAFE_END(cpr, &tx->tx_sync_lock);
@@ -272,7 +267,7 @@ txg_sync_stop(dsl_pool_t *dp)
 	ASSERT3U(tx->tx_threads, ==, 2);
 
 	/*
-	 * We need to ensure that we've vacated the deferred space_maps.
+	 * We need to ensure that we've vacated the deferred metaslab trees.
 	 */
 	txg_wait_synced(dp, tx->tx_open_txg + TXG_DEFER_SIZE);
 
@@ -692,7 +687,7 @@ txg_wait_synced_impl(dsl_pool_t *dp, uint64_t txg, boolean_t wait_sig)
 	    txg, tx->tx_quiesce_txg_waiting, tx->tx_sync_txg_waiting);
 	while (tx->tx_synced_txg < txg) {
 		dprintf("broadcasting sync more "
-		    "tx_synced=%llu waiting=%llu dp=%p\n",
+		    "tx_synced=%llu waiting=%llu dp=%px\n",
 		    tx->tx_synced_txg, tx->tx_sync_txg_waiting, dp);
 		cv_broadcast(&tx->tx_sync_more_cv);
 		if (wait_sig) {
@@ -760,7 +755,8 @@ txg_wait_open(dsl_pool_t *dp, uint64_t txg, boolean_t should_quiesce)
 		if (should_quiesce == B_TRUE) {
 			cv_wait_io(&tx->tx_quiesce_done_cv, &tx->tx_sync_lock);
 		} else {
-			cv_wait_sig(&tx->tx_quiesce_done_cv, &tx->tx_sync_lock);
+			cv_wait_idle(&tx->tx_quiesce_done_cv,
+			    &tx->tx_sync_lock);
 		}
 	}
 	mutex_exit(&tx->tx_sync_lock);
@@ -813,7 +809,7 @@ txg_sync_waiting(dsl_pool_t *dp)
 void
 txg_verify(spa_t *spa, uint64_t txg)
 {
-	ASSERTV(dsl_pool_t *dp = spa_get_dsl(spa));
+	dsl_pool_t *dp __maybe_unused = spa_get_dsl(spa);
 	if (txg <= TXG_INITIAL || txg == ZILTEST_TXG)
 		return;
 	ASSERT3U(txg, <=, dp->dp_tx.tx_open_txg);
@@ -1038,7 +1034,6 @@ txg_list_next(txg_list_t *tl, void *p, uint64_t txg)
 	return (tn == NULL ? NULL : (char *)tn - tl->tl_offset);
 }
 
-#if defined(_KERNEL)
 EXPORT_SYMBOL(txg_init);
 EXPORT_SYMBOL(txg_fini);
 EXPORT_SYMBOL(txg_sync_start);
@@ -1054,6 +1049,7 @@ EXPORT_SYMBOL(txg_wait_callbacks);
 EXPORT_SYMBOL(txg_stalled);
 EXPORT_SYMBOL(txg_sync_waiting);
 
-module_param(zfs_txg_timeout, int, 0644);
-MODULE_PARM_DESC(zfs_txg_timeout, "Max seconds worth of delta per txg");
-#endif
+/* BEGIN CSTYLED */
+ZFS_MODULE_PARAM(zfs_txg, zfs_txg_, timeout, INT, ZMOD_RW,
+	"Max seconds worth of delta per txg");
+/* END CSTYLED */

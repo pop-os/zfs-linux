@@ -4,6 +4,7 @@ SUBDIRS = \
 	arc \
 	atime \
 	bootfs \
+	btree \
 	cache \
 	cachefile \
 	casenorm \
@@ -21,6 +22,7 @@ SUBDIRS = \
 	devices \
 	events \
 	exec \
+	fallocate \
 	fault \
 	features \
 	grow \
@@ -33,8 +35,8 @@ SUBDIRS = \
 	largest_pool \
 	libzfs \
 	limits \
-	pyzfs \
 	link_count \
+	log_spacemap \
 	migration \
 	mmap \
 	mmp \
@@ -44,14 +46,18 @@ SUBDIRS = \
 	no_space \
 	nopwrite \
 	online_offline \
+	pam \
+	persist_l2arc \
 	pool_checkpoint \
 	pool_names \
 	poolversion \
 	privilege \
 	procfs \
 	projectquota \
+	pyzfs \
 	quota \
 	raidz \
+	redacted_send \
 	redundancy \
 	refquota \
 	refreserv \
@@ -59,7 +65,6 @@ SUBDIRS = \
 	rename_dirs \
 	replacement \
 	reservation \
-	resilver \
 	rootpool \
 	rsend \
 	scrub_mirror \
@@ -69,7 +74,6 @@ SUBDIRS = \
 	sparse \
 	suid \
 	threadsappend \
-	tmpfile \
 	trim \
 	truncate \
 	upgrade \
@@ -79,3 +83,8 @@ SUBDIRS = \
 	write_dirs \
 	xattr \
 	zvol
+
+if BUILD_LINUX
+SUBDIRS += \
+	tmpfile
+endif

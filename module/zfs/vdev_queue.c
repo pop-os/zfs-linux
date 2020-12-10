@@ -158,6 +158,8 @@ uint32_t zfs_vdev_initializing_min_active = 1;
 uint32_t zfs_vdev_initializing_max_active = 1;
 uint32_t zfs_vdev_trim_min_active = 1;
 uint32_t zfs_vdev_trim_max_active = 2;
+uint32_t zfs_vdev_rebuild_min_active = 1;
+uint32_t zfs_vdev_rebuild_max_active = 3;
 
 /*
  * When the pool has less than zfs_vdev_async_write_active_min_dirty_percent
@@ -212,18 +214,18 @@ int zfs_vdev_def_queue_depth = 32;
  */
 int zfs_vdev_aggregate_trim = 0;
 
-int
+static int
 vdev_queue_offset_compare(const void *x1, const void *x2)
 {
 	const zio_t *z1 = (const zio_t *)x1;
 	const zio_t *z2 = (const zio_t *)x2;
 
-	int cmp = AVL_CMP(z1->io_offset, z2->io_offset);
+	int cmp = TREE_CMP(z1->io_offset, z2->io_offset);
 
 	if (likely(cmp))
 		return (cmp);
 
-	return (AVL_PCMP(z1, z2));
+	return (TREE_PCMP(z1, z2));
 }
 
 static inline avl_tree_t *
@@ -244,18 +246,18 @@ vdev_queue_type_tree(vdev_queue_t *vq, zio_type_t t)
 		return (&vq->vq_trim_offset_tree);
 }
 
-int
+static int
 vdev_queue_timestamp_compare(const void *x1, const void *x2)
 {
 	const zio_t *z1 = (const zio_t *)x1;
 	const zio_t *z2 = (const zio_t *)x2;
 
-	int cmp = AVL_CMP(z1->io_timestamp, z2->io_timestamp);
+	int cmp = TREE_CMP(z1->io_timestamp, z2->io_timestamp);
 
 	if (likely(cmp))
 		return (cmp);
 
-	return (AVL_PCMP(z1, z2));
+	return (TREE_PCMP(z1, z2));
 }
 
 static int
@@ -278,6 +280,8 @@ vdev_queue_class_min_active(zio_priority_t p)
 		return (zfs_vdev_initializing_min_active);
 	case ZIO_PRIORITY_TRIM:
 		return (zfs_vdev_trim_min_active);
+	case ZIO_PRIORITY_REBUILD:
+		return (zfs_vdev_rebuild_min_active);
 	default:
 		panic("invalid priority %u", p);
 		return (0);
@@ -352,6 +356,8 @@ vdev_queue_class_max_active(spa_t *spa, zio_priority_t p)
 		return (zfs_vdev_initializing_max_active);
 	case ZIO_PRIORITY_TRIM:
 		return (zfs_vdev_trim_max_active);
+	case ZIO_PRIORITY_REBUILD:
+		return (zfs_vdev_rebuild_max_active);
 	default:
 		panic("invalid priority %u", p);
 		return (0);
@@ -535,15 +541,6 @@ vdev_queue_pending_remove(vdev_queue_t *vq, zio_t *zio)
 static void
 vdev_queue_agg_io_done(zio_t *aio)
 {
-	if (aio->io_type == ZIO_TYPE_READ) {
-		zio_t *pio;
-		zio_link_t *zl = NULL;
-		while ((pio = zio_walk_parents(aio, &zl)) != NULL) {
-			abd_copy_off(pio->io_abd, aio->io_abd,
-			    0, pio->io_offset - aio->io_offset, pio->io_size);
-		}
-	}
-
 	abd_free(aio->io_abd);
 }
 
@@ -556,6 +553,14 @@ vdev_queue_agg_io_done(zio_t *aio)
 #define	IO_SPAN(fio, lio) ((lio)->io_offset + (lio)->io_size - (fio)->io_offset)
 #define	IO_GAP(fio, lio) (-IO_SPAN(lio, fio))
 
+/*
+ * Sufficiently adjacent io_offset's in ZIOs will be aggregated. We do this
+ * by creating a gang ABD from the adjacent ZIOs io_abd's. By using
+ * a gang ABD we avoid doing memory copies to and from the parent,
+ * child ZIOs. The gang ABD also accounts for gaps between adjacent
+ * io_offsets by simply getting the zero ABD for writes or allocating
+ * a new ABD for reads and placing them in the gang ABD as well.
+ */
 static zio_t *
 vdev_queue_aggregate(vdev_queue_t *vq, zio_t *zio)
 {
@@ -568,6 +573,7 @@ vdev_queue_aggregate(vdev_queue_t *vq, zio_t *zio)
 	boolean_t stretch = B_FALSE;
 	avl_tree_t *t = vdev_queue_type_tree(vq, zio->io_type);
 	enum zio_flag flags = zio->io_flags & ZIO_FLAG_AGG_INHERIT;
+	uint64_t next_offset;
 	abd_t *abd;
 
 	maxblocksize = spa_maxblocksize(vq->vq_vdev->vdev_spa);
@@ -695,7 +701,7 @@ vdev_queue_aggregate(vdev_queue_t *vq, zio_t *zio)
 	size = IO_SPAN(first, last);
 	ASSERT3U(size, <=, maxblocksize);
 
-	abd = abd_alloc_for_io(size, B_TRUE);
+	abd = abd_alloc_gang_abd();
 	if (abd == NULL)
 		return (NULL);
 
@@ -706,31 +712,57 @@ vdev_queue_aggregate(vdev_queue_t *vq, zio_t *zio)
 	aio->io_timestamp = first->io_timestamp;
 
 	nio = first;
+	next_offset = first->io_offset;
 	do {
 		dio = nio;
 		nio = AVL_NEXT(t, dio);
 		zio_add_child(dio, aio);
 		vdev_queue_io_remove(vq, dio);
+
+		if (dio->io_offset != next_offset) {
+			/* allocate a buffer for a read gap */
+			ASSERT3U(dio->io_type, ==, ZIO_TYPE_READ);
+			ASSERT3U(dio->io_offset, >, next_offset);
+			abd = abd_alloc_for_io(
+			    dio->io_offset - next_offset, B_TRUE);
+			abd_gang_add(aio->io_abd, abd, B_TRUE);
+		}
+		if (dio->io_abd &&
+		    (dio->io_size != abd_get_size(dio->io_abd))) {
+			/* abd size not the same as IO size */
+			ASSERT3U(abd_get_size(dio->io_abd), >, dio->io_size);
+			abd = abd_get_offset_size(dio->io_abd, 0, dio->io_size);
+			abd_gang_add(aio->io_abd, abd, B_TRUE);
+		} else {
+			if (dio->io_flags & ZIO_FLAG_NODATA) {
+				/* allocate a buffer for a write gap */
+				ASSERT3U(dio->io_type, ==, ZIO_TYPE_WRITE);
+				ASSERT3P(dio->io_abd, ==, NULL);
+				abd_gang_add(aio->io_abd,
+				    abd_get_zeros(dio->io_size), B_TRUE);
+			} else {
+				/*
+				 * We pass B_FALSE to abd_gang_add()
+				 * because we did not allocate a new
+				 * ABD, so it is assumed the caller
+				 * will free this ABD.
+				 */
+				abd_gang_add(aio->io_abd, dio->io_abd,
+				    B_FALSE);
+			}
+		}
+		next_offset = dio->io_offset + dio->io_size;
 	} while (dio != last);
+	ASSERT3U(abd_get_size(aio->io_abd), ==, aio->io_size);
 
 	/*
 	 * We need to drop the vdev queue's lock during zio_execute() to
 	 * avoid a deadlock that we could encounter due to lock order
 	 * reversal between vq_lock and io_lock in zio_change_priority().
-	 * Use the dropped lock to do memory copy without congestion.
 	 */
 	mutex_exit(&vq->vq_lock);
 	while ((dio = zio_walk_parents(aio, &zl)) != NULL) {
 		ASSERT3U(dio->io_type, ==, aio->io_type);
-
-		if (dio->io_flags & ZIO_FLAG_NODATA) {
-			ASSERT3U(dio->io_type, ==, ZIO_TYPE_WRITE);
-			abd_zero_off(aio->io_abd,
-			    dio->io_offset - aio->io_offset, dio->io_size);
-		} else if (dio->io_type == ZIO_TYPE_WRITE) {
-			abd_copy_off(aio->io_abd, dio->io_abd,
-			    dio->io_offset - aio->io_offset, 0, dio->io_size);
-		}
 
 		zio_vdev_io_bypass(dio);
 		zio_execute(dio);
@@ -819,7 +851,8 @@ vdev_queue_io(zio_t *zio)
 		    zio->io_priority != ZIO_PRIORITY_ASYNC_READ &&
 		    zio->io_priority != ZIO_PRIORITY_SCRUB &&
 		    zio->io_priority != ZIO_PRIORITY_REMOVAL &&
-		    zio->io_priority != ZIO_PRIORITY_INITIALIZING) {
+		    zio->io_priority != ZIO_PRIORITY_INITIALIZING &&
+		    zio->io_priority != ZIO_PRIORITY_REBUILD) {
 			zio->io_priority = ZIO_PRIORITY_ASYNC_READ;
 		}
 	} else if (zio->io_type == ZIO_TYPE_WRITE) {
@@ -828,7 +861,8 @@ vdev_queue_io(zio_t *zio)
 		if (zio->io_priority != ZIO_PRIORITY_SYNC_WRITE &&
 		    zio->io_priority != ZIO_PRIORITY_ASYNC_WRITE &&
 		    zio->io_priority != ZIO_PRIORITY_REMOVAL &&
-		    zio->io_priority != ZIO_PRIORITY_INITIALIZING) {
+		    zio->io_priority != ZIO_PRIORITY_INITIALIZING &&
+		    zio->io_priority != ZIO_PRIORITY_REBUILD) {
 			zio->io_priority = ZIO_PRIORITY_ASYNC_WRITE;
 		}
 	} else {
@@ -952,99 +986,85 @@ vdev_queue_last_offset(vdev_t *vd)
 	return (vd->vdev_queue.vq_last_offset);
 }
 
-#if defined(_KERNEL)
-module_param(zfs_vdev_aggregation_limit, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_aggregation_limit, "Max vdev I/O aggregation size");
+/* BEGIN CSTYLED */
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, aggregation_limit, INT, ZMOD_RW,
+	"Max vdev I/O aggregation size");
 
-module_param(zfs_vdev_aggregation_limit_non_rotating, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_aggregation_limit_non_rotating,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, aggregation_limit_non_rotating, INT, ZMOD_RW,
 	"Max vdev I/O aggregation size for non-rotating media");
 
-module_param(zfs_vdev_aggregate_trim, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_aggregate_trim, "Allow TRIM I/O to be aggregated");
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, aggregate_trim, INT, ZMOD_RW,
+	"Allow TRIM I/O to be aggregated");
 
-module_param(zfs_vdev_read_gap_limit, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_read_gap_limit, "Aggregate read I/O over gap");
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, read_gap_limit, INT, ZMOD_RW,
+	"Aggregate read I/O over gap");
 
-module_param(zfs_vdev_write_gap_limit, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_write_gap_limit, "Aggregate write I/O over gap");
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, write_gap_limit, INT, ZMOD_RW,
+	"Aggregate write I/O over gap");
 
-module_param(zfs_vdev_max_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_max_active, "Maximum number of active I/Os per vdev");
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, max_active, INT, ZMOD_RW,
+	"Maximum number of active I/Os per vdev");
 
-module_param(zfs_vdev_async_write_active_max_dirty_percent, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_async_write_active_max_dirty_percent,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, async_write_active_max_dirty_percent, INT, ZMOD_RW,
 	"Async write concurrency max threshold");
 
-module_param(zfs_vdev_async_write_active_min_dirty_percent, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_async_write_active_min_dirty_percent,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, async_write_active_min_dirty_percent, INT, ZMOD_RW,
 	"Async write concurrency min threshold");
 
-module_param(zfs_vdev_async_read_max_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_async_read_max_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, async_read_max_active, INT, ZMOD_RW,
 	"Max active async read I/Os per vdev");
 
-module_param(zfs_vdev_async_read_min_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_async_read_min_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, async_read_min_active, INT, ZMOD_RW,
 	"Min active async read I/Os per vdev");
 
-module_param(zfs_vdev_async_write_max_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_async_write_max_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, async_write_max_active, INT, ZMOD_RW,
 	"Max active async write I/Os per vdev");
 
-module_param(zfs_vdev_async_write_min_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_async_write_min_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, async_write_min_active, INT, ZMOD_RW,
 	"Min active async write I/Os per vdev");
 
-module_param(zfs_vdev_initializing_max_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_initializing_max_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, initializing_max_active, INT, ZMOD_RW,
 	"Max active initializing I/Os per vdev");
 
-module_param(zfs_vdev_initializing_min_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_initializing_min_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, initializing_min_active, INT, ZMOD_RW,
 	"Min active initializing I/Os per vdev");
 
-module_param(zfs_vdev_removal_max_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_removal_max_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, removal_max_active, INT, ZMOD_RW,
 	"Max active removal I/Os per vdev");
 
-module_param(zfs_vdev_removal_min_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_removal_min_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, removal_min_active, INT, ZMOD_RW,
 	"Min active removal I/Os per vdev");
 
-module_param(zfs_vdev_scrub_max_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_scrub_max_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, scrub_max_active, INT, ZMOD_RW,
 	"Max active scrub I/Os per vdev");
 
-module_param(zfs_vdev_scrub_min_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_scrub_min_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, scrub_min_active, INT, ZMOD_RW,
 	"Min active scrub I/Os per vdev");
 
-module_param(zfs_vdev_sync_read_max_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_sync_read_max_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, sync_read_max_active, INT, ZMOD_RW,
 	"Max active sync read I/Os per vdev");
 
-module_param(zfs_vdev_sync_read_min_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_sync_read_min_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, sync_read_min_active, INT, ZMOD_RW,
 	"Min active sync read I/Os per vdev");
 
-module_param(zfs_vdev_sync_write_max_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_sync_write_max_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, sync_write_max_active, INT, ZMOD_RW,
 	"Max active sync write I/Os per vdev");
 
-module_param(zfs_vdev_sync_write_min_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_sync_write_min_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, sync_write_min_active, INT, ZMOD_RW,
 	"Min active sync write I/Os per vdev");
 
-module_param(zfs_vdev_trim_max_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_trim_max_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, trim_max_active, INT, ZMOD_RW,
 	"Max active trim/discard I/Os per vdev");
 
-module_param(zfs_vdev_trim_min_active, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_trim_min_active,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, trim_min_active, INT, ZMOD_RW,
 	"Min active trim/discard I/Os per vdev");
 
-module_param(zfs_vdev_queue_depth_pct, int, 0644);
-MODULE_PARM_DESC(zfs_vdev_queue_depth_pct,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, rebuild_max_active, INT, ZMOD_RW,
+	"Max active rebuild I/Os per vdev");
+
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, rebuild_min_active, INT, ZMOD_RW,
+	"Min active rebuild I/Os per vdev");
+
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, queue_depth_pct, INT, ZMOD_RW,
 	"Queue depth percentage for each top-level vdev");
-#endif
+/* END CSTYLED */
