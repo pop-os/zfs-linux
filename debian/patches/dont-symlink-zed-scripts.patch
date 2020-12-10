@@ -2,7 +2,7 @@ Description: track default symlinks, instead of symlinking
 Forwarded: no need
 --- a/cmd/zed/zed.d/Makefile.am
 +++ b/cmd/zed/zed.d/Makefile.am
-@@ -52,6 +52,6 @@
+@@ -48,6 +48,6 @@
  	for f in $(zedconfdefaults); do \
  	  test -f "$(DESTDIR)$(zedconfdir)/$${f}" -o \
  	       -L "$(DESTDIR)$(zedconfdir)/$${f}" || \

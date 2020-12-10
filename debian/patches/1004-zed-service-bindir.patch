@@ -11,8 +11,8 @@ Bug-Debian: https://bugs.debian.org/826994
 Forwarded: no
 --- a/etc/systemd/system/zfs-zed.service.in
 +++ b/etc/systemd/system/zfs-zed.service.in
-@@ -3,7 +3,7 @@
- Documentation=man:zed(8)
+@@ -4,7 +4,7 @@
+ ConditionPathIsDirectory=/sys/module/zfs
  
  [Service]
 -ExecStart=@sbindir@/zed -F

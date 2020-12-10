@@ -183,7 +183,11 @@ Files: contrib/bash_completion.d/*
 Copyright: 2010, 2013, Aneurin Price <aneurin.price@gmail.com>
 License: Expat
 
-FIles: contrib/pyzfs/*
+Files: contrib/pam_zfs_key/*
+Copyright: Copyright (c) 2020, Felix Dörre. All rights reserved.
+License: BSD-3-clause
+
+Files: contrib/pyzfs/*
 Copyright: 2015 ClusterHQ
 License: Apache-2.0
 
@@ -431,6 +435,10 @@ Copyright: 2011-2014, Delphix.
   2007, 2009, 2010, Sun Microsystems, Inc.
 License: CDDL-1.0
 
+Files: module/lua
+Copyright: 1994-2015 Lua.org, PUC-Rio.
+License: Expat
+
 Files: module/nvpair/*
 Copyright: 2000, 2002, 2004-2007, 2009, 2010, Oracle and/or its affiliates.
 License: CDDL-1.0
@@ -480,7 +488,7 @@ Copyright: 2007, 2009, 2010, Sun Microsystems, Inc.
   1982, 1986, 1988, The Regents of the University of California
 License: CDDL-1.0
 
-Files: module/spl/*
+Files: module/os/linux/spl/*
 Copyright:
   2008-2010 Sun Microsystems, Inc.
   2007-2010 Lawrence Livermore National Security, LLC.
@@ -761,6 +769,21 @@ Files: module/zfs/zpl_file.c
 Copyright: 2015, Chunwei Chen.
   2011, Lawrence Livermore National Security, LLC
 License: CDDL-1.0
+
+Files: module/zstd/zstd-in.c
+Copyright: Copyright (c) 2016-2020, Yann Collet, Facebook, Inc.
+  Copyright (c) 2019-2020, Michael Niewöhner
+License: BSD-3-clause
+
+Files: module/zstd/zfs_zstd.c
+Copyright: Copyright (c) 2016-2018, Klara Inc.
+  Copyright (c) 2016-2018, Allan Jude
+  Copyright (c) 2018-2020, Sebastian Gottschall
+  Copyright (c) 2019-2020, Michael Niewöhner
+  Copyright (c) 2020, The FreeBSD Foundation [1]
+License: BSD-3-clause
+Comment:  [1] Portions of this software were developed by Allan Jude
+  under sponsorship from the FreeBSD Foundation.
 
 Files: scripts/*
 Copyright: 2003-2012, Ville Skyttä <ville.skytta@iki.fi>
@@ -1210,6 +1233,29 @@ License: BSD-2-clause
  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-3-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+     * Redistributions of source code must retain the above copyright
+       notice, this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+     * Neither the name of the <organization> nor the
+       names of its contributors may be used to endorse or promote products
+       derived from this software without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 License: Apache-2.0
  Licensed under the Apache License, Version 2.0 (the "License");

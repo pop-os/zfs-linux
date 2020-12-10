@@ -1,4 +1,4 @@
-libuutil.so.1 libuutil1linux #MINVER#
+libuutil.so.3 libuutil3linux #MINVER#
 * Build-Depends-Package: libzfslinux-dev
  _sol_getmntent@Base 0.8.2
  aok@Base 0.8.3
@@ -145,6 +145,9 @@ libuutil.so.1 libuutil1linux #MINVER#
  avl_numnodes@Base 0.8.2
  avl_remove@Base 0.8.2
  avl_swap@Base 0.8.2
+ avl_update@Base 2.0
+ avl_update_gt@Base 2.0
+ avl_update_lt@Base 2.0
  avl_walk@Base 0.8.2
  buf@Base 0.8.2
  (arch=s390x ppc64el arm64 armhf armel mips64el mipsel riscv64)cas32@Base 0.8.2
@@ -157,8 +160,7 @@ libuutil.so.1 libuutil1linux #MINVER#
  getextmntent@Base 0.8.2
  getmntany@Base 0.8.2
  getzoneid@Base 0.8.2
- getzoneidbyname@Base 0.8.2
- getzonenamebyid@Base 0.8.2
+ libspl_assertf@Base 2.0
  list_create@Base 0.8.2
  list_destroy@Base 0.8.2
  list_head@Base 0.8.2

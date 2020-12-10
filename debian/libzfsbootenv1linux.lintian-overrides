@@ -1,0 +1,2 @@
+libzfsbootenv1linux: package-name-doesnt-match-sonames
+libzfsbootenv1linux: extra-license-file usr/share/doc/libzfsbootenv1linux/LICENSE.gz
