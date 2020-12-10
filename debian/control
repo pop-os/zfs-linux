@@ -6,7 +6,7 @@ Uploaders: Aron Xu <aron@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>,
            Mo Zhou <lumin@debian.org>
 Build-Depends: abigail-tools,
-               debhelper-compat (= 10),
+               debhelper-compat (= 12),
                dh-python,
                dkms (>> 2.1.1.2-5),
                libaio-dev,
@@ -227,6 +227,7 @@ Description: OpenZFS root filesystem capabilities for Linux - dracut
 Package: zfsutils-linux
 Section: contrib/admin
 Architecture: linux-any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: libnvpair3linux (= ${binary:Version}),
          libuutil3linux (= ${binary:Version}),
          libzfs4linux (= ${binary:Version}),
@@ -257,6 +258,7 @@ Description: command-line tools to manage OpenZFS filesystems
 Package: zfs-zed
 Section: contrib/admin
 Architecture: linux-any
+Pre-Depends: ${misc:Pre-Depends}
 Depends: zfs-modules | zfs-dkms,
          zfsutils-linux (>= ${binary:Version}),
          ${misc:Depends},
