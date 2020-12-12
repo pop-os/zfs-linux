@@ -203,9 +203,8 @@ override_dh_installinit:
 override_dh_installsystemd:
 	mkdir -p debian/zfsutils-linux/lib/systemd/system
 	ln -sr /dev/null debian/zfsutils-linux/lib/systemd/system/zfs-import.service
-	dh_installsystemd -r --no-restart-after-upgrade --name zfs-impot-cache
-	dh_installsystemd -r --no-restart-after-upgrade --name zfs-impot-scan
-	dh_installsystemd
+	dh_installsystemd --no-stop-on-upgrade -X zfs-zed.service
+	dh_installsystemd --name zfs-zed
 
 override_dh_installdocs:
 	dh_installdocs
