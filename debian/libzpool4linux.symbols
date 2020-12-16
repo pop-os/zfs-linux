@@ -56,8 +56,6 @@ libzpool.so.4 libzpool4linux #MINVER#
  Skein_512_Output@Base 0.8.2
  Skein_512_Process_Block@Base 0.8.2
  Skein_512_Update@Base 0.8.2
- (arch=s390x)Skein_Get64_LSB_First@Base 0.8.2
- (arch=s390x)Skein_Put64_LSB_First@Base 0.8.2
  ZSTD_isError@Base 2.0
  __dmu_object_info_from_dnode@Base 0.8.2
  __dprintf@Base 0.8.2
