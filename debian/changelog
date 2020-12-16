@@ -17,7 +17,7 @@ zfs-linux (2.0.0-1~exp1) UNRELEASED; urgency=medium
   * Update symbols
   * refresh lintian-overrides for 2.0.0
   * package zfsbootenv library
-  * Temporarily disable risc patches
+  * Remove upstreamed risc patches
   * override zfs-tests lintian warnings
   * Validate ABI at build time
   * Reflect libssl requirement of libzfs
