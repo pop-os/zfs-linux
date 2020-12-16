@@ -78,8 +78,10 @@ override_dh_auto_build:
 	dh_auto_build
 
 override_dh_auto_test:
+ifeq (amd64,$(DEB_HOST_ARCH))
 	# Upstream provides an ABI guarantee that we validate here
 	$(MAKE) checkabi
+endif
 
 	# The dh_auto_test rule is disabled because
 	# `make check` cannot run in an unprivileged build environment.
