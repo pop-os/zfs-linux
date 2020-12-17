@@ -36,11 +36,13 @@ rm -rf "$KERNEL_DIR/include/zfs" "$KERNEL_DIR/fs/zfs"
 cp --recursive include "$KERNEL_DIR/include/zfs"
 cp --recursive module "$KERNEL_DIR/fs/zfs"
 cp zfs_config.h "$KERNEL_DIR/include/zfs/"
+rm "$KERNEL_DIR/include/zfs/.gitignore"
 
 for MODULE in "${MODULES[@]}"
 do
-	sed -i.bak '/obj =/d' "$KERNEL_DIR/fs/zfs/$MODULE/Makefile"
-	sed -i.bak '/src =/d' "$KERNEL_DIR/fs/zfs/$MODULE/Makefile"
+	sed -i '/obj =/d' "$KERNEL_DIR/fs/zfs/$MODULE/Makefile"
+	sed -i '/src =/d' "$KERNEL_DIR/fs/zfs/$MODULE/Makefile"
+	sed -i "s|-I$PWD/module/|-I\$(srctree)/fs/zfs/|" "$KERNEL_DIR/fs/zfs/$MODULE/Makefile"
 done
 
 cat > "$KERNEL_DIR/fs/zfs/Kconfig" <<"EOF"

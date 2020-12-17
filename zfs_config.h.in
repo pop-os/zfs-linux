@@ -103,6 +103,9 @@
 /* Define if host toolchain supports AVX512VL */
 #undef HAVE_AVX512VL
 
+/* bdev_check_media_change() exists */
+#undef HAVE_BDEV_CHECK_MEDIA_CHANGE
+
 /* bdev_logical_block_size() is available */
 #undef HAVE_BDEV_LOGICAL_BLOCK_SIZE
 
@@ -219,6 +222,9 @@
 
 /* iops->check_acl() wants flags */
 #undef HAVE_CHECK_ACL_WITH_FLAGS
+
+/* check_disk_change() exists */
+#undef HAVE_CHECK_DISK_CHANGE
 
 /* clear_inode() is available */
 #undef HAVE_CLEAR_INODE
@@ -418,6 +424,9 @@
 
 /* kernel does stack verification */
 #undef HAVE_KERNEL_OBJTOOL
+
+/* kernel has linux/objtool.h */
+#undef HAVE_KERNEL_OBJTOOL_HEADER
 
 /* kernel_read() take loff_t pointer */
 #undef HAVE_KERNEL_READ_PPOS
