@@ -1,3 +1,10 @@
+zfs-linux (0.8.6-1) unstable; urgency=medium
+
+  * New upstream version 0.8.6
+  * d/patches/update-meta.patch: disabled, not needed this upload
+
+ -- Aron Xu <aron@debian.org>  Thu, 17 Dec 2020 17:18:12 +0800
+
 zfs-linux (0.8.5-3) unstable; urgency=medium
 
   [ Antonio Russo ]
