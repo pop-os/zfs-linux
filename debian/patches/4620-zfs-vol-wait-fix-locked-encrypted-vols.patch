@@ -24,9 +24,9 @@ Last-Update: 2020-07-22
 +}
 +
  list_zvols() {
- 	zfs list -t volume -H -o name,volmode,receive_resume_token |
- 		while read -r zvol_line; do
-@@ -71,7 +79,7 @@
+ 	zfs list -t volume -H -o \
+ 		name,volmode,receive_resume_token,redact_snaps |
+@@ -75,7 +83,7 @@
  	while [ "$inner_loop" -lt 30 ]; do
  		inner_loop=$((inner_loop + 1))
  

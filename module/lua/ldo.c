@@ -64,6 +64,7 @@ static intptr_t stack_remaining(void) {
 
 #ifdef _KERNEL
 
+#ifdef __linux__
 #if defined(__i386__)
 #define	JMP_BUF_CNT	6
 #elif defined(__x86_64__)
@@ -80,6 +81,8 @@ static intptr_t stack_remaining(void) {
 #define JMP_BUF_CNT	12
 #elif defined(__s390x__)
 #define JMP_BUF_CNT	18
+#elif defined(__riscv)
+#define JMP_BUF_CNT     64
 #else
 #define	JMP_BUF_CNT	1
 #endif
@@ -93,7 +96,7 @@ extern void longjmp(label_t *) __attribute__((__noreturn__));
 #define LUAI_TRY(L,c,a)		if (setjmp(&(c)->b) == 0) { a }
 #define luai_jmpbuf		label_t
 
-/* unsupported archs will build but not be able to run lua programs */
+/* unsupported arches will build but not be able to run lua programs */
 #if JMP_BUF_CNT == 1
 int setjmp (label_t *buf) {
 	return 1;
@@ -102,6 +105,11 @@ int setjmp (label_t *buf) {
 void longjmp (label_t * buf) {
 	for (;;);
 }
+#endif
+#else
+#define LUAI_THROW(L,c)		longjmp((c)->b, 1)
+#define LUAI_TRY(L,c,a)		if (setjmp((c)->b) == 0) { a }
+#define luai_jmpbuf		jmp_buf
 #endif
 
 #else /* _KERNEL */

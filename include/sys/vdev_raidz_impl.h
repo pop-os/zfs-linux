@@ -90,7 +90,7 @@ typedef boolean_t	(*will_work_f)(void);
 typedef void		(*init_impl_f)(void);
 typedef void		(*fini_impl_f)(void);
 
-#define	RAIDZ_IMPL_NAME_MAX	(16)
+#define	RAIDZ_IMPL_NAME_MAX	(20)
 
 typedef struct raidz_impl_ops {
 	init_impl_f init;
@@ -133,6 +133,8 @@ typedef struct raidz_map {
 #define	RAIDZ_ORIGINAL_IMPL	(INT_MAX)
 
 extern const raidz_impl_ops_t vdev_raidz_scalar_impl;
+extern boolean_t raidz_will_scalar_work(void);
+
 #if defined(__x86_64) && defined(HAVE_SSE2)	/* only x86_64 for now */
 extern const raidz_impl_ops_t vdev_raidz_sse2_impl;
 #endif
@@ -151,6 +153,9 @@ extern const raidz_impl_ops_t vdev_raidz_avx512bw_impl;
 #if defined(__aarch64__)
 extern const raidz_impl_ops_t vdev_raidz_aarch64_neon_impl;
 extern const raidz_impl_ops_t vdev_raidz_aarch64_neonx2_impl;
+#endif
+#if defined(__powerpc__)
+extern const raidz_impl_ops_t vdev_raidz_powerpc_altivec_impl;
 #endif
 
 /*

@@ -21,7 +21,7 @@
 
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2018 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2020 by Delphix. All rights reserved.
  * Copyright Joyent, Inc.
  * Copyright (c) 2013 Steven Hartland. All rights reserved.
  * Copyright (c) 2016, Intel Corporation.
@@ -79,7 +79,7 @@ typedef enum zfs_error {
 	EZFS_NODEVICE,		/* no such device in pool */
 	EZFS_BADDEV,		/* invalid device to add */
 	EZFS_NOREPLICAS,	/* no valid replicas */
-	EZFS_RESILVERING,	/* currently resilvering */
+	EZFS_RESILVERING,	/* resilvering (healing reconstruction) */
 	EZFS_BADVERSION,	/* unsupported version */
 	EZFS_POOLUNAVAIL,	/* pool is currently unavailable */
 	EZFS_DEVOVERFLOW,	/* too many devices in one vdev */
@@ -88,8 +88,8 @@ typedef enum zfs_error {
 	EZFS_ZONED,		/* used improperly in local zone */
 	EZFS_MOUNTFAILED,	/* failed to mount dataset */
 	EZFS_UMOUNTFAILED,	/* failed to unmount dataset */
-	EZFS_UNSHARENFSFAILED,	/* unshare(1M) failed */
-	EZFS_SHARENFSFAILED,	/* share(1M) failed */
+	EZFS_UNSHARENFSFAILED,	/* failed to unshare over nfs */
+	EZFS_SHARENFSFAILED,	/* failed to share over nfs */
 	EZFS_PERM,		/* permission denied */
 	EZFS_NOSPC,		/* out of space */
 	EZFS_FAULT,		/* bad address */
@@ -148,6 +148,7 @@ typedef enum zfs_error {
 	EZFS_TRIM_NOTSUP,	/* device does not support trim */
 	EZFS_NO_RESILVER_DEFER,	/* pool doesn't support resilver_defer */
 	EZFS_EXPORT_IN_PROGRESS,	/* currently exporting the pool */
+	EZFS_REBUILDING,	/* resilvering (sequential reconstrution) */
 	EZFS_UNKNOWN
 } zfs_error_t;
 
@@ -193,6 +194,10 @@ typedef struct zfs_allow {
 typedef struct zfs_handle zfs_handle_t;
 typedef struct zpool_handle zpool_handle_t;
 typedef struct libzfs_handle libzfs_handle_t;
+
+extern int zpool_wait(zpool_handle_t *, zpool_wait_activity_t);
+extern int zpool_wait_status(zpool_handle_t *, zpool_wait_activity_t,
+    boolean_t *, boolean_t *);
 
 /*
  * Library initialization
@@ -265,6 +270,9 @@ typedef struct trimflags {
 	/* request a secure trim, requires support from device */
 	boolean_t secure;
 
+	/* after starting trim, block until trim completes */
+	boolean_t wait;
+
 	/* trim at the requested rate in bytes/second */
 	uint64_t rate;
 } trimflags_t;
@@ -274,6 +282,8 @@ typedef struct trimflags {
  */
 extern int zpool_scan(zpool_handle_t *, pool_scan_func_t, pool_scrub_cmd_t);
 extern int zpool_initialize(zpool_handle_t *, pool_initialize_func_t,
+    nvlist_t *);
+extern int zpool_initialize_wait(zpool_handle_t *, pool_initialize_func_t,
     nvlist_t *);
 extern int zpool_trim(zpool_handle_t *, pool_trim_func_t, nvlist_t *,
     trimflags_t *);
@@ -288,7 +298,7 @@ extern int zpool_vdev_online(zpool_handle_t *, const char *, int,
     vdev_state_t *);
 extern int zpool_vdev_offline(zpool_handle_t *, const char *, boolean_t);
 extern int zpool_vdev_attach(zpool_handle_t *, const char *,
-    const char *, nvlist_t *, int);
+    const char *, nvlist_t *, int, boolean_t);
 extern int zpool_vdev_detach(zpool_handle_t *, const char *);
 extern int zpool_vdev_remove(zpool_handle_t *, const char *);
 extern int zpool_vdev_remove_cancel(zpool_handle_t *);
@@ -304,7 +314,7 @@ extern nvlist_t *zpool_find_vdev(zpool_handle_t *, const char *, boolean_t *,
     boolean_t *, boolean_t *);
 extern nvlist_t *zpool_find_vdev_by_physpath(zpool_handle_t *, const char *,
     boolean_t *, boolean_t *, boolean_t *);
-extern int zpool_label_disk(libzfs_handle_t *, zpool_handle_t *, char *);
+extern int zpool_label_disk(libzfs_handle_t *, zpool_handle_t *, const char *);
 extern uint64_t zpool_vdev_path_to_guid(zpool_handle_t *zhp, const char *path);
 
 const char *zpool_get_state_str(zpool_handle_t *);
@@ -317,6 +327,7 @@ extern int zpool_get_prop(zpool_handle_t *, zpool_prop_t, char *,
     size_t proplen, zprop_source_t *, boolean_t literal);
 extern uint64_t zpool_get_prop_int(zpool_handle_t *, zpool_prop_t,
     zprop_source_t *);
+extern int zpool_props_refresh(zpool_handle_t *);
 
 extern const char *zpool_prop_to_name(zpool_prop_t);
 extern const char *zpool_prop_values(zpool_prop_t);
@@ -377,6 +388,9 @@ typedef enum {
 	ZPOOL_STATUS_RESILVERING,	/* device being resilvered */
 	ZPOOL_STATUS_OFFLINE_DEV,	/* device offline */
 	ZPOOL_STATUS_REMOVED_DEV,	/* removed device */
+	ZPOOL_STATUS_REBUILDING,	/* device being rebuilt */
+	ZPOOL_STATUS_REBUILD_SCRUB,	/* recommend scrubbing the pool */
+	ZPOOL_STATUS_NON_NATIVE_ASHIFT,	/* (e.g. 512e dev with ashift of 9) */
 
 	/*
 	 * Finally, the following indicates a healthy pool.
@@ -431,8 +445,10 @@ extern int zpool_events_next(libzfs_handle_t *, nvlist_t **, int *, unsigned,
     int);
 extern int zpool_events_clear(libzfs_handle_t *, int *);
 extern int zpool_events_seek(libzfs_handle_t *, uint64_t, int);
+extern void zpool_obj_to_path_ds(zpool_handle_t *, uint64_t, uint64_t, char *,
+    size_t);
 extern void zpool_obj_to_path(zpool_handle_t *, uint64_t, uint64_t, char *,
-    size_t len);
+    size_t);
 extern int zfs_ioctl(libzfs_handle_t *, int, struct zfs_cmd *);
 extern int zpool_get_physpath(zpool_handle_t *, char *, size_t);
 extern void zpool_explain_recover(libzfs_handle_t *, const char *, int,
@@ -497,6 +513,9 @@ extern nvlist_t *zfs_get_user_props(zfs_handle_t *);
 extern nvlist_t *zfs_get_recvd_props(zfs_handle_t *);
 extern nvlist_t *zfs_get_clones_nvl(zfs_handle_t *);
 
+extern int zfs_wait_status(zfs_handle_t *, zfs_wait_activity_t,
+    boolean_t *, boolean_t *);
+
 /*
  * zfs encryption management
  */
@@ -537,7 +556,7 @@ extern void zfs_prune_proplist(zfs_handle_t *, uint8_t *);
 /*
  * zpool property management
  */
-extern int zpool_expand_proplist(zpool_handle_t *, zprop_list_t **);
+extern int zpool_expand_proplist(zpool_handle_t *, zprop_list_t **, boolean_t);
 extern int zpool_prop_get_feature(zpool_handle_t *, const char *, char *,
     size_t);
 extern const char *zpool_prop_default_string(zpool_prop_t);
@@ -623,11 +642,23 @@ extern int zfs_snapshot(libzfs_handle_t *, const char *, boolean_t, nvlist_t *);
 extern int zfs_snapshot_nvl(libzfs_handle_t *hdl, nvlist_t *snaps,
     nvlist_t *props);
 extern int zfs_rollback(zfs_handle_t *, zfs_handle_t *, boolean_t);
-extern int zfs_rename(zfs_handle_t *, const char *, boolean_t, boolean_t);
+
+typedef struct renameflags {
+	/* recursive rename */
+	int recursive : 1;
+
+	/* don't unmount file systems */
+	int nounmount : 1;
+
+	/* force unmount file systems */
+	int forceunmount : 1;
+} renameflags_t;
+
+extern int zfs_rename(zfs_handle_t *, const char *, renameflags_t);
 
 typedef struct sendflags {
-	/* print informational messages (ie, -v was specified) */
-	boolean_t verbose;
+	/* Amount of extra information to print. */
+	int verbosity;
 
 	/* recursive send  (ie, -R) */
 	boolean_t replicate;
@@ -638,8 +669,8 @@ typedef struct sendflags {
 	/* if dataset is a clone, do incremental from its origin */
 	boolean_t fromorigin;
 
-	/* do deduplication */
-	boolean_t dedup;
+	/* field no longer used, maintained for backwards compatibility */
+	boolean_t pad;
 
 	/* send properties (ie, -p) */
 	boolean_t props;
@@ -670,15 +701,21 @@ typedef struct sendflags {
 
 	/* include snapshot holds in send stream */
 	boolean_t holds;
+
+	/* stream represents a partially received dataset */
+	boolean_t saved;
 } sendflags_t;
 
 typedef boolean_t (snapfilter_cb_t)(zfs_handle_t *, void *);
 
 extern int zfs_send(zfs_handle_t *, const char *, const char *,
     sendflags_t *, int, snapfilter_cb_t, void *, nvlist_t **);
-extern int zfs_send_one(zfs_handle_t *, const char *, int, sendflags_t flags);
+extern int zfs_send_one(zfs_handle_t *, const char *, int, sendflags_t *,
+    const char *);
+extern int zfs_send_progress(zfs_handle_t *, int, uint64_t *, uint64_t *);
 extern int zfs_send_resume(libzfs_handle_t *, sendflags_t *, int outfd,
     const char *);
+extern int zfs_send_saved(zfs_handle_t *, sendflags_t *, int, const char *);
 extern nvlist_t *zfs_send_resume_token_to_nvlist(libzfs_handle_t *hdl,
     const char *token);
 
@@ -739,6 +776,12 @@ typedef struct recvflags {
 
 	/* skip receive of snapshot holds */
 	boolean_t skipholds;
+
+	/* mount the filesystem unless nomount is specified */
+	boolean_t domount;
+
+	/* force unmount while recv snapshot (private) */
+	boolean_t forceunmount;
 } recvflags_t;
 
 extern int zfs_receive(libzfs_handle_t *, const char *, nvlist_t *,
@@ -759,7 +802,8 @@ extern int zfs_show_diffs(zfs_handle_t *, int, const char *, const char *,
 extern const char *zfs_type_to_name(zfs_type_t);
 extern void zfs_refresh_properties(zfs_handle_t *);
 extern int zfs_name_valid(const char *, zfs_type_t);
-extern zfs_handle_t *zfs_path_to_zhandle(libzfs_handle_t *, char *, zfs_type_t);
+extern zfs_handle_t *zfs_path_to_zhandle(libzfs_handle_t *, const char *,
+    zfs_type_t);
 extern int zfs_parent_name(zfs_handle_t *, char *, size_t);
 extern boolean_t zfs_dataset_exists(libzfs_handle_t *, const char *,
     zfs_type_t);
@@ -772,8 +816,16 @@ extern boolean_t zfs_bookmark_exists(const char *path);
 extern boolean_t is_mounted(libzfs_handle_t *, const char *special, char **);
 extern boolean_t zfs_is_mounted(zfs_handle_t *, char **);
 extern int zfs_mount(zfs_handle_t *, const char *, int);
+extern int zfs_mount_at(zfs_handle_t *, const char *, int, const char *);
 extern int zfs_unmount(zfs_handle_t *, const char *, int);
 extern int zfs_unmountall(zfs_handle_t *, int);
+
+#if defined(__linux__)
+extern int zfs_parse_mount_options(char *mntopts, unsigned long *mntflags,
+    unsigned long *zfsflags, int sloppy, char *badopt, char *mtabopt);
+extern void zfs_adjust_mount_options(zfs_handle_t *zhp, const char *mntpoint,
+    char *mntopts, char *mtabopt);
+#endif
 
 /*
  * Share support functions.
@@ -799,6 +851,10 @@ extern int zfs_unshareall_bytype(zfs_handle_t *, const char *, const char *);
 extern int zfs_unshareall(zfs_handle_t *);
 extern int zfs_deleg_share_nfs(libzfs_handle_t *, char *, char *, char *,
     void *, void *, int, zfs_share_op_t);
+extern void zfs_commit_nfs_shares(void);
+extern void zfs_commit_smb_shares(void);
+extern void zfs_commit_all_shares(void);
+extern void zfs_commit_shares(const char *);
 
 extern int zfs_nicestrtonum(libzfs_handle_t *, const char *, uint64_t *);
 
@@ -809,15 +865,15 @@ extern int zfs_nicestrtonum(libzfs_handle_t *, const char *, uint64_t *);
 #define	STDERR_VERBOSE	0x02
 #define	NO_DEFAULT_PATH	0x04 /* Don't use $PATH to lookup the command */
 
-int libzfs_run_process(const char *, char **, int flags);
-int libzfs_run_process_get_stdout(const char *path, char *argv[], char *env[],
-    char **lines[], int *lines_cnt);
-int libzfs_run_process_get_stdout_nopath(const char *path, char *argv[],
-    char *env[], char **lines[], int *lines_cnt);
+int libzfs_run_process(const char *, char **, int);
+int libzfs_run_process_get_stdout(const char *, char *[], char *[],
+    char **[], int *);
+int libzfs_run_process_get_stdout_nopath(const char *, char *[], char *[],
+    char **[], int *);
 
-void libzfs_free_str_array(char **strs, int count);
+void libzfs_free_str_array(char **, int);
 
-int libzfs_envvar_is_set(char *envvar);
+int libzfs_envvar_is_set(char *);
 
 /*
  * Utility functions for zfs version
@@ -836,6 +892,8 @@ extern int zpool_in_use(libzfs_handle_t *, int, pool_state_t *, char **,
  * Label manipulation.
  */
 extern int zpool_clear_label(int);
+extern int zpool_set_bootenv(zpool_handle_t *, const nvlist_t *);
+extern int zpool_get_bootenv(zpool_handle_t *, nvlist_t **);
 
 /*
  * Management interfaces for SMB ACL files
@@ -853,7 +911,19 @@ int zfs_smb_acl_rename(libzfs_handle_t *, char *, char *, char *, char *);
 extern int zpool_enable_datasets(zpool_handle_t *, const char *, int);
 extern int zpool_disable_datasets(zpool_handle_t *, boolean_t);
 
-extern int zfs_remap_indirects(libzfs_handle_t *hdl, const char *);
+#ifdef __FreeBSD__
+
+/*
+ * Attach/detach the given filesystem to/from the given jail.
+ */
+extern int zfs_jail(zfs_handle_t *zhp, int jailid, int attach);
+
+/*
+ * Set loader options for next boot.
+ */
+extern int zpool_nextboot(libzfs_handle_t *, uint64_t, uint64_t, const char *);
+
+#endif /* __FreeBSD__ */
 
 #ifdef	__cplusplus
 }

@@ -82,7 +82,7 @@ too_many_errors(vdev_t *vd, uint64_t numerrors)
 
 static int
 vdev_root_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
-    uint64_t *ashift)
+    uint64_t *ashift, uint64_t *pshift)
 {
 	spa_t *spa = vd->vdev_spa;
 	int lasterror = 0;
@@ -98,7 +98,8 @@ vdev_root_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
 	for (int c = 0; c < vd->vdev_children; c++) {
 		vdev_t *cvd = vd->vdev_child[c];
 
-		if (cvd->vdev_open_error && !cvd->vdev_islog) {
+		if (cvd->vdev_open_error && !cvd->vdev_islog &&
+		    cvd->vdev_ops != &vdev_indirect_ops) {
 			lasterror = cvd->vdev_open_error;
 			numerrors++;
 		}
@@ -115,6 +116,7 @@ vdev_root_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
 	*asize = 0;
 	*max_asize = 0;
 	*ashift = 0;
+	*pshift = 0;
 
 	return (0);
 }

@@ -3,7 +3,7 @@ Author: Ubuntu developers
 Forward: no need
 --- a/etc/systemd/system/Makefile.am
 +++ b/etc/systemd/system/Makefile.am
-@@ -2,6 +2,7 @@
+@@ -4,6 +4,7 @@
  	50-zfs.preset
  
  systemdunit_DATA = \
@@ -11,14 +11,6 @@ Forward: no need
  	zfs-zed.service \
  	zfs-import-cache.service \
  	zfs-import-scan.service \
-@@ -13,6 +14,7 @@
- 	zfs.target
- 
- EXTRA_DIST = \
-+	$(top_srcdir)/etc/systemd/system/zfs-load-module.service.in \
- 	$(top_srcdir)/etc/systemd/system/zfs-zed.service.in \
- 	$(top_srcdir)/etc/systemd/system/zfs-import-cache.service.in \
- 	$(top_srcdir)/etc/systemd/system/zfs-import-scan.service.in \
 --- a/etc/systemd/system/zfs-import-cache.service.in
 +++ b/etc/systemd/system/zfs-import-cache.service.in
 @@ -3,7 +3,9 @@
@@ -72,7 +64,7 @@ Forward: no need
 +enable zfs-load-module.service
 --- a/contrib/dracut/90zfs/module-setup.sh.in
 +++ b/contrib/dracut/90zfs/module-setup.sh.in
-@@ -91,6 +91,7 @@
+@@ -95,6 +95,7 @@
  
  	if dracut_module_included "systemd"; then
  		mkdir -p "${initdir}/$systemdsystemunitdir/zfs-import.target.wants"

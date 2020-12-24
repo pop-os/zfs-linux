@@ -1,6 +1,6 @@
 /*
- * This file is part of the ZFS Event Daemon (ZED)
- * for ZFS on Linux (ZoL) <http://zfsonlinux.org/>.
+ * This file is part of the ZFS Event Daemon (ZED).
+ *
  * Developed at Lawrence Livermore National Laboratory (LLNL-CODE-403049).
  * Copyright (C) 2013-2014 Lawrence Livermore National Security, LLC.
  * Refer to the ZoL git commit log for authoritative copyright attribution.
@@ -25,6 +25,7 @@ struct zed_conf {
 	unsigned	do_memlock:1;		/* true if locking memory */
 	unsigned	do_verbose:1;		/* true if verbosity enabled */
 	unsigned	do_zero:1;		/* true if zeroing state */
+	unsigned	do_idle:1;		/* true if idle enabled */
 	int		syslog_facility;	/* syslog facility value */
 	int		min_events;		/* RESERVED FOR FUTURE USE */
 	int		max_events;		/* RESERVED FOR FUTURE USE */

@@ -28,9 +28,12 @@
 #if defined(__x86_64) && defined(HAVE_AVX512F)
 
 #include <sys/types.h>
-#include <linux/simd_x86.h>
+#include <sys/simd.h>
+#include <sys/debug.h>
 
+#ifdef __linux__
 #define	__asm __asm__ __volatile__
+#endif
 
 #define	_REG_CNT(_0, _1, _2, _3, _4, _5, _6, _7, N, ...) N
 #define	REG_CNT(r...) _REG_CNT(r, 8, 7, 6, 5, 4, 3, 2, 1)
@@ -194,6 +197,8 @@ typedef struct v {
 		    "vpternlogd $0x6c,%zmm29, %zmm26, %" VR0(r) "\n"	\
 		    "vpternlogd $0x6c,%zmm29, %zmm25, %" VR1(r));	\
 		break;							\
+	default:							\
+		VERIFY(0);						\
 	}								\
 }
 
@@ -370,6 +375,9 @@ gf_x2_mul_fns[256] = {
 		COPY(R_23(r), _mul_x2_in);				\
 		gf_x2_mul_fns[c]();					\
 		COPY(_mul_x2_acc, R_23(r));				\
+		break;							\
+	default:							\
+		VERIFY(0);						\
 	}								\
 }
 

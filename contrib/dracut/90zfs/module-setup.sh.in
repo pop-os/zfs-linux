@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 check() {
 	# We depend on udev-rules being loaded
 	[ "${1}" = "-d" ] && return 0
 
 	# Verify the zfs tool chain
-	for tool in "@sbindir@/zpool" "@sbindir@/zfs" "@mounthelperdir@/mount.zfs" ; do
+	for tool in "@bindir@/zgenhostid" "@sbindir@/zpool" "@sbindir@/zfs" "@mounthelperdir@/mount.zfs" ; do
 		test -x "$tool" || return 1
 	done
 	# Verify grep exists
@@ -38,9 +38,11 @@ install() {
 	inst_rules @udevruledir@/60-zvol.rules
 	dracut_install hostid
 	dracut_install grep
+	dracut_install @bindir@/zgenhostid
 	dracut_install @sbindir@/zfs
 	dracut_install @sbindir@/zpool
-	# Workaround for zfsonlinux/zfs#4749 by ensuring libgcc_s.so(.1) is included
+	# Workaround for https://github.com/openzfs/zfs/issues/4749 by
+	# ensuring libgcc_s.so(.1) is included
 	if [[ -n "$(ldd @sbindir@/zpool | grep -F 'libgcc_s.so')" ]]; then
 		# Dracut will have already tracked and included it
 		:;
@@ -83,11 +85,13 @@ install() {
 	fi
 
 	# Synchronize initramfs and system hostid
-	AA=`hostid | cut -b 1,2`
-	BB=`hostid | cut -b 3,4`
-	CC=`hostid | cut -b 5,6`
-	DD=`hostid | cut -b 7,8`
-	echo -ne "\\x${DD}\\x${CC}\\x${BB}\\x${AA}" > "${initdir}/etc/hostid"
+	if [ -f @sysconfdir@/hostid ]; then
+		inst @sysconfdir@/hostid
+		type mark_hostonly >/dev/null 2>&1 && mark_hostonly @sysconfdir@/hostid
+	elif HOSTID="$(hostid 2>/dev/null)" && [ "${HOSTID}" != "00000000" ]; then
+		zgenhostid -o "${initdir}@sysconfdir@/hostid" "${HOSTID}"
+		type mark_hostonly >/dev/null 2>&1 && mark_hostonly @sysconfdir@/hostid
+	fi
 
 	if dracut_module_included "systemd"; then
 		mkdir -p "${initdir}/$systemdsystemunitdir/zfs-import.target.wants"
@@ -109,5 +113,11 @@ install() {
 			ln -s ../zfs-import.target "${initdir}/$systemdsystemunitdir/initrd.target.wants"/zfs-import.target
 			type mark_hostonly >/dev/null 2>&1 && mark_hostonly @systemdunitdir@/zfs-import.target
 		fi
+		for _service in zfs-snapshot-bootfs.service zfs-rollback-bootfs.service ; do
+			inst "${moddir}"/$_service "${systemdsystemunitdir}"/$_service
+			if ! [ -L "${initdir}/$systemdsystemunitdir/initrd.target.wants"/$_service ]; then
+				ln -s ../$_service "${initdir}/$systemdsystemunitdir/initrd.target.wants"/$_service
+			fi
+		done
 	fi
 }

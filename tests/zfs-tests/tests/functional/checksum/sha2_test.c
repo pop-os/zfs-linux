@@ -39,9 +39,8 @@
 #include <sys/time.h>
 #define	_SHA2_IMPL
 #include <sys/sha2.h>
+#include <sys/stdtypes.h>
 #define NOTE(x)
-typedef enum boolean { B_FALSE, B_TRUE } boolean_t;
-typedef	unsigned long long	u_longlong_t;
 
 
 /*
@@ -172,20 +171,6 @@ const uint8_t	sha512_256_test_digests[][32] = {
 		0x6F, 0xEA, 0xC8, 0x61, 0xE1, 0x9B, 0x56, 0x3A
 	}
 };
-
-/*
- * Local reimplementation of cmn_err, since it's used in sha2.c.
- */
-/*ARGSUSED*/
-void
-cmn_err(int level, char *format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	/* LINTED: E_SEC_PRINTF_VAR_FMT */
-	(void) vfprintf(stderr, format, ap);
-	va_end(ap);
-}
 
 int
 main(int argc, char *argv[])
