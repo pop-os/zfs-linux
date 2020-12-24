@@ -1,4 +1,4 @@
-zfs-linux (2.0.0-1~exp1) UNRELEASED; urgency=medium
+zfs-linux (2.0.0-1~exp1) experimental; urgency=medium
 
   [ Mo Zhou ]
   * New upstream version 2.0.0
@@ -25,7 +25,14 @@ zfs-linux (2.0.0-1~exp1) UNRELEASED; urgency=medium
   * Remove duplicate lintian override
   * Update debian/copyright
 
- -- Mo Zhou <lumin@debian.org>  Thu, 10 Dec 2020 15:57:33 +0800
+  [ Mo Zhou ]
+  * d/rules: Only check ABI for the amd64 architecture.
+  * Refresh symbols file again based on arm64.
+
+  [ Aron Xu ]
+  * Remove out dated lintian override: package-uses-old-debhelper-compat-version
+
+ -- Aron Xu <aron@debian.org>  Fri, 25 Dec 2020 01:33:41 +0800
 
 zfs-linux (0.8.5-3) unstable; urgency=medium
 
