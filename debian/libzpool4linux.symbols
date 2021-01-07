@@ -3063,6 +3063,8 @@ libzpool.so.4 libzpool4linux #MINVER#
  zfs_vdev_min_auto_ashift@Base 2.0
  zfs_vdev_min_ms_count@Base 0.8.2
  zfs_vdev_ms_count_limit@Base 0.8.2
+ zfs_vdev_nia_credit@Base 2.0.1
+ zfs_vdev_nia_delay@Base 2.0.1
  zfs_vdev_queue_depth_pct@Base 0.8.2
  zfs_vdev_read_gap_limit@Base 0.8.2
  zfs_vdev_rebuild_max_active@Base 2.0
