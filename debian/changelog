@@ -1,7 +1,15 @@
+zfs-linux (2.0.1-1) UNRELEASED; urgency=medium
+
+  * New upstream version 2.0.1
+
+ -- Mo Zhou <lumin@debian.org>  Fri, 08 Jan 2021 15:15:09 +0800
+
 zfs-linux (2.0.0-1~exp1) experimental; urgency=medium
 
   [ Mo Zhou ]
   * New upstream version 2.0.0
+  * d/rules: Only check ABI for the amd64 architecture.
+  * Refresh symbols file again based on arm64.
 
   [ Antonio Russo ]
   * Use new --with-pkgconfigdir tunable
@@ -24,10 +32,6 @@ zfs-linux (2.0.0-1~exp1) experimental; urgency=medium
   * Exclude FreeBSD sources in Linux DKMS package
   * Remove duplicate lintian override
   * Update debian/copyright
-
-  [ Mo Zhou ]
-  * d/rules: Only check ABI for the amd64 architecture.
-  * Refresh symbols file again based on arm64.
 
   [ Aron Xu ]
   * Remove out dated lintian override: package-uses-old-debhelper-compat-version
