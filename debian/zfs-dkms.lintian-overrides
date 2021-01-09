@@ -1,5 +1,6 @@
 binary-package-depends-on-toolchain-package Suggests: debhelper
-zfs-dkms: extra-license-file usr/share/doc/zfs-dkms/LICENSE.gz
-zfs-dkms: extra-license-file usr/src/zfs-2.0.1/LICENSE
-zfs-dkms: package-contains-documentation-outside-usr-share-doc usr/src/zfs-2.0.1/LICENSE
-zfs-dkms: package-contains-documentation-outside-usr-share-doc usr/src/zfs-2.0.1/README.md
+extra-license-file usr/share/doc/zfs-dkms/LICENSE.gz
+extra-license-file usr/src/zfs-*/LICENSE
+package-contains-documentation-outside-usr-share-doc usr/src/zfs-*/LICENSE
+package-contains-documentation-outside-usr-share-doc usr/src/zfs-*/README.md
+package-contains-documentation-outside-usr-share-doc usr/src/zfs-*/COPYRIGHT

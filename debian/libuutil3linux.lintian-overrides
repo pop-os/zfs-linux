@@ -1,2 +1,3 @@
-libuutil3linux: package-name-doesnt-match-sonames
-libuutil3linux: extra-license-file usr/share/doc/libuutil3linux/LICENSE.gz
+package-name-doesnt-match-sonames
+extra-license-file usr/share/doc/libuutil3linux/LICENSE.gz
+exit-in-shared-library

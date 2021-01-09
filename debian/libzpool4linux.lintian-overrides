@@ -1,2 +1,2 @@
-libzpool4linux: package-name-doesnt-match-sonames
-libzpool4linux: extra-license-file usr/share/doc/libzpool4linux/LICENSE.gz
+package-name-doesnt-match-sonames
+extra-license-file usr/share/doc/libzpool4linux/LICENSE.gz

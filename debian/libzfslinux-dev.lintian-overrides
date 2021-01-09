@@ -1,2 +1,2 @@
-libzfslinux-dev: extra-license-file usr/share/doc/libzfslinux-dev/LICENSE.gz
-libzfslinux-dev: package-contains-empty-directory usr/include/libzfs/linux/
+extra-license-file usr/share/doc/libzfslinux-dev/LICENSE.gz
+breakout-link
