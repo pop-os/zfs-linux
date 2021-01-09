@@ -1,8 +1,13 @@
 zfs-linux (2.0.1-1) UNRELEASED; urgency=medium
 
-  * New upstream version 2.0.1
+  [ Mo Zhou ]
+  * New upstream version 2.0.1 (Closes: #977656)
 
- -- Mo Zhou <lumin@debian.org>  Fri, 08 Jan 2021 15:15:09 +0800
+  [ Antonio Russo ]
+  * Update overrides for 2.0.1
+  * New symbols shipped in 2.0.1
+
+ -- Mo Zhou <lumin@debian.org>  Sat, 09 Jan 2021 13:15:58 +0800
 
 zfs-linux (2.0.0-1~exp1) experimental; urgency=medium
 
