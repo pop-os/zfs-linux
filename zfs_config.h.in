@@ -16,9 +16,6 @@
 /* bdi_setup_and_register() wants 2 args */
 #undef HAVE_2ARGS_BDI_SETUP_AND_REGISTER
 
-/* lookup_bdev() wants 2 args */
-#undef HAVE_2ARGS_LOOKUP_BDEV
-
 /* vfs_getattr wants 2 args */
 #undef HAVE_2ARGS_VFS_GETATTR
 
@@ -79,6 +76,9 @@
 /* bdev_check_media_change() exists */
 #undef HAVE_BDEV_CHECK_MEDIA_CHANGE
 
+/* bdev_whole() is available */
+#undef HAVE_BDEV_WHOLE
+
 /* bio->bi_opf is defined */
 #undef HAVE_BIO_BI_OPF
 
@@ -87,6 +87,9 @@
 
 /* bio has bi_iter */
 #undef HAVE_BIO_BVEC_ITER
+
+/* bio_*_io_acct() available */
+#undef HAVE_BIO_IO_ACCT
 
 /* bio_set_dev() is available */
 #undef HAVE_BIO_SET_DEV
@@ -108,6 +111,9 @@
 
 /* blk_alloc_queue() expects request function */
 #undef HAVE_BLK_ALLOC_QUEUE_REQUEST_FN
+
+/* blk_alloc_queue_rh() expects request function */
+#undef HAVE_BLK_ALLOC_QUEUE_REQUEST_FN_RH
 
 /* blk queue backing_dev_info is dynamic */
 #undef HAVE_BLK_QUEUE_BDI_DYNAMIC
@@ -157,6 +163,12 @@
 /* dentry uses const struct dentry_operations */
 #undef HAVE_CONST_DENTRY_OPERATIONS
 
+/* copy_from_iter() is available */
+#undef HAVE_COPY_FROM_ITER
+
+/* copy_to_iter() is available */
+#undef HAVE_COPY_TO_ITER
+
 /* current_time() exists */
 #undef HAVE_CURRENT_TIME
 
@@ -166,6 +178,9 @@
 
 /* DECLARE_EVENT_CLASS() is available */
 #undef HAVE_DECLARE_EVENT_CLASS
+
+/* lookup_bdev() wants dev_t arg */
+#undef HAVE_DEVT_LOOKUP_BDEV
 
 /* sops->dirty_inode() wants flags */
 #undef HAVE_DIRTY_INODE_WITH_FLAGS
@@ -209,10 +224,10 @@
 /* fops->fsync() without dentry */
 #undef HAVE_FSYNC_WITHOUT_DENTRY
 
-/* generic_start_io_acct()/generic_end_io_acct() available */
+/* generic_*_io_acct() 3 arg available */
 #undef HAVE_GENERIC_IO_ACCT_3ARG
 
-/* generic_start_io_acct()/generic_end_io_acct() 4 arg available */
+/* generic_*_io_acct() 4 arg available */
 #undef HAVE_GENERIC_IO_ACCT_4ARG
 
 /* generic_readlink is global */
@@ -226,9 +241,6 @@
 
 /* Define if the GNU gettext() function is already present or preinstalled. */
 #undef HAVE_GETTEXT
-
-/* get_disk_and_module() is available */
-#undef HAVE_GET_DISK_AND_MODULE
 
 /* iops->get_link() cookie */
 #undef HAVE_GET_LINK_COOKIE
@@ -265,6 +277,27 @@
 
 /* in_compat_syscall() is available */
 #undef HAVE_IN_COMPAT_SYSCALL
+
+/* iov_iter_advance() is available */
+#undef HAVE_IOV_ITER_ADVANCE
+
+/* iov_iter_count() is available */
+#undef HAVE_IOV_ITER_COUNT
+
+/* iov_iter_fault_in_readable() is available */
+#undef HAVE_IOV_ITER_FAULT_IN_READABLE
+
+/* iov_iter_init() is available */
+#undef HAVE_IOV_ITER_INIT
+
+/* iov_iter_init() is available */
+#undef HAVE_IOV_ITER_INIT_LEGACY
+
+/* iov_iter_revert() is available */
+#undef HAVE_IOV_ITER_REVERT
+
+/* iov_iter types are available */
+#undef HAVE_IOV_ITER_TYPES
 
 /* yes */
 #undef HAVE_IO_SCHEDULE_TIMEOUT
@@ -365,6 +398,9 @@
 /* Define to 1 if you have the `mlockall' function. */
 #undef HAVE_MLOCKALL
 
+/* lookup_bdev() wants mode arg */
+#undef HAVE_MODE_LOOKUP_BDEV
+
 /* Define if host toolchain supports MOVBE */
 #undef HAVE_MOVBE
 
@@ -433,6 +469,9 @@
 
 /* REQ_PREFLUSH is defined */
 #undef HAVE_REQ_PREFLUSH
+
+/* revalidate_disk() is available */
+#undef HAVE_REVALIDATE_DISK
 
 /* revalidate_disk_size() is available */
 #undef HAVE_REVALIDATE_DISK_SIZE
@@ -553,6 +592,9 @@
 
 /* aops->direct_IO() uses iov_iter with rw and offset */
 #undef HAVE_VFS_DIRECT_IO_ITER_RW_OFFSET
+
+/* All required iov_iter interfaces are available */
+#undef HAVE_VFS_IOV_ITER
 
 /* fops->iterate() is available */
 #undef HAVE_VFS_ITERATE

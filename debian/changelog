@@ -1,7 +1,23 @@
+zfs-linux (2.0.1-1~exp1) experimental; urgency=medium
+
+  [ Mo Zhou ]
+  * New upstream version 2.0.1 (Closes: #977656)
+  * Elaborate the functionality of ZED in long description. (Closes: #979414)
+  * Fixup encoding in one of the patch headers.
+  * Update lintian overrides.
+
+  [ Antonio Russo ]
+  * Update overrides for 2.0.1
+  * New symbols shipped in 2.0.1
+
+ -- Mo Zhou <lumin@debian.org>  Sat, 09 Jan 2021 13:24:36 +0800
+
 zfs-linux (2.0.0-1~exp1) experimental; urgency=medium
 
   [ Mo Zhou ]
   * New upstream version 2.0.0
+  * d/rules: Only check ABI for the amd64 architecture.
+  * Refresh symbols file again based on arm64.
 
   [ Antonio Russo ]
   * Use new --with-pkgconfigdir tunable
@@ -24,10 +40,6 @@ zfs-linux (2.0.0-1~exp1) experimental; urgency=medium
   * Exclude FreeBSD sources in Linux DKMS package
   * Remove duplicate lintian override
   * Update debian/copyright
-
-  [ Mo Zhou ]
-  * d/rules: Only check ABI for the amd64 architecture.
-  * Refresh symbols file again based on arm64.
 
   [ Aron Xu ]
   * Remove out dated lintian override: package-uses-old-debhelper-compat-version
