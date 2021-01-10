@@ -103,8 +103,8 @@ fatal(spa_t *spa, void *tag, const char *fmt, ...)
 
 /* ARGSUSED */
 static int
-space_delta_cb(dmu_object_type_t bonustype, void *data,
-    uint64_t *userp, uint64_t *groupp, uint64_t *projectp)
+space_delta_cb(dmu_object_type_t bonustype, const void *data,
+    zfs_file_info_t *zoi)
 {
 	/*
 	 * Is it a valid type of object to track?
@@ -126,7 +126,8 @@ zhack_import(char *target, boolean_t readonly)
 	nvlist_t *props;
 	int error;
 
-	kernel_init(readonly ? FREAD : (FREAD | FWRITE));
+	kernel_init(readonly ? SPA_MODE_READ :
+	    (SPA_MODE_READ | SPA_MODE_WRITE));
 
 	dmu_objset_register_type(DMU_OST_ZFS, space_delta_cb);
 
@@ -149,6 +150,7 @@ zhack_import(char *target, boolean_t readonly)
 	zfeature_checks_disable = B_TRUE;
 	error = spa_import(target, config, props,
 	    (readonly ?  ZFS_IMPORT_SKIP_MMP : ZFS_IMPORT_NORMAL));
+	fnvlist_free(config);
 	zfeature_checks_disable = B_FALSE;
 	if (error == EEXIST)
 		error = 0;

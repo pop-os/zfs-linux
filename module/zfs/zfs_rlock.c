@@ -38,6 +38,20 @@
  *	rangelock_reduce(lr, off, len); // optional
  *	rangelock_exit(lr);
  *
+ * Range locking rules
+ * --------------------
+ * 1. When truncating a file (zfs_create, zfs_setattr, zfs_space) the whole
+ *    file range needs to be locked as RL_WRITER. Only then can the pages be
+ *    freed etc and zp_size reset. zp_size must be set within range lock.
+ * 2. For writes and punching holes (zfs_write & zfs_space) just the range
+ *    being written or freed needs to be locked as RL_WRITER.
+ *    Multiple writes at the end of the file must coordinate zp_size updates
+ *    to ensure data isn't lost. A compare and swap loop is currently used
+ *    to ensure the file size is at least the offset last written.
+ * 3. For reads (zfs_read, zfs_get_data & zfs_putapage) just the range being
+ *    read needs to be locked as RL_READER. A check against zp_size can then
+ *    be made for reading beyond end of file.
+ *
  * AVL tree
  * --------
  * An AVL tree is used to maintain the state of the existing ranges
@@ -99,6 +113,7 @@
 #include <sys/zfs_context.h>
 #include <sys/zfs_rlock.h>
 
+
 /*
  * AVL comparison function used to order range locks
  * Locks are ordered on the start offset of the range.
@@ -109,7 +124,7 @@ zfs_rangelock_compare(const void *arg1, const void *arg2)
 	const zfs_locked_range_t *rl1 = (const zfs_locked_range_t *)arg1;
 	const zfs_locked_range_t *rl2 = (const zfs_locked_range_t *)arg2;
 
-	return (AVL_CMP(rl1->lr_offset, rl2->lr_offset));
+	return (TREE_CMP(rl1->lr_offset, rl2->lr_offset));
 }
 
 /*
@@ -135,10 +150,12 @@ zfs_rangelock_fini(zfs_rangelock_t *rl)
 }
 
 /*
- * Check if a write lock can be grabbed, or wait and recheck until available.
+ * Check if a write lock can be grabbed.  If not, fail immediately or sleep and
+ * recheck until available, depending on the value of the "nonblock" parameter.
  */
-static void
-zfs_rangelock_enter_writer(zfs_rangelock_t *rl, zfs_locked_range_t *new)
+static boolean_t
+zfs_rangelock_enter_writer(zfs_rangelock_t *rl, zfs_locked_range_t *new,
+    boolean_t nonblock)
 {
 	avl_tree_t *tree = &rl->rl_tree;
 	zfs_locked_range_t *lr;
@@ -168,7 +185,7 @@ zfs_rangelock_enter_writer(zfs_rangelock_t *rl, zfs_locked_range_t *new)
 		 */
 		if (avl_numnodes(tree) == 0) {
 			avl_add(tree, new);
-			return;
+			return (B_TRUE);
 		}
 
 		/*
@@ -189,8 +206,10 @@ zfs_rangelock_enter_writer(zfs_rangelock_t *rl, zfs_locked_range_t *new)
 			goto wait;
 
 		avl_insert(tree, new, where);
-		return;
+		return (B_TRUE);
 wait:
+		if (nonblock)
+			return (B_FALSE);
 		if (!lr->lr_write_wanted) {
 			cv_init(&lr->lr_write_cv, NULL, CV_DEFAULT, NULL);
 			lr->lr_write_wanted = B_TRUE;
@@ -376,10 +395,12 @@ zfs_rangelock_add_reader(avl_tree_t *tree, zfs_locked_range_t *new,
 }
 
 /*
- * Check if a reader lock can be grabbed, or wait and recheck until available.
+ * Check if a reader lock can be grabbed.  If not, fail immediately or sleep and
+ * recheck until available, depending on the value of the "nonblock" parameter.
  */
-static void
-zfs_rangelock_enter_reader(zfs_rangelock_t *rl, zfs_locked_range_t *new)
+static boolean_t
+zfs_rangelock_enter_reader(zfs_rangelock_t *rl, zfs_locked_range_t *new,
+    boolean_t nonblock)
 {
 	avl_tree_t *tree = &rl->rl_tree;
 	zfs_locked_range_t *prev, *next;
@@ -400,6 +421,8 @@ retry:
 	 */
 	if (prev && (off < prev->lr_offset + prev->lr_length)) {
 		if ((prev->lr_type == RL_WRITER) || (prev->lr_write_wanted)) {
+			if (nonblock)
+				return (B_FALSE);
 			if (!prev->lr_read_wanted) {
 				cv_init(&prev->lr_read_cv,
 				    NULL, CV_DEFAULT, NULL);
@@ -424,6 +447,8 @@ retry:
 		if (off + len <= next->lr_offset)
 			goto got_lock;
 		if ((next->lr_type == RL_WRITER) || (next->lr_write_wanted)) {
+			if (nonblock)
+				return (B_FALSE);
 			if (!next->lr_read_wanted) {
 				cv_init(&next->lr_read_cv,
 				    NULL, CV_DEFAULT, NULL);
@@ -442,6 +467,7 @@ got_lock:
 	 * locks and bumping ref counts (r_count).
 	 */
 	zfs_rangelock_add_reader(tree, new, prev, where);
+	return (B_TRUE);
 }
 
 /*
@@ -449,11 +475,12 @@ got_lock:
  * (RL_WRITER or RL_APPEND).  If RL_APPEND is specified, rl_cb() will convert
  * it to a RL_WRITER lock (with the offset at the end of the file).  Returns
  * the range lock structure for later unlocking (or reduce range if the
- * entire file is locked as RL_WRITER).
+ * entire file is locked as RL_WRITER), or NULL if nonblock is true and the
+ * lock could not be acquired immediately.
  */
-zfs_locked_range_t *
-zfs_rangelock_enter(zfs_rangelock_t *rl, uint64_t off, uint64_t len,
-    zfs_rangelock_type_t type)
+static zfs_locked_range_t *
+zfs_rangelock_enter_impl(zfs_rangelock_t *rl, uint64_t off, uint64_t len,
+    zfs_rangelock_type_t type, boolean_t nonblock)
 {
 	zfs_locked_range_t *new;
 
@@ -476,16 +503,32 @@ zfs_rangelock_enter(zfs_rangelock_t *rl, uint64_t off, uint64_t len,
 		/*
 		 * First check for the usual case of no locks
 		 */
-		if (avl_numnodes(&rl->rl_tree) == 0)
+		if (avl_numnodes(&rl->rl_tree) == 0) {
 			avl_add(&rl->rl_tree, new);
-		else
-			zfs_rangelock_enter_reader(rl, new);
-	} else {
-		/* RL_WRITER or RL_APPEND */
-		zfs_rangelock_enter_writer(rl, new);
+		} else if (!zfs_rangelock_enter_reader(rl, new, nonblock)) {
+			kmem_free(new, sizeof (*new));
+			new = NULL;
+		}
+	} else if (!zfs_rangelock_enter_writer(rl, new, nonblock)) {
+		kmem_free(new, sizeof (*new));
+		new = NULL;
 	}
 	mutex_exit(&rl->rl_lock);
 	return (new);
+}
+
+zfs_locked_range_t *
+zfs_rangelock_enter(zfs_rangelock_t *rl, uint64_t off, uint64_t len,
+    zfs_rangelock_type_t type)
+{
+	return (zfs_rangelock_enter_impl(rl, off, len, type, B_FALSE));
+}
+
+zfs_locked_range_t *
+zfs_rangelock_tryenter(zfs_rangelock_t *rl, uint64_t off, uint64_t len,
+    zfs_rangelock_type_t type)
+{
+	return (zfs_rangelock_enter_impl(rl, off, len, type, B_TRUE));
 }
 
 /*
@@ -642,6 +685,7 @@ zfs_rangelock_reduce(zfs_locked_range_t *lr, uint64_t off, uint64_t len)
 EXPORT_SYMBOL(zfs_rangelock_init);
 EXPORT_SYMBOL(zfs_rangelock_fini);
 EXPORT_SYMBOL(zfs_rangelock_enter);
+EXPORT_SYMBOL(zfs_rangelock_tryenter);
 EXPORT_SYMBOL(zfs_rangelock_exit);
 EXPORT_SYMBOL(zfs_rangelock_reduce);
 #endif

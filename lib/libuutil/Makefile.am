@@ -1,10 +1,9 @@
 include $(top_srcdir)/config/Rules.am
-
-DEFAULT_INCLUDES += \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/lib/libspl/include
+PHONY =
 
 lib_LTLIBRARIES = libuutil.la
+
+include $(top_srcdir)/config/Abigail.am
 
 USER_C = \
 	uu_alloc.c \
@@ -17,12 +16,21 @@ USER_C = \
 	uu_pname.c \
 	uu_string.c
 
-nodist_libuutil_la_SOURCES = $(USER_C)
+libuutil_la_SOURCES = $(USER_C)
 
 libuutil_la_LIBADD = \
-	$(top_builddir)/lib/libavl/libavl.la \
-	$(top_builddir)/lib/libspl/libspl.la
+	$(abs_top_builddir)/lib/libavl/libavl.la \
+	$(abs_top_builddir)/lib/libspl/libspl.la
 
-libuutil_la_LDFLAGS = -pthread -version-info 1:1:0
+libuutil_la_LIBADD += $(LTLIBINTL)
 
-EXTRA_DIST = $(USER_C)
+libuutil_la_LDFLAGS = -pthread
+
+if !ASAN_ENABLED
+libuutil_la_LDFLAGS += -Wl,-z,defs
+endif
+
+libuutil_la_LDFLAGS += -version-info 3:0:0
+
+# Library ABI
+EXTRA_DIST = libuutil.abi libuutil.suppr

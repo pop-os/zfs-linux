@@ -37,7 +37,7 @@
 #include <sys/sa.h>
 #include <sys/sa_impl.h>
 #include <sys/zfs_context.h>
-#include <sys/trace_dmu.h>
+#include <sys/trace_zfs.h>
 
 typedef void (*dmu_tx_hold_func_t)(dmu_tx_t *tx, struct dnode *dn,
     uint64_t arg1, uint64_t arg2);
@@ -314,23 +314,6 @@ dmu_tx_hold_write(dmu_tx_t *tx, uint64_t object, uint64_t off, int len)
 		dmu_tx_count_write(txh, off, len);
 		dmu_tx_count_dnode(txh);
 	}
-}
-
-void
-dmu_tx_hold_remap_l1indirect(dmu_tx_t *tx, uint64_t object)
-{
-	dmu_tx_hold_t *txh;
-
-	ASSERT(tx->tx_txg == 0);
-	txh = dmu_tx_hold_object_impl(tx, tx->tx_objset,
-	    object, THT_WRITE, 0, 0);
-	if (txh == NULL)
-		return;
-
-	dnode_t *dn = txh->txh_dnode;
-	(void) zfs_refcount_add_many(&txh->txh_space_towrite,
-	    1ULL << dn->dn_indblkshift, FTAG);
-	dmu_tx_count_dnode(txh);
 }
 
 void
@@ -1200,7 +1183,7 @@ dmu_tx_abort(dmu_tx_t *tx)
 	 * Call any registered callbacks with an error code.
 	 */
 	if (!list_is_empty(&tx->tx_callbacks))
-		dmu_tx_do_callbacks(&tx->tx_callbacks, ECANCELED);
+		dmu_tx_do_callbacks(&tx->tx_callbacks, SET_ERROR(ECANCELED));
 
 	dmu_tx_destroy(tx);
 }

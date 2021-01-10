@@ -25,13 +25,24 @@
  * Copyright 2018 RackTop Systems.
  */
 
+/*
+ * Links to Illumos.org for more information on Interface Libraries:
+ * [1] https://illumos.org/man/3lib/libnvpair
+ * [2] https://illumos.org/man/3nvpair/nvlist_alloc
+ * [3] https://illumos.org/man/9f/nvlist_alloc
+ * [4] https://illumos.org/man/9f/nvlist_next_nvpair
+ * [5] https://illumos.org/man/9f/nvpair_value_byte
+ */
+
 #include <sys/debug.h>
 #include <sys/isa_defs.h>
 #include <sys/nvpair.h>
 #include <sys/nvpair_impl.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/strings.h>
 #include <rpc/xdr.h>
+#include <sys/mod.h>
 
 #if defined(_KERNEL)
 #include <sys/sunddi.h>
@@ -557,10 +568,10 @@ nvlist_nv_alloc(int kmflag)
 	switch (kmflag) {
 	case KM_SLEEP:
 		return (nv_alloc_sleep);
-	case KM_PUSHPAGE:
-		return (nv_alloc_pushpage);
-	default:
+	case KM_NOSLEEP:
 		return (nv_alloc_nosleep);
+	default:
+		return (nv_alloc_pushpage);
 	}
 #else
 	return (nv_alloc_nosleep);
@@ -2553,11 +2564,13 @@ nvlist_common(nvlist_t *nvl, char *buf, size_t *buflen, int encoding,
 	int err = 0;
 	nvstream_t nvs;
 	int nvl_endian;
-#ifdef	_LITTLE_ENDIAN
+#if defined(_ZFS_LITTLE_ENDIAN)
 	int host_endian = 1;
-#else
+#elif defined(_ZFS_BIG_ENDIAN)
 	int host_endian = 0;
-#endif	/* _LITTLE_ENDIAN */
+#else
+#error "No endian defined!"
+#endif	/* _ZFS_LITTLE_ENDIAN */
 	nvs_header_t *nvh;
 
 	if (buflen == NULL || nvl == NULL ||
@@ -3603,11 +3616,12 @@ nvpair_fini(void)
 
 module_init(nvpair_init);
 module_exit(nvpair_fini);
+#endif
 
-MODULE_DESCRIPTION("Generic name/value pair implementation");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_LICENSE(ZFS_META_LICENSE);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+ZFS_MODULE_DESCRIPTION("Generic name/value pair implementation");
+ZFS_MODULE_AUTHOR(ZFS_META_AUTHOR);
+ZFS_MODULE_LICENSE(ZFS_META_LICENSE);
+ZFS_MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
 
 EXPORT_SYMBOL(nv_alloc_init);
 EXPORT_SYMBOL(nv_alloc_reset);
@@ -3722,5 +3736,3 @@ EXPORT_SYMBOL(nvpair_value_uint64_array);
 EXPORT_SYMBOL(nvpair_value_string_array);
 EXPORT_SYMBOL(nvpair_value_nvlist_array);
 EXPORT_SYMBOL(nvpair_value_hrtime);
-
-#endif

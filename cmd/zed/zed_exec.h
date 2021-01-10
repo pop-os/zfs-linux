@@ -1,6 +1,6 @@
 /*
- * This file is part of the ZFS Event Daemon (ZED)
- * for ZFS on Linux (ZoL) <http://zfsonlinux.org/>.
+ * This file is part of the ZFS Event Daemon (ZED).
+ *
  * Developed at Lawrence Livermore National Laboratory (LLNL-CODE-403049).
  * Copyright (C) 2013-2014 Lawrence Livermore National Security, LLC.
  * Refer to the ZoL git commit log for authoritative copyright attribution.
@@ -16,6 +16,7 @@
 #define	ZED_EXEC_H
 
 #include <stdint.h>
+#include "zed_strings.h"
 
 int zed_exec_process(uint64_t eid, const char *class, const char *subclass,
     const char *dir, zed_strings_t *zedlets, zed_strings_t *envs,

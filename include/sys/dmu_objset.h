@@ -118,6 +118,7 @@ struct objset {
 	uint64_t os_dnodesize; /* default dnode size for new objects */
 	enum zio_checksum os_checksum;
 	enum zio_compress os_compress;
+	uint8_t os_complevel;
 	uint8_t os_copies;
 	enum zio_checksum os_dedup_checksum;
 	boolean_t os_dedup_verify;
@@ -126,7 +127,7 @@ struct objset {
 	zfs_cache_type_t os_secondary_cache;
 	zfs_sync_type_t os_sync;
 	zfs_redundant_metadata_type_t os_redundant_metadata;
-	int os_recordsize;
+	uint64_t os_recordsize;
 	/*
 	 * The next four values are used as a cache of whatever's on disk, and
 	 * are initialized the first time these properties are queried. Before
@@ -244,7 +245,7 @@ void dmu_objset_evict(objset_t *os);
 void dmu_objset_do_userquota_updates(objset_t *os, dmu_tx_t *tx);
 void dmu_objset_userquota_get_ids(dnode_t *dn, boolean_t before, dmu_tx_t *tx);
 boolean_t dmu_objset_userused_enabled(objset_t *os);
-int dmu_objset_userspace_upgrade(objset_t *os);
+void dmu_objset_userspace_upgrade(objset_t *os);
 boolean_t dmu_objset_userspace_present(objset_t *os);
 boolean_t dmu_objset_userobjused_enabled(objset_t *os);
 boolean_t dmu_objset_userobjspace_upgradable(objset_t *os);
@@ -254,6 +255,8 @@ boolean_t dmu_objset_projectquota_enabled(objset_t *os);
 boolean_t dmu_objset_projectquota_present(objset_t *os);
 boolean_t dmu_objset_projectquota_upgradable(objset_t *os);
 void dmu_objset_id_quota_upgrade(objset_t *os);
+int dmu_get_file_info(objset_t *os, dmu_object_type_t bonustype,
+    const void *data, zfs_file_info_t *zfi);
 
 int dmu_fsname(const char *snapname, char *buf);
 

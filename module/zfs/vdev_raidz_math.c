@@ -29,9 +29,7 @@
 #include <sys/zfs_debug.h>
 #include <sys/vdev_raidz.h>
 #include <sys/vdev_raidz_impl.h>
-#include <linux/simd.h>
-
-extern boolean_t raidz_will_scalar_work(void);
+#include <sys/simd.h>
 
 /* Opaque implementation with NULL methods to represent original methods */
 static const raidz_impl_ops_t vdev_raidz_original_impl = {
@@ -63,9 +61,12 @@ const raidz_impl_ops_t *raidz_all_maths[] = {
 #if defined(__x86_64) && defined(HAVE_AVX512BW)	/* only x86_64 for now */
 	&vdev_raidz_avx512bw_impl,
 #endif
-#if defined(__aarch64__)
+#if defined(__aarch64__) && !defined(__FreeBSD__)
 	&vdev_raidz_aarch64_neon_impl,
 	&vdev_raidz_aarch64_neonx2_impl,
+#endif
+#if defined(__powerpc__) && defined(__altivec__)
+	&vdev_raidz_powerpc_altivec_impl,
 #endif
 };
 
@@ -359,7 +360,7 @@ raidz_math_kstat_addr(kstat_t *ksp, loff_t n)
 #define	BENCH_D_COLS	(8ULL)
 #define	BENCH_COLS	(BENCH_D_COLS + PARITY_PQR)
 #define	BENCH_ZIO_SIZE	(1ULL << SPA_OLD_MAXBLOCKSHIFT)	/* 128 kiB */
-#define	BENCH_NS	MSEC2NSEC(25)			/* 25ms */
+#define	BENCH_NS	MSEC2NSEC(1)			/* 1ms */
 
 typedef void (*benchmark_fn)(raidz_map_t *rm, const int fn);
 
@@ -409,7 +410,7 @@ benchmark_raidz_impl(raidz_map_t *bench_rm, const int fn, benchmark_fn bench_fn)
 		t_start = gethrtime();
 
 		do {
-			for (i = 0; i < 25; i++, run_cnt++)
+			for (i = 0; i < 5; i++, run_cnt++)
 				bench_fn(bench_rm, fn);
 
 			t_diff = gethrtime() - t_start;
@@ -627,8 +628,7 @@ vdev_raidz_impl_set(const char *val)
 	return (err);
 }
 
-#if defined(_KERNEL)
-#include <linux/mod_compat.h>
+#if defined(_KERNEL) && defined(__linux__)
 
 static int
 zfs_vdev_raidz_impl_set(const char *val, zfs_kernel_param_t *kp)

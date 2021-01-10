@@ -81,9 +81,7 @@ log_must truncate -s 0 $ZED_DEBUG_LOG
 # 4. Generate additional events.
 log_must zpool offline $MPOOL $VDEV1
 log_must zpool online $MPOOL $VDEV1
-while ! is_pool_resilvered $MPOOL; do
-	sleep 1
-done
+log_must zpool wait -t resilver $MPOOL
 
 log_must zpool scrub $MPOOL
 
@@ -94,7 +92,7 @@ done
 
 # 5. Start the ZED and verify it only handled the new missed events.
 log_must zed_start
-log_must file_wait $ZED_DEBUG_LOG 15
+log_must file_wait $ZED_DEBUG_LOG 35
 log_must cp $ZED_DEBUG_LOG $TMP_EVENTS_ZED
 
 log_mustnot grep -q "sysevent.fs.zfs.pool_create" $TMP_EVENTS_ZED

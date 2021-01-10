@@ -104,8 +104,6 @@ zpool_prop_init(void)
 	/* default number properties */
 	zprop_register_number(ZPOOL_PROP_VERSION, "version", SPA_VERSION,
 	    PROP_DEFAULT, ZFS_TYPE_POOL, "<version>", "VERSION");
-	zprop_register_number(ZPOOL_PROP_DEDUPDITTO, "dedupditto", 0,
-	    PROP_DEFAULT, ZFS_TYPE_POOL, "<threshold (min 100)>", "DEDUPDITTO");
 	zprop_register_number(ZPOOL_PROP_ASHIFT, "ashift", 0, PROP_DEFAULT,
 	    ZFS_TYPE_POOL, "<ashift, 9-16, or 0=default>", "ASHIFT");
 
@@ -131,7 +129,7 @@ zpool_prop_init(void)
 	    ZIO_FAILURE_MODE_WAIT, PROP_DEFAULT, ZFS_TYPE_POOL,
 	    "wait | continue | panic", "FAILMODE", failuremode_table);
 	zprop_register_index(ZPOOL_PROP_AUTOTRIM, "autotrim",
-	    SPA_AUTOTRIM_OFF, PROP_DEFAULT, ZFS_TYPE_POOL,
+	    SPA_AUTOTRIM_DEFAULT, PROP_DEFAULT, ZFS_TYPE_POOL,
 	    "on | off", "AUTOTRIM", boolean_table);
 
 	/* hidden properties */
@@ -143,6 +141,8 @@ zpool_prop_init(void)
 	    PROP_ONETIME, ZFS_TYPE_POOL, "TNAME");
 	zprop_register_hidden(ZPOOL_PROP_MAXDNODESIZE, "maxdnodesize",
 	    PROP_TYPE_NUMBER, PROP_READONLY, ZFS_TYPE_POOL, "MAXDNODESIZE");
+	zprop_register_hidden(ZPOOL_PROP_DEDUPDITTO, "dedupditto",
+	    PROP_TYPE_NUMBER, PROP_DEFAULT, ZFS_TYPE_POOL, "DEDUPDITTO");
 }
 
 /*
@@ -235,6 +235,7 @@ zpool_prop_random_value(zpool_prop_t prop, uint64_t seed)
 }
 
 #ifndef _KERNEL
+#include <libzfs.h>
 
 const char *
 zpool_prop_values(zpool_prop_t prop)

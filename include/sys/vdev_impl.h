@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2018 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2020 by Delphix. All rights reserved.
  * Copyright (c) 2017, Intel Corporation.
  */
 
@@ -38,6 +38,7 @@
 #include <sys/uberblock_impl.h>
 #include <sys/vdev_indirect_mapping.h>
 #include <sys/vdev_indirect_births.h>
+#include <sys/vdev_rebuild.h>
 #include <sys/vdev_removal.h>
 #include <sys/zfs_ratelimit.h>
 
@@ -68,7 +69,7 @@ extern uint32_t zfs_vdev_async_write_max_active;
  * Virtual device operations
  */
 typedef int	vdev_open_func_t(vdev_t *vd, uint64_t *size, uint64_t *max_size,
-    uint64_t *ashift);
+    uint64_t *ashift, uint64_t *pshift);
 typedef void	vdev_close_func_t(vdev_t *vd);
 typedef uint64_t vdev_asize_func_t(vdev_t *vd, uint64_t psize);
 typedef void	vdev_io_start_func_t(zio_t *zio);
@@ -86,8 +87,8 @@ typedef void	vdev_remap_func_t(vdev_t *vd, uint64_t offset, uint64_t size,
  * Given a target vdev, translates the logical range "in" to the physical
  * range "res"
  */
-typedef void vdev_xlation_func_t(vdev_t *cvd, const range_seg_t *in,
-    range_seg_t *res);
+typedef void vdev_xlation_func_t(vdev_t *cvd, const range_seg64_t *in,
+    range_seg64_t *res);
 
 typedef const struct vdev_ops {
 	vdev_open_func_t		*vdev_op_open;
@@ -147,6 +148,9 @@ struct vdev_queue {
 	avl_tree_t	vq_write_offset_tree;
 	avl_tree_t	vq_trim_offset_tree;
 	uint64_t	vq_last_offset;
+	zio_priority_t	vq_last_prio;	/* Last sent I/O priority. */
+	uint32_t	vq_ia_active;	/* Active interactive I/Os. */
+	uint32_t	vq_nia_credit;	/* Non-interactive I/Os credit. */
 	hrtime_t	vq_io_complete_ts; /* time last i/o completed */
 	hrtime_t	vq_io_delta_ts;
 	zio_t		vq_io_search; /* used as local for stack reduction */
@@ -215,13 +219,30 @@ struct vdev {
 	uint64_t	vdev_min_asize;	/* min acceptable asize		*/
 	uint64_t	vdev_max_asize;	/* max acceptable asize		*/
 	uint64_t	vdev_ashift;	/* block alignment shift	*/
+
+	/*
+	 * Logical block alignment shift
+	 *
+	 * The smallest sized/aligned I/O supported by the device.
+	 */
+	uint64_t	vdev_logical_ashift;
+	/*
+	 * Physical block alignment shift
+	 *
+	 * The device supports logical I/Os with vdev_logical_ashift
+	 * size/alignment, but optimum performance will be achieved by
+	 * aligning/sizing requests to vdev_physical_ashift.  Smaller
+	 * requests may be inflated or incur device level read-modify-write
+	 * operations.
+	 *
+	 * May be 0 to indicate no preference (i.e. use vdev_logical_ashift).
+	 */
+	uint64_t	vdev_physical_ashift;
 	uint64_t	vdev_state;	/* see VDEV_STATE_* #defines	*/
 	uint64_t	vdev_prevstate;	/* used when reopening a vdev	*/
 	vdev_ops_t	*vdev_ops;	/* vdev operations		*/
 	spa_t		*vdev_spa;	/* spa for this vdev		*/
 	void		*vdev_tsd;	/* type-specific data		*/
-	vnode_t		*vdev_name_vp;	/* vnode for pathname		*/
-	vnode_t		*vdev_devid_vp;	/* vnode for devid		*/
 	vdev_t		*vdev_top;	/* top-level vdev		*/
 	vdev_t		*vdev_parent;	/* parent vdev			*/
 	vdev_t		**vdev_child;	/* array of children		*/
@@ -297,13 +318,26 @@ struct vdev {
 	uint64_t	vdev_trim_secure;	/* requested secure TRIM */
 	uint64_t	vdev_trim_action_time;	/* start and end time */
 
-	/* for limiting outstanding I/Os (initialize and TRIM) */
+	/* Rebuild related */
+	boolean_t	vdev_rebuilding;
+	boolean_t	vdev_rebuild_exit_wanted;
+	boolean_t	vdev_rebuild_cancel_wanted;
+	boolean_t	vdev_rebuild_reset_wanted;
+	kmutex_t	vdev_rebuild_lock;
+	kcondvar_t	vdev_rebuild_cv;
+	kthread_t	*vdev_rebuild_thread;
+	vdev_rebuild_t	vdev_rebuild_config;
+
+	/* For limiting outstanding I/Os (initialize, TRIM, rebuild) */
 	kmutex_t	vdev_initialize_io_lock;
 	kcondvar_t	vdev_initialize_io_cv;
 	uint64_t	vdev_initialize_inflight;
 	kmutex_t	vdev_trim_io_lock;
 	kcondvar_t	vdev_trim_io_cv;
-	uint64_t	vdev_trim_inflight[2];
+	uint64_t	vdev_trim_inflight[3];
+	kmutex_t	vdev_rebuild_io_lock;
+	kcondvar_t	vdev_rebuild_io_cv;
+	uint64_t	vdev_rebuild_inflight;
 
 	/*
 	 * Values stored in the config for an indirect or removing vdev.
@@ -360,6 +394,7 @@ struct vdev {
 	uint64_t	vdev_degraded;	/* persistent degraded state	*/
 	uint64_t	vdev_removed;	/* persistent removed state	*/
 	uint64_t	vdev_resilver_txg; /* persistent resilvering state */
+	uint64_t	vdev_rebuild_txg; /* persistent rebuilding state */
 	uint64_t	vdev_nparity;	/* number of parity devices for raidz */
 	char		*vdev_path;	/* vdev path (if any)		*/
 	char		*vdev_devid;	/* vdev devid (if any)		*/
@@ -416,7 +451,7 @@ struct vdev {
 #define	VDEV_RAIDZ_MAXPARITY	3
 
 #define	VDEV_PAD_SIZE		(8 << 10)
-/* 2 padding areas (vl_pad1 and vl_pad2) to skip */
+/* 2 padding areas (vl_pad1 and vl_be) to skip */
 #define	VDEV_SKIP_SIZE		VDEV_PAD_SIZE * 2
 #define	VDEV_PHYS_SIZE		(112 << 10)
 #define	VDEV_UBERBLOCK_RING	(128 << 10)
@@ -443,12 +478,41 @@ typedef struct vdev_phys {
 	zio_eck_t	vp_zbt;
 } vdev_phys_t;
 
+typedef enum vbe_vers {
+	/*
+	 * The bootenv file is stored as ascii text in the envblock.
+	 * It is used by the GRUB bootloader used on Linux to store the
+	 * contents of the grubenv file. The file is stored as raw ASCII,
+	 * and is protected by an embedded checksum. By default, GRUB will
+	 * check if the boot filesystem supports storing the environment data
+	 * in a special location, and if so, will invoke filesystem specific
+	 * logic to retrieve it. This can be overriden by a variable, should
+	 * the user so desire.
+	 */
+	VB_RAW = 0,
+
+	/*
+	 * The bootenv file is converted to an nvlist and then packed into the
+	 * envblock.
+	 */
+	VB_NVLIST = 1
+} vbe_vers_t;
+
+typedef struct vdev_boot_envblock {
+	uint64_t	vbe_version;
+	char		vbe_bootenv[VDEV_PAD_SIZE - sizeof (uint64_t) -
+			sizeof (zio_eck_t)];
+	zio_eck_t	vbe_zbt;
+} vdev_boot_envblock_t;
+
+CTASSERT_GLOBAL(sizeof (vdev_boot_envblock_t) == VDEV_PAD_SIZE);
+
 typedef struct vdev_label {
 	char		vl_pad1[VDEV_PAD_SIZE];			/*  8K */
-	char		vl_pad2[VDEV_PAD_SIZE];			/*  8K */
+	vdev_boot_envblock_t	vl_be;				/*  8K */
 	vdev_phys_t	vl_vdev_phys;				/* 112K	*/
 	char		vl_uberblock[VDEV_UBERBLOCK_RING];	/* 128K	*/
-} vdev_label_t;							/* 256K total */
+} vdev_label_t;						/* 256K total */
 
 /*
  * vdev_dirty() flags
@@ -526,8 +590,8 @@ extern vdev_ops_t vdev_indirect_ops;
 /*
  * Common size functions
  */
-extern void vdev_default_xlate(vdev_t *vd, const range_seg_t *in,
-    range_seg_t *out);
+extern void vdev_default_xlate(vdev_t *vd, const range_seg64_t *in,
+    range_seg64_t *out);
 extern uint64_t vdev_default_asize(vdev_t *vd, uint64_t psize);
 extern uint64_t vdev_get_min_asize(vdev_t *vd);
 extern void vdev_set_min_asize(vdev_t *vd);
@@ -535,7 +599,7 @@ extern void vdev_set_min_asize(vdev_t *vd);
 /*
  * Global variables
  */
-extern int vdev_standard_sm_blksz;
+extern int zfs_vdev_standard_sm_blksz;
 /* zdb uses this tunable, so it must be declared here to make lint happy. */
 extern int zfs_vdev_cache_size;
 
@@ -552,6 +616,14 @@ extern int vdev_obsolete_counts_are_precise(vdev_t *vd, boolean_t *are_precise);
  * Other miscellaneous functions
  */
 int vdev_checkpoint_sm_object(vdev_t *vd, uint64_t *sm_obj);
+
+/*
+ * Vdev ashift optimization tunables
+ */
+extern uint64_t zfs_vdev_min_auto_ashift;
+extern uint64_t zfs_vdev_max_auto_ashift;
+int param_set_min_auto_ashift(ZFS_MODULE_PARAM_ARGS);
+int param_set_max_auto_ashift(ZFS_MODULE_PARAM_ARGS);
 
 #ifdef	__cplusplus
 }

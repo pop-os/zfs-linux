@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2018 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2019 by Delphix. All rights reserved.
  * Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
  * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
  * Copyright 2013 Saso Kiselkov. All rights reserved.
@@ -34,7 +34,9 @@
 
 #include <sys/spa.h>
 #include <sys/spa_checkpoint.h>
+#include <sys/spa_log_spacemap.h>
 #include <sys/vdev.h>
+#include <sys/vdev_rebuild.h>
 #include <sys/vdev_removal.h>
 #include <sys/metaslab.h>
 #include <sys/dmu.h>
@@ -42,12 +44,13 @@
 #include <sys/uberblock_impl.h>
 #include <sys/zfs_context.h>
 #include <sys/avl.h>
-#include <sys/refcount.h>
+#include <sys/zfs_refcount.h>
 #include <sys/bplist.h>
 #include <sys/bpobj.h>
 #include <sys/dsl_crypt.h>
 #include <sys/zfeature.h>
 #include <sys/zthr.h>
+#include <sys/dsl_deadlist.h>
 #include <zfeature_common.h>
 
 #ifdef	__cplusplus
@@ -214,6 +217,7 @@ struct spa {
 	spa_load_state_t spa_load_state;	/* current load operation */
 	boolean_t	spa_indirect_vdevs_loaded; /* mappings loaded? */
 	boolean_t	spa_trust_config;	/* do we trust vdev tree? */
+	boolean_t	spa_is_splitting;	/* in the middle of a split? */
 	spa_config_source_t spa_config_source;	/* where config comes from? */
 	uint64_t	spa_import_flags;	/* import specific flags */
 	spa_taskqs_t	spa_zio_taskq[ZIO_TYPES][ZIO_TASKQ_TYPES];
@@ -310,6 +314,19 @@ struct spa {
 	spa_checkpoint_info_t spa_checkpoint_info; /* checkpoint accounting */
 	zthr_t		*spa_checkpoint_discard_zthr;
 
+	space_map_t	*spa_syncing_log_sm;	/* current log space map */
+	avl_tree_t	spa_sm_logs_by_txg;
+	kmutex_t	spa_flushed_ms_lock;	/* for metaslabs_by_flushed */
+	avl_tree_t	spa_metaslabs_by_flushed;
+	spa_unflushed_stats_t	spa_unflushed_stats;
+	list_t		spa_log_summary;
+	uint64_t	spa_log_flushall_txg;
+
+	zthr_t		*spa_livelist_delete_zthr; /* deleting livelists */
+	zthr_t		*spa_livelist_condense_zthr; /* condensing livelists */
+	uint64_t	spa_livelists_to_delete; /* set of livelists to free */
+	livelist_condense_entry_t	spa_to_condense; /* next to condense */
+
 	char		*spa_root;		/* alternate root directory */
 	uint64_t	spa_ena;		/* spa-wide ereport ENA */
 	int		spa_last_open_failed;	/* error if last open failed */
@@ -347,13 +364,12 @@ struct spa {
 	uint8_t		spa_claiming;		/* pool is doing zil_claim() */
 	boolean_t	spa_is_root;		/* pool is root */
 	int		spa_minref;		/* num refs when first opened */
-	int		spa_mode;		/* FREAD | FWRITE */
+	spa_mode_t	spa_mode;		/* SPA_MODE_{READ|WRITE} */
 	spa_log_state_t spa_log_state;		/* log state */
 	uint64_t	spa_autoexpand;		/* lun expansion on/off */
 	ddt_t		*spa_ddt[ZIO_CHECKSUM_FUNCTIONS]; /* in-core DDTs */
 	uint64_t	spa_ddt_stat_object;	/* DDT statistics */
 	uint64_t	spa_dedup_dspace;	/* Cache get_dedup_dspace() */
-	uint64_t	spa_dedup_ditto;	/* dedup ditto threshold */
 	uint64_t	spa_dedup_checksum;	/* default dedup checksum */
 	uint64_t	spa_dspace;		/* dspace in normal class */
 	kmutex_t	spa_vdev_top_lock;	/* dueling offline/remove */
@@ -361,7 +377,7 @@ struct spa {
 	kcondvar_t	spa_proc_cv;		/* spa_proc_state transitions */
 	spa_proc_state_t spa_proc_state;	/* see definition */
 	proc_t		*spa_proc;		/* "zpool-poolname" process */
-	uint64_t	spa_did;		/* if procp != p0, did of t1 */
+	uintptr_t	spa_did;		/* if procp != p0, did of t1 */
 	boolean_t	spa_autoreplace;	/* autoreplace set in open */
 	int		spa_vdev_locks;		/* locks grabbed */
 	uint64_t	spa_creation_version;	/* version at pool creation */
@@ -399,6 +415,13 @@ struct spa {
 	uint64_t	spa_leaf_list_gen;	/* track leaf_list changes */
 	uint32_t	spa_hostid;		/* cached system hostid */
 
+	/* synchronization for threads in spa_wait */
+	kmutex_t	spa_activities_lock;
+	kcondvar_t	spa_activities_cv;
+	kcondvar_t	spa_waiters_cv;
+	int		spa_waiters;		/* number of waiting threads */
+	boolean_t	spa_waiters_cancel;	/* waiters should return */
+
 	/*
 	 * spa_refcount & spa_config_lock must be the last elements
 	 * because zfs_refcount_t changes size based on compilation options.
@@ -412,7 +435,8 @@ struct spa {
 };
 
 extern char *spa_config_path;
-
+extern char *zfs_deadman_failmode;
+extern int spa_slop_shift;
 extern void spa_taskq_dispatch_ent(spa_t *spa, zio_type_t t, zio_taskq_type_t q,
     task_func_t *func, void *arg, uint_t flags, taskq_ent_t *ent);
 extern void spa_taskq_dispatch_sync(spa_t *, zio_type_t t, zio_taskq_type_t q,
@@ -422,7 +446,10 @@ extern void spa_load_l2cache(spa_t *spa);
 extern sysevent_t *spa_event_create(spa_t *spa, vdev_t *vd, nvlist_t *hist_nvl,
     const char *name);
 extern void spa_event_post(sysevent_t *ev);
-
+extern int param_set_deadman_failmode_common(const char *val);
+extern void spa_set_deadman_synctime(hrtime_t ns);
+extern void spa_set_deadman_ziotime(hrtime_t ns);
+extern const char *spa_history_zone(void);
 
 #ifdef	__cplusplus
 }

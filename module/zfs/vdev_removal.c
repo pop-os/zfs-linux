@@ -21,7 +21,7 @@
 
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2019 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2020 by Delphix. All rights reserved.
  * Copyright (c) 2019, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
  */
 
@@ -47,7 +47,7 @@
 #include <sys/abd.h>
 #include <sys/vdev_initialize.h>
 #include <sys/vdev_trim.h>
-#include <sys/trace_vdev.h>
+#include <sys/trace_zfs.h>
 
 /*
  * This file contains the necessary logic to remove vdevs from a
@@ -198,11 +198,12 @@ spa_vdev_removal_create(vdev_t *vd)
 	spa_vdev_removal_t *svr = kmem_zalloc(sizeof (*svr), KM_SLEEP);
 	mutex_init(&svr->svr_lock, NULL, MUTEX_DEFAULT, NULL);
 	cv_init(&svr->svr_cv, NULL, CV_DEFAULT, NULL);
-	svr->svr_allocd_segs = range_tree_create(NULL, NULL);
+	svr->svr_allocd_segs = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
 	svr->svr_vdev_id = vd->vdev_id;
 
 	for (int i = 0; i < TXG_SIZE; i++) {
-		svr->svr_frees[i] = range_tree_create(NULL, NULL);
+		svr->svr_frees[i] = range_tree_create(NULL, RANGE_SEG64, NULL,
+		    0, 0);
 		list_create(&svr->svr_new_segments[i],
 		    sizeof (vdev_indirect_mapping_entry_t),
 		    offsetof(vdev_indirect_mapping_entry_t, vime_node));
@@ -247,7 +248,7 @@ vdev_remove_initiate_sync(void *arg, dmu_tx_t *tx)
 	vdev_indirect_config_t *vic = &vd->vdev_indirect_config;
 	objset_t *mos = spa->spa_dsl_pool->dp_meta_objset;
 	spa_vdev_removal_t *svr = NULL;
-	ASSERTV(uint64_t txg = dmu_tx_get_txg(tx));
+	uint64_t txg __maybe_unused = dmu_tx_get_txg(tx);
 
 	ASSERT3P(vd->vdev_ops, !=, &vdev_raidz_ops);
 	svr = spa_vdev_removal_create(vd);
@@ -267,7 +268,7 @@ vdev_remove_initiate_sync(void *arg, dmu_tx_t *tx)
 		VERIFY0(zap_add(spa->spa_meta_objset, vd->vdev_top_zap,
 		    VDEV_TOP_ZAP_OBSOLETE_COUNTS_ARE_PRECISE, sizeof (one), 1,
 		    &one, tx));
-		ASSERTV(boolean_t are_precise);
+		boolean_t are_precise __maybe_unused;
 		ASSERT0(vdev_obsolete_counts_are_precise(vd, &are_precise));
 		ASSERT3B(are_precise, ==, B_TRUE);
 	}
@@ -348,7 +349,7 @@ vdev_remove_initiate_sync(void *arg, dmu_tx_t *tx)
 	    vic->vic_mapping_object);
 
 	spa_history_log_internal(spa, "vdev remove started", tx,
-	    "%s vdev %llu %s", spa_name(spa), vd->vdev_id,
+	    "%s vdev %llu %s", spa_name(spa), (u_longlong_t)vd->vdev_id,
 	    (vd->vdev_path != NULL) ? vd->vdev_path : "-");
 	/*
 	 * Setting spa_vdev_removal causes subsequent frees to call
@@ -698,6 +699,7 @@ spa_finish_removal(spa_t *spa, dsl_scan_state_t state, dmu_tx_t *tx)
 	spa_vdev_removal_destroy(svr);
 
 	spa_sync_removing_state(spa, tx);
+	spa_notify_waiters(spa);
 
 	vdev_config_dirty(spa->spa_root_vdev);
 }
@@ -723,7 +725,7 @@ vdev_mapping_sync(void *arg, dmu_tx_t *tx)
 	spa_vdev_removal_t *svr = arg;
 	spa_t *spa = dmu_tx_pool(tx)->dp_spa;
 	vdev_t *vd = vdev_lookup_top(spa, svr->svr_vdev_id);
-	ASSERTV(vdev_indirect_config_t *vic = &vd->vdev_indirect_config);
+	vdev_indirect_config_t *vic __maybe_unused = &vd->vdev_indirect_config;
 	uint64_t txg = dmu_tx_get_txg(tx);
 	vdev_indirect_mapping_t *vim = vd->vdev_indirect_mapping;
 
@@ -966,18 +968,15 @@ spa_vdev_copy_segment(vdev_t *vd, range_tree_t *segs,
 		 * the allocation at the end of a segment, thus avoiding
 		 * additional split blocks.
 		 */
-		range_seg_t search;
-		avl_index_t where;
-		search.rs_start = start + maxalloc;
-		search.rs_end = search.rs_start;
-		range_seg_t *rs = avl_find(&segs->rt_root, &search, &where);
-		if (rs == NULL) {
-			rs = avl_nearest(&segs->rt_root, where, AVL_BEFORE);
-		} else {
-			rs = AVL_PREV(&segs->rt_root, rs);
-		}
+		range_seg_max_t search;
+		zfs_btree_index_t where;
+		rs_set_start(&search, segs, start + maxalloc);
+		rs_set_end(&search, segs, start + maxalloc);
+		(void) zfs_btree_find(&segs->rt_root, &search, &where);
+		range_seg_t *rs = zfs_btree_prev(&segs->rt_root, &where,
+		    &where);
 		if (rs != NULL) {
-			size = rs->rs_end - start;
+			size = rs_get_end(rs, segs) - start;
 		} else {
 			/*
 			 * There are no segments that end before maxalloc.
@@ -994,7 +993,7 @@ spa_vdev_copy_segment(vdev_t *vd, range_tree_t *segs,
 	 * An allocation class might not have any remaining vdevs or space
 	 */
 	metaslab_class_t *mc = mg->mg_class;
-	if (mc != spa_normal_class(spa) && mc->mc_groups <= 1)
+	if (mc->mc_groups == 0)
 		mc = spa_normal_class(spa);
 	int error = metaslab_alloc_dva(spa, mc, size, &dst, 0, NULL, txg, 0,
 	    zal, 0);
@@ -1010,20 +1009,22 @@ spa_vdev_copy_segment(vdev_t *vd, range_tree_t *segs,
 	 * relative to the start of the range to be copied (i.e. relative to the
 	 * local variable "start").
 	 */
-	range_tree_t *obsolete_segs = range_tree_create(NULL, NULL);
+	range_tree_t *obsolete_segs = range_tree_create(NULL, RANGE_SEG64, NULL,
+	    0, 0);
 
-	range_seg_t *rs = avl_first(&segs->rt_root);
-	ASSERT3U(rs->rs_start, ==, start);
-	uint64_t prev_seg_end = rs->rs_end;
-	while ((rs = AVL_NEXT(&segs->rt_root, rs)) != NULL) {
-		if (rs->rs_start >= start + size) {
+	zfs_btree_index_t where;
+	range_seg_t *rs = zfs_btree_first(&segs->rt_root, &where);
+	ASSERT3U(rs_get_start(rs, segs), ==, start);
+	uint64_t prev_seg_end = rs_get_end(rs, segs);
+	while ((rs = zfs_btree_next(&segs->rt_root, &where, &where)) != NULL) {
+		if (rs_get_start(rs, segs) >= start + size) {
 			break;
 		} else {
 			range_tree_add(obsolete_segs,
 			    prev_seg_end - start,
-			    rs->rs_start - prev_seg_end);
+			    rs_get_start(rs, segs) - prev_seg_end);
 		}
-		prev_seg_end = rs->rs_end;
+		prev_seg_end = rs_get_end(rs, segs);
 	}
 	/* We don't end in the middle of an obsolete range */
 	ASSERT3U(start + size, <=, prev_seg_end);
@@ -1112,7 +1113,7 @@ vdev_remove_complete_sync(void *arg, dmu_tx_t *tx)
 	spa_finish_removal(dmu_tx_pool(tx)->dp_spa, DSS_FINISHED, tx);
 	/* vd->vdev_path is not available here */
 	spa_history_log_internal(spa, "vdev remove completed",  tx,
-	    "%s vdev %llu", spa_name(spa), vd->vdev_id);
+	    "%s vdev %llu", spa_name(spa), (u_longlong_t)vd->vdev_id);
 }
 
 static void
@@ -1166,8 +1167,8 @@ vdev_remove_replace_with_indirect(vdev_t *vd, uint64_t txg)
 
 	/* After this, we can not use svr. */
 	tx = dmu_tx_create_assigned(spa->spa_dsl_pool, txg);
-	dsl_sync_task_nowait(spa->spa_dsl_pool, vdev_remove_complete_sync, svr,
-	    0, ZFS_SPACE_CHECK_NONE, tx);
+	dsl_sync_task_nowait(spa->spa_dsl_pool,
+	    vdev_remove_complete_sync, svr, tx);
 	dmu_tx_commit(tx);
 }
 
@@ -1204,6 +1205,7 @@ vdev_remove_complete(spa_t *spa)
 		vdev_metaslab_fini(vd);
 		metaslab_group_destroy(vd->vdev_mg);
 		vd->vdev_mg = NULL;
+		spa_log_sm_set_blocklimit(spa);
 	}
 	ASSERT0(vd->vdev_stat.vs_space);
 	ASSERT0(vd->vdev_stat.vs_dspace);
@@ -1266,9 +1268,10 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
 	 * allocated segments that we are copying.  We may also be copying
 	 * free segments (of up to vdev_removal_max_span bytes).
 	 */
-	range_tree_t *segs = range_tree_create(NULL, NULL);
+	range_tree_t *segs = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
 	for (;;) {
-		range_seg_t *rs = range_tree_first(svr->svr_allocd_segs);
+		range_tree_t *rt = svr->svr_allocd_segs;
+		range_seg_t *rs = range_tree_first(rt);
 
 		if (rs == NULL)
 			break;
@@ -1277,17 +1280,17 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
 
 		if (range_tree_is_empty(segs)) {
 			/* need to truncate the first seg based on max_alloc */
-			seg_length =
-			    MIN(rs->rs_end - rs->rs_start, *max_alloc);
+			seg_length = MIN(rs_get_end(rs, rt) - rs_get_start(rs,
+			    rt), *max_alloc);
 		} else {
-			if (rs->rs_start - range_tree_max(segs) >
+			if (rs_get_start(rs, rt) - range_tree_max(segs) >
 			    vdev_removal_max_span) {
 				/*
 				 * Including this segment would cause us to
 				 * copy a larger unneeded chunk than is allowed.
 				 */
 				break;
-			} else if (rs->rs_end - range_tree_min(segs) >
+			} else if (rs_get_end(rs, rt) - range_tree_min(segs) >
 			    *max_alloc) {
 				/*
 				 * This additional segment would extend past
@@ -1296,13 +1299,14 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
 				 */
 				break;
 			} else {
-				seg_length = rs->rs_end - rs->rs_start;
+				seg_length = rs_get_end(rs, rt) -
+				    rs_get_start(rs, rt);
 			}
 		}
 
-		range_tree_add(segs, rs->rs_start, seg_length);
+		range_tree_add(segs, rs_get_start(rs, rt), seg_length);
 		range_tree_remove(svr->svr_allocd_segs,
-		    rs->rs_start, seg_length);
+		    rs_get_start(rs, rt), seg_length);
 	}
 
 	if (range_tree_is_empty(segs)) {
@@ -1313,7 +1317,7 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
 
 	if (svr->svr_max_offset_to_sync[txg & TXG_MASK] == 0) {
 		dsl_sync_task_nowait(dmu_tx_pool(tx), vdev_mapping_sync,
-		    svr, 0, ZFS_SPACE_CHECK_NONE, tx);
+		    svr, tx);
 	}
 
 	svr->svr_max_offset_to_sync[txg & TXG_MASK] = range_tree_max(segs);
@@ -1462,6 +1466,10 @@ spa_vdev_remove_thread(void *arg)
 			VERIFY0(space_map_load(msp->ms_sm,
 			    svr->svr_allocd_segs, SM_ALLOC));
 
+			range_tree_walk(msp->ms_unflushed_allocs,
+			    range_tree_add, svr->svr_allocd_segs);
+			range_tree_walk(msp->ms_unflushed_frees,
+			    range_tree_remove, svr->svr_allocd_segs);
 			range_tree_walk(msp->ms_freeing,
 			    range_tree_remove, svr->svr_allocd_segs);
 
@@ -1477,7 +1485,7 @@ spa_vdev_remove_thread(void *arg)
 
 		vca.vca_msp = msp;
 		zfs_dbgmsg("copying %llu segments for metaslab %llu",
-		    avl_numnodes(&svr->svr_allocd_segs->rt_root),
+		    zfs_btree_numnodes(&svr->svr_allocd_segs->rt_root),
 		    msp->ms_id);
 
 		while (!svr->svr_thread_exit &&
@@ -1587,6 +1595,8 @@ spa_vdev_remove_thread(void *arg)
 		ASSERT0(range_tree_space(svr->svr_allocd_segs));
 		vdev_remove_complete(spa);
 	}
+
+	thread_exit();
 }
 
 void
@@ -1686,6 +1696,11 @@ spa_vdev_remove_cancel_sync(void *arg, dmu_tx_t *tx)
 			mutex_enter(&svr->svr_lock);
 			VERIFY0(space_map_load(msp->ms_sm,
 			    svr->svr_allocd_segs, SM_ALLOC));
+
+			range_tree_walk(msp->ms_unflushed_allocs,
+			    range_tree_add, svr->svr_allocd_segs);
+			range_tree_walk(msp->ms_unflushed_frees,
+			    range_tree_remove, svr->svr_allocd_segs);
 			range_tree_walk(msp->ms_freeing,
 			    range_tree_remove, svr->svr_allocd_segs);
 
@@ -1748,7 +1763,8 @@ spa_vdev_remove_cancel_sync(void *arg, dmu_tx_t *tx)
 	    vd->vdev_id, dmu_tx_get_txg(tx));
 	spa_history_log_internal(spa, "vdev remove canceled", tx,
 	    "%s vdev %llu %s", spa_name(spa),
-	    vd->vdev_id, (vd->vdev_path != NULL) ? vd->vdev_path : "-");
+	    (u_longlong_t)vd->vdev_id,
+	    (vd->vdev_path != NULL) ? vd->vdev_path : "-");
 }
 
 static int
@@ -1814,19 +1830,14 @@ vdev_remove_make_hole_and_free(vdev_t *vd)
 	uint64_t id = vd->vdev_id;
 	spa_t *spa = vd->vdev_spa;
 	vdev_t *rvd = spa->spa_root_vdev;
-	boolean_t last_vdev = (id == (rvd->vdev_children - 1));
 
 	ASSERT(MUTEX_HELD(&spa_namespace_lock));
 	ASSERT(spa_config_held(spa, SCL_ALL, RW_WRITER) == SCL_ALL);
 
 	vdev_free(vd);
 
-	if (last_vdev) {
-		vdev_compact_children(rvd);
-	} else {
-		vd = vdev_alloc_common(spa, id, 0, &vdev_hole_ops);
-		vdev_add_child(rvd, vd);
-	}
+	vd = vdev_alloc_common(spa, id, 0, &vdev_hole_ops);
+	vdev_add_child(rvd, vd);
 	vdev_config_dirty(rvd);
 
 	/*
@@ -1895,7 +1906,28 @@ spa_vdev_remove_log(vdev_t *vd, uint64_t *txg)
 	vdev_dirty_leaves(vd, VDD_DTL, *txg);
 	vdev_config_dirty(vd);
 
+	/*
+	 * When the log space map feature is enabled we look at
+	 * the vdev's top_zap to find the on-disk flush data of
+	 * the metaslab we just flushed. Thus, while removing a
+	 * log vdev we make sure to call vdev_metaslab_fini()
+	 * first, which removes all metaslabs of this vdev from
+	 * spa_metaslabs_by_flushed before vdev_remove_empty()
+	 * destroys the top_zap of this log vdev.
+	 *
+	 * This avoids the scenario where we flush a metaslab
+	 * from the log vdev being removed that doesn't have a
+	 * top_zap and end up failing to lookup its on-disk flush
+	 * data.
+	 *
+	 * We don't call metaslab_group_destroy() right away
+	 * though (it will be called in vdev_free() later) as
+	 * during metaslab_sync() of metaslabs from other vdevs
+	 * we may touch the metaslab group of this vdev through
+	 * metaslab_class_histogram_verify()
+	 */
 	vdev_metaslab_fini(vd);
+	spa_log_sm_set_blocklimit(spa);
 
 	spa_vdev_config_exit(spa, NULL, *txg, 0, FTAG);
 	*txg = spa_vdev_config_enter(spa);
@@ -1944,32 +1976,38 @@ spa_vdev_remove_top_check(vdev_t *vd)
 	if (!spa_feature_is_enabled(spa, SPA_FEATURE_DEVICE_REMOVAL))
 		return (SET_ERROR(ENOTSUP));
 
-	/* available space in the pool's normal class */
-	uint64_t available = dsl_dir_space_available(
-	    spa->spa_dsl_pool->dp_root_dir, NULL, 0, B_TRUE);
 
 	metaslab_class_t *mc = vd->vdev_mg->mg_class;
-
-	/*
-	 * When removing a vdev from an allocation class that has
-	 * remaining vdevs, include available space from the class.
-	 */
-	if (mc != spa_normal_class(spa) && mc->mc_groups > 1) {
-		uint64_t class_avail = metaslab_class_get_space(mc) -
-		    metaslab_class_get_alloc(mc);
-
-		/* add class space, adjusted for overhead */
-		available += (class_avail * 94) / 100;
-	}
-
-	/*
-	 * There has to be enough free space to remove the
-	 * device and leave double the "slop" space (i.e. we
-	 * must leave at least 3% of the pool free, in addition to
-	 * the normal slop space).
-	 */
-	if (available < vd->vdev_stat.vs_dspace + spa_get_slop_space(spa)) {
-		return (SET_ERROR(ENOSPC));
+	metaslab_class_t *normal = spa_normal_class(spa);
+	if (mc != normal) {
+		/*
+		 * Space allocated from the special (or dedup) class is
+		 * included in the DMU's space usage, but it's not included
+		 * in spa_dspace (or dsl_pool_adjustedsize()).  Therefore
+		 * there is always at least as much free space in the normal
+		 * class, as is allocated from the special (and dedup) class.
+		 * As a backup check, we will return ENOSPC if this is
+		 * violated. See also spa_update_dspace().
+		 */
+		uint64_t available = metaslab_class_get_space(normal) -
+		    metaslab_class_get_alloc(normal);
+		ASSERT3U(available, >=, vd->vdev_stat.vs_alloc);
+		if (available < vd->vdev_stat.vs_alloc)
+			return (SET_ERROR(ENOSPC));
+	} else {
+		/* available space in the pool's normal class */
+		uint64_t available = dsl_dir_space_available(
+		    spa->spa_dsl_pool->dp_root_dir, NULL, 0, B_TRUE);
+		if (available <
+		    vd->vdev_stat.vs_dspace + spa_get_slop_space(spa)) {
+			/*
+			 * This is a normal device. There has to be enough free
+			 * space to remove the device and leave double the
+			 * "slop" space (i.e. we must leave at least 3% of the
+			 * pool free, in addition to the normal slop space).
+			 */
+			return (SET_ERROR(ENOSPC));
+		}
 	}
 
 	/*
@@ -1999,6 +2037,15 @@ spa_vdev_remove_top_check(vdev_t *vd)
 	}
 
 	/*
+	 * A removed special/dedup vdev must have same ashift as normal class.
+	 */
+	ASSERT(!vd->vdev_islog);
+	if (vd->vdev_alloc_bias != VDEV_BIAS_NONE &&
+	    vd->vdev_ashift != spa->spa_max_ashift) {
+		return (SET_ERROR(EINVAL));
+	}
+
+	/*
 	 * All vdevs in normal class must have the same ashift
 	 * and not be raidz.
 	 */
@@ -2006,7 +2053,18 @@ spa_vdev_remove_top_check(vdev_t *vd)
 	int num_indirect = 0;
 	for (uint64_t id = 0; id < rvd->vdev_children; id++) {
 		vdev_t *cvd = rvd->vdev_child[id];
-		if (cvd->vdev_ashift != 0 && !cvd->vdev_islog)
+
+		/*
+		 * A removed special/dedup vdev must have the same ashift
+		 * across all vdevs in its class.
+		 */
+		if (vd->vdev_alloc_bias != VDEV_BIAS_NONE &&
+		    cvd->vdev_alloc_bias == vd->vdev_alloc_bias &&
+		    cvd->vdev_ashift != vd->vdev_ashift) {
+			return (SET_ERROR(EINVAL));
+		}
+		if (cvd->vdev_ashift != 0 &&
+		    cvd->vdev_alloc_bias == VDEV_BIAS_NONE)
 			ASSERT3U(cvd->vdev_ashift, ==, spa->spa_max_ashift);
 		if (cvd->vdev_ops == &vdev_indirect_ops)
 			num_indirect++;
@@ -2111,8 +2169,7 @@ spa_vdev_remove_top(vdev_t *vd, uint64_t *txg)
 	vdev_config_dirty(vd);
 	dmu_tx_t *tx = dmu_tx_create_assigned(spa->spa_dsl_pool, *txg);
 	dsl_sync_task_nowait(spa->spa_dsl_pool,
-	    vdev_remove_initiate_sync,
-	    (void *)(uintptr_t)vd->vdev_id, 0, ZFS_SPACE_CHECK_NONE, tx);
+	    vdev_remove_initiate_sync, (void *)(uintptr_t)vd->vdev_id, tx);
 	dmu_tx_commit(tx);
 
 	return (0);
@@ -2192,6 +2249,20 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 		 * Cache devices can always be removed.
 		 */
 		vd = spa_lookup_by_guid(spa, guid, B_TRUE);
+
+		/*
+		 * Stop trimming the cache device. We need to release the
+		 * config lock to allow the syncing of TRIM transactions
+		 * without releasing the spa_namespace_lock. The same
+		 * strategy is employed in spa_vdev_remove_top().
+		 */
+		spa_vdev_config_exit(spa, NULL,
+		    txg + TXG_CONCURRENT_STATES + TXG_DEFER_SIZE, 0, FTAG);
+		mutex_enter(&vd->vdev_trim_lock);
+		vdev_trim_stop(vd, VDEV_TRIM_CANCELED, NULL);
+		mutex_exit(&vd->vdev_trim_lock);
+		txg = spa_vdev_config_enter(spa);
+
 		ev = spa_event_create(spa, vd, NULL, ESC_ZFS_VDEV_REMOVE_AUX);
 		spa_vdev_remove_aux(spa->spa_l2cache.sav_config,
 		    ZPOOL_CONFIG_L2CACHE, l2cache, nl2cache, nv);
@@ -2268,22 +2339,17 @@ spa_removal_get_stats(spa_t *spa, pool_removal_stat_t *prs)
 	return (0);
 }
 
-#if defined(_KERNEL)
-module_param(zfs_removal_ignore_errors, int, 0644);
-MODULE_PARM_DESC(zfs_removal_ignore_errors,
+/* BEGIN CSTYLED */
+ZFS_MODULE_PARAM(zfs_vdev, zfs_, removal_ignore_errors, INT, ZMOD_RW,
 	"Ignore hard IO errors when removing device");
 
-module_param(zfs_remove_max_segment, int, 0644);
-MODULE_PARM_DESC(zfs_remove_max_segment,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_, remove_max_segment, INT, ZMOD_RW,
 	"Largest contiguous segment to allocate when removing device");
 
-module_param(vdev_removal_max_span, int, 0644);
-MODULE_PARM_DESC(vdev_removal_max_span,
+ZFS_MODULE_PARAM(zfs_vdev, vdev_, removal_max_span, INT, ZMOD_RW,
 	"Largest span of free chunks a remap segment can span");
 
-/* BEGIN CSTYLED */
-module_param(zfs_removal_suspend_progress, int, 0644);
-MODULE_PARM_DESC(zfs_removal_suspend_progress,
+ZFS_MODULE_PARAM(zfs_vdev, zfs_, removal_suspend_progress, INT, ZMOD_RW,
 	"Pause device removal after this many bytes are copied "
 	"(debug use only - causes removal to hang)");
 /* END CSTYLED */
@@ -2297,4 +2363,3 @@ EXPORT_SYMBOL(spa_vdev_remove);
 EXPORT_SYMBOL(spa_vdev_remove_cancel);
 EXPORT_SYMBOL(spa_vdev_remove_suspend);
 EXPORT_SYMBOL(svr_sync);
-#endif

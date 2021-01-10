@@ -59,9 +59,9 @@ AC_DEFUN([ZFS_AC_DEBUG], [
 ])
 
 AC_DEFUN([ZFS_AC_DEBUGINFO_ENABLE], [
-	DEBUG_CFLAGS="$DEBUG_CFLAGS -g -fno-inline"
+	DEBUG_CFLAGS="$DEBUG_CFLAGS -g -fno-inline $NO_IPA_SRA"
 
-	KERNEL_DEBUG_CFLAGS="$KERNEL_DEBUG_CFLAGS -fno-inline"
+	KERNEL_DEBUG_CFLAGS="$KERNEL_DEBUG_CFLAGS -fno-inline $NO_IPA_SRA"
 	KERNEL_MAKE="$KERNEL_MAKE CONFIG_DEBUG_INFO=y"
 
 	DEBUGINFO_ZFS="_with_debuginfo"
@@ -110,7 +110,7 @@ AC_DEFUN([ZFS_AC_DEBUG_KMEM], [
 		[enable_debug_kmem=no])
 
 	AS_IF([test "x$enable_debug_kmem" = xyes], [
-		KERNEL_DEBUG_CPPFLAGS+=" -DDEBUG_KMEM"
+		KERNEL_DEBUG_CPPFLAGS="${KERNEL_DEBUG_CPPFLAGS} -DDEBUG_KMEM"
 		DEBUG_KMEM_ZFS="_with_debug_kmem"
 	], [
 		DEBUG_KMEM_ZFS="_without_debug_kmem"
@@ -140,7 +140,7 @@ AC_DEFUN([ZFS_AC_DEBUG_KMEM_TRACKING], [
 		[enable_debug_kmem_tracking=no])
 
 	AS_IF([test "x$enable_debug_kmem_tracking" = xyes], [
-		KERNEL_DEBUG_CPPFLAGS+=" -DDEBUG_KMEM_TRACKING"
+		KERNEL_DEBUG_CPPFLAGS="${KERNEL_DEBUG_CPPFLAGS} -DDEBUG_KMEM_TRACKING"
 		DEBUG_KMEM_TRACKING_ZFS="_with_debug_kmem_tracking"
 	], [
 		DEBUG_KMEM_TRACKING_ZFS="_without_debug_kmem_tracking"
@@ -157,12 +157,16 @@ AC_DEFUN([ZFS_AC_CONFIG_ALWAYS], [
 	ZFS_AC_CONFIG_ALWAYS_CC_NO_BOOL_COMPARE
 	ZFS_AC_CONFIG_ALWAYS_CC_FRAME_LARGER_THAN
 	ZFS_AC_CONFIG_ALWAYS_CC_NO_FORMAT_TRUNCATION
+	ZFS_AC_CONFIG_ALWAYS_CC_NO_FORMAT_ZERO_LENGTH
 	ZFS_AC_CONFIG_ALWAYS_CC_NO_OMIT_FRAME_POINTER
+	ZFS_AC_CONFIG_ALWAYS_CC_NO_IPA_SRA
 	ZFS_AC_CONFIG_ALWAYS_CC_ASAN
 	ZFS_AC_CONFIG_ALWAYS_TOOLCHAIN_SIMD
+	ZFS_AC_CONFIG_ALWAYS_SYSTEM
 	ZFS_AC_CONFIG_ALWAYS_ARCH
 	ZFS_AC_CONFIG_ALWAYS_PYTHON
 	ZFS_AC_CONFIG_ALWAYS_PYZFS
+	ZFS_AC_CONFIG_ALWAYS_SED
 ])
 
 AC_DEFUN([ZFS_AC_CONFIG], [
@@ -170,20 +174,13 @@ AC_DEFUN([ZFS_AC_CONFIG], [
         dnl # Remove the previous build test directory.
         rm -Rf build
 
-	AC_ARG_VAR([TEST_JOBS],
-	    [simultaneous jobs during configure (defaults to $(nproc))])
-	if test "x$ac_cv_env_TEST_JOBS_set" != "xset"; then
-		TEST_JOBS=$(nproc)
-	fi
-	AC_SUBST(TEST_JOBS)
-
 	ZFS_CONFIG=all
 	AC_ARG_WITH([config],
 		AS_HELP_STRING([--with-config=CONFIG],
 		[Config file 'kernel|user|all|srpm']),
 		[ZFS_CONFIG="$withval"])
 	AC_ARG_ENABLE([linux-builtin],
-		[AC_HELP_STRING([--enable-linux-builtin],
+		[AS_HELP_STRING([--enable-linux-builtin],
 		[Configure for builtin in-tree kernel modules @<:@default=no@:>@])],
 		[],
 		[enable_linux_builtin=no])
@@ -193,6 +190,16 @@ AC_DEFUN([ZFS_AC_CONFIG], [
 	AC_SUBST(ZFS_CONFIG)
 
 	ZFS_AC_CONFIG_ALWAYS
+
+
+	AM_COND_IF([BUILD_LINUX], [
+		AC_ARG_VAR([TEST_JOBS],
+		    [simultaneous jobs during configure (defaults to $(nproc))])
+		if test "x$ac_cv_env_TEST_JOBS_set" != "xset"; then
+			TEST_JOBS=$(nproc)
+		fi
+		AC_SUBST(TEST_JOBS)
+	])
 
 	case "$ZFS_CONFIG" in
 		kernel) ZFS_AC_CONFIG_KERNEL ;;
@@ -216,6 +223,7 @@ AC_DEFUN([ZFS_AC_CONFIG], [
 	    [test "x$qatsrc" != x ])
 	AM_CONDITIONAL([WANT_DEVNAME2DEVID], [test "x$user_libudev" = xyes ])
 	AM_CONDITIONAL([WANT_MMAP_LIBAIO], [test "x$user_libaio" = xyes ])
+	AM_CONDITIONAL([PAM_ZFS_ENABLED], [test "x$enable_pam" = xyes])
 ])
 
 dnl #
@@ -253,12 +261,12 @@ AC_DEFUN([ZFS_AC_RPM], [
 	])
 
 	RPM_DEFINE_COMMON='--define "$(DEBUG_ZFS) 1"'
-	RPM_DEFINE_COMMON+=' --define "$(DEBUG_KMEM_ZFS) 1"'
-	RPM_DEFINE_COMMON+=' --define "$(DEBUG_KMEM_TRACKING_ZFS) 1"'
-	RPM_DEFINE_COMMON+=' --define "$(DEBUGINFO_ZFS) 1"'
-	RPM_DEFINE_COMMON+=' --define "$(ASAN_ZFS) 1"'
+	RPM_DEFINE_COMMON=${RPM_DEFINE_COMMON}' --define "$(DEBUGINFO_ZFS) 1"'
+	RPM_DEFINE_COMMON=${RPM_DEFINE_COMMON}' --define "$(DEBUG_KMEM_ZFS) 1"'
+	RPM_DEFINE_COMMON=${RPM_DEFINE_COMMON}' --define "$(DEBUG_KMEM_TRACKING_ZFS) 1"'
+	RPM_DEFINE_COMMON=${RPM_DEFINE_COMMON}' --define "$(ASAN_ZFS) 1"'
 
-	RPM_DEFINE_UTIL=' --define "_initconfdir $(DEFAULT_INITCONF_DIR)"'
+	RPM_DEFINE_UTIL=' --define "_initconfdir $(initconfdir)"'
 
 	dnl # Make the next three RPM_DEFINE_UTIL additions conditional, since
 	dnl # their values may not be set when running:
@@ -266,19 +274,19 @@ AC_DEFUN([ZFS_AC_RPM], [
 	dnl #	./configure --with-config=srpm
 	dnl #
 	AS_IF([test -n "$dracutdir" ], [
-		RPM_DEFINE_UTIL='--define "_dracutdir $(dracutdir)"'
+		RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' --define "_dracutdir $(dracutdir)"'
 	])
 	AS_IF([test -n "$udevdir" ], [
-		RPM_DEFINE_UTIL+=' --define "_udevdir $(udevdir)"'
+		RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' --define "_udevdir $(udevdir)"'
 	])
 	AS_IF([test -n "$udevruledir" ], [
-		RPM_DEFINE_UTIL+=' --define "_udevdir $(udevruledir)"'
+		RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' --define "_udevruledir $(udevruledir)"'
 	])
-	RPM_DEFINE_UTIL+=' $(DEFINE_INITRAMFS)'
-	RPM_DEFINE_UTIL+=' $(DEFINE_SYSTEMD)'
-	RPM_DEFINE_UTIL+=' $(DEFINE_PYZFS)'
-	RPM_DEFINE_UTIL+=' $(DEFINE_PYTHON_VERSION)'
-	RPM_DEFINE_UTIL+=' $(DEFINE_PYTHON_PKG_VERSION)'
+	RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' $(DEFINE_SYSTEMD)'
+	RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' $(DEFINE_PYZFS)'
+	RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' $(DEFINE_PAM)'
+	RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' $(DEFINE_PYTHON_VERSION)'
+	RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' $(DEFINE_PYTHON_PKG_VERSION)'
 
 	dnl # Override default lib directory on Debian/Ubuntu systems.  The
 	dnl # provided /usr/lib/rpm/platform/<arch>/macros files do not
@@ -290,14 +298,20 @@ AC_DEFUN([ZFS_AC_RPM], [
 	dnl #
 	AS_IF([test "$DEFAULT_PACKAGE" = "deb"], [
 		MULTIARCH_LIBDIR="lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)"
-		RPM_DEFINE_UTIL+=' --define "_lib $(MULTIARCH_LIBDIR)"'
+		RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' --define "_lib $(MULTIARCH_LIBDIR)"'
 		AC_SUBST(MULTIARCH_LIBDIR)
 	])
 
-	RPM_DEFINE_KMOD='--define "kernels $(LINUX_VERSION)"'
-	RPM_DEFINE_KMOD+=' --define "ksrc $(LINUX)"'
-	RPM_DEFINE_KMOD+=' --define "kobj $(LINUX_OBJ)"'
-	RPM_DEFINE_KMOD+=' --define "_wrong_version_format_terminate_build 0"'
+	dnl # Make RPM_DEFINE_KMOD additions conditional on CONFIG_KERNEL,
+	dnl # since the values will not be set otherwise. The spec files
+	dnl # provide defaults for them.
+	dnl #
+	RPM_DEFINE_KMOD='--define "_wrong_version_format_terminate_build 0"'
+	AM_COND_IF([CONFIG_KERNEL], [
+		RPM_DEFINE_KMOD=${RPM_DEFINE_KMOD}' --define "kernels $(LINUX_VERSION)"'
+		RPM_DEFINE_KMOD=${RPM_DEFINE_KMOD}' --define "ksrc $(LINUX)"'
+		RPM_DEFINE_KMOD=${RPM_DEFINE_KMOD}' --define "kobj $(LINUX_OBJ)"'
+	])
 
 	RPM_DEFINE_DKMS=''
 
@@ -402,32 +416,44 @@ dnl # Using the VENDOR tag from config.guess set the default
 dnl # package type for 'make pkg': (rpm | deb | tgz)
 dnl #
 AC_DEFUN([ZFS_AC_DEFAULT_PACKAGE], [
-	AC_MSG_CHECKING([linux distribution])
-	if test -f /etc/toss-release ; then
-		VENDOR=toss ;
-	elif test -f /etc/fedora-release ; then
-		VENDOR=fedora ;
-	elif test -f /etc/redhat-release ; then
-		VENDOR=redhat ;
-	elif test -f /etc/gentoo-release ; then
-		VENDOR=gentoo ;
-	elif test -f /etc/arch-release ; then
-		VENDOR=arch ;
-	elif test -f /etc/SuSE-release ; then
-		VENDOR=sles ;
-	elif test -f /etc/slackware-version ; then
-		VENDOR=slackware ;
-	elif test -f /etc/lunar.release ; then
-		VENDOR=lunar ;
-	elif test -f /etc/lsb-release ; then
-		VENDOR=ubuntu ;
-	elif test -f /etc/debian_version ; then
-		VENDOR=debian ;
-	elif test -f /etc/alpine-release ; then
-		VENDOR=alpine ;
-	else
-		VENDOR= ;
-	fi
+	AC_MSG_CHECKING([os distribution])
+	AC_ARG_WITH([vendor],
+		[AS_HELP_STRING([--with-vendor],
+			[Distribution vendor @<:@default=check@:>@])],
+		[with_vendor=$withval],
+		[with_vendor=check])
+	AS_IF([test "x$with_vendor" = "xcheck"],[
+		if test -f /etc/toss-release ; then
+			VENDOR=toss ;
+		elif test -f /etc/fedora-release ; then
+			VENDOR=fedora ;
+		elif test -f /etc/redhat-release ; then
+			VENDOR=redhat ;
+		elif test -f /etc/gentoo-release ; then
+			VENDOR=gentoo ;
+		elif test -f /etc/arch-release ; then
+			VENDOR=arch ;
+		elif test -f /etc/SuSE-release ; then
+			VENDOR=sles ;
+		elif test -f /etc/slackware-version ; then
+			VENDOR=slackware ;
+		elif test -f /etc/lunar.release ; then
+			VENDOR=lunar ;
+		elif test -f /etc/lsb-release ; then
+			VENDOR=ubuntu ;
+		elif test -f /etc/debian_version ; then
+			VENDOR=debian ;
+		elif test -f /etc/alpine-release ; then
+			VENDOR=alpine ;
+		elif test -f /bin/freebsd-version ; then
+			VENDOR=freebsd ;
+		else
+			VENDOR= ;
+		fi],
+		[ test "x${with_vendor}" != x],[
+			VENDOR="$with_vendor" ],
+		[ VENDOR= ; ]
+	)
 	AC_MSG_RESULT([$VENDOR])
 	AC_SUBST(VENDOR)
 
@@ -444,17 +470,21 @@ AC_DEFUN([ZFS_AC_DEFAULT_PACKAGE], [
 		lunar)      DEFAULT_PACKAGE=tgz  ;;
 		ubuntu)     DEFAULT_PACKAGE=deb  ;;
 		debian)     DEFAULT_PACKAGE=deb  ;;
+		freebsd)    DEFAULT_PACKAGE=pkg  ;;
 		*)          DEFAULT_PACKAGE=rpm  ;;
 	esac
 	AC_MSG_RESULT([$DEFAULT_PACKAGE])
 	AC_SUBST(DEFAULT_PACKAGE)
 
-	DEFAULT_INIT_DIR=$sysconfdir/init.d
 	AC_MSG_CHECKING([default init directory])
-	AC_MSG_RESULT([$DEFAULT_INIT_DIR])
-	AC_SUBST(DEFAULT_INIT_DIR)
+	case "$VENDOR" in
+		freebsd)    initdir=$sysconfdir/rc.d  ;;
+		*)          initdir=$sysconfdir/init.d;;
+	esac
+	AC_MSG_RESULT([$initdir])
+	AC_SUBST(initdir)
 
-	AC_MSG_CHECKING([default init script type])
+	AC_MSG_CHECKING([default init script type and shell])
 	case "$VENDOR" in
 		toss)       DEFAULT_INIT_SCRIPT=redhat ;;
 		redhat)     DEFAULT_INIT_SCRIPT=redhat ;;
@@ -467,35 +497,57 @@ AC_DEFUN([ZFS_AC_DEFAULT_PACKAGE], [
 		lunar)      DEFAULT_INIT_SCRIPT=lunar  ;;
 		ubuntu)     DEFAULT_INIT_SCRIPT=lsb    ;;
 		debian)     DEFAULT_INIT_SCRIPT=lsb    ;;
+		freebsd)    DEFAULT_INIT_SCRIPT=freebsd;;
 		*)          DEFAULT_INIT_SCRIPT=lsb    ;;
 	esac
-	AC_MSG_RESULT([$DEFAULT_INIT_SCRIPT])
+
+	# On gentoo, it's possible that OpenRC isn't installed.  Check if
+	# /sbin/openrc-run exists, and if not, fall back to generic defaults.
+
+	DEFAULT_INIT_SHELL="/bin/sh"
+	AS_IF([test "$DEFAULT_INIT_SCRIPT" = "openrc"], [
+		AS_IF([test -x "/sbin/openrc-run"],
+			[DEFAULT_INIT_SHELL="/sbin/openrc-run"],
+			[DEFAULT_INIT_SCRIPT=lsb])
+	])
+
+	AC_MSG_RESULT([$DEFAULT_INIT_SCRIPT:$DEFAULT_INIT_SHELL])
 	AC_SUBST(DEFAULT_INIT_SCRIPT)
+	AC_SUBST(DEFAULT_INIT_SHELL)
+
+	AC_MSG_CHECKING([default nfs server init script])
+	AS_IF([test "$VENDOR" = "debian"],
+		[DEFAULT_INIT_NFS_SERVER="nfs-kernel-server"],
+		[DEFAULT_INIT_NFS_SERVER="nfs"]
+	)
+	AC_MSG_RESULT([$DEFAULT_INIT_NFS_SERVER])
+	AC_SUBST(DEFAULT_INIT_NFS_SERVER)
 
 	AC_MSG_CHECKING([default init config directory])
 	case "$VENDOR" in
-		alpine)     DEFAULT_INITCONF_DIR=/etc/conf.d    ;;
-		gentoo)     DEFAULT_INITCONF_DIR=/etc/conf.d    ;;
-		toss)       DEFAULT_INITCONF_DIR=/etc/sysconfig ;;
-		redhat)     DEFAULT_INITCONF_DIR=/etc/sysconfig ;;
-		fedora)     DEFAULT_INITCONF_DIR=/etc/sysconfig ;;
-		sles)       DEFAULT_INITCONF_DIR=/etc/sysconfig ;;
-		ubuntu)     DEFAULT_INITCONF_DIR=/etc/default   ;;
-		debian)     DEFAULT_INITCONF_DIR=/etc/default   ;;
-		*)          DEFAULT_INITCONF_DIR=/etc/default   ;;
+		alpine)     initconfdir=/etc/conf.d    ;;
+		gentoo)     initconfdir=/etc/conf.d    ;;
+		toss)       initconfdir=/etc/sysconfig ;;
+		redhat)     initconfdir=/etc/sysconfig ;;
+		fedora)     initconfdir=/etc/sysconfig ;;
+		sles)       initconfdir=/etc/sysconfig ;;
+		ubuntu)     initconfdir=/etc/default   ;;
+		debian)     initconfdir=/etc/default   ;;
+		freebsd)    initconfdir=$sysconfdir/rc.conf.d;;
+		*)          initconfdir=/etc/default   ;;
 	esac
-	AC_MSG_RESULT([$DEFAULT_INITCONF_DIR])
-	AC_SUBST(DEFAULT_INITCONF_DIR)
+	AC_MSG_RESULT([$initconfdir])
+	AC_SUBST(initconfdir)
 
 	AC_MSG_CHECKING([whether initramfs-tools is available])
 	if test -d /usr/share/initramfs-tools ; then
-		DEFINE_INITRAMFS='--define "_initramfs 1"'
+		RPM_DEFINE_INITRAMFS='--define "_initramfs 1"'
 		AC_MSG_RESULT([yes])
 	else
-		DEFINE_INITRAMFS=''
+		RPM_DEFINE_INITRAMFS=''
 		AC_MSG_RESULT([no])
 	fi
-	AC_SUBST(DEFINE_INITRAMFS)
+	AC_SUBST(RPM_DEFINE_INITRAMFS)
 ])
 
 dnl #
@@ -503,7 +555,9 @@ dnl # Default ZFS package configuration
 dnl #
 AC_DEFUN([ZFS_AC_PACKAGE], [
 	ZFS_AC_DEFAULT_PACKAGE
-	ZFS_AC_RPM
-	ZFS_AC_DPKG
-	ZFS_AC_ALIEN
+	AS_IF([test x$VENDOR != xfreebsd], [
+		ZFS_AC_RPM
+		ZFS_AC_DPKG
+		ZFS_AC_ALIEN
+	])
 ])
