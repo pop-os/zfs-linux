@@ -1,3 +1,9 @@
+zfs-linux (2.0.1-1) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Mo Zhou <lumin@debian.org>  Sun, 10 Jan 2021 22:24:18 +0800
+
 zfs-linux (2.0.1-1~exp1) experimental; urgency=medium
 
   [ Mo Zhou ]
