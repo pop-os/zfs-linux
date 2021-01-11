@@ -1,3 +1,1 @@
 source: excessive-debhelper-overrides
-source: package-uses-old-debhelper-compat-version 10
-

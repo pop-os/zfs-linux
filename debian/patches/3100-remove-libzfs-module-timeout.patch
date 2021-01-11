@@ -6,9 +6,9 @@ container and set the timeout to zero in this specific case.
 
 ---
 
---- a/lib/libzfs/libzfs_util.c
-+++ b/lib/libzfs/libzfs_util.c
-@@ -921,6 +921,15 @@
+--- a/lib/libzfs/os/linux/libzfs_util_os.c
++++ b/lib/libzfs/os/linux/libzfs_util_os.c
+@@ -107,6 +107,15 @@
  	int load = 0, fd;
  	hrtime_t start;
  
