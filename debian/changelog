@@ -1,3 +1,11 @@
+zfs-linux (2.0.1-2) unstable; urgency=medium
+
+  * Patch: move manpage arcstat(1) to arcstat(8). (Closes: #980105)
+  * Cherry-pick patches from upstream zfs-2.0.2-staging branch.
+     + 0001-zpool-Dryrun-fails-to-list-some-devices.patch
+
+ -- Mo Zhou <lumin@debian.org>  Fri, 15 Jan 2021 22:27:09 +0800
+
 zfs-linux (2.0.1-1) unstable; urgency=medium
 
   * Upload to unstable.
@@ -51,6 +59,13 @@ zfs-linux (2.0.0-1~exp1) experimental; urgency=medium
   * Remove out dated lintian override: package-uses-old-debhelper-compat-version
 
  -- Aron Xu <aron@debian.org>  Fri, 25 Dec 2020 01:33:41 +0800
+
+zfs-linux (0.8.6-1) unstable; urgency=medium
+
+  * New upstream version 0.8.6
+  * d/patches/update-meta.patch: disabled, not needed this upload
+
+ -- Aron Xu <aron@debian.org>  Thu, 17 Dec 2020 17:18:12 +0800
 
 zfs-linux (0.8.5-3) unstable; urgency=medium
 
