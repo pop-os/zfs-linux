@@ -1,3 +1,11 @@
+zfs-linux (2.0.1-2) unstable; urgency=medium
+
+  * Patch: move manpage arcstat(1) to arcstat(8). (Closes: #980105)
+  * Cherry-pick patches from upstream zfs-2.0.2-staging branch.
+     + 0001-zpool-Dryrun-fails-to-list-some-devices.patch
+
+ -- Mo Zhou <lumin@debian.org>  Fri, 15 Jan 2021 22:27:09 +0800
+
 zfs-linux (2.0.1-1) unstable; urgency=medium
 
   * Upload to unstable.
