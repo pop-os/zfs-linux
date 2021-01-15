@@ -1,0 +1,824 @@
+From 6539bf71fe0efb610bd7957e7e9c5ea153397739 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Attila=20F=C3=BCl=C3=B6p?= <attila@fueloep.org>
+Date: Fri, 4 Dec 2020 23:04:39 +0100
+Subject: [PATCH 1/2] zpool: Dryrun fails to list some devices
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+`zpool create -n` fails to list cache and spare vdevs.
+`zpool add -n` fails to list spare devices.
+`zpool split -n` fails to list `special` and `dedup` labels.
+`zpool add -n` and `zpool split -n` shouldn't list hole devices.
+
+Reviewed-by: Ryan Moeller <ryan@iXsystems.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Attila Fülöp <attila@fueloep.org>
+Closes #11122
+Closes #11167
+---
+ cmd/zpool/zpool_main.c                        |  94 +++++++++-
+ lib/libzfs/libzfs_pool.c                      |  24 ++-
+ tests/runfiles/common.run                     |   7 +-
+ .../functional/cli_root/zpool_add/Makefile.am |   3 +-
+ .../cli_root/zpool_add/zpool_add_003_pos.ksh  |   4 +-
+ .../zpool_add/zpool_add_dryrun_output.ksh     | 177 ++++++++++++++++++
+ .../cli_root/zpool_create/Makefile.am         |   3 +-
+ .../zpool_create_dryrun_output.ksh            | 141 ++++++++++++++
+ .../cli_root/zpool_split/Makefile.am          |   3 +-
+ .../zpool_split/zpool_split_dryrun_output.ksh | 151 +++++++++++++++
+ 10 files changed, 593 insertions(+), 14 deletions(-)
+ create mode 100755 tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_dryrun_output.ksh
+ create mode 100755 tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_dryrun_output.ksh
+ create mode 100755 tests/zfs-tests/tests/functional/cli_root/zpool_split/zpool_split_dryrun_output.ksh
+
+diff --git a/cmd/zpool/zpool_main.c b/cmd/zpool/zpool_main.c
+index 2ddb0f66b..fbea83c38 100644
+--- a/cmd/zpool/zpool_main.c
++++ b/cmd/zpool/zpool_main.c
+@@ -669,9 +669,16 @@ print_vdev_tree(zpool_handle_t *zhp, const char *name, nvlist_t *nv, int indent,
+ 	}
+ 
+ 	for (c = 0; c < children; c++) {
+-		uint64_t is_log = B_FALSE;
++		uint64_t is_log = B_FALSE, is_hole = B_FALSE;
+ 		char *class = "";
+ 
++		(void) nvlist_lookup_uint64(child[c], ZPOOL_CONFIG_IS_HOLE,
++		    &is_hole);
++
++		if (is_hole == B_TRUE) {
++			continue;
++		}
++
+ 		(void) nvlist_lookup_uint64(child[c], ZPOOL_CONFIG_IS_LOG,
+ 		    &is_log);
+ 		if (is_log)
+@@ -692,6 +699,54 @@ print_vdev_tree(zpool_handle_t *zhp, const char *name, nvlist_t *nv, int indent,
+ 	}
+ }
+ 
++/*
++ * Print the list of l2cache devices for dry runs.
++ */
++static void
++print_cache_list(nvlist_t *nv, int indent)
++{
++	nvlist_t **child;
++	uint_t c, children;
++
++	if (nvlist_lookup_nvlist_array(nv, ZPOOL_CONFIG_L2CACHE,
++	    &child, &children) == 0 && children > 0) {
++		(void) printf("\t%*s%s\n", indent, "", "cache");
++	} else {
++		return;
++	}
++	for (c = 0; c < children; c++) {
++		char *vname;
++
++		vname = zpool_vdev_name(g_zfs, NULL, child[c], 0);
++		(void) printf("\t%*s%s\n", indent + 2, "", vname);
++		free(vname);
++	}
++}
++
++/*
++ * Print the list of spares for dry runs.
++ */
++static void
++print_spare_list(nvlist_t *nv, int indent)
++{
++	nvlist_t **child;
++	uint_t c, children;
++
++	if (nvlist_lookup_nvlist_array(nv, ZPOOL_CONFIG_SPARES,
++	    &child, &children) == 0 && children > 0) {
++		(void) printf("\t%*s%s\n", indent, "", "spares");
++	} else {
++		return;
++	}
++	for (c = 0; c < children; c++) {
++		char *vname;
++
++		vname = zpool_vdev_name(g_zfs, NULL, child[c], 0);
++		(void) printf("\t%*s%s\n", indent + 2, "", vname);
++		free(vname);
++	}
++}
++
+ static boolean_t
+ prop_list_contains_feature(nvlist_t *proplist)
+ {
+@@ -921,16 +976,16 @@ zpool_do_add(int argc, char **argv)
+ 
+ 	if (dryrun) {
+ 		nvlist_t *poolnvroot;
+-		nvlist_t **l2child;
+-		uint_t l2children, c;
++		nvlist_t **l2child, **sparechild;
++		uint_t l2children, sparechildren, c;
+ 		char *vname;
+-		boolean_t hadcache = B_FALSE;
++		boolean_t hadcache = B_FALSE, hadspare = B_FALSE;
+ 
+ 		verify(nvlist_lookup_nvlist(config, ZPOOL_CONFIG_VDEV_TREE,
+ 		    &poolnvroot) == 0);
+ 
+ 		(void) printf(gettext("would update '%s' to the following "
+-		    "configuration:\n"), zpool_get_name(zhp));
++		    "configuration:\n\n"), zpool_get_name(zhp));
+ 
+ 		/* print original main pool and new tree */
+ 		print_vdev_tree(zhp, poolname, poolnvroot, 0, "",
+@@ -991,6 +1046,29 @@ zpool_do_add(int argc, char **argv)
+ 				free(vname);
+ 			}
+ 		}
++		/* And finaly the spares */
++		if (nvlist_lookup_nvlist_array(poolnvroot, ZPOOL_CONFIG_SPARES,
++		    &sparechild, &sparechildren) == 0 && sparechildren > 0) {
++			hadspare = B_TRUE;
++			(void) printf(gettext("\tspares\n"));
++			for (c = 0; c < sparechildren; c++) {
++				vname = zpool_vdev_name(g_zfs, NULL,
++				    sparechild[c], name_flags);
++				(void) printf("\t  %s\n", vname);
++				free(vname);
++			}
++		}
++		if (nvlist_lookup_nvlist_array(nvroot, ZPOOL_CONFIG_SPARES,
++		    &sparechild, &sparechildren) == 0 && sparechildren > 0) {
++			if (!hadspare)
++				(void) printf(gettext("\tspares\n"));
++			for (c = 0; c < sparechildren; c++) {
++				vname = zpool_vdev_name(g_zfs, NULL,
++				    sparechild[c], name_flags);
++				(void) printf("\t  %s\n", vname);
++				free(vname);
++			}
++		}
+ 
+ 		ret = 0;
+ 	} else {
+@@ -1548,6 +1626,8 @@ zpool_do_create(int argc, char **argv)
+ 		    VDEV_ALLOC_BIAS_SPECIAL, 0);
+ 		print_vdev_tree(NULL, "logs", nvroot, 0,
+ 		    VDEV_ALLOC_BIAS_LOG, 0);
++		print_cache_list(nvroot, 0);
++		print_spare_list(nvroot, 0);
+ 
+ 		ret = 0;
+ 	} else {
+@@ -6515,6 +6595,10 @@ zpool_do_split(int argc, char **argv)
+ 			    "following layout:\n\n"), newpool);
+ 			print_vdev_tree(NULL, newpool, config, 0, "",
+ 			    flags.name_flags);
++			print_vdev_tree(NULL, "dedup", config, 0,
++			    VDEV_ALLOC_BIAS_DEDUP, 0);
++			print_vdev_tree(NULL, "special", config, 0,
++			    VDEV_ALLOC_BIAS_SPECIAL, 0);
+ 		}
+ 	}
+ 
+diff --git a/lib/libzfs/libzfs_pool.c b/lib/libzfs/libzfs_pool.c
+index 7974cb70b..3606bbfdd 100644
+--- a/lib/libzfs/libzfs_pool.c
++++ b/lib/libzfs/libzfs_pool.c
+@@ -3388,7 +3388,7 @@ zpool_vdev_split(zpool_handle_t *zhp, char *newname, nvlist_t **newroot,
+     nvlist_t *props, splitflags_t flags)
+ {
+ 	zfs_cmd_t zc = {"\0"};
+-	char msg[1024];
++	char msg[1024], *bias;
+ 	nvlist_t *tree, *config, **child, **newchild, *newconfig = NULL;
+ 	nvlist_t **varray = NULL, *zc_props = NULL;
+ 	uint_t c, children, newchildren, lastlog = 0, vcount, found = 0;
+@@ -3446,6 +3446,7 @@ zpool_vdev_split(zpool_handle_t *zhp, char *newname, nvlist_t **newroot,
+ 
+ 	for (c = 0; c < children; c++) {
+ 		uint64_t is_log = B_FALSE, is_hole = B_FALSE;
++		boolean_t is_special = B_FALSE, is_dedup = B_FALSE;
+ 		char *type;
+ 		nvlist_t **mchild, *vdev;
+ 		uint_t mchildren;
+@@ -3492,6 +3493,13 @@ zpool_vdev_split(zpool_handle_t *zhp, char *newname, nvlist_t **newroot,
+ 			goto out;
+ 		}
+ 
++		if (nvlist_lookup_string(child[c],
++		    ZPOOL_CONFIG_ALLOCATION_BIAS, &bias) == 0) {
++			if (strcmp(bias, VDEV_ALLOC_BIAS_SPECIAL) == 0)
++				is_special = B_TRUE;
++			else if (strcmp(bias, VDEV_ALLOC_BIAS_DEDUP) == 0)
++				is_dedup = B_TRUE;
++		}
+ 		verify(nvlist_lookup_nvlist_array(child[c],
+ 		    ZPOOL_CONFIG_CHILDREN, &mchild, &mchildren) == 0);
+ 
+@@ -3509,6 +3517,20 @@ zpool_vdev_split(zpool_handle_t *zhp, char *newname, nvlist_t **newroot,
+ 
+ 		if (nvlist_dup(vdev, &varray[vcount++], 0) != 0)
+ 			goto out;
++
++		if (flags.dryrun != 0) {
++			if (is_dedup == B_TRUE) {
++				if (nvlist_add_string(varray[vcount - 1],
++				    ZPOOL_CONFIG_ALLOCATION_BIAS,
++				    VDEV_ALLOC_BIAS_DEDUP) != 0)
++					goto out;
++			} else if (is_special == B_TRUE) {
++				if (nvlist_add_string(varray[vcount - 1],
++				    ZPOOL_CONFIG_ALLOCATION_BIAS,
++				    VDEV_ALLOC_BIAS_SPECIAL) != 0)
++					goto out;
++			}
++		}
+ 	}
+ 
+ 	/* did we find every disk the user specified? */
+diff --git a/tests/runfiles/common.run b/tests/runfiles/common.run
+index bb70dfead..d7a87bf51 100644
+--- a/tests/runfiles/common.run
++++ b/tests/runfiles/common.run
+@@ -317,7 +317,7 @@ tags = ['functional', 'cli_root', 'zpool']
+ tests = ['zpool_add_001_pos', 'zpool_add_002_pos', 'zpool_add_003_pos',
+     'zpool_add_004_pos', 'zpool_add_006_pos', 'zpool_add_007_neg',
+     'zpool_add_008_neg', 'zpool_add_009_neg', 'zpool_add_010_pos',
+-    'add-o_ashift', 'add_prop_ashift']
++    'add-o_ashift', 'add_prop_ashift', 'zpool_add_dryrun_output']
+ tags = ['functional', 'cli_root', 'zpool_add']
+ 
+ [tests/functional/cli_root/zpool_attach]
+@@ -342,7 +342,7 @@ tests = ['zpool_create_001_pos', 'zpool_create_002_pos',
+     'zpool_create_features_001_pos', 'zpool_create_features_002_pos',
+     'zpool_create_features_003_pos', 'zpool_create_features_004_neg',
+     'zpool_create_features_005_pos',
+-    'create-o_ashift', 'zpool_create_tempname']
++    'create-o_ashift', 'zpool_create_tempname', 'zpool_create_dryrun_output']
+ tags = ['functional', 'cli_root', 'zpool_create']
+ 
+ [tests/functional/cli_root/zpool_destroy]
+@@ -460,7 +460,8 @@ tags = ['functional', 'cli_root', 'zpool_set']
+ [tests/functional/cli_root/zpool_split]
+ tests = ['zpool_split_cliargs', 'zpool_split_devices',
+     'zpool_split_encryption', 'zpool_split_props', 'zpool_split_vdevs',
+-    'zpool_split_resilver', 'zpool_split_indirect']
++    'zpool_split_resilver', 'zpool_split_indirect',
++    'zpool_split_dryrun_output']
+ tags = ['functional', 'cli_root', 'zpool_split']
+ 
+ [tests/functional/cli_root/zpool_status]
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zpool_add/Makefile.am b/tests/zfs-tests/tests/functional/cli_root/zpool_add/Makefile.am
+index a7f62b6f9..8d54d13f7 100644
+--- a/tests/zfs-tests/tests/functional/cli_root/zpool_add/Makefile.am
++++ b/tests/zfs-tests/tests/functional/cli_root/zpool_add/Makefile.am
+@@ -14,7 +14,8 @@ dist_pkgdata_SCRIPTS = \
+ 	zpool_add_010_pos.ksh \
+ 	add-o_ashift.ksh \
+ 	add_prop_ashift.ksh \
+-	add_nested_replacing_spare.ksh
++	add_nested_replacing_spare.ksh \
++	zpool_add_dryrun_output.ksh
+ 
+ dist_pkgdata_DATA = \
+ 	zpool_add.cfg \
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_003_pos.ksh b/tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_003_pos.ksh
+index f27004130..a6b03ff32 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_003_pos.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_003_pos.ksh
+@@ -61,7 +61,7 @@ log_onexit cleanup
+ typeset TMPFILE_PREFIX="$TEST_BASE_DIR/zpool_add_003"
+ typeset STR_DRYRUN="would update '$TESTPOOL' to the following configuration:"
+ typeset VDEV_PREFIX="$TEST_BASE_DIR/filedev"
+-typeset -a VDEV_TYPES=("" "dedup" "special" "log" "cache")
++typeset -a VDEV_TYPES=("" "dedup" "special" "log" "cache" "spare")
+ 
+ vdevs=""
+ config=""
+@@ -91,7 +91,7 @@ log_must zpool add -f $TESTPOOL $config
+ zpool status $TESTPOOL | awk 'NR == 1, /NAME/ { next } /^$/ {exit}
+ 	{print $1}' > "$TMPFILE_PREFIX-vdevtree"
+ cat "$TMPFILE_PREFIX-dryrun" | awk 'NR == 1, /would/ {next}
+-	{print $1}' > "$TMPFILE_PREFIX-vdevtree-n"
++	/^$/ {next} {print $1}' > "$TMPFILE_PREFIX-vdevtree-n"
+ log_must eval "diff $TMPFILE_PREFIX-vdevtree-n $TMPFILE_PREFIX-vdevtree"
+ 
+ log_pass "'zpool add -n <pool> <vdev> ...' executes successfully."
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_dryrun_output.ksh b/tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_dryrun_output.ksh
+new file mode 100755
+index 000000000..5e16cddab
+--- /dev/null
++++ b/tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_dryrun_output.ksh
+@@ -0,0 +1,177 @@
++#!/bin/ksh -p
++#
++# CDDL HEADER START
++#
++# The contents of this file are subject to the terms of the
++# Common Development and Distribution License (the "License").
++# You may not use this file except in compliance with the License.
++#
++# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
++# or http://www.opensolaris.org/os/licensing.
++# See the License for the specific language governing permissions
++# and limitations under the License.
++#
++# When distributing Covered Code, include this CDDL HEADER in each
++# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
++# If applicable, add the following below this CDDL HEADER, with the
++# fields enclosed by brackets "[]" replaced with your own identifying
++# information: Portions Copyright [yyyy] [name of copyright owner]
++#
++# CDDL HEADER END
++#
++
++#
++# Copyright 2020 Attila Fülöp <attila@fueloep.org>
++#
++
++. $STF_SUITE/include/libtest.shlib
++. $STF_SUITE/tests/functional/cli_root/zpool_add/zpool_add.kshlib
++
++typeset TMPFILE_PREFIX="$TEST_BASE_DIR/zpool_add_dryrun_output"
++typeset STR_DRYRUN="would update '$TESTPOOL' to the following configuration:"
++typeset VDEV_PREFIX="$TEST_BASE_DIR/filedev"
++
++#
++# DESCRIPTION:
++# 'zpool add -n <pool> <vdev> ...' can display the correct configuration
++#
++# STRATEGY:
++# 1. Create different storage pools, use -n to add devices to the pool and
++#    verify the output is as expected.
++# 2. Create a pool whith a hole vdev and verify it's not listed with add -n.
++#
++
++typeset -a dev=(
++	"${VDEV_PREFIX}00" "${VDEV_PREFIX}01" "${VDEV_PREFIX}02"
++	"${VDEV_PREFIX}03" "${VDEV_PREFIX}04" "${VDEV_PREFIX}05"
++	"${VDEV_PREFIX}06" "${VDEV_PREFIX}07" "${VDEV_PREFIX}08"
++	"${VDEV_PREFIX}09" "${VDEV_PREFIX}10" "${VDEV_PREFIX}11"
++)
++
++typeset -a tests=(
++    (
++	tree="'${dev[0]}' log '${dev[1]}' special '${dev[2]}' dedup '${dev[3]}'"
++	add="spare '${dev[4]}' cache '${dev[5]}'"
++	want="$STR_DRYRUN
++
++	$TESTPOOL
++	  ${dev[0]}
++	dedup
++	  ${dev[3]}
++	special
++	  ${dev[2]}
++	logs
++	  ${dev[1]}
++	cache
++	  ${dev[5]}
++	spares
++	  ${dev[4]}"
++    )
++    (
++	tree="'${dev[0]}' log '${dev[1]}' special '${dev[2]}' dedup '${dev[3]}' \
++	    spare '${dev[4]}' cache '${dev[5]}'"
++
++	add="'${dev[6]}' log '${dev[7]}' special '${dev[8]}' dedup '${dev[9]}' \
++	    spare '${dev[10]}' cache '${dev[11]}'"
++
++	want="$STR_DRYRUN
++
++	$TESTPOOL
++	  ${dev[0]}
++	  ${dev[6]}
++	dedup
++	  ${dev[3]}
++	  ${dev[9]}
++	special
++	  ${dev[2]}
++	  ${dev[8]}
++	logs
++	  ${dev[1]}
++	  ${dev[7]}
++	cache
++	  ${dev[5]}
++	  ${dev[11]}
++	spares
++	  ${dev[4]}
++	  ${dev[10]}"
++    )
++    (
++	tree="mirror '${dev[0]}' '${dev[1]}' \
++	    log mirror '${dev[2]}' '${dev[3]}' \
++	    dedup mirror '${dev[6]}' '${dev[7]}' \
++	    spare '${dev[8]}'"
++
++	add="special mirror '${dev[4]}' '${dev[5]}' \
++	    spare '${dev[9]}' cache '${dev[10]}' '${dev[11]}'"
++
++	want="$STR_DRYRUN
++
++	$TESTPOOL
++	  mirror-0
++	    ${dev[0]}
++	    ${dev[1]}
++	dedup
++	  mirror
++	    ${dev[6]}
++	    ${dev[7]}
++	special
++	  mirror
++	    ${dev[4]}
++	    ${dev[5]}
++	logs
++	  mirror
++	    ${dev[2]}
++	    ${dev[3]}
++	cache
++	  ${dev[10]}
++	  ${dev[11]}
++	spares
++	  ${dev[8]}
++	  ${dev[9]}"
++    )
++)
++
++verify_runnable "global"
++
++function cleanup
++{
++	destroy_pool "$TESTPOOL"
++	rm -f "$TMPFILE_PREFIX"* "$VDEV_PREFIX"*
++}
++
++log_assert "'zpool add -n <pool> <vdev> ...' can display the configuration"
++
++log_onexit cleanup
++
++# Create needed file vdevs.
++for (( i=0; i < ${#dev[@]}; i+=1 )); do
++	log_must truncate -s $SPA_MINDEVSIZE "${dev[$i]}"
++done
++
++# Foreach test create pool, add -n devices and check output.
++for (( i=0; i < ${#tests[@]}; i+=1 )); do
++	typeset tree="${tests[$i].tree}"
++	typeset add="${tests[$i].add}"
++	typeset want="${tests[$i].want}"
++
++	log_must eval zpool create "$TESTPOOL" $tree
++	log_must poolexists "$TESTPOOL"
++	typeset out="$(log_must eval "zpool add -n '$TESTPOOL' $add" | \
++	    sed /^SUCCESS/d)"
++
++	if [[ "$out" != "$want" ]]; then
++		log_fail "Got:\n" "$out" "\nbut expected:\n" "$want"
++	fi
++	log_must destroy_pool "$TESTPOOL"
++done
++
++# Make sure hole vdevs are skiped in output.
++log_must eval "zpool create '$TESTPOOL' '${dev[0]}' log '${dev[1]}' \
++    cache '${dev[2]}'"
++
++# Create a hole vdev.
++log_must eval "zpool remove '$TESTPOOL' '${dev[1]}'"
++log_mustnot eval "zpool add -n '$TESTPOOL' '${dev[1]}' | \
++    grep -qE '[[:space:]]+hole'"
++
++log_pass "'zpool add -n <pool> <vdev> ...' displays config correctly."
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am b/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
+index 3c595935a..37d26ae61 100644
+--- a/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
++++ b/tests/zfs-tests/tests/functional/cli_root/zpool_create/Makefile.am
+@@ -33,7 +33,8 @@ dist_pkgdata_SCRIPTS = \
+ 	zpool_create_features_004_neg.ksh \
+ 	zpool_create_features_005_pos.ksh \
+ 	create-o_ashift.ksh \
+-	zpool_create_tempname.ksh
++	zpool_create_tempname.ksh \
++	zpool_create_dryrun_output.ksh
+ 
+ dist_pkgdata_DATA = \
+ 	zpool_create.cfg \
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_dryrun_output.ksh b/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_dryrun_output.ksh
+new file mode 100755
+index 000000000..97c0c207d
+--- /dev/null
++++ b/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_dryrun_output.ksh
+@@ -0,0 +1,141 @@
++#!/bin/ksh -p
++#
++# CDDL HEADER START
++#
++# The contents of this file are subject to the terms of the
++# Common Development and Distribution License (the "License").
++# You may not use this file except in compliance with the License.
++#
++# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
++# or http://www.opensolaris.org/os/licensing.
++# See the License for the specific language governing permissions
++# and limitations under the License.
++#
++# When distributing Covered Code, include this CDDL HEADER in each
++# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
++# If applicable, add the following below this CDDL HEADER, with the
++# fields enclosed by brackets "[]" replaced with your own identifying
++# information: Portions Copyright [yyyy] [name of copyright owner]
++#
++# CDDL HEADER END
++#
++
++#
++# Copyright 2020 Attila Fülöp <attila@fueloep.org>
++#
++
++. $STF_SUITE/include/libtest.shlib
++. $STF_SUITE/tests/functional/cli_root/zpool_create/zpool_create.shlib
++
++typeset TMPFILE_PREFIX="$TEST_BASE_DIR/zpool_create_dryrun_output"
++typeset STR_DRYRUN="would create '$TESTPOOL' with the following layout:"
++typeset VDEV_PREFIX="$TEST_BASE_DIR/filedev"
++
++#
++# DESCRIPTION:
++# 'zpool create -n <pool> <vdev> ...' can display the correct configuration
++#
++# STRATEGY:
++# 1. Create a storage pool
++#
++
++typeset -a dev=(
++	"${VDEV_PREFIX}00" "${VDEV_PREFIX}01" "${VDEV_PREFIX}02"
++	"${VDEV_PREFIX}03" "${VDEV_PREFIX}04" "${VDEV_PREFIX}05"
++	"${VDEV_PREFIX}06" "${VDEV_PREFIX}07" "${VDEV_PREFIX}08"
++	"${VDEV_PREFIX}09" "${VDEV_PREFIX}10" "${VDEV_PREFIX}11"
++)
++
++typeset -a tests=(
++    (
++	tree="'${dev[0]}' '${dev[1]}' log '${dev[2]}' '${dev[3]}' \
++	    special '${dev[4]}' '${dev[5]}' dedup '${dev[6]}' '${dev[7]}' \
++		spare '${dev[8]}' '${dev[9]}' cache '${dev[10]}' '${dev[11]}'"
++
++	want="$STR_DRYRUN
++
++	$TESTPOOL
++	  ${dev[0]}
++	  ${dev[1]}
++	dedup
++	  ${dev[6]}
++	  ${dev[7]}
++	special
++	  ${dev[4]}
++	  ${dev[5]}
++	logs
++	  ${dev[2]}
++	  ${dev[3]}
++	cache
++	  ${dev[10]}
++	  ${dev[11]}
++	spares
++	  ${dev[8]}
++	  ${dev[9]}"
++    )
++    (
++	tree="mirror '${dev[0]}' '${dev[1]}' \
++	    log mirror '${dev[2]}' '${dev[3]}' \
++	    special mirror '${dev[4]}' '${dev[5]}' \
++	    dedup mirror '${dev[6]}' '${dev[7]}' \
++		spare '${dev[8]}' '${dev[9]}' \
++	    cache '${dev[10]}' '${dev[11]}'"
++
++	want="$STR_DRYRUN
++
++	$TESTPOOL
++	  mirror
++	    ${dev[0]}
++	    ${dev[1]}
++	dedup
++	  mirror
++	    ${dev[6]}
++	    ${dev[7]}
++	special
++	  mirror
++	    ${dev[4]}
++	    ${dev[5]}
++	logs
++	  mirror
++	    ${dev[2]}
++	    ${dev[3]}
++	cache
++	  ${dev[10]}
++	  ${dev[11]}
++	spares
++	  ${dev[8]}
++	  ${dev[9]}"
++    )
++)
++
++verify_runnable "global"
++
++function cleanup
++{
++	rm -f "$TMPFILE_PREFIX"* "$VDEV_PREFIX"*
++}
++
++log_assert "'zpool add -n <pool> <vdev> ...' can display the configuration"
++
++log_onexit cleanup
++typeset disk1=$(create_blockfile $FILESIZE)
++
++# Create needed file vdevs.
++for (( i=0; i < ${#dev[@]}; i+=1 )); do
++	log_must truncate -s $SPA_MINDEVSIZE "${dev[$i]}"
++done
++
++# Foreach test create pool, add -n devices and check output.
++for (( i=0; i < ${#tests[@]}; i+=1 )); do
++	typeset tree="${tests[$i].tree}"
++	typeset want="${tests[$i].want}"
++
++	typeset out="$(log_must eval "zpool create -n '$TESTPOOL' $tree" | \
++	    sed /^SUCCESS/d)"
++
++	if [[ "$out" != "$want" ]]; then
++		log_fail "Got:\n" "$out" "\nbut expected:\n" "$want"
++	fi
++done
++
++log_pass "'zpool add -n <pool> <vdev> ...' displays config correctly."
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zpool_split/Makefile.am b/tests/zfs-tests/tests/functional/cli_root/zpool_split/Makefile.am
+index 1ca05a4e8..aac5e0d6e 100644
+--- a/tests/zfs-tests/tests/functional/cli_root/zpool_split/Makefile.am
++++ b/tests/zfs-tests/tests/functional/cli_root/zpool_split/Makefile.am
+@@ -12,7 +12,8 @@ dist_pkgdata_SCRIPTS = \
+ 	zpool_split_vdevs.ksh \
+ 	zpool_split_resilver.ksh \
+ 	zpool_split_wholedisk.ksh \
+-	zpool_split_indirect.ksh
++	zpool_split_indirect.ksh \
++	zpool_split_dryrun_output.ksh
+ 
+ dist_pkgdata_DATA = \
+ 	zpool_split.cfg
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zpool_split/zpool_split_dryrun_output.ksh b/tests/zfs-tests/tests/functional/cli_root/zpool_split/zpool_split_dryrun_output.ksh
+new file mode 100755
+index 000000000..f06339cea
+--- /dev/null
++++ b/tests/zfs-tests/tests/functional/cli_root/zpool_split/zpool_split_dryrun_output.ksh
+@@ -0,0 +1,151 @@
++#!/bin/ksh -p
++#
++# CDDL HEADER START
++#
++# The contents of this file are subject to the terms of the
++# Common Development and Distribution License (the "License").
++# You may not use this file except in compliance with the License.
++#
++# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
++# or http://www.opensolaris.org/os/licensing.
++# See the License for the specific language governing permissions
++# and limitations under the License.
++#
++# When distributing Covered Code, include this CDDL HEADER in each
++# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
++# If applicable, add the following below this CDDL HEADER, with the
++# fields enclosed by brackets "[]" replaced with your own identifying
++# information: Portions Copyright [yyyy] [name of copyright owner]
++#
++# CDDL HEADER END
++#
++
++#
++# Copyright 2020 Attila Fülöp <attila@fueloep.org>
++#
++
++. $STF_SUITE/include/libtest.shlib
++
++typeset NEWPOOL="${TESTPOOL}split"
++typeset STR_DRYRUN="would create '$NEWPOOL' with the following layout:"
++typeset VDEV_PREFIX="$TEST_BASE_DIR/filedev"
++
++#
++# DESCRIPTION:
++# 'zpool split -n <pool> <newpool> [<vdev> ...]' can display the correct
++# configuration
++#
++# STRATEGY:
++# 1. Create a mirrored storage pool, split -n and verify the output is as
++#    expected.
++#
++
++typeset -a dev=(
++	"${VDEV_PREFIX}00" "${VDEV_PREFIX}01" "${VDEV_PREFIX}02"
++	"${VDEV_PREFIX}03" "${VDEV_PREFIX}04" "${VDEV_PREFIX}05"
++	"${VDEV_PREFIX}06" "${VDEV_PREFIX}07" "${VDEV_PREFIX}08"
++	"${VDEV_PREFIX}09" "${VDEV_PREFIX}10" "${VDEV_PREFIX}11"
++)
++
++typeset -a tests=(
++    # Test for hole.
++    (
++	tree="mirror '${dev[0]}' '${dev[1]}' log mirror '${dev[2]}' '${dev[3]}' \
++	    special mirror '${dev[4]}' '${dev[5]}'"
++
++	devs=""
++	want="$STR_DRYRUN
++
++	$NEWPOOL
++	  ${dev[1]}
++	special
++	  ${dev[5]}"
++    )
++    (
++	tree="mirror '${dev[0]}' '${dev[1]}' log mirror '${dev[2]}' '${dev[3]}' \
++	    special mirror '${dev[4]}' '${dev[5]}'"
++
++	devs="'${dev[0]}' '${dev[4]}'"
++	want="$STR_DRYRUN
++
++	$NEWPOOL
++	  ${dev[0]}
++	special
++	  ${dev[4]}"
++    )
++
++	# Full set of vdev types.
++    (
++	tree="mirror '${dev[0]}' '${dev[1]}'
++	    dedup mirror '${dev[2]}' '${dev[3]}' \
++	    special mirror '${dev[4]}' '${dev[5]}' \
++	    cache '${dev[6]}' '${dev[7]}' \
++	    spare '${dev[8]}' '${dev[9]}'\
++		log mirror '${dev[10]}' '${dev[11]}'"
++
++	devs=""
++	want="$STR_DRYRUN
++
++	$NEWPOOL
++	  ${dev[1]}
++	dedup
++	  ${dev[3]}
++	special
++	  ${dev[5]}"
++    )
++    (
++	tree="mirror '${dev[0]}' '${dev[1]}'
++	    dedup mirror '${dev[2]}' '${dev[3]}' \
++	    special mirror '${dev[4]}' '${dev[5]}' \
++	    cache '${dev[6]}' '${dev[7]}' \
++	    spare '${dev[8]}' '${dev[9]}'\
++		log mirror '${dev[10]}' '${dev[11]}'"
++
++	devs="'${dev[0]}' '${dev[2]}' '${dev[4]}'"
++	want="$STR_DRYRUN
++
++	$NEWPOOL
++	  ${dev[0]}
++	dedup
++	  ${dev[2]}
++	special
++	  ${dev[4]}"
++    )
++)
++
++verify_runnable "global"
++
++function cleanup
++{
++	destroy_pool "$TESTPOOL"
++}
++
++log_assert \
++"'zpool split -n <pool> <newpool> [<vdev>]...' can display the configuration"
++
++log_onexit cleanup
++
++# Create needed file vdevs.
++for (( i=0; i < ${#dev[@]}; i+=1 )); do
++	log_must truncate -s $SPA_MINDEVSIZE "${dev[$i]}"
++done
++
++# Foreach test create pool, add -n devices and check output.
++for (( i=0; i < ${#tests[@]}; i+=1 )); do
++	typeset tree="${tests[$i].tree}"
++	typeset devs="${tests[$i].devs}"
++	typeset want="${tests[$i].want}"
++
++	log_must eval zpool create "$TESTPOOL" $tree
++	log_must poolexists "$TESTPOOL"
++	typeset out="$(log_must eval "zpool split -n \
++	    '$TESTPOOL' '$NEWPOOL' $devs" | sed /^SUCCESS/d)"
++
++	if [[ "$out" != "$want" ]]; then
++		log_fail "Got:\n" "$out" "\nbut expected:\n" "$want"
++	fi
++	log_must destroy_pool "$TESTPOOL"
++done
++
++log_pass \
++"'zpool split -n <pool> <newpool> [<vdev>]...' displays config correctly."
+-- 
+2.30.0
+
