@@ -1,0 +1,277 @@
+commit f8c4d63a2660e07e8172372a753b582bd7c3c1c1
+Author: Antonio Russo <aerusso@aerusso.net>
+Date:   Tue Jan 19 12:53:35 2021 -0700
+
+    ZTS: avoid piping to special devices
+    
+    As described in #11445, the kernel interface kernel_{read,write} no
+    longer act on special devices.  In the ZTS, zfs send and receive are
+    tested by piping to these devices, leading to spurious failures (for
+    positive tests) and may mask errors (for negative tests).
+    
+    Until a more permanent mechanism to address this deficiency is
+    developed, clean up the output from the ZTS by avoiding directly piping
+    to or from /dev/null and /dev/zero.
+    
+    For /dev/zero input, simply use a pipe: `cat </dev/zero |` .
+    
+    However, for /dev/null output, the shell semantics for pipe failures
+    means that zfs send error codes will be masked by the successful
+    `| cat >/dev/null` command execution.  In that case, use a temporary
+    file under $TEST_BASE_DIR for output in favor.
+    
+    Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+    Reviewed-by: Attila Fülöp <attila@fueloep.org>
+    Signed-off-by: Antonio Russo <aerusso@aerusso.net>
+    Closes #11478
+
+diff --git a/contrib/pyzfs/libzfs_core/test/test_libzfs_core.py b/contrib/pyzfs/libzfs_core/test/test_libzfs_core.py
+index a841f96af..08b58b5d1 100644
+--- a/contrib/pyzfs/libzfs_core/test/test_libzfs_core.py
++++ b/contrib/pyzfs/libzfs_core/test/test_libzfs_core.py
+@@ -154,8 +154,8 @@ def os_open(name, mode):
+ 
+ @contextlib.contextmanager
+ def dev_null():
+-    with os_open('/dev/null', os.O_WRONLY) as fd:
+-        yield fd
++    with tempfile.TemporaryFile(suffix='.zstream') as fd:
++        yield fd.fileno()
+ 
+ 
+ @contextlib.contextmanager
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zfs_receive/zfs_receive_005_neg.ksh b/tests/zfs-tests/tests/functional/cli_root/zfs_receive/zfs_receive_005_neg.ksh
+index 4cbc7e339..ce89c6835 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zfs_receive/zfs_receive_005_neg.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zfs_receive/zfs_receive_005_neg.ksh
+@@ -82,8 +82,8 @@ log_must zfs snapshot $init_snap
+ log_must eval "zfs send $init_snap > $full_bkup"
+ 
+ log_note "'zfs receive' fails with invalid send streams."
+-log_mustnot eval "zfs receive $rst_init_snap < /dev/zero"
+-log_mustnot eval "zfs receive -d $rst_root </dev/zero"
++log_mustnot eval "cat </dev/zero | zfs receive $rst_init_snap"
++log_mustnot eval "cat </dev/zero | zfs receive -d $rst_root"
+ 
+ log_must eval "zfs receive $rst_init_snap < $full_bkup"
+ 
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send-b.ksh b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send-b.ksh
+index 87997e76c..2105bc4d2 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send-b.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send-b.ksh
+@@ -58,13 +58,13 @@ log_must zfs set "org.openzfs:snapprop=val" "$SENDFS@s1"
+ # 2. Verify command line options interact with '-b' correctly
+ typeset opts=("" "p" "Rp" "cew" "nv" "D" "DLPRcenpvw")
+ for opt in ${opts[@]}; do
+-	log_must eval "zfs send -b$opt $SENDFS@s1 > /dev/null"
+-	log_must eval "zfs send -b$opt -i $SENDFS@s1 $SENDFS@s2 > /dev/null"
+-	log_must eval "zfs send -b$opt -I $SENDFS@s1 $SENDFS@s2 > /dev/null"
++	log_must eval "zfs send -b$opt $SENDFS@s1 >$TEST_BASE_DIR/devnull"
++	log_must eval "zfs send -b$opt -i $SENDFS@s1 $SENDFS@s2 >$TEST_BASE_DIR/devnull"
++	log_must eval "zfs send -b$opt -I $SENDFS@s1 $SENDFS@s2 >$TEST_BASE_DIR/devnull"
+ done
+ for opt in ${opts[@]}; do
+-	log_mustnot eval "zfs send -b$opt $SENDFS > /dev/null"
+-	log_mustnot eval "zfs send -b$opt $SENDFS#bm > /dev/null"
++	log_mustnot eval "zfs send -b$opt $SENDFS >$TEST_BASE_DIR/devnull"
++	log_mustnot eval "zfs send -b$opt $SENDFS#bm >$TEST_BASE_DIR/devnull"
+ done
+ 
+ # Do 3..6 in a loop to verify various combination of "zfs send" options
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_003_pos.ksh b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_003_pos.ksh
+index 825a10d0f..0b55254f7 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_003_pos.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_003_pos.ksh
+@@ -61,7 +61,7 @@ log_must zfs snapshot $snap2
+ 
+ typeset -i i=0
+ while (( i < ${#args[*]} )); do
+-	log_must eval "zfs send -i ${args[i]} > /dev/null"
++	log_must eval "zfs send -i ${args[i]} >$TEST_BASE_DIR/devnull"
+ 
+ 	(( i += 1 ))
+ done
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_004_neg.ksh b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_004_neg.ksh
+index 4a9d29fce..dfa9fc251 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_004_neg.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_004_neg.ksh
+@@ -96,7 +96,7 @@ log_must zfs snapshot $snap3
+ typeset -i i=0
+ while (( i < ${#badargs[*]} ))
+ do
+-	log_mustnot eval "zfs send ${badargs[i]} >/dev/null"
++	log_mustnot eval "zfs send ${badargs[i]} >$TEST_BASE_DIR/devnull"
+ 
+ 	(( i = i + 1 ))
+ done
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_005_pos.ksh b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_005_pos.ksh
+index 9f369e372..c9e37cbba 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_005_pos.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_005_pos.ksh
+@@ -61,6 +61,6 @@ log_must zfs snapshot -r $TESTPOOL@snap
+ log_must zpool export $TESTPOOL
+ log_must zpool import -o readonly=on $TESTPOOL
+ 
+-log_must eval "zfs send -R $TESTPOOL@snap >/dev/null"
++log_must eval "zfs send -R $TESTPOOL@snap >$TEST_BASE_DIR/devnull"
+ 
+ log_pass "'zfs send -R' can send from read-only pools"
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_encrypted.ksh b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_encrypted.ksh
+index 490e146ba..1e63b29ad 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_encrypted.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_encrypted.ksh
+@@ -62,15 +62,15 @@ log_must eval "echo $passphrase1 | zfs create -o encryption=on" \
+ 
+ log_must zfs snapshot -r $snap
+ 
+-log_must eval "zfs send $snap > /dev/null"
+-log_mustnot eval "zfs send -p $snap > /dev/null"
+-log_mustnot eval "zfs send -R $snap > /dev/null"
++log_must eval "zfs send $snap >$TEST_BASE_DIR/devnull"
++log_mustnot eval "zfs send -p $snap >$TEST_BASE_DIR/devnull"
++log_mustnot eval "zfs send -R $snap >$TEST_BASE_DIR/devnull"
+ 
+ log_must zfs unmount $TESTPOOL/$TESTFS1
+ log_must zfs unload-key $TESTPOOL/$TESTFS1
+ 
+-log_mustnot eval "zfs send $snap > /dev/null"
+-log_must eval "zfs send $TESTPOOL/$TESTFS1/child@snap > /dev/null"
++log_mustnot eval "zfs send $snap >$TEST_BASE_DIR/devnull"
++log_must eval "zfs send $TESTPOOL/$TESTFS1/child@snap >$TEST_BASE_DIR/devnull"
+ 
+ log_pass "ZFS performs unencrypted sends of encrypted datasets, unless the" \
+ 	"'-p' or '-R' options are specified"
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_encrypted_unloaded.ksh b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_encrypted_unloaded.ksh
+index 112ee1143..9d59494fc 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_encrypted_unloaded.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_encrypted_unloaded.ksh
+@@ -53,7 +53,7 @@ log_must eval "echo $passphrase | zfs create -o encryption=on" \
+ log_must zfs snapshot $snap
+ log_must zfs unmount $TESTPOOL/$TESTFS1
+ log_must zfs unload-key $TESTPOOL/$TESTFS1
+-log_mustnot eval "zfs send $snap > /dev/null"
++log_mustnot eval "zfs send $snap >$TEST_BASE_DIR/devnull"
+ 
+ log_pass "ZFS does not perform unencrypted sends from encrypted datasets" \
+ 	"with unloaded keys."
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_raw.ksh b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_raw.ksh
+index 85cc7407e..065eea3eb 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_raw.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zfs_send/zfs_send_raw.ksh
+@@ -59,21 +59,21 @@ log_must eval "echo $passphrase | zfs create -o encryption=on" \
+ log_must zfs snapshot $snap
+ log_must zfs snapshot $snap1
+ 
+-log_must eval "zfs send -w $snap > /dev/null"
+-log_must eval "zfs send -w $snap1 > /dev/null"
++log_must eval "zfs send -w $snap >$TEST_BASE_DIR/devnull"
++log_must eval "zfs send -w $snap1 >$TEST_BASE_DIR/devnull"
+ 
+ log_note "Verify ZFS can perform raw sends with properties"
+-log_must eval "zfs send -wp $snap > /dev/null"
+-log_must eval "zfs send -wp $snap1 > /dev/null"
++log_must eval "zfs send -wp $snap >$TEST_BASE_DIR/devnull"
++log_must eval "zfs send -wp $snap1 >$TEST_BASE_DIR/devnull"
+ 
+ log_note "Verify ZFS can perform raw replication sends"
+-log_must eval "zfs send -wR $snap > /dev/null"
+-log_must eval "zfs send -wR $snap1 > /dev/null"
++log_must eval "zfs send -wR $snap >$TEST_BASE_DIR/devnull"
++log_must eval "zfs send -wR $snap1 >$TEST_BASE_DIR/devnull"
+ 
+ log_note "Verify ZFS can perform a raw send of an encrypted datasets with" \
+ 	"its key unloaded"
+ log_must zfs unmount $TESTPOOL/$TESTFS1
+ log_must zfs unload-key $TESTPOOL/$TESTFS1
+-log_must eval "zfs send -w $snap1 > /dev/null"
++log_must eval "zfs send -w $snap1 >$TEST_BASE_DIR/devnull"
+ 
+ log_pass "ZFS performs raw sends of datasets"
+diff --git a/tests/zfs-tests/tests/functional/redacted_send/redacted_negative.ksh b/tests/zfs-tests/tests/functional/redacted_send/redacted_negative.ksh
+index 432460fa2..e591cca0b 100755
+--- a/tests/zfs-tests/tests/functional/redacted_send/redacted_negative.ksh
++++ b/tests/zfs-tests/tests/functional/redacted_send/redacted_negative.ksh
+@@ -45,11 +45,11 @@ log_must zfs snapshot $clone2@snap
+ 
+ # Incompatible flags
+ log_must zfs redact $sendfs@snap2 book $clone1@snap
+-log_mustnot eval "zfs send -R --redact book $sendfs@snap2 >/dev/null"
++log_mustnot eval "zfs send -R --redact book $sendfs@snap2 >$TEST_BASE_DIR/devnull"
+ 
+ typeset arg
+ for arg in "$sendfs" "$clone1#book"; do
+-	log_mustnot eval "zfs send --redact book $arg >/dev/null"
++	log_mustnot eval "zfs send --redact book $arg >$TEST_BASE_DIR/devnull"
+ done
+ 
+ # Bad redaction list arguments
+@@ -58,7 +58,7 @@ log_mustnot zfs redact $sendfs@snap1 book
+ log_mustnot zfs redact $sendfs#book1 book4 $clone1
+ log_mustnot zfs redact $sendfs@snap1 book snap2 snap3
+ log_mustnot zfs redact $sendfs@snap1 book @snap2 @snap3
+-log_mustnot eval "zfs send --redact $sendfs#book $sendfs@snap >/dev/null"
++log_mustnot eval "zfs send --redact $sendfs#book $sendfs@snap >$TEST_BASE_DIR/devnull"
+ 
+ # Redaction snapshots not a descendant of tosnap
+ log_mustnot zfs redact $sendfs@snap2 book $sendfs@snap2
+@@ -66,7 +66,7 @@ log_must zfs redact $sendfs@snap2 book2 $clone1@snap $clone2@snap
+ log_must eval "zfs send --redact book2 $sendfs@snap2 >$stream"
+ log_must zfs redact $sendfs@snap2 book3 $clone1@snap $clone2@snap
+ log_must eval "zfs send -i $sendfs@snap1 --redact book3 $sendfs@snap2 \
+-    >/dev/null"
++    >$TEST_BASE_DIR/devnull"
+ log_mustnot zfs redact $sendfs@snap3 $sendfs@snap3 $clone1@snap
+ 
+ # Full redacted sends of redacted datasets are not allowed.
+diff --git a/tests/zfs-tests/tests/functional/redacted_send/redacted_resume.ksh b/tests/zfs-tests/tests/functional/redacted_send/redacted_resume.ksh
+index 8118ea59e..4ab04a0e5 100755
+--- a/tests/zfs-tests/tests/functional/redacted_send/redacted_resume.ksh
++++ b/tests/zfs-tests/tests/functional/redacted_send/redacted_resume.ksh
+@@ -81,7 +81,7 @@ log_must eval "zfs send --redact book1 $sendfs@snap >$stream"
+ dd if=$stream bs=64k count=1 | log_mustnot zfs receive -s $recvfs
+ [[ "-" = $(get_prop receive_resume_token $recvfs) ]] && \
+     log_fail "Receive token not found."
+-log_mustnot eval "zfs send --saved --redact book1 $recvfs > /dev/null"
++log_mustnot eval "zfs send --saved --redact book1 $recvfs >$TEST_BASE_DIR/devnull"
+ log_must zfs recv -A $recvfs
+ log_must datasetnonexists $recvfs
+ 
+diff --git a/tests/zfs-tests/tests/functional/removal/removal_with_send.ksh b/tests/zfs-tests/tests/functional/removal/removal_with_send.ksh
+index 59e66aca5..a08247838 100755
+--- a/tests/zfs-tests/tests/functional/removal/removal_with_send.ksh
++++ b/tests/zfs-tests/tests/functional/removal/removal_with_send.ksh
+@@ -28,7 +28,7 @@ function callback
+ {
+ 	create_snapshot $TESTPOOL/$TESTFS $TESTSNAP
+ 	log_must ksh -c \
+-	    "zfs send $TESTPOOL/$TESTFS@$TESTSNAP >/dev/null"
++	    "zfs send $TESTPOOL/$TESTFS@$TESTSNAP >$TEST_BASE_DIR/devnull"
+ 	return 0
+ }
+ 
+diff --git a/tests/zfs-tests/tests/functional/rsend/send_invalid.ksh b/tests/zfs-tests/tests/functional/rsend/send_invalid.ksh
+index a0abe64b4..2ce7ee4a0 100755
+--- a/tests/zfs-tests/tests/functional/rsend/send_invalid.ksh
++++ b/tests/zfs-tests/tests/functional/rsend/send_invalid.ksh
+@@ -44,7 +44,7 @@ log_must zfs snap $testfs@snap0
+ log_must zfs snap $testfs@snap1
+ 
+ # Test bad send with the CLI
+-log_mustnot eval "zfs send -i $testfs@snap1 $testfs@snap0 >/dev/null"
++log_mustnot eval "zfs send -i $testfs@snap1 $testfs@snap0 >$TEST_BASE_DIR/devnull"
+ 
+ # Test bad send with libzfs/libzfs_core
+ log_must badsend $testfs@snap0 $testfs@snap1
+diff --git a/tests/zfs-tests/tests/functional/rsend/send_partial_dataset.ksh b/tests/zfs-tests/tests/functional/rsend/send_partial_dataset.ksh
+index d5eb9a0ed..c390327a5 100755
+--- a/tests/zfs-tests/tests/functional/rsend/send_partial_dataset.ksh
++++ b/tests/zfs-tests/tests/functional/rsend/send_partial_dataset.ksh
+@@ -103,7 +103,7 @@ set -A badargs \
+ 
+ while (( i < ${#badargs[*]} ))
+ do
+-	log_mustnot eval "zfs send --saved ${badargs[i]} >/dev/null"
++	log_mustnot eval "zfs send --saved ${badargs[i]} >$TEST_BASE_DIR/devnull"
+ 	(( i = i + 1 ))
+ done
+ 

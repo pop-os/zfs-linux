@@ -5,6 +5,10 @@ dont-symlink-zed-scripts.patch
 0003-relocate-zvol_wait.patch
 0004-prefer-python3-tests.patch
 0005-install-zgenhostid-to-sbin.patch
+0006-zts-avoid-piping-to-devnull.patch
+0007-zts-avoid-race-in-zfs-destroy.patch
+0008-zpool-Dryrun-fails-to-list-some-devices.patch
+0009-zts-three-small-fixes-11167.patch
 enable-zed.patch
 1004-zed-service-bindir.patch
 2100-zfs-load-module.patch
@@ -18,4 +22,3 @@ force-verbose-rules.patch
 #4510-silently-ignore-modprobe-failure.patch
 4620-zfs-vol-wait-fix-locked-encrypted-vols.patch
 move-arcstat-1-to-8.patch
-0001-zpool-Dryrun-fails-to-list-some-devices.patch

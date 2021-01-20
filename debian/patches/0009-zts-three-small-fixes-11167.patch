@@ -1,0 +1,87 @@
+commit acb39fc9a42e255967c363ec05bbcb956f57fee5
+Author: Attila Fülöp <attila@fueloep.org>
+Date:   Thu Dec 10 06:27:12 2020 +0100
+
+    ZTS: three small follow up fixes for #11167
+    
+    Follow up fix for 0cb40fa3. Remove unused variables, don't source
+    unused libs and add missed cleanup.
+    
+    Reviewed-by: Ryan Moeller <ryan@iXsystems.com>
+    Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+    Signed-off-by: Attila Fülöp <attila@fueloep.org>
+    Closes #11311
+
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_dryrun_output.ksh b/tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_dryrun_output.ksh
+index 5e16cddab..dbf81262e 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_dryrun_output.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_dryrun_output.ksh
+@@ -25,9 +25,7 @@
+ #
+ 
+ . $STF_SUITE/include/libtest.shlib
+-. $STF_SUITE/tests/functional/cli_root/zpool_add/zpool_add.kshlib
+ 
+-typeset TMPFILE_PREFIX="$TEST_BASE_DIR/zpool_add_dryrun_output"
+ typeset STR_DRYRUN="would update '$TESTPOOL' to the following configuration:"
+ typeset VDEV_PREFIX="$TEST_BASE_DIR/filedev"
+ 
+@@ -136,7 +134,7 @@ verify_runnable "global"
+ function cleanup
+ {
+ 	destroy_pool "$TESTPOOL"
+-	rm -f "$TMPFILE_PREFIX"* "$VDEV_PREFIX"*
++	rm -f "$VDEV_PREFIX"*
+ }
+ 
+ log_assert "'zpool add -n <pool> <vdev> ...' can display the configuration"
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_dryrun_output.ksh b/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_dryrun_output.ksh
+index 97c0c207d..1e4db20cf 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_dryrun_output.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_dryrun_output.ksh
+@@ -25,9 +25,7 @@
+ #
+ 
+ . $STF_SUITE/include/libtest.shlib
+-. $STF_SUITE/tests/functional/cli_root/zpool_create/zpool_create.shlib
+ 
+-typeset TMPFILE_PREFIX="$TEST_BASE_DIR/zpool_create_dryrun_output"
+ typeset STR_DRYRUN="would create '$TESTPOOL' with the following layout:"
+ typeset VDEV_PREFIX="$TEST_BASE_DIR/filedev"
+ 
+@@ -36,7 +34,7 @@ typeset VDEV_PREFIX="$TEST_BASE_DIR/filedev"
+ # 'zpool create -n <pool> <vdev> ...' can display the correct configuration
+ #
+ # STRATEGY:
+-# 1. Create a storage pool
++# 1. Create -n a storage pool and verify the output is as expected.
+ #
+ 
+ typeset -a dev=(
+@@ -112,13 +110,12 @@ verify_runnable "global"
+ 
+ function cleanup
+ {
+-	rm -f "$TMPFILE_PREFIX"* "$VDEV_PREFIX"*
++	rm -f "$VDEV_PREFIX"*
+ }
+ 
+ log_assert "'zpool add -n <pool> <vdev> ...' can display the configuration"
+ 
+ log_onexit cleanup
+-typeset disk1=$(create_blockfile $FILESIZE)
+ 
+ # Create needed file vdevs.
+ for (( i=0; i < ${#dev[@]}; i+=1 )); do
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zpool_split/zpool_split_dryrun_output.ksh b/tests/zfs-tests/tests/functional/cli_root/zpool_split/zpool_split_dryrun_output.ksh
+index f06339cea..2267ea7bd 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zpool_split/zpool_split_dryrun_output.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zpool_split/zpool_split_dryrun_output.ksh
+@@ -118,6 +118,7 @@ verify_runnable "global"
+ function cleanup
+ {
+ 	destroy_pool "$TESTPOOL"
++	rm -f "$VDEV_PREFIX"*
+ }
+ 
+ log_assert \

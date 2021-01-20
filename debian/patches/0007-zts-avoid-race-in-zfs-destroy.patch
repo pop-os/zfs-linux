@@ -1,0 +1,29 @@
+commit 8752f7e320115a1deaa4672c73293879c6d5d0f1
+Author: Antonio Russo <aerusso@aerusso.net>
+Date:   Tue Jan 12 18:20:02 2021 -0700
+
+    ZTS: avoid race to unmount in zfs_rollback_001
+    
+    The zfs_rollback_001 test modifies files in a temporary, test dataset
+    repeatedly.  Before each iteration, any preexisting dataset is removed,
+    after unmounted with umount -f, if necessary.
+    
+    Add a short delay after the forced unmount, avoiding a race that can
+    prevent zfs destroy from succeeding, leading to a test failure.
+    
+    Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+    Signed-off-by: Antonio Russo <aerusso@aerusso.net>
+    Closes #11451
+
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zfs_rollback/zfs_rollback_001_pos.ksh b/tests/zfs-tests/tests/functional/cli_root/zfs_rollback/zfs_rollback_001_pos.ksh
+index 5511f6ad6..342c72e16 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zfs_rollback/zfs_rollback_001_pos.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zfs_rollback/zfs_rollback_001_pos.ksh
+@@ -80,6 +80,7 @@ function test_n_check #opt num_snap_clone num_rollback
+ 	if datasetexists $VOL; then
+ 		if ismounted $TESTDIR1 $NEWFS_DEFAULT_FS; then
+ 			log_must umount -f $TESTDIR1
++			sleep 0.1
+ 		fi
+ 
+ 		log_must zfs destroy -Rf $VOL
