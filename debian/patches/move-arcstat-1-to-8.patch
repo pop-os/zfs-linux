@@ -3,6 +3,7 @@ Author: Mo Zhou <cdluminate@gmail.com>
 Date:   Fri Jan 15 14:26:42 2021 +0800
 
     Move arcstat(1) to arcstat(8) to avoid conflict with binary package nordugrid-arc-client.
+    We regenerate Makefile.in, so we don't have to modify them explicitly here.
 
 --- a/man/man1/Makefile.am
 +++ b/man/man1/Makefile.am
@@ -12,32 +13,11 @@ Date:   Fri Jan 15 14:26:42 2021 +0800
  EXTRA_DIST = cstyle.1
  
  if BUILD_LINUX
---- a/man/man1/Makefile.in
-+++ b/man/man1/Makefile.in
-@@ -577,7 +577,7 @@
- udevdir = @udevdir@
- udevruledir = @udevruledir@
- zfsexecdir = @zfsexecdir@
--dist_man_MANS = zhack.1 ztest.1 raidz_test.1 zvol_wait.1 arcstat.1
-+dist_man_MANS = zhack.1 ztest.1 raidz_test.1 zvol_wait.1
- EXTRA_DIST = cstyle.1
- all: all-am
- 
 --- a/man/man8/Makefile.am
 +++ b/man/man8/Makefile.am
 @@ -1,6 +1,7 @@
  include $(top_srcdir)/config/Substfiles.am
  
- dist_man_MANS = \
-+	arcstat.8 \
- 	fsck.zfs.8 \
- 	mount.zfs.8 \
- 	vdev_id.8 \
---- a/man/man8/Makefile.in
-+++ b/man/man8/Makefile.in
-@@ -601,6 +601,7 @@
- CLEANFILES = $(SUBSTFILES)
- EXTRA_DIST = $(SUBSTFILES:=.in)
  dist_man_MANS = \
 +	arcstat.8 \
  	fsck.zfs.8 \
