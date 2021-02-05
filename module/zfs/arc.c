@@ -4050,7 +4050,7 @@ arc_evict_state_impl(multilist_t *ml, int idx, arc_buf_hdr_t *marker,
 	mutex_enter(&arc_evict_lock);
 	arc_evict_count += bytes_evicted;
 
-	if ((int64_t)(arc_free_memory() - arc_sys_free / 2) > 0) {
+	if (arc_free_memory() > arc_sys_free / 2) {
 		arc_evict_waiter_t *aw;
 		while ((aw = list_head(&arc_evict_waiters)) != NULL &&
 		    aw->aew_count <= arc_evict_count) {
@@ -5136,14 +5136,20 @@ arc_wait_for_eviction(uint64_t amount)
 			list_link_init(&aw.aew_node);
 			cv_init(&aw.aew_cv, NULL, CV_DEFAULT, NULL);
 
-			arc_evict_waiter_t *last =
-			    list_tail(&arc_evict_waiters);
-			if (last != NULL) {
-				ASSERT3U(last->aew_count, >, arc_evict_count);
-				aw.aew_count = last->aew_count + amount;
-			} else {
-				aw.aew_count = arc_evict_count + amount;
+			uint64_t last_count = 0;
+			if (!list_is_empty(&arc_evict_waiters)) {
+				arc_evict_waiter_t *last =
+				    list_tail(&arc_evict_waiters);
+				last_count = last->aew_count;
 			}
+			/*
+			 * Note, the last waiter's count may be less than
+			 * arc_evict_count if we are low on memory in which
+			 * case arc_evict_state_impl() may have deferred
+			 * wakeups (but still incremented arc_evict_count).
+			 */
+			aw.aew_count =
+			    MAX(last_count, arc_evict_count) + amount;
 
 			list_insert_tail(&arc_evict_waiters, &aw);
 
@@ -8919,6 +8925,7 @@ l2arc_write_buffers(spa_t *spa, l2arc_dev_t *dev, uint64_t target_sz)
 	l2arc_write_callback_t	*cb = NULL;
 	zio_t 			*pio, *wzio;
 	uint64_t 		guid = spa_load_guid(spa);
+	l2arc_dev_hdr_phys_t	*l2dhdr = dev->l2ad_dev_hdr;
 
 	ASSERT3P(dev->l2ad_vdev, !=, NULL);
 
@@ -8931,17 +8938,17 @@ l2arc_write_buffers(spa_t *spa, l2arc_dev_t *dev, uint64_t target_sz)
 	/*
 	 * Copy buffers for L2ARC writing.
 	 */
-	for (int try = 0; try < L2ARC_FEED_TYPES; try++) {
+	for (int pass = 0; pass < L2ARC_FEED_TYPES; pass++) {
 		/*
-		 * If try == 1 or 3, we cache MRU metadata and data
+		 * If pass == 1 or 3, we cache MRU metadata and data
 		 * respectively.
 		 */
 		if (l2arc_mfuonly) {
-			if (try == 1 || try == 3)
+			if (pass == 1 || pass == 3)
 				continue;
 		}
 
-		multilist_sublist_t *mls = l2arc_sublist_lock(try);
+		multilist_sublist_t *mls = l2arc_sublist_lock(pass);
 		uint64_t passed_sz = 0;
 
 		VERIFY3P(mls, !=, NULL);
@@ -9147,7 +9154,8 @@ l2arc_write_buffers(spa_t *spa, l2arc_dev_t *dev, uint64_t target_sz)
 		 * Although we did not write any buffers l2ad_evict may
 		 * have advanced.
 		 */
-		l2arc_dev_hdr_update(dev);
+		if (dev->l2ad_evict != l2dhdr->dh_evict)
+			l2arc_dev_hdr_update(dev);
 
 		return (0);
 	}
