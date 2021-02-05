@@ -1,3 +1,16 @@
+zfs-linux (2.0.2-1) UNRELEASED; urgency=medium
+
+  [ Mo Zhou ]
+  * New upstream version 2.0.2
+
+  [ Antonio Russo ]
+  * Remove upstreamed patches and refresh remaining ones.
+  * Update debian/copyright
+  * Add ZTS to debian/tests
+  * Bump Standards-Version to 4.5.1 (no changes)
+
+ -- Mo Zhou <lumin@debian.org>  Sat, 06 Feb 2021 00:29:38 +0800
+
 zfs-linux (2.0.1-3) unstable; urgency=medium
 
   [ Antonio Russo ]
