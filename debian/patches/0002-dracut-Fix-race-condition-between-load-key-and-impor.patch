@@ -1,0 +1,40 @@
+From 07ca7592ad0ef60d22b8155eeae1cc9bc69a528f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Lorenz=20H=C3=BCdepohl?= <dev@stellardeath.org>
+Date: Tue, 26 Jan 2021 21:14:22 +0100
+Subject: dracut: Fix race condition between load-key and import
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+zfs-load-key.sh is called by the dracut-pre-mount.service unit which has
+no explicit 'After' dependency on zfs-import.target. That way it can be
+that the pool has not yet been imported and the zfs-load-key.sh finishes
+without ever seeing the relevant pool.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Lorenz Hüdepohl <dev@stellardeath.org>
+Closes #11500
+---
+ contrib/dracut/90zfs/zfs-generator.sh.in | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/contrib/dracut/90zfs/zfs-generator.sh.in b/contrib/dracut/90zfs/zfs-generator.sh.in
+index 59cdadcbe..12293bd24 100755
+--- a/contrib/dracut/90zfs/zfs-generator.sh.in
++++ b/contrib/dracut/90zfs/zfs-generator.sh.in
+@@ -59,4 +59,12 @@ echo "zfs-generator: writing extension for sysroot.mount to $GENERATOR_DIR"/sysr
+ [ -d "$GENERATOR_DIR"/initrd-root-fs.target.requires ] || mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.requires
+ ln -s ../sysroot.mount "$GENERATOR_DIR"/initrd-root-fs.target.requires/sysroot.mount
+ 
++
++[ -d "$GENERATOR_DIR"/dracut-pre-mount.service.d ] || mkdir "$GENERATOR_DIR"/dracut-pre-mount.service.d
++
++{
++    echo "[Unit]"
++    echo "After=zfs-import.target"
++} > "$GENERATOR_DIR"/dracut-pre-mount.service.d/zfs-enhancement.conf
++
+ echo "zfs-generator: finished" >> /dev/kmsg
+-- 
+2.30.0
+
