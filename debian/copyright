@@ -832,6 +832,12 @@ Files: tests/zfs-tests/tests/functional/channel_program/lua_core/*.lua
 Copyright:1994-2016 Lua.org, PUC-Rio.
 License: Expat
 
+Files: tests/zfs-tests/tests/functional/cli_root/zpool_add/zpool_add_dryrun_output.ksh
+       tests/zfs-tests/tests/functional/cli_root/zpool_create/zpool_create_dryrun_output.ksh
+       tests/zfs-tests/tests/functional/cli_root/zpool_split/zpool_split_dryrun_output.ksh
+Copyright: 2020 Attila Fülöp <attila@fueloep.org>
+License: CDDL-1.0
+
 
 License: Expat
  Permission is hereby granted, free of charge, to any person obtaining

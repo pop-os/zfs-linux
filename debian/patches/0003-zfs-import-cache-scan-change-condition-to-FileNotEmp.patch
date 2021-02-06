@@ -1,0 +1,56 @@
+From 642d86af0d91b2bf88d5ea34cb6888b03c39c459 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=D0=BD=D0=B0=D0=B1?= <nabijaczleweli@nabijaczleweli.xyz>
+Date: Fri, 5 Feb 2021 20:25:22 +0100
+Subject: zfs-import-{cache,scan}: change condition to FileNotEmpty
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When all pools are exported ZFS will generate an empty cache file.
+This will cause the import service to fail, which is sub-optimal,
+since this means that dracut fails, and it necessary to run
+`zpool import -a` to boot, delete the file, and regenerate+reinstall
+the initrd.
+
+This resolves the issue by treating an zero-length cache files the
+same as a missing cache file.  This aligns the behavior with that
+of the `zpool` command itself.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Richard Laager <rlaager@wiktel.com>
+Signed-off-by: Ahelenia Ziemiańska <nabijaczleweli@nabijaczleweli.xyz>
+Closes #11568
+---
+ etc/systemd/system/zfs-import-cache.service.in | 2 +-
+ etc/systemd/system/zfs-import-scan.service.in  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/etc/systemd/system/zfs-import-cache.service.in b/etc/systemd/system/zfs-import-cache.service.in
+index 47c5b07f8..0d236fe9e 100644
+--- a/etc/systemd/system/zfs-import-cache.service.in
++++ b/etc/systemd/system/zfs-import-cache.service.in
+@@ -8,7 +8,7 @@ After=cryptsetup.target
+ After=multipathd.target
+ After=systemd-remount-fs.service
+ Before=zfs-import.target
+-ConditionPathExists=@sysconfdir@/zfs/zpool.cache
++ConditionFileNotEmpty=@sysconfdir@/zfs/zpool.cache
+ ConditionPathIsDirectory=/sys/module/zfs
+ 
+ [Service]
+diff --git a/etc/systemd/system/zfs-import-scan.service.in b/etc/systemd/system/zfs-import-scan.service.in
+index 6520f3246..f0317e23e 100644
+--- a/etc/systemd/system/zfs-import-scan.service.in
++++ b/etc/systemd/system/zfs-import-scan.service.in
+@@ -7,7 +7,7 @@ After=systemd-udev-settle.service
+ After=cryptsetup.target
+ After=multipathd.target
+ Before=zfs-import.target
+-ConditionPathExists=!@sysconfdir@/zfs/zpool.cache
++ConditionFileNotEmpty=!@sysconfdir@/zfs/zpool.cache
+ ConditionPathIsDirectory=/sys/module/zfs
+ 
+ [Service]
+-- 
+2.30.0
+
