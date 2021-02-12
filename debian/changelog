@@ -1,3 +1,11 @@
+zfs-linux (2.0.3-1) unstable; urgency=medium
+
+  * New upstream version 2.0.3
+  * Remove upstreamed patches.
+  * Synchronize with ubuntu delta 2.0.1-1ubuntu2.
+
+ -- Mo Zhou <lumin@debian.org>  Fri, 12 Feb 2021 16:30:01 +0800
+
 zfs-linux (2.0.2-1) unstable; urgency=medium
 
   [ Mo Zhou ]

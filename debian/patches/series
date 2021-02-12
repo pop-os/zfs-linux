@@ -1,7 +1,4 @@
 #unapplied/init-debian-openrc-workaround.patch # OpenRC users can apply this locally
-0001-zfs-list.8-clarify-listing-snapshots.patch
-0002-dracut-Fix-race-condition-between-load-key-and-impor.patch
-0003-zfs-import-cache-scan-change-condition-to-FileNotEmp.patch
 1000-dont-symlink-zed-scripts.patch
 1001-Prevent-manual-builds-in-the-DKMS-source.patch
 1002-Check-for-META-and-DCH-consistency-in-autoconf.patch
@@ -10,13 +7,12 @@
 1005-enable-zed.patch
 1006-zed-service-bindir.patch
 2100-zfs-load-module.patch
-#2200-add-zfs-0.6.x-ioctl-compat-shim.patch
 3100-remove-libzfs-module-timeout.patch
-#3302-Use-obj-m-instead-of-subdir-m.patch
-#4000-zsys-support.patch
-#4100-disable-bpool-upgrade.patch
+#ubuntu/4000-zsys-support.patch
+#ubuntu/4100-disable-bpool-upgrade.patch
 force-verbose-rules.patch
-#zfs-mount-container-start.patch
-#4510-silently-ignore-modprobe-failure.patch
+#ubuntu/zfs-mount-container-start.patch
+#ubuntu/4510-silently-ignore-modprobe-failure.patch
 4620-zfs-vol-wait-fix-locked-encrypted-vols.patch
 move-arcstat-1-to-8.patch
+#ubuntu/4701-enable-ARC-FILL-LOCKED-flag.patch

@@ -5,10 +5,10 @@ Origin: ubuntu
 Forwarded: no
 Last-Update: 2020-06-04
 
-Index: zfs-linux-0.8.4/etc/systemd/system/zfs-load-module.service.in
+Index: zfs-linux-2.0.1/etc/systemd/system/zfs-load-module.service.in
 ===================================================================
---- zfs-linux-0.8.4.orig/etc/systemd/system/zfs-load-module.service.in
-+++ zfs-linux-0.8.4/etc/systemd/system/zfs-load-module.service.in
+--- zfs-linux-2.0.1.orig/etc/systemd/system/zfs-load-module.service.in
++++ zfs-linux-2.0.1/etc/systemd/system/zfs-load-module.service.in
 @@ -10,7 +10,7 @@ After=systemd-remount-fs.service
  [Service]
  Type=oneshot
@@ -18,14 +18,14 @@ Index: zfs-linux-0.8.4/etc/systemd/system/zfs-load-module.service.in
  
  [Install]
  WantedBy=zfs-mount.service
-Index: zfs-linux-0.8.4/etc/systemd/system/zfs-share.service.in
+Index: zfs-linux-2.0.1/etc/systemd/system/zfs-share.service.in
 ===================================================================
---- zfs-linux-0.8.4.orig/etc/systemd/system/zfs-share.service.in
-+++ zfs-linux-0.8.4/etc/systemd/system/zfs-share.service.in
-@@ -13,7 +13,7 @@ PartOf=smb.service
+--- zfs-linux-2.0.1.orig/etc/systemd/system/zfs-share.service.in
++++ zfs-linux-2.0.1/etc/systemd/system/zfs-share.service.in
+@@ -13,7 +13,7 @@ ConditionPathIsDirectory=/sys/module/zfs
+ [Service]
  Type=oneshot
  RemainAfterExit=yes
- ExecStartPre=-/bin/rm -f /etc/dfs/sharetab
 -ExecStart=@sbindir@/zfs share -a
 +ExecStart=-@sbindir@/zfs share -a
  
