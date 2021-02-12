@@ -1,4 +1,5 @@
 #unapplied/init-debian-openrc-workaround.patch # OpenRC users can apply this locally
+0001-meta-file.patch
 1000-dont-symlink-zed-scripts.patch
 1001-Prevent-manual-builds-in-the-DKMS-source.patch
 1002-Check-for-META-and-DCH-consistency-in-autoconf.patch
