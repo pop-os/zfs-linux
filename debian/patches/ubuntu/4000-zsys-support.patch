@@ -8,10 +8,10 @@ Description: Support zsys systems
 Author: Jean-Baptiste Lallement <jean.baptiste@ubuntu.com>
         Didier Roche <didrocks@ubuntu.com>
 Last-Update: 2019-06-06
-Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
+Index: zfs-linux-2.0.1/etc/systemd/system-generators/zfs-mount-generator.in
 ===================================================================
---- zfs-linux-0.8.4.orig/etc/systemd/system-generators/zfs-mount-generator.in
-+++ zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
+--- zfs-linux-2.0.1.orig/etc/systemd/system-generators/zfs-mount-generator.in
++++ zfs-linux-2.0.1/etc/systemd/system-generators/zfs-mount-generator.in
 @@ -29,6 +29,8 @@ FSLIST="@sysconfdir@/zfs/zfs-list.cache"
  
  [ -d "${FSLIST}" ] || exit 0
@@ -21,9 +21,9 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
  do_fail() {
    printf 'zfs-mount-generator: %s\n' "$*" > /dev/kmsg
    exit 1
-@@ -120,6 +122,9 @@ process_line() {
-   requiredby=""
-   noauto="off"
+@@ -137,6 +139,9 @@ process_line() {
+     fi
+   done
  
 +  # Escape the mountpoint per systemd policy.
 +  mountfile="$(systemd-escape --path --suffix=mount "${p_mountpoint}")"
@@ -31,7 +31,7 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
    if [ -n "${p_systemd_after}" ] && \
        [ "${p_systemd_after}" != "-" ] ; then
      after="${p_systemd_after} ${after}"
-@@ -145,6 +150,62 @@ process_line() {
+@@ -162,6 +167,62 @@ process_line() {
        [ "${p_encroot}" != "-" ] ; then
      keyloadunit="zfs-load-key-$(systemd-escape "${p_encroot}").service"
      if [ "${p_encroot}" = "${dataset}" ] ; then
@@ -94,7 +94,7 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
        keymountdep=""
        if [ "${p_keyloc%%://*}" = "file" ] ; then
          if [ -n "${requiredmounts}" ] ; then
-@@ -200,6 +261,7 @@ Wants=${wants}
+@@ -217,6 +278,7 @@ Wants=${wants}
  After=${after}
  ${requires}
  ${keymountdep}
@@ -102,7 +102,7 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
  
  [Service]
  Type=oneshot
-@@ -248,9 +310,6 @@ ExecStop=${keyunloadcmd}"   > "${dest_no
+@@ -269,9 +331,6 @@ ExecStop=${keyunloadcmd}"   > "${dest_no
      do_fail "invalid mountpoint for ${dataset}"
    fi
  
@@ -112,7 +112,7 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
    # Parse options
    # see lib/libzfs/libzfs_mount.c:zfs_add_options
    opts=""
-@@ -437,6 +496,87 @@ Options=defaults${opts},zfsutil" > "${de
+@@ -458,6 +517,87 @@ Options=defaults${opts},zfsutil" > "${de
  
  }
  
@@ -198,14 +198,14 @@ Index: zfs-linux-0.8.4/etc/systemd/system-generators/zfs-mount-generator.in
 +initzsys
 +
  for cachefile in "${FSLIST}/"* ; do
-   # Sort cachefile's lines by canmount, "on" before "noauto"
-   # and feed each line into process_line
-Index: zfs-linux-0.8.4/contrib/initramfs/scripts/zfs
+   # Disable glob expansion to protect against special characters when parsing.
+   set -f
+Index: zfs-linux-2.0.1/contrib/initramfs/scripts/zfs
 ===================================================================
---- zfs-linux-0.8.4.orig/contrib/initramfs/scripts/zfs
-+++ zfs-linux-0.8.4/contrib/initramfs/scripts/zfs
-@@ -63,6 +63,20 @@ get_fs_value()
- 	"${ZFS}" get -H -ovalue $value "$fs" 2> /dev/null
+--- zfs-linux-2.0.1.orig/contrib/initramfs/scripts/zfs
++++ zfs-linux-2.0.1/contrib/initramfs/scripts/zfs
+@@ -64,6 +64,20 @@ get_fs_value()
+ 	"${ZFS}" get -H -ovalue "$value" "$fs" 2> /dev/null
  }
  
 +# Get a ZFS filesystem property value with the source stripped from the value
@@ -225,10 +225,10 @@ Index: zfs-linux-0.8.4/contrib/initramfs/scripts/zfs
  # Find the 'bootfs' property on pool $1.
  # If the property does not contain '/', then ignore this
  # pool by exporting it again.
-@@ -487,16 +501,17 @@ clone_snap()
- 	local snap="$1"
- 	local destfs="$2"
- 	local mountpoint="$3"
+@@ -486,16 +500,17 @@ clone_snap()
+ 	snap="$1"
+ 	destfs="$2"
+ 	mountpoint="$3"
 +	local additional_parameters="$4"
  
  	[ "$quiet" != "y" ] && zfs_log_begin_msg "Cloning '$snap' to '$destfs'"
@@ -249,7 +249,7 @@ Index: zfs-linux-0.8.4/contrib/initramfs/scripts/zfs
  	ZFS_CMD="${ZFS_CMD} $snap $destfs"
  	ZFS_STDERR="$(${ZFS_CMD} 2>&1)"
  	ZFS_ERROR="$?"
-@@ -608,6 +623,15 @@ setup_snapshot_booting()
+@@ -606,6 +621,15 @@ setup_snapshot_booting()
  	snapname="${snap##*@}"
  	ZFS_BOOTFS="${rootfs}_${snapname}"
  
@@ -265,7 +265,7 @@ Index: zfs-linux-0.8.4/contrib/initramfs/scripts/zfs
  	if ! grep -qiE '(^|[^\\](\\\\)* )(rollback)=(on|yes|1)( |$)' /proc/cmdline
  	then
  		# If the destination dataset for the clone
-@@ -637,10 +661,18 @@ setup_snapshot_booting()
+@@ -635,10 +659,18 @@ setup_snapshot_booting()
  			#       rpool/ROOT/debian/boot@snap2	=> rpool/ROOT/debian_snap2/boot
  			#       rpool/ROOT/debian/usr@snap2	=> rpool/ROOT/debian_snap2/usr
  			#       rpool/ROOT/debian/var@snap2	=> rpool/ROOT/debian_snap2/var
@@ -284,7 +284,7 @@ Index: zfs-linux-0.8.4/contrib/initramfs/scripts/zfs
  			[ -n "$subfs" ] && destfs="${destfs}$subfs" # + sub fs.
  
  			# Get the mountpoint of the filesystem, to be used
-@@ -657,9 +689,38 @@ setup_snapshot_booting()
+@@ -655,9 +687,38 @@ setup_snapshot_booting()
  				fi
  			fi
  
@@ -324,7 +324,7 @@ Index: zfs-linux-0.8.4/contrib/initramfs/scripts/zfs
  			    retval=$((retval + 1))
  		fi
  	done
-@@ -879,6 +940,38 @@ mountroot()
+@@ -875,6 +936,38 @@ mountroot()
  		shell
  	fi
  
@@ -363,7 +363,7 @@ Index: zfs-linux-0.8.4/contrib/initramfs/scripts/zfs
  	# In case the pool was specified as guid, resolve guid to name
  	pool="$("${ZPOOL}" get name,guid -o name,value -H | \
  	    awk -v pool="${ZFS_RPOOL}" '$2 == pool { print $1 }')"
-@@ -922,6 +1015,8 @@ mountroot()
+@@ -918,6 +1011,8 @@ mountroot()
  		# Booting from a snapshot?
  		# Will overwrite the ZFS_BOOTFS variable like so:
  		#   rpool/ROOT/debian@snap2 => rpool/ROOT/debian_snap2
@@ -372,7 +372,7 @@ Index: zfs-linux-0.8.4/contrib/initramfs/scripts/zfs
  		echo "${ZFS_BOOTFS}" | grep -q '@' && \
  		    setup_snapshot_booting "${ZFS_BOOTFS}"
  	fi
-@@ -959,8 +1054,16 @@ mountroot()
+@@ -955,8 +1050,16 @@ mountroot()
  	# Go through the complete list (recursively) of all filesystems below
  	# the real root dataset
  	filesystems=$("${ZFS}" list -oname -tfilesystem -H -r "${ZFS_BOOTFS}")
@@ -389,8 +389,8 @@ Index: zfs-linux-0.8.4/contrib/initramfs/scripts/zfs
  		mount_fs "$fs"
  	done
  
-@@ -999,3 +1102,8 @@ mountroot()
- 		[ "$quiet" != "y" ] && zfs_log_end_msg
+@@ -1002,3 +1105,8 @@ mountroot()
+ 		fi
  	fi
  }
 +
