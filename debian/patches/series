@@ -1,7 +1,4 @@
 #unapplied/init-debian-openrc-workaround.patch # OpenRC users can apply this locally
-0001-zfs-list.8-clarify-listing-snapshots.patch
-0002-dracut-Fix-race-condition-between-load-key-and-impor.patch
-0003-zfs-import-cache-scan-change-condition-to-FileNotEmp.patch
 1000-dont-symlink-zed-scripts.patch
 1001-Prevent-manual-builds-in-the-DKMS-source.patch
 1002-Check-for-META-and-DCH-consistency-in-autoconf.patch
