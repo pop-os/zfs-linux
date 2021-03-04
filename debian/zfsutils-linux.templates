@@ -3,7 +3,7 @@ Type: boolean
 Default: true
 _Description: Scrub OpenZFS pools periodically?
  Scrubbing storage pool data is a routine maintenance operation that check all
- data against known checksums, and fix early problems like bit riots. This
+ data against known checksums, and fix early problems like bit rots. This
  operation is scheduled with low priority in the background, and usually does
  not have big impact on performance when the pool is not heavily utilized.
  .
