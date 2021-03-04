@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux 0.6.1-1\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2021-03-04 22:20+0800\n"
+"POT-Creation-Date: 2021-03-05 02:27+0800\n"
 "PO-Revision-Date: 2013-07-21 09:57+0200\n"
 "Last-Translator: Michal Simunek <michal.simunek@gmail.com>\n"
 "Language-Team: Czech <debian-l10n-czech@lists.debian.org>\n"
@@ -55,13 +55,14 @@ msgstr "Přerušit sestavování OpenZFS na neznámém kernelu?"
 #. Description
 #: ../zfs-dkms.templates:2001
 msgid ""
-"You are attempting to build OpenZFS against a running kernel that could not be "
-"identified as 32-bit or 64-bit. If you are not completely sure that the "
+"You are attempting to build OpenZFS against a running kernel that could not "
+"be identified as 32-bit or 64-bit. If you are not completely sure that the "
 "running kernel is a 64-bit one, you should probably stop the build."
 msgstr ""
-"Pokoušíte se sestavit OpenZFS oproti běžícímu kernelu, u kterého se nepodařilo "
-"rozpoznat, zda-li je 32 bitový nebo 64 bitový. Pokud si nejste zcela jisti, "
-"že je běžící kernel 64 bitový, měli byste nejspíš sestavování ukončit."
+"Pokoušíte se sestavit OpenZFS oproti běžícímu kernelu, u kterého se "
+"nepodařilo rozpoznat, zda-li je 32 bitový nebo 64 bitový. Pokud si nejste "
+"zcela jisti, že je běžící kernel 64 bitový, měli byste nejspíš sestavování "
+"ukončit."
 
 #. Type: note
 #. Description
@@ -85,10 +86,10 @@ msgstr ""
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"You are going to build OpenZFS using DKMS in such a way that they are not going "
-"to be built into one monolithic binary. Please be aware that distributing "
-"both of the binaries in the same media (disk images, virtual appliances, "
-"etc) may lead to infringing."
+"You are going to build OpenZFS using DKMS in such a way that they are not "
+"going to be built into one monolithic binary. Please be aware that "
+"distributing both of the binaries in the same media (disk images, virtual "
+"appliances, etc) may lead to infringing."
 msgstr ""
 
 #. Type: boolean
@@ -102,10 +103,9 @@ msgstr ""
 #: ../zfsutils-linux.templates:1001
 msgid ""
 "Scrubbing storage pool data is a routine maintenance operation that check "
-"all data against known checksums, and fix early problems like bit riots. "
-"This operation is scheduled with low priority in the background, and usually "
-"does not have big impact on performance when the pool is not heavily "
-"utilized."
+"all data against known checksums, and fix early problems like bit rots. This "
+"operation is scheduled with low priority in the background, and usually does "
+"not have big impact on performance when the pool is not heavily utilized."
 msgstr ""
 
 #. Type: boolean

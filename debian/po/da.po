@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2021-03-04 22:20+0800\n"
+"POT-Creation-Date: 2021-03-05 02:27+0800\n"
 "PO-Revision-Date: 2016-07-09 06:57+0100\n"
 "Last-Translator: Joe Hansen <joedalton2@yahoo.dk>\n"
 "Language-Team: Danish <debian-l10n-danish@lists.debian.org>\n"
@@ -42,7 +42,8 @@ msgstr ""
 "Selvom det er muligt, så er bygning af et 32-bit miljø ikke understøttet og "
 "vil sandsynligvis medføre ustabilitet, der kan føre til dataødelæggelse. Du "
 "rådes på det kraftigste til at bruge en 64-bit kerne; hvis du vælger at "
-"fortsætte med at bruge OpenZFS på denne kerne så husk, at det er på egen risiko."
+"fortsætte med at bruge OpenZFS på denne kerne så husk, at det er på egen "
+"risiko."
 
 #. Type: boolean
 #. Description
@@ -54,13 +55,13 @@ msgstr "Afbryd bygning af OpenZFS på en ukendt kerne?"
 #. Description
 #: ../zfs-dkms.templates:2001
 msgid ""
-"You are attempting to build OpenZFS against a running kernel that could not be "
-"identified as 32-bit or 64-bit. If you are not completely sure that the "
+"You are attempting to build OpenZFS against a running kernel that could not "
+"be identified as 32-bit or 64-bit. If you are not completely sure that the "
 "running kernel is a 64-bit one, you should probably stop the build."
 msgstr ""
-"Du forsøger at bygge OpenZFS mod en kørende kerne, som ikke kan identificeres "
-"som enten 32-bit eller 64-bit. Hvis du ikke er fuldstændig sikker på, at den "
-"kørende kerne er en 64-bit, så bør du stoppe bygningen."
+"Du forsøger at bygge OpenZFS mod en kørende kerne, som ikke kan "
+"identificeres som enten 32-bit eller 64-bit. Hvis du ikke er fuldstændig "
+"sikker på, at den kørende kerne er en 64-bit, så bør du stoppe bygningen."
 
 #. Type: note
 #. Description
@@ -79,26 +80,26 @@ msgid ""
 "prevents using pieces of code exclusively available under one license with "
 "pieces of code exclusively available under the other in the same binary."
 msgstr ""
-"OpenZFS er udgivet under licensen Common Development and Distribution License "
-"(CDDL), og Linuxkernen er udgivet under GNU General Public License Version 2 "
-"(GPL-2). Selv om begge er frie åben licenser er de restriktive licenser. "
-"Kombinationen af dem medfører problemer da de forhindrer brug af kodestumper "
-"eksklusivt tilgængelig under en licens med stykker af kode eksklusivt "
-"tilgængelig under den anden i den samme binære."
+"OpenZFS er udgivet under licensen Common Development and Distribution "
+"License (CDDL), og Linuxkernen er udgivet under GNU General Public License "
+"Version 2 (GPL-2). Selv om begge er frie åben licenser er de restriktive "
+"licenser. Kombinationen af dem medfører problemer da de forhindrer brug af "
+"kodestumper eksklusivt tilgængelig under en licens med stykker af kode "
+"eksklusivt tilgængelig under den anden i den samme binære."
 
 #. Type: note
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"You are going to build OpenZFS using DKMS in such a way that they are not going "
-"to be built into one monolithic binary. Please be aware that distributing "
-"both of the binaries in the same media (disk images, virtual appliances, "
-"etc) may lead to infringing."
+"You are going to build OpenZFS using DKMS in such a way that they are not "
+"going to be built into one monolithic binary. Please be aware that "
+"distributing both of the binaries in the same media (disk images, virtual "
+"appliances, etc) may lead to infringing."
 msgstr ""
-"Du er ved at bygge OpenZFS via DKMS, hvorved de ikke bliver bygget ind til en "
-"monolitisk binær. Vær opmærksom på at distribution af begge de binære filer "
-"på det samme medie (diskaftryk, virtuelle enheder etc.) kan føre til en "
-"overtrædelse af licenserne."
+"Du er ved at bygge OpenZFS via DKMS, hvorved de ikke bliver bygget ind til "
+"en monolitisk binær. Vær opmærksom på at distribution af begge de binære "
+"filer på det samme medie (diskaftryk, virtuelle enheder etc.) kan føre til "
+"en overtrædelse af licenserne."
 
 #. Type: boolean
 #. Description
@@ -111,10 +112,9 @@ msgstr ""
 #: ../zfsutils-linux.templates:1001
 msgid ""
 "Scrubbing storage pool data is a routine maintenance operation that check "
-"all data against known checksums, and fix early problems like bit riots. "
-"This operation is scheduled with low priority in the background, and usually "
-"does not have big impact on performance when the pool is not heavily "
-"utilized."
+"all data against known checksums, and fix early problems like bit rots. This "
+"operation is scheduled with low priority in the background, and usually does "
+"not have big impact on performance when the pool is not heavily utilized."
 msgstr ""
 
 #. Type: boolean

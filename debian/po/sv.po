@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2021-03-04 22:20+0800\n"
+"POT-Creation-Date: 2021-03-05 02:27+0800\n"
 "PO-Revision-Date: 2019-01-02 12:24+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
@@ -56,13 +56,13 @@ msgstr "Ska bygget av OpenZFS på en okänd kärntyp avbrytas?"
 #. Description
 #: ../zfs-dkms.templates:2001
 msgid ""
-"You are attempting to build OpenZFS against a running kernel that could not be "
-"identified as 32-bit or 64-bit. If you are not completely sure that the "
+"You are attempting to build OpenZFS against a running kernel that could not "
+"be identified as 32-bit or 64-bit. If you are not completely sure that the "
 "running kernel is a 64-bit one, you should probably stop the build."
 msgstr ""
-"Du försöker bygga OpenZFS mot en kärna som varken kan identifieras som 32-bitars "
-"eller 64-bitars. Om du inte är helt säker på att du kör en 64-bitars kärna "
-"ska du avbryta bygget nu."
+"Du försöker bygga OpenZFS mot en kärna som varken kan identifieras som 32-"
+"bitars eller 64-bitars. Om du inte är helt säker på att du kör en 64-bitars "
+"kärna ska du avbryta bygget nu."
 
 #. Type: note
 #. Description
@@ -86,15 +86,15 @@ msgstr ""
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"You are going to build OpenZFS using DKMS in such a way that they are not going "
-"to be built into one monolithic binary. Please be aware that distributing "
-"both of the binaries in the same media (disk images, virtual appliances, "
-"etc) may lead to infringing."
+"You are going to build OpenZFS using DKMS in such a way that they are not "
+"going to be built into one monolithic binary. Please be aware that "
+"distributing both of the binaries in the same media (disk images, virtual "
+"appliances, etc) may lead to infringing."
 msgstr ""
-"Du kommer att bygga OpenZFS med DKMS på ett sådant sätt att de inte byggs ihop "
-"till en monolit-binär. Vänligen notera att distribution av dessa binärer på "
-"samma media(diskavbildningar, virtuella maskin-bilder eller dylikt) kan "
-"innebära intrång i upphovsrätt och avtal."
+"Du kommer att bygga OpenZFS med DKMS på ett sådant sätt att de inte byggs "
+"ihop till en monolit-binär. Vänligen notera att distribution av dessa "
+"binärer på samma media(diskavbildningar, virtuella maskin-bilder eller "
+"dylikt) kan innebära intrång i upphovsrätt och avtal."
 
 #. Type: boolean
 #. Description
@@ -107,10 +107,9 @@ msgstr ""
 #: ../zfsutils-linux.templates:1001
 msgid ""
 "Scrubbing storage pool data is a routine maintenance operation that check "
-"all data against known checksums, and fix early problems like bit riots. "
-"This operation is scheduled with low priority in the background, and usually "
-"does not have big impact on performance when the pool is not heavily "
-"utilized."
+"all data against known checksums, and fix early problems like bit rots. This "
+"operation is scheduled with low priority in the background, and usually does "
+"not have big impact on performance when the pool is not heavily utilized."
 msgstr ""
 
 #. Type: boolean

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2021-03-04 22:20+0800\n"
+"POT-Creation-Date: 2021-03-05 02:27+0800\n"
 "PO-Revision-Date: 2019-08-02 14:56+0200\n"
 "Last-Translator: Julien Patriarca <leatherface@debian.org>\n"
 "Language-Team: FRENCH <debian-l10n-french@lists.debian.org>\n"
@@ -43,8 +43,8 @@ msgstr ""
 "Même si c'est en théorie possible, compiler au sein d'un environnement "
 "32 bits n'est pas géré et peut entraîner une instabilité du système pouvant "
 "aboutir à une corruption des données. Il vous est fortement recommandé "
-"d'utiliser un noyau 64 bits ; si vous décidez d'utiliser OpenZFS sur ce noyau, "
-"gardez à l'esprit que c'est à vos propres risques."
+"d'utiliser un noyau 64 bits ; si vous décidez d'utiliser OpenZFS sur ce "
+"noyau, gardez à l'esprit que c'est à vos propres risques."
 
 #. Type: boolean
 #. Description
@@ -56,13 +56,13 @@ msgstr "Abandonner la compilation de OpenZFS sur un noyau inconnu ?"
 #. Description
 #: ../zfs-dkms.templates:2001
 msgid ""
-"You are attempting to build OpenZFS against a running kernel that could not be "
-"identified as 32-bit or 64-bit. If you are not completely sure that the "
+"You are attempting to build OpenZFS against a running kernel that could not "
+"be identified as 32-bit or 64-bit. If you are not completely sure that the "
 "running kernel is a 64-bit one, you should probably stop the build."
 msgstr ""
-"Vous êtes en train d'essayer de compiler OpenZFS sur un noyau qui n'a pu être "
-"identifié comme 32 bits ou 64 bits. Si vous n'êtes pas certain que le noyau "
-"actuel est un 64 bits, vous devriez arrêter la compilation."
+"Vous êtes en train d'essayer de compiler OpenZFS sur un noyau qui n'a pu "
+"être identifié comme 32 bits ou 64 bits. Si vous n'êtes pas certain que le "
+"noyau actuel est un 64 bits, vous devriez arrêter la compilation."
 
 #. Type: note
 #. Description
@@ -93,16 +93,16 @@ msgstr ""
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"You are going to build OpenZFS using DKMS in such a way that they are not going "
-"to be built into one monolithic binary. Please be aware that distributing "
-"both of the binaries in the same media (disk images, virtual appliances, "
-"etc) may lead to infringing."
+"You are going to build OpenZFS using DKMS in such a way that they are not "
+"going to be built into one monolithic binary. Please be aware that "
+"distributing both of the binaries in the same media (disk images, virtual "
+"appliances, etc) may lead to infringing."
 msgstr ""
-"Vous êtes sur le point de construire OpenZFS en utilisant DKMS d'une manière qui "
-"fera qu'ils ne seront pas intégrés dans un binaire unique. Veuillez prendre "
-"en considération que la distribution de ces deux binaires au sein d'un même "
-"média (images de disque, machines virtuelles, etc) peut mener à une "
-"infraction."
+"Vous êtes sur le point de construire OpenZFS en utilisant DKMS d'une manière "
+"qui fera qu'ils ne seront pas intégrés dans un binaire unique. Veuillez "
+"prendre en considération que la distribution de ces deux binaires au sein "
+"d'un même média (images de disque, machines virtuelles, etc) peut mener à "
+"une infraction."
 
 #. Type: boolean
 #. Description
@@ -115,10 +115,9 @@ msgstr ""
 #: ../zfsutils-linux.templates:1001
 msgid ""
 "Scrubbing storage pool data is a routine maintenance operation that check "
-"all data against known checksums, and fix early problems like bit riots. "
-"This operation is scheduled with low priority in the background, and usually "
-"does not have big impact on performance when the pool is not heavily "
-"utilized."
+"all data against known checksums, and fix early problems like bit rots. This "
+"operation is scheduled with low priority in the background, and usually does "
+"not have big impact on performance when the pool is not heavily utilized."
 msgstr ""
 
 #. Type: boolean

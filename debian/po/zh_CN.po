@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2021-03-04 22:20+0800\n"
+"POT-Creation-Date: 2021-03-05 02:27+0800\n"
 "PO-Revision-Date: 2015-11-01 14:25+0800\n"
 "Last-Translator: Aron <aron@debian.org>\n"
 "Language-Team: Chinese (Simplified) <debian-l10n-chinese@lists.debian.org>\n"
@@ -54,12 +54,12 @@ msgstr "中断在未知内核上编译？"
 #. Description
 #: ../zfs-dkms.templates:2001
 msgid ""
-"You are attempting to build OpenZFS against a running kernel that could not be "
-"identified as 32-bit or 64-bit. If you are not completely sure that the "
+"You are attempting to build OpenZFS against a running kernel that could not "
+"be identified as 32-bit or 64-bit. If you are not completely sure that the "
 "running kernel is a 64-bit one, you should probably stop the build."
 msgstr ""
-"无法确定您即将编译OpenZFS支持的内核是32位或64位。如果您不能确定当前运行的内核是64"
-"位的，那么建议您停止编译。"
+"无法确定您即将编译OpenZFS支持的内核是32位或64位。如果您不能确定当前运行的内核"
+"是64位的，那么建议您停止编译。"
 
 #. Type: note
 #. Description
@@ -78,21 +78,21 @@ msgid ""
 "prevents using pieces of code exclusively available under one license with "
 "pieces of code exclusively available under the other in the same binary."
 msgstr ""
-"OpenZFS的许可证是CDDL，Linux内核的许可证是GPL-2。两者皆为自由/开源软件许可证，然"
-"而它们的限制性也都较强，将两部分各自独立许可的代码合并使用将导致问题。"
+"OpenZFS的许可证是CDDL，Linux内核的许可证是GPL-2。两者皆为自由/开源软件许可"
+"证，然而它们的限制性也都较强，将两部分各自独立许可的代码合并使用将导致问题。"
 
 #. Type: note
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"You are going to build OpenZFS using DKMS in such a way that they are not going "
-"to be built into one monolithic binary. Please be aware that distributing "
-"both of the binaries in the same media (disk images, virtual appliances, "
-"etc) may lead to infringing."
+"You are going to build OpenZFS using DKMS in such a way that they are not "
+"going to be built into one monolithic binary. Please be aware that "
+"distributing both of the binaries in the same media (disk images, virtual "
+"appliances, etc) may lead to infringing."
 msgstr ""
-"您将以DKMS方式编译OpenZFS，以使其不与Linux内核被编译成为一个单独的二进制文件。在"
-"单一介质(如磁盘镜像、虚拟机模板等)上同时发OpenZFS和Linux内核的二进制文件将造成侵"
-"权。"
+"您将以DKMS方式编译OpenZFS，以使其不与Linux内核被编译成为一个单独的二进制文"
+"件。在单一介质(如磁盘镜像、虚拟机模板等)上同时发OpenZFS和Linux内核的二进制文"
+"件将造成侵权。"
 
 #. Type: boolean
 #. Description
@@ -105,10 +105,9 @@ msgstr ""
 #: ../zfsutils-linux.templates:1001
 msgid ""
 "Scrubbing storage pool data is a routine maintenance operation that check "
-"all data against known checksums, and fix early problems like bit riots. "
-"This operation is scheduled with low priority in the background, and usually "
-"does not have big impact on performance when the pool is not heavily "
-"utilized."
+"all data against known checksums, and fix early problems like bit rots. This "
+"operation is scheduled with low priority in the background, and usually does "
+"not have big impact on performance when the pool is not heavily utilized."
 msgstr ""
 
 #. Type: boolean
