@@ -1,0 +1,36 @@
+From 75a089ed34befb8d11df9be92a4438cc49554bf6 Mon Sep 17 00:00:00 2001
+From: Brian Behlendorf <behlendorf1@llnl.gov>
+Date: Wed, 24 Feb 2021 10:00:21 -0800
+Subject: [PATCH 28/38] Fix overly broad locking in spa_vdev_config_exit()
+
+Calling vdev_free() only requires the we acquire the spa config
+SCL_STATE_ALL locks, not the SCL_ALL locks.  In particular, we need
+need to avoid taking the SCL_CONFIG lock (included in SCL_ALL) as a
+writer since this can lead to a deadlock.  The txg_sync_thread() may
+block in spa_txg_history_init_io() when taking the SCL_CONFIG lock
+as a reading when it detects there's a pending writer.
+
+Reviewed-by: Igor Kozhukhov <igor@dilos.org>
+Reviewed-by: Mark Maybee <mark.maybee@delphix.com>
+Signed-off-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Closes #11585
+---
+ module/zfs/spa_misc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+Index: zfs/module/zfs/spa_misc.c
+===================================================================
+--- zfs.orig/module/zfs/spa_misc.c
++++ zfs/module/zfs/spa_misc.c
+@@ -1274,9 +1274,9 @@ spa_vdev_config_exit(spa_t *spa, vdev_t
+ 		 */
+ 		vdev_autotrim_stop_wait(vd);
+ 
+-		spa_config_enter(spa, SCL_ALL, spa, RW_WRITER);
++		spa_config_enter(spa, SCL_STATE_ALL, spa, RW_WRITER);
+ 		vdev_free(vd);
+-		spa_config_exit(spa, SCL_ALL, spa);
++		spa_config_exit(spa, SCL_STATE_ALL, spa);
+ 	}
+ 
+ 	/*
