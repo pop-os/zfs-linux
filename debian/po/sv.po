@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2015-11-01 14:11+0800\n"
+"POT-Creation-Date: 2021-03-04 22:20+0800\n"
 "PO-Revision-Date: 2019-01-02 12:24+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
@@ -35,16 +35,16 @@ msgstr "Du försöker bygga ZFS mot en 32-bitars kärna."
 #. Description
 #: ../zfs-dkms.templates:1001 ../zfs-dkms.templates:2001
 msgid ""
-"Although possible, building in a 32-bit environment is unsupported and likely "
-"to cause instability leading to possible data corruption. You are strongly "
-"advised to use a 64-bit kernel; if you do decide to proceed with using ZFS on "
-"this kernel then keep in mind that it is at your own risk."
+"Although possible, building in a 32-bit environment is unsupported and "
+"likely to cause instability leading to possible data corruption. You are "
+"strongly advised to use a 64-bit kernel; if you do decide to proceed with "
+"using ZFS on this kernel then keep in mind that it is at your own risk."
 msgstr ""
 "Det är inte omöjligt men att bygga i en 32-bitars-miljö är inte något som "
-"stöds och kommer troligen att leda till ostabilt system och det i sin tur kan "
-"leda till dataförlust. Att använda en 64-bitars kärna är starkt rekommenderat. "
-"Om du väljer att fortsätta med att använda ZFS på den här kärnan är det helt "
-"och hållet på din egen risk."
+"stöds och kommer troligen att leda till ostabilt system och det i sin tur "
+"kan leda till dataförlust. Att använda en 64-bitars kärna är starkt "
+"rekommenderat. Om du väljer att fortsätta med att använda ZFS på den här "
+"kärnan är det helt och hållet på din egen risk."
 
 #. Type: boolean
 #. Description
@@ -61,8 +61,8 @@ msgid ""
 "running kernel is a 64-bit one, you should probably stop the build."
 msgstr ""
 "Du försöker bygga ZFS mot en kärna som varken kan identifieras som 32-bitars "
-"eller 64-bitars. Om du inte är helt säker på att du kör en 64-bitars kärna ska "
-"du avbryta bygget nu."
+"eller 64-bitars. Om du inte är helt säker på att du kör en 64-bitars kärna "
+"ska du avbryta bygget nu."
 
 #. Type: note
 #. Description
@@ -74,24 +74,72 @@ msgstr "Licenserna för ZFS och Linux är inte kompatibla"
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"ZFS is licensed under the Common Development and Distribution License (CDDL), "
-"and the Linux kernel is licensed under the GNU General Public License Version "
-"2 (GPL-2). While both are free open source licenses they are restrictive "
-"licenses. The combination of them causes problems because it prevents using "
-"pieces of code exclusively available under one license with pieces of code "
-"exclusively available under the other in the same binary."
+"ZFS is licensed under the Common Development and Distribution License "
+"(CDDL), and the Linux kernel is licensed under the GNU General Public "
+"License Version 2 (GPL-2). While both are free open source licenses they are "
+"restrictive licenses. The combination of them causes problems because it "
+"prevents using pieces of code exclusively available under one license with "
+"pieces of code exclusively available under the other in the same binary."
 msgstr ""
 
 #. Type: note
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"You are going to build ZFS using DKMS in such a way that they are not going to "
-"be built into one monolithic binary. Please be aware that distributing both of "
-"the binaries in the same media (disk images, virtual appliances, etc) may lead "
-"to infringing."
+"You are going to build ZFS using DKMS in such a way that they are not going "
+"to be built into one monolithic binary. Please be aware that distributing "
+"both of the binaries in the same media (disk images, virtual appliances, "
+"etc) may lead to infringing."
 msgstr ""
 "Du kommer att bygga ZFS med DKMS på ett sådant sätt att de inte byggs ihop "
 "till en monolit-binär. Vänligen notera att distribution av dessa binärer på "
 "samma media(diskavbildningar, virtuella maskin-bilder eller dylikt) kan "
 "innebära intrång i upphovsrätt och avtal."
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid "Scrub OpenZFS pools periodically?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid ""
+"Scrubbing storage pool data is a routine maintenance operation that check "
+"all data against known checksums, and fix early problems like bit riots. "
+"This operation is scheduled with low priority in the background, and usually "
+"does not have big impact on performance when the pool is not heavily "
+"utilized."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid ""
+"Would you like to scrub all pools periodically? By default scrub jobs are "
+"scheduled on every first Sunday of month."
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid "TRIM SSD devices in OpenZFS pools periodically?"
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid ""
+"Some SSD devices require proper scheduling of TRIM commands to maintain best "
+"performance. Would you like to TRIM SSD devices periodically?"
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid ""
+"TRIM jobs are scheduled on every first Sunday of month to NVMe devices in "
+"pools by default. You can choose to enable TRIM for all SSD or disable it "
+"completely. If no suitable SSD device is found, nothing will be done."
+msgstr ""

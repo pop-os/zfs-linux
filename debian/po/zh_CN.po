@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2015-11-01 14:11+0800\n"
+"POT-Creation-Date: 2021-03-04 22:20+0800\n"
 "PO-Revision-Date: 2015-11-01 14:25+0800\n"
 "Last-Translator: Aron <aron@debian.org>\n"
 "Language-Team: Chinese (Simplified) <debian-l10n-chinese@lists.debian.org>\n"
@@ -78,18 +78,66 @@ msgid ""
 "prevents using pieces of code exclusively available under one license with "
 "pieces of code exclusively available under the other in the same binary."
 msgstr ""
-"ZFS的许可证是CDDL，Linux内核的许可证是GPL-2。两者皆为自由/开源软件许可证，"
-"然而它们的限制性也都较强，将两部分各自独立许可的代码合并使用将导致问题。"
+"ZFS的许可证是CDDL，Linux内核的许可证是GPL-2。两者皆为自由/开源软件许可证，然"
+"而它们的限制性也都较强，将两部分各自独立许可的代码合并使用将导致问题。"
 
 #. Type: note
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"You are going to build ZFS using DKMS in such a way that they are not going to "
-"be built into one monolithic binary. Please be aware that distributing both of "
-"the binaries in the same media (disk images, virtual appliances, etc) may "
-"lead to infringing."
+"You are going to build ZFS using DKMS in such a way that they are not going "
+"to be built into one monolithic binary. Please be aware that distributing "
+"both of the binaries in the same media (disk images, virtual appliances, "
+"etc) may lead to infringing."
 msgstr ""
-"您将以DKMS方式编译ZFS，以使其不与Linux内核被编译成为一个单独的二进制文件。"
-"在单一介质(如磁盘镜像、虚拟机模板等)上同时发ZFS和Linux内核的二进制文件将造"
-"成侵权。"
+"您将以DKMS方式编译ZFS，以使其不与Linux内核被编译成为一个单独的二进制文件。在"
+"单一介质(如磁盘镜像、虚拟机模板等)上同时发ZFS和Linux内核的二进制文件将造成侵"
+"权。"
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid "Scrub OpenZFS pools periodically?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid ""
+"Scrubbing storage pool data is a routine maintenance operation that check "
+"all data against known checksums, and fix early problems like bit riots. "
+"This operation is scheduled with low priority in the background, and usually "
+"does not have big impact on performance when the pool is not heavily "
+"utilized."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid ""
+"Would you like to scrub all pools periodically? By default scrub jobs are "
+"scheduled on every first Sunday of month."
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid "TRIM SSD devices in OpenZFS pools periodically?"
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid ""
+"Some SSD devices require proper scheduling of TRIM commands to maintain best "
+"performance. Would you like to TRIM SSD devices periodically?"
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid ""
+"TRIM jobs are scheduled on every first Sunday of month to NVMe devices in "
+"pools by default. You can choose to enable TRIM for all SSD or disable it "
+"completely. If no suitable SSD device is found, nothing will be done."
+msgstr ""

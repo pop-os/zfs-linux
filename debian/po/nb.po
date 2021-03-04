@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2015-11-01 14:11+0800\n"
+"POT-Creation-Date: 2021-03-04 22:20+0800\n"
 "PO-Revision-Date: 2016-06-08 14:23+0200\n"
 "Last-Translator: Petter Reinholdtsen <pere@hungry.com>\n"
 "Language-Team: Norwegian Bokmål <i18n-no@lister.ping.uio.no>\n"
@@ -41,10 +41,10 @@ msgid ""
 "using ZFS on this kernel then keep in mind that it is at your own risk."
 msgstr ""
 "Selv om det er mulig, så er det ikke støttet å bygge i et 32-bits miljø, og "
-"det vil antagelig forårsake ustabiliteter som kan føre til korrupte data. "
-"Du anbefales på det sterkeste å bruke en 64-bits kjerne.  Hvis du "
-"bestemmer deg for å fortsette med å bruke ZFS med denne kjernen, ha "
-"i bakhodet at det skjer på egen risiko."
+"det vil antagelig forårsake ustabiliteter som kan føre til korrupte data. Du "
+"anbefales på det sterkeste å bruke en 64-bits kjerne.  Hvis du bestemmer deg "
+"for å fortsette med å bruke ZFS med denne kjernen, ha i bakhodet at det "
+"skjer på egen risiko."
 
 #. Type: boolean
 #. Description
@@ -62,8 +62,7 @@ msgid ""
 msgstr ""
 "Du forsøker å bygge ZFS mot en kjørende kjerne som ikke kunne identifiseres "
 "som enten 32-bits eller 64-bits.  Hvis du ikke er helt sikker på at den "
-"kjørende "
-"kjernen er 64-bits, så bør du antagelig stoppe byggingen."
+"kjørende kjernen er 64-bits, så bør du antagelig stoppe byggingen."
 
 #. Type: note
 #. Description
@@ -86,23 +85,68 @@ msgstr ""
 "(CDDL), mens Linux-kjernen er lisensiert i henhold til GNU General Public "
 "License Version 2 (GPL-2). Selv om begge er fri programvarelisenser så er de "
 "restriktive lisenser.  Kombinasjonen av dem gir problemer da det hindrer at "
-"en "
-"bruker deler av kode som er eksklusivt tilgjengelig i henhold til en lisens "
-"med deler "
-"av kode som er eksklusivt tilgjengelig i henhold til den andre, i den samme "
-"binæren."
+"en bruker deler av kode som er eksklusivt tilgjengelig i henhold til en "
+"lisens med deler av kode som er eksklusivt tilgjengelig i henhold til den "
+"andre, i den samme binæren."
 
 #. Type: note
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"You are going to build ZFS using DKMS in such a way that they are not going to "
-"be built into one monolithic binary. Please be aware that distributing both of "
-"the binaries in the same media (disk images, virtual appliances, etc) may "
-"lead to infringing."
+"You are going to build ZFS using DKMS in such a way that they are not going "
+"to be built into one monolithic binary. Please be aware that distributing "
+"both of the binaries in the same media (disk images, virtual appliances, "
+"etc) may lead to infringing."
 msgstr ""
 "Du er igang med å bygge ZFS ved hjelp av DKMS slik at de ikke kommer til å "
-"bli bygget inn i en monolitisk binær.  Vær oppmerksom på at distribusjon "
-"av begge binærene på samme media (diskavtrykk, virtuelle enheter etc) kan "
-"være i strid med opphavsretten."
+"bli bygget inn i en monolitisk binær.  Vær oppmerksom på at distribusjon av "
+"begge binærene på samme media (diskavtrykk, virtuelle enheter etc) kan være "
+"i strid med opphavsretten."
 
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid "Scrub OpenZFS pools periodically?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid ""
+"Scrubbing storage pool data is a routine maintenance operation that check "
+"all data against known checksums, and fix early problems like bit riots. "
+"This operation is scheduled with low priority in the background, and usually "
+"does not have big impact on performance when the pool is not heavily "
+"utilized."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid ""
+"Would you like to scrub all pools periodically? By default scrub jobs are "
+"scheduled on every first Sunday of month."
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid "TRIM SSD devices in OpenZFS pools periodically?"
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid ""
+"Some SSD devices require proper scheduling of TRIM commands to maintain best "
+"performance. Would you like to TRIM SSD devices periodically?"
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid ""
+"TRIM jobs are scheduled on every first Sunday of month to NVMe devices in "
+"pools by default. You can choose to enable TRIM for all SSD or disable it "
+"completely. If no suitable SSD device is found, nothing will be done."
+msgstr ""

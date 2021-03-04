@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2015-11-01 14:11+0800\n"
+"POT-Creation-Date: 2021-03-04 22:20+0800\n"
 "PO-Revision-Date: 2013-07-04 23:09+0900\n"
 "Last-Translator: victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -85,8 +85,56 @@ msgstr ""
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"You are going to build ZFS using DKMS in such a way that they are not going to "
-"be built into one monolithic binary. Please be aware that distributing both of "
-"the binaries in the same media (disk images, virtual appliances, etc) may "
-"lead to infringing."
+"You are going to build ZFS using DKMS in such a way that they are not going "
+"to be built into one monolithic binary. Please be aware that distributing "
+"both of the binaries in the same media (disk images, virtual appliances, "
+"etc) may lead to infringing."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid "Scrub OpenZFS pools periodically?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid ""
+"Scrubbing storage pool data is a routine maintenance operation that check "
+"all data against known checksums, and fix early problems like bit riots. "
+"This operation is scheduled with low priority in the background, and usually "
+"does not have big impact on performance when the pool is not heavily "
+"utilized."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid ""
+"Would you like to scrub all pools periodically? By default scrub jobs are "
+"scheduled on every first Sunday of month."
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid "TRIM SSD devices in OpenZFS pools periodically?"
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid ""
+"Some SSD devices require proper scheduling of TRIM commands to maintain best "
+"performance. Would you like to TRIM SSD devices periodically?"
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid ""
+"TRIM jobs are scheduled on every first Sunday of month to NVMe devices in "
+"pools by default. You can choose to enable TRIM for all SSD or disable it "
+"completely. If no suitable SSD device is found, nothing will be done."
 msgstr ""

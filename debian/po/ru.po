@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux 0.6.1-1\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2015-11-01 14:11+0800\n"
+"POT-Creation-Date: 2021-03-04 22:20+0800\n"
 "PO-Revision-Date: 2018-01-01 15:56+0500\n"
 "Last-Translator: Lev Lamberov <dogsleg@debian.org>\n"
 "Language-Team: Russian <man-pages-ru-talks@lists.sourceforge.net>\n"
@@ -37,10 +37,10 @@ msgstr "Вы пытаетесь собрать ZFS для выполняющег
 #. Description
 #: ../zfs-dkms.templates:1001 ../zfs-dkms.templates:2001
 msgid ""
-"Although possible, building in a 32-bit environment is unsupported and likely "
-"to cause instability leading to possible data corruption. You are strongly "
-"advised to use a 64-bit kernel; if you do decide to proceed with using ZFS on "
-"this kernel then keep in mind that it is at your own risk."
+"Although possible, building in a 32-bit environment is unsupported and "
+"likely to cause instability leading to possible data corruption. You are "
+"strongly advised to use a 64-bit kernel; if you do decide to proceed with "
+"using ZFS on this kernel then keep in mind that it is at your own risk."
 msgstr ""
 "Хотя это и возможно, сборка в 32-битном окружении не поддерживается, и, "
 "вероятно, она будет работать нестабильно, что может вызвать повреждение "
@@ -75,32 +75,80 @@ msgstr "Лицензии ZFS и Linux несовместимы"
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"ZFS is licensed under the Common Development and Distribution License (CDDL), "
-"and the Linux kernel is licensed under the GNU General Public License Version "
-"2 (GPL-2). While both are free open source licenses they are restrictive "
-"licenses. The combination of them causes problems because it prevents using "
-"pieces of code exclusively available under one license with pieces of code "
-"exclusively available under the other in the same binary."
+"ZFS is licensed under the Common Development and Distribution License "
+"(CDDL), and the Linux kernel is licensed under the GNU General Public "
+"License Version 2 (GPL-2). While both are free open source licenses they are "
+"restrictive licenses. The combination of them causes problems because it "
+"prevents using pieces of code exclusively available under one license with "
+"pieces of code exclusively available under the other in the same binary."
 msgstr ""
 "Код ZFS выпущен под лицензией Common Development and Distribution License "
-"(CDDL), а ядро Linux выпущено под лицензией GNU General Public License Version "
-"2 (GPL-2). Хотя обе эти лицензии являются свободными лицензиями, они также "
-"являются ограничительными лицензиями. При их объединении возникают проблемы, "
-"поскольку объединённые условия лицензирования не позволяют использовать части "
-"кода, выпущенные исключительно под одной из указанных лицензий, вместе с "
-"частями кода, выпущенного исключительно под другой из указанных лицензий, в "
-"одной двоичной сборке."
+"(CDDL), а ядро Linux выпущено под лицензией GNU General Public License "
+"Version 2 (GPL-2). Хотя обе эти лицензии являются свободными лицензиями, они "
+"также являются ограничительными лицензиями. При их объединении возникают "
+"проблемы, поскольку объединённые условия лицензирования не позволяют "
+"использовать части кода, выпущенные исключительно под одной из указанных "
+"лицензий, вместе с частями кода, выпущенного исключительно под другой из "
+"указанных лицензий, в одной двоичной сборке."
 
 #. Type: note
 #. Description
 #: ../zfs-dkms.templates:3001
 msgid ""
-"You are going to build ZFS using DKMS in such a way that they are not going to "
-"be built into one monolithic binary. Please be aware that distributing both of "
-"the binaries in the same media (disk images, virtual appliances, etc) may lead "
-"to infringing."
+"You are going to build ZFS using DKMS in such a way that they are not going "
+"to be built into one monolithic binary. Please be aware that distributing "
+"both of the binaries in the same media (disk images, virtual appliances, "
+"etc) may lead to infringing."
 msgstr ""
 "Код ZFS будет собран с использованием DKMS таким образом, что части кода под "
 "разными лицензиями не будут представлять собой монолитной двоичной сборки. "
 "Помните, что распространение обоих двоичных сборок на одном носителе (образы "
 "дисков, виртуальные устройства и проч.) может привести к нарушению закона."
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid "Scrub OpenZFS pools periodically?"
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid ""
+"Scrubbing storage pool data is a routine maintenance operation that check "
+"all data against known checksums, and fix early problems like bit riots. "
+"This operation is scheduled with low priority in the background, and usually "
+"does not have big impact on performance when the pool is not heavily "
+"utilized."
+msgstr ""
+
+#. Type: boolean
+#. Description
+#: ../zfsutils-linux.templates:1001
+msgid ""
+"Would you like to scrub all pools periodically? By default scrub jobs are "
+"scheduled on every first Sunday of month."
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid "TRIM SSD devices in OpenZFS pools periodically?"
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid ""
+"Some SSD devices require proper scheduling of TRIM commands to maintain best "
+"performance. Would you like to TRIM SSD devices periodically?"
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../zfsutils-linux.templates:2001
+msgid ""
+"TRIM jobs are scheduled on every first Sunday of month to NVMe devices in "
+"pools by default. You can choose to enable TRIM for all SSD or disable it "
+"completely. If no suitable SSD device is found, nothing will be done."
+msgstr ""
