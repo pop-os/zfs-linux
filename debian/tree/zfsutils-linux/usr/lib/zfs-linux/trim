@@ -1,14 +1,59 @@
-#!/bin/sh -eu
+#!/bin/bash -e
 
-# TRIM all healthy pools that are not already trimming.
-zpool list -H -o health,name 2>&1 | \
-	awk '$1 ~ /^ONLINE/ { print $2; }' | \
-while read pool
-do
-	if ! zpool status "$pool" | grep -q "trimming"
-	then
+# source debconf library
+. /usr/share/debconf/confmodule
+
+# read config from debconf database
+db_get zfsutils-linux/periodic-trim-ssd-devices
+
+function trim_if_not_already_trimming() {
+	local pool="$1"
+	if ! zpool status "${pool}" | grep -q "trimming"; then
 		# Ignore errors (i.e. HDD pools),
 		# and continue with trimming other pools.
-		zpool trim "$pool" || true
+		zpool trim "${pool}" || true
 	fi
-done
+}
+
+function device_list_is_nvme_only() {
+	# parse arguments
+	local devices=("$@")
+	# check devices in the list one-by-one
+	for dev in ${devices[@]}; do
+		if !(echo ${dev} | grep -q /dev/nvme); then
+			return 1
+		fi
+	done
+	return 0
+	# this function returns 0 or 1
+}
+
+function zpool_is_nvme_only() {
+	# parse arguments
+	local zpool=$1
+	# get a list of devices attached to the specified zpool
+	local devices=$(zpool list -vHPL ${zpool} | awk '/\/dev\//{print $1}')
+	# are they all nvme drives?
+	device_list_is_nvme_only ${devices[@]} && return 0 || return 1
+	# this function returns 0 or 1
+}
+
+if [ "${RET}" = "Auto" ]; then
+	# only automatically trim the nvme-only pools.
+	ZPOOLS=$(zpool list -H | awk '{print $1}')
+	for pool in ${ZPOOLS[@]}; do
+		zpool_is_nvme_only "${pool}" && \
+			trim_if_not_already_trimming "${pool}"
+	done
+elif [ "${RET}" = "Enable" ]; then
+	# TRIM all healthy pools that are not already trimming.
+	zpool list -H -o health,name 2>&1 | \
+		awk '$1 ~ /^ONLINE/ { print $2; }' | \
+	while read pool
+	do
+		trim_if_not_already_trimming "${pool}"
+	done
+else
+	# "Disable": do nothing.
+	true
+fi
