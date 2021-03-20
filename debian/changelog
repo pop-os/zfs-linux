@@ -1,3 +1,39 @@
+zfs-linux (2.0.3-2) UNRELEASED; urgency=medium
+
+  [ Aron Xu ]
+  * cherry pick of upstream post-2.0.3 fixes
+  * debconf: add new questions for zfsutils-linux
+  * debconf: update all po files
+  * debconf: update the term ZFS to OpenZFS
+  * debconf: update translations to reflect template change
+  * debconf: run debconf-updatepo
+  * debconf: [INTL:zh_CN] update zh_CN translation
+
+  [ Antonio Russo ]
+  * Adjust zed.d symlink-preservation (Closes: #983401)
+  * Remove /etc/zfs/zed.d on purge
+
+  [ Mo Zhou ]
+  * Honour new debconf options on cron jobs for automatic-{scrub,trim}.
+    (Closes: #983086, #982505)
+
+  [ Parodper ]
+  * debconf: add gl translations
+
+  [ Helge Kreutzmann ]
+  * [INTL:de] updated German debconf translation (Closes: #984731)
+
+  [ Traduz - DebianPT ]
+  * [INTL:pt] Portuguese translation for debconf messages (Closes: #985130)
+
+  [ Frans Spiesschaert ]
+  * [INTL:nl] Dutch translation of debconf messages (Closes: #985360)
+
+  [ наб ]
+  * Fix a misleading comment in the scrub cronjob script. (Closes: #985349)
+
+ -- Mo Zhou <lumin@debian.org>  Sat, 20 Mar 2021 21:20:58 +0800
+
 zfs-linux (2.0.3-1) unstable; urgency=medium
 
   * New upstream version 2.0.3
