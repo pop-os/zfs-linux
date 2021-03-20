@@ -15,8 +15,7 @@ if [ "${RET}" = "true" ]; then
 	do
 		if ! zpool status "$pool" | grep -q "scrub in progress"
 		then
-			# Ignore errors (i.e. HDD pools),
-			# and continue with scrubing other pools.
+			# Ignore errors and continue with scrubbing other pools.
 			zpool scrub "$pool" || true
 		fi
 	done
