@@ -2,14 +2,14 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the zfs-linux package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-# Frans Spiesschaert <Frans.Spiesschaert@yucom.be>, 2016.
+# Frans Spiesschaert <Frans.Spiesschaert@yucom.be>, 2016, 2021
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: zfs-linux\n"
+"Project-Id-Version: zfs-linux_2.0.3-2\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
 "POT-Creation-Date: 2021-03-05 02:27+0800\n"
-"PO-Revision-Date: 2016-05-30 17:08+0200\n"
+"PO-Revision-Date: 2021-03-08 19:52+0100\n"
 "Last-Translator: Frans Spiesschaert <Frans.Spiesschaert@yucom.be>\n"
 "Language-Team: Debian Dutch l10n Team <debian-l10n-dutch@lists.debian.org>\n"
 "Language: nl\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Gtranslator 2.91.6\n"
+"X-Generator: Poedit 2.2.1\n"
 
 #. Type: boolean
 #. Description
@@ -86,7 +86,7 @@ msgid ""
 "pieces of code exclusively available under the other in the same binary."
 msgstr ""
 "OpenZFS gebruikt als licentie de Common Development and Distribution License "
-"(CDDL) en de Linux kernel gebruikt de GNU General Public License Version 2 "
+"(CDDL) en de Linux kernel gebruikt de GNU General Public License Versie 2 "
 "(GPL-2) als licentie. Hoewel beide vrije open source-licenties zijn, zijn ze "
 "allebei restrictief. De combinatie van beide geeft problemen, omdat belet "
 "wordt dat codefragmenten die exclusief onder de ene licentie beschikbaar "
@@ -112,7 +112,7 @@ msgstr ""
 #. Description
 #: ../zfsutils-linux.templates:1001
 msgid "Scrub OpenZFS pools periodically?"
-msgstr ""
+msgstr "De pools van OpenZFS periodiek opschonen?"
 
 #. Type: boolean
 #. Description
@@ -123,6 +123,11 @@ msgid ""
 "operation is scheduled with low priority in the background, and usually does "
 "not have big impact on performance when the pool is not heavily utilized."
 msgstr ""
+"Het opschonen van gegevens in een opslagpool is een routine-"
+"onderhoudsoperatie die alle gegevens controleert aan de hand van bekende "
+"controlegetallen, en vroege problemen zoals bitrot verhelpt. Deze bewerking "
+"wordt met lage prioriteit op de achtergrond gepland, en heeft gewoonlijk "
+"geen grote invloed op de prestatie als de pool niet zwaar gebruikt wordt."
 
 #. Type: boolean
 #. Description
@@ -131,12 +136,14 @@ msgid ""
 "Would you like to scrub all pools periodically? By default scrub jobs are "
 "scheduled on every first Sunday of month."
 msgstr ""
+"Wilt u alle pools periodiek opschonen? Standaard worden opschoontaken "
+"ingepland op elke eerste zondag van de maand."
 
 #. Type: select
 #. Description
 #: ../zfsutils-linux.templates:2001
 msgid "TRIM SSD devices in OpenZFS pools periodically?"
-msgstr ""
+msgstr "SSD-apparaten in OpenZFS-pools periodiek TRIM-men?"
 
 #. Type: select
 #. Description
@@ -145,6 +152,9 @@ msgid ""
 "Some SSD devices require proper scheduling of TRIM commands to maintain best "
 "performance. Would you like to TRIM SSD devices periodically?"
 msgstr ""
+"Sommige SSD-apparaten vereisen een juiste planning van TRIM-opdrachten om de "
+"beste prestaties te blijven behouden. Wilt u SSD-apparaten periodiek TRIM-"
+"men?"
 
 #. Type: select
 #. Description
@@ -154,3 +164,7 @@ msgid ""
 "pools by default. You can choose to enable TRIM for all SSD or disable it "
 "completely. If no suitable SSD device is found, nothing will be done."
 msgstr ""
+"TRIM-taken worden standaard op elke eerste zondag van de maand gepland voor "
+"NVMe-apparaten in pools. U kunt ervoor kiezen om TRIM voor alle SSD-"
+"apparaten in te schakelen of volledig uit te schakelen. Als er geen geschikt "
+"SSD-apparaat wordt gevonden, wordt er niets gedaan."
