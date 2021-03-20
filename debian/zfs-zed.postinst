@@ -8,7 +8,7 @@ etcd="/etc/zfs/zed.d"
 while read -r file ; do
     etcfile="${etcd}/${file}"
     [ -e "${etcfile}" ] && continue
-    ln -s "${zedd}/${file}" "${etcfile}"
+    ln -sfT "${zedd}/${file}" "${etcfile}"
 done < "${zedd}/DEFAULT-ENABLED"
 
 # remove the overrides created in prerm
