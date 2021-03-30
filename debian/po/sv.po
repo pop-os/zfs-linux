@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2021-03-05 02:27+0800\n"
+"POT-Creation-Date: 2021-03-30 14:43+0800\n"
 "PO-Revision-Date: 2019-01-02 12:24+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
@@ -95,50 +95,3 @@ msgstr ""
 "ihop till en monolit-binär. Vänligen notera att distribution av dessa "
 "binärer på samma media(diskavbildningar, virtuella maskin-bilder eller "
 "dylikt) kan innebära intrång i upphovsrätt och avtal."
-
-#. Type: boolean
-#. Description
-#: ../zfsutils-linux.templates:1001
-msgid "Scrub OpenZFS pools periodically?"
-msgstr ""
-
-#. Type: boolean
-#. Description
-#: ../zfsutils-linux.templates:1001
-msgid ""
-"Scrubbing storage pool data is a routine maintenance operation that check "
-"all data against known checksums, and fix early problems like bit rots. This "
-"operation is scheduled with low priority in the background, and usually does "
-"not have big impact on performance when the pool is not heavily utilized."
-msgstr ""
-
-#. Type: boolean
-#. Description
-#: ../zfsutils-linux.templates:1001
-msgid ""
-"Would you like to scrub all pools periodically? By default scrub jobs are "
-"scheduled on every first Sunday of month."
-msgstr ""
-
-#. Type: select
-#. Description
-#: ../zfsutils-linux.templates:2001
-msgid "TRIM SSD devices in OpenZFS pools periodically?"
-msgstr ""
-
-#. Type: select
-#. Description
-#: ../zfsutils-linux.templates:2001
-msgid ""
-"Some SSD devices require proper scheduling of TRIM commands to maintain best "
-"performance. Would you like to TRIM SSD devices periodically?"
-msgstr ""
-
-#. Type: select
-#. Description
-#: ../zfsutils-linux.templates:2001
-msgid ""
-"TRIM jobs are scheduled on every first Sunday of month to NVMe devices in "
-"pools by default. You can choose to enable TRIM for all SSD or disable it "
-"completely. If no suitable SSD device is found, nothing will be done."
-msgstr ""

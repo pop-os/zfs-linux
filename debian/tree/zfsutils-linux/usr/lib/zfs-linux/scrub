@@ -1,22 +1,13 @@
 #!/bin/sh -eu
 
-# source debconf library
-. /usr/share/debconf/confmodule
-
-# read config from debconf database
-db_get zfsutils-linux/periodic-scrub-pools
-
-# only scrub the pools when the setting is true
-if [ "${RET}" = "true" ]; then
-	# Scrub all healthy pools that are not already scrubbing.
-	zpool list -H -o health,name 2>&1 | \
-		awk '$1 ~ /^ONLINE/ { print $2; }' | \
-	while read pool
-	do
-		if ! zpool status "$pool" | grep -q "scrub in progress"
-		then
-			# Ignore errors and continue with scrubbing other pools.
-			zpool scrub "$pool" || true
-		fi
-	done
-fi
+# Scrub all healthy pools that are not already scrubbing.
+zpool list -H -o health,name 2>&1 | \
+	awk '$1 ~ /^ONLINE/ { print $2; }' | \
+while read pool
+do
+	if ! zpool status "$pool" | grep -q "scrub in progress"
+	then
+		# Ignore errors and continue with scrubbing other pools.
+		zpool scrub "$pool" || true
+	fi
+done

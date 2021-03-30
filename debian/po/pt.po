@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2021-03-05 02:27+0800\n"
+"POT-Creation-Date: 2021-03-30 14:43+0800\n"
 "PO-Revision-Date: 2021-03-07 12:49+0000\n"
 "Last-Translator: Rui Branco <ruipb@debianpt.org>\n"
 "Language-Team: Portuguese <traduz@debianpt.org>\n"
@@ -106,65 +106,47 @@ msgstr ""
 "mesmo suporte de media (imagens de disco, aplicações virtuais, etc) pode "
 "levar a violação da licença. "
 
-#. Type: boolean
-#. Description
-#: ../zfsutils-linux.templates:1001
-msgid "Scrub OpenZFS pools periodically?"
-msgstr "Fazer Scrub periodicamente aos pools OpenZFS?"
+#~ msgid "Scrub OpenZFS pools periodically?"
+#~ msgstr "Fazer Scrub periodicamente aos pools OpenZFS?"
 
-#. Type: boolean
-#. Description
-#: ../zfsutils-linux.templates:1001
-msgid ""
-"Scrubbing storage pool data is a routine maintenance operation that check "
-"all data against known checksums, and fix early problems like bit rots. This "
-"operation is scheduled with low priority in the background, and usually does "
-"not have big impact on performance when the pool is not heavily utilized."
-msgstr ""
-"Fazer scrub aos dados do pool de armazenamento é uma operação de rotina de "
-"manutenção que verifica todos os dados contra dados de controle conhecidos, "
-"e corrigie problemas no inicio como bit rots. Esta operação é agendada com "
-"prioridade baixa em background, e normalmente não tem grande impacto no "
-"desempenho quando o pool não é muito utilizado."
+#~ msgid ""
+#~ "Scrubbing storage pool data is a routine maintenance operation that check "
+#~ "all data against known checksums, and fix early problems like bit rots. "
+#~ "This operation is scheduled with low priority in the background, and "
+#~ "usually does not have big impact on performance when the pool is not "
+#~ "heavily utilized."
+#~ msgstr ""
+#~ "Fazer scrub aos dados do pool de armazenamento é uma operação de rotina "
+#~ "de manutenção que verifica todos os dados contra dados de controle "
+#~ "conhecidos, e corrigie problemas no inicio como bit rots. Esta operação é "
+#~ "agendada com prioridade baixa em background, e normalmente não tem grande "
+#~ "impacto no desempenho quando o pool não é muito utilizado."
 
-#. Type: boolean
-#. Description
-#: ../zfsutils-linux.templates:1001
-msgid ""
-"Would you like to scrub all pools periodically? By default scrub jobs are "
-"scheduled on every first Sunday of month."
-msgstr ""
-"Deseja fazer scrub periodicamente a todos os pools? Por predefinição os "
-"trabalhos de scrub são agendados para o primeiro Domingo do mês."
+#~ msgid ""
+#~ "Would you like to scrub all pools periodically? By default scrub jobs are "
+#~ "scheduled on every first Sunday of month."
+#~ msgstr ""
+#~ "Deseja fazer scrub periodicamente a todos os pools? Por predefinição os "
+#~ "trabalhos de scrub são agendados para o primeiro Domingo do mês."
 
-#. Type: select
-#. Description
-#: ../zfsutils-linux.templates:2001
-msgid "TRIM SSD devices in OpenZFS pools periodically?"
-msgstr "Fazer TRIM periodicamente a dispositivos SSD em pools OpenZFS?"
+#~ msgid "TRIM SSD devices in OpenZFS pools periodically?"
+#~ msgstr "Fazer TRIM periodicamente a dispositivos SSD em pools OpenZFS?"
 
-#. Type: select
-#. Description
-#: ../zfsutils-linux.templates:2001
-msgid ""
-"Some SSD devices require proper scheduling of TRIM commands to maintain best "
-"performance. Would you like to TRIM SSD devices periodically?"
-msgstr ""
-"Alguns dispositivos SSD necessitam de agendamento adequado dos comandos TRIM "
-"para manter o melhor desempenho. Deseja fazer periodicamente TRIM a "
-"dispositivos SSD?"
+#~ msgid ""
+#~ "Some SSD devices require proper scheduling of TRIM commands to maintain "
+#~ "best performance. Would you like to TRIM SSD devices periodically?"
+#~ msgstr ""
+#~ "Alguns dispositivos SSD necessitam de agendamento adequado dos comandos "
+#~ "TRIM para manter o melhor desempenho. Deseja fazer periodicamente TRIM a "
+#~ "dispositivos SSD?"
 
-#. Type: select
-#. Description
-#: ../zfsutils-linux.templates:2001
-msgid ""
-"TRIM jobs are scheduled on every first Sunday of month to NVMe devices in "
-"pools by default. You can choose to enable TRIM for all SSD or disable it "
-"completely. If no suitable SSD device is found, nothing will be done."
-msgstr ""
-"Os trabalhos de TRIM são agendados, por predefinição, para o primeiro "
-"Domingo do mês em todos os dispositivos NVMe nos pools. Pode escolher "
-"habilitar TRIM para todos os dispositivos SSD ou desabilita-los "
-"completamente. Se não for encontrado nenhum dispositivo SSD adequado, não "
-"será feito nada."
-
+#~ msgid ""
+#~ "TRIM jobs are scheduled on every first Sunday of month to NVMe devices in "
+#~ "pools by default. You can choose to enable TRIM for all SSD or disable it "
+#~ "completely. If no suitable SSD device is found, nothing will be done."
+#~ msgstr ""
+#~ "Os trabalhos de TRIM são agendados, por predefinição, para o primeiro "
+#~ "Domingo do mês em todos os dispositivos NVMe nos pools. Pode escolher "
+#~ "habilitar TRIM para todos os dispositivos SSD ou desabilita-los "
+#~ "completamente. Se não for encontrado nenhum dispositivo SSD adequado, não "
+#~ "será feito nada."

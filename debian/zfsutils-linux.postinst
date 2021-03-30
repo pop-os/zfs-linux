@@ -1,9 +1,6 @@
 #!/bin/sh
 set -e
 
-# Source debconf library (see dh_installdebconf(1) and #106070 #626312)
-. /usr/share/debconf/confmodule
-
 # The hostname and hostid of the last system to access a ZFS pool are stored in
 # the ZFS pool itself. A pool is foreign if, during `zpool import`, the
 # current hostname and hostid are different than the stored values thereof.
@@ -26,20 +23,6 @@ fi
 # to complete the installation.
 #
 modprobe -v zfs || true # modprobe zfs does nothing if zfs.ko was already loaded.
-
-db_get zfsutils-linux/periodic-scrub-pools
-if [ "$RET" = "false" ]; then
-    echo "Disabling periodic pool scrubs."
-    # TODO: signal the choice.
-fi
-db_get zfsutils-linux/periodic-trim-ssd-devices
-if [ "$RET" = "Enable" ]; then
-    echo "Enabling periodic TRIM for all SSD devices."
-    # TODO: signal the choice.
-elif [ "$RET" = "Disable" ]; then
-    echo "Disabling periodic TRIM for all SSD devices."
-    # TODO: signal the choice.
-fi
 
 #DEBHELPER#
 
