@@ -16,3 +16,12 @@ force-verbose-rules.patch
 4620-zfs-vol-wait-fix-locked-encrypted-vols.patch
 move-arcstat-1-to-8.patch
 #ubuntu/4701-enable-ARC-FILL-LOCKED-flag.patch
+0010-Fix-report_mount_progress-never-calling-set_progress.patch
+0014-libzpool-set_global_var-fix-endianness-handling-fixe.patch
+0019-Better-zfs_get_enclosure_sysfs_path-enclosure-suppor.patch
+0020-vdev_ops-don-t-try-to-call-vdev_op_hold-or-vdev_op_r.patch
+0026-Linux-increase-max-nvlist_src-size.patch
+0028-Fix-overly-broad-locking-in-spa_vdev_config_exit.patch
+0035-Cancel-TRIM-initialize-on-FAULTED-non-writeable-vdev.patch
+0037-linux-zvol-avoid-heap-allocation-for-zvol_request_sy.patch
+0038-Don-t-bomb-out-when-using-keylocation-file.patch

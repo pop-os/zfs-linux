@@ -1,0 +1,37 @@
+From b5fffa1d294f5e17e8e4fdf34a4fec99c374c586 Mon Sep 17 00:00:00 2001
+From: Christian Schwarz <me@cschwarz.com>
+Date: Mon, 15 Feb 2021 13:02:32 +0100
+Subject: [PATCH 14/38] libzpool: set_global_var: fix endianness handling
+ (fixes zdb -o )
+
+Without this patch I get the error
+
+  Setting global variables is only supported on little-endian systems
+
+when using `zdb -o` on my amd64 machine.
+
+Reviewed-by: Matthew Ahrens <mahrens@delphix.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Pavel Zakharov <pavel.zakharov@delphix.com>
+Signed-off-by: Christian Schwarz <me@cschwarz.com>
+Closes #11602
+---
+ lib/libzpool/util.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/libzpool/util.c b/lib/libzpool/util.c
+index ebfaa9b41..13d585299 100644
+--- a/lib/libzpool/util.c
++++ b/lib/libzpool/util.c
+@@ -159,7 +159,7 @@ set_global_var(char *arg)
+ 	char *varname = arg, *varval;
+ 	u_longlong_t val;
+ 
+-#ifndef _LITTLE_ENDIAN
++#ifndef _ZFS_LITTLE_ENDIAN
+ 	/*
+ 	 * On big endian systems changing a 64-bit variable would set the high
+ 	 * 32 bits instead of the low 32 bits, which could cause unexpected
+-- 
+2.30.1
+

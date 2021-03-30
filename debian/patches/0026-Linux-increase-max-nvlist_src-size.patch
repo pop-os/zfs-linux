@@ -1,0 +1,46 @@
+From 1dfc82a14ed538992f5c37a152995e93ede10469 Mon Sep 17 00:00:00 2001
+From: Brian Behlendorf <behlendorf1@llnl.gov>
+Date: Wed, 24 Feb 2021 09:57:18 -0800
+Subject: [PATCH 26/38] Linux: increase max nvlist_src size
+
+On Linux increase the maximum allowed size of the src nvlist which
+can be passed to the /dev/zfs ioctl.  Originally, this was set
+to a maximum of KMALLOC_MAX_SIZE (4M) because it was kmalloc'd.
+Since that time it's been converted to a vmalloc so that's no
+longer a hard limit, and it's desirable for `zfs send/recv` to
+allow larger nvlists so more snapshots can be sent at once.
+
+Signed-off-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Closes #6572
+Closes #11638
+---
+ man/man5/zfs-module-parameters.5   | 2 +-
+ module/os/linux/zfs/zfs_ioctl_os.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+Index: zfs/man/man5/zfs-module-parameters.5
+===================================================================
+--- zfs.orig/man/man5/zfs-module-parameters.5
++++ zfs/man/man5/zfs-module-parameters.5
+@@ -1186,7 +1186,7 @@ amount of memory. When the limit is exce
+ description of the error is sent to the zfs-dbgmsg log. This parameter should
+ not need to be touched under normal circumstances. On FreeBSD, the default is
+ based on the system limit on user wired memory. On Linux, the default is
+-\fBKMALLOC_MAX_SIZE\fR .
++\fB128MB\fR.
+ .sp
+ Default value: \fB0\fR (kernel decides)
+ .RE
+Index: zfs/module/os/linux/zfs/zfs_ioctl_os.c
+===================================================================
+--- zfs.orig/module/os/linux/zfs/zfs_ioctl_os.c
++++ zfs/module/os/linux/zfs/zfs_ioctl_os.c
+@@ -209,7 +209,7 @@ zfs_max_nvlist_src_size_os(void)
+ 	if (zfs_max_nvlist_src_size != 0)
+ 		return (zfs_max_nvlist_src_size);
+ 
+-	return (KMALLOC_MAX_SIZE);
++	return (MIN(ptob(zfs_totalram_pages) / 4, 128 * 1024 * 1024));
+ }
+ 
+ void

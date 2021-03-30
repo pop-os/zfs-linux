@@ -1,3 +1,22 @@
+zfs-linux (2.0.3-2) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * cherry pick of upstream post-2.0.3 fixes
+  * debconf: update the term ZFS to OpenZFS
+  * debconf: run debconf-updatepo
+
+  [ Antonio Russo ]
+  * Adjust zed.d symlink-preservation (Closes: #983401)
+  * Remove /etc/zfs/zed.d on purge
+
+  [ Mo Zhou ]
+  * Only automatically TRIM NVMe SSD pools. (Closes: #983086, #982505)
+
+  [ наб ]
+  * Fix a misleading comment in the scrub cronjob script. (Closes: #985349)
+
+ -- Aron Xu <aron@debian.org>  Tue, 30 Mar 2021 14:47:05 +0800
+
 zfs-linux (2.0.3-1) unstable; urgency=medium
 
   * New upstream version 2.0.3
