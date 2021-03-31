@@ -33,7 +33,7 @@ function zpool_is_nvme_only() {
 }
 
 # only automatically trim the nvme-only pools.
-POOLS=$(zpool list -H | awk '{print $1}')
+ZPOOLS=$(zpool list -H | awk '{print $1}')
 for pool in ${ZPOOLS[@]}; do
 	zpool_is_nvme_only "${pool}" && \
 		trim_if_not_already_trimming "${pool}"
