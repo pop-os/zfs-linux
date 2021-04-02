@@ -1,3 +1,10 @@
+zfs-linux (2.0.3-4) unstable; urgency=medium
+
+  * Revise the auto-{scrub,trim} scripts and describe usage in README.Debian.
+    (See #986185 and thanks for наб)
+
+ -- Mo Zhou <lumin@debian.org>  Fri, 02 Apr 2021 21:35:32 +0800
+
 zfs-linux (2.0.3-3) unstable; urgency=medium
 
   * Use zfs property for periodical-{scrub,trim} cron jobs.
