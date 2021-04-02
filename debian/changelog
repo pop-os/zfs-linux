@@ -1,3 +1,15 @@
+zfs-linux (2.0.3-3) unstable; urgency=medium
+
+  * Use zfs property for periodical-{scrub,trim} cron jobs.
+    This fixes the exclusive "nvme-only" behavior of the auto-trim script.
+    P.S. In this way, we will not have to store configs in /etc/default/zfs,
+    or use debconf database as a registry. Plus, this also allows us to
+    configure the cron job behavior per zpool.
+    (Closes: #986185)
+  * Fix i386 autopkgtest failure due to missing dependency.
+
+ -- Mo Zhou <lumin@debian.org>  Fri, 02 Apr 2021 14:34:15 +0800
+
 zfs-linux (2.0.3-2) unstable; urgency=medium
 
   [ Aron Xu ]
