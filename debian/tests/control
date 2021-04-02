@@ -10,6 +10,7 @@ Tests: dkms-zfs-test
 Restrictions: needs-root, allow-stderr
 Depends: dkms,
          linux-headers-amd64 [amd64],
+         linux-headers-686 [i386],
          linux-headers-arm64 [arm64],
          linux-headers-powerpc64le [ppc64el],
          linux-headers-s390x [s390x]
@@ -18,6 +19,7 @@ Tests: binary-debs-modules, binary-debs-modules-udeb
 Restrictions: needs-root, allow-stderr,
 Depends: fakeroot,
          linux-headers-amd64 [amd64],
+         linux-headers-686 [i386],
          linux-headers-arm64 [arm64],
          linux-headers-powerpc64le [ppc64el],
          linux-headers-s390x [s390x],
