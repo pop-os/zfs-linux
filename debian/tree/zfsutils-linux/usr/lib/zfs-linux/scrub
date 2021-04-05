@@ -27,20 +27,19 @@ scrub_if_not_scrub_in_progress () {
 
 # Scrub all healthy pools that are not already scrubbing as per their configs.
 zpool list -H -o health,name 2>&1 | \
-	awk '$1 ~ /^ONLINE/ { print $2; }' | \
+	awk -F'\t' '$1 == "ONLINE" {print $2}' | \
 while read pool
 do
 	# read user-defined config
 	ret=$(get_property "${pool}")
 	if [ $? -ne 0 ] || [ "disable" = "${ret}" ]; then
-		continue
+		:
 	elif [ "-" = "${ret}" ] || [ "auto" = "${ret}" ] || [ "enable" = "${ret}" ]; then
 		scrub_if_not_scrub_in_progress "${pool}"
 	else
 		cat > /dev/stderr <<EOF
-/usr/lib/zfs-linux/scrub: [WARNING] illegal value "${ret}" for property "${PROPERTY_NAME}" of ZFS dataset "${pool}".
-/usr/lib/zfs-linux/scrub: Acceptable choices for this property are: auto, enable, disable. The default is auto.
+$0: [WARNING] illegal value "${ret}" for property "${PROPERTY_NAME}" of ZFS dataset "${pool}".
+$0: Acceptable choices for this property are: auto, enable, disable. The default is auto.
 EOF
-		continue
 	fi
 done
