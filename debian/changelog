@@ -1,3 +1,15 @@
+zfs-linux (2.0.3-6) unstable; urgency=medium
+
+  [ наб ]
+  * Fix broken purge detection in zfs-zed.postrm. (Closes: #986374)
+  * /u/l/z-l/{scrub, trim}: enhancements including proper handling for pools
+    with spaces in name. (Closes: #986380)
+
+  [ Mo Zhou ]
+  * Really install README.Debian into every binary package.
+
+ -- Mo Zhou <lumin@debian.org>  Mon, 05 Apr 2021 10:35:25 +0800
+
 zfs-linux (2.0.3-5) unstable; urgency=medium
 
   [ наб ]

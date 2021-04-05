@@ -29,37 +29,32 @@ trim_if_not_already_trimming () {
 zpool_is_nvme_only () {
 	zpool=$1
 	# get a list of devices attached to the specified zpool
-	zpool list -vHPL ${zpool} | awk '/\/dev\//{print $1}' \
-		| while read dev
-		do
-			# are these devices all nvme drives?
-			if !(echo ${dev} | grep -q /dev/nvme); then
-				return 1
-			fi
-		done
-	return 0
+	zpool list -vHPL "${zpool}" |
+		awk -F'\t' '$2 ~ /^\/dev\// {
+			if($2 !~ /^\/dev\/nvme/)
+				exit 1
+		}'
 }
 
 # TRIM all healthy pools that are not already trimming as per their configs.
 zpool list -H -o health,name 2>&1 | \
-	awk '$1 ~ /^ONLINE/ { print $2; }' | \
+	awk -F'\t' '$1 == "ONLINE" {print $2}' | \
 while read pool
 do
 	# read user-defined config
 	ret=$(get_property "${pool}")
 	if [ $? -ne 0 ] || [ "disable" = "${ret}" ]; then
-		continue
+		:
 	elif [ "enable" = "${ret}" ]; then
 		trim_if_not_already_trimming "${pool}"
 	elif [ "-" = "${ret}" ] || [ "auto" = "${ret}" ]; then
-		# only automatically trim the nvme-only pools.
-		zpool_is_nvme_only "${pool}" \
-			&& trim_if_not_already_trimming "${pool}" \
-			|| continue
+		if zpool_is_nvme_only "${pool}"; then
+			trim_if_not_already_trimming "${pool}"
+		fi
 	else
 		cat > /dev/stderr <<EOF
-/usr/lib/zfs-linux/trim: [WARNING] illegal value "${ret}" for property "${PROPERTY_NAME}" of ZFS dataset "${pool}".
-/usr/lib/zfs-linux/trim: Acceptable choices for this property are: auto, enable, disable. The default is auto.
+$0: [WARNING] illegal value "${ret}" for property "${PROPERTY_NAME}" of ZFS dataset "${pool}".
+$0: Acceptable choices for this property are: auto, enable, disable. The default is auto.
 EOF
 	fi
 done
