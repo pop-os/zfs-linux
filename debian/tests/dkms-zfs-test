@@ -1,10 +1,6 @@
 #!/bin/sh
 set -xe
-
-DEB_HOST_ARCH=$(dpkg --print-architecture)
-if ! (echo "amd64 arm64 ppc64el s390x" | grep -o $DEB_HOST_ARCH); then
-	exit 0
-fi
+# architecture detection is done in the Architecture field of d/tests/control.
 
 # NOTE: zfs-dkms will pull zfsutils-linux if you enable apt to install
 # recommended packages. Systemd units of zfsutils-linux will cause

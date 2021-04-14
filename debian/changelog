@@ -1,3 +1,10 @@
+zfs-linux (2.0.3-7) unstable; urgency=medium
+
+  * Use Architecture: field for autopkgtest.
+  * Add missing test dependency linux-headers-armmp for armhf.
+
+ -- Mo Zhou <lumin@debian.org>  Wed, 14 Apr 2021 12:24:03 +0800
+
 zfs-linux (2.0.3-6) unstable; urgency=medium
 
   [ наб ]

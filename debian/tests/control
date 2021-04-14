@@ -7,10 +7,10 @@ Depends: zfs-dkms [ amd64 arm64 ppc64el s390x ],
          zfsutils-linux [ amd64 arm64 ppc64el s390x ]
 
 Tests: dkms-zfs-test
+Architecture: amd64, arm64, ppc64el, s390x
 Restrictions: needs-root, allow-stderr
 Depends: dkms,
          linux-headers-amd64 [amd64],
-         linux-headers-686 [i386],
          linux-headers-arm64 [arm64],
          linux-headers-powerpc64le [ppc64el],
          linux-headers-s390x [s390x]
@@ -21,6 +21,7 @@ Depends: fakeroot,
          linux-headers-amd64 [amd64],
          linux-headers-686 [i386],
          linux-headers-arm64 [arm64],
+         linux-hearders-armmp [armhf],
          linux-headers-powerpc64le [ppc64el],
          linux-headers-s390x [s390x],
          @builddeps@
