@@ -49,7 +49,7 @@ loss of data, please use zfs-initramfs with caution.
 
   # zfs set org.debian:periodic-scrub=auto tank
 
- By default scrub jobs are scheduled on every first Sunday of month.
+ By default scrub jobs are scheduled on every second Sunday of month.
 
  [ Periodic Trimming ]
 
