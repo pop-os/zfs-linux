@@ -1,3 +1,16 @@
+zfs-linux (2.0.6-1) unstable; urgency=medium
+
+  [ Ben K ]
+  * Fix grammar (or maybe it was a typo) of "das/dass" in debian/po/de.po.
+
+  [ Aron Xu ]
+  * d/README.Debian: update the scrub time
+  * New upstream version 2.0.6
+  * Remove applied patch, refresh remaining ones
+  * Update symbols for libzpool4linux
+
+ -- Aron Xu <aron@debian.org>  Thu, 23 Sep 2021 14:43:12 +0800
+
 zfs-linux (2.0.3-9) unstable; urgency=medium
 
   * Cherry-pick "Remove iov_iter_advance() for iter_write" (Closes: #989373)
