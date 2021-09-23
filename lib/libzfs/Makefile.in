@@ -33,6 +33,10 @@
 # a mechanism for suppressing harmless warnings.
 #
 
+#
+# Default rules for running cppcheck against the the user space components.
+#
+
 
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -140,11 +144,13 @@ subdir = lib/libzfs
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/always-compiler-options.m4 \
+	$(top_srcdir)/config/always-cppcheck.m4 \
 	$(top_srcdir)/config/always-python.m4 \
 	$(top_srcdir)/config/always-pyzfs.m4 \
 	$(top_srcdir)/config/always-sed.m4 \
 	$(top_srcdir)/config/always-system.m4 \
 	$(top_srcdir)/config/ax_code_coverage.m4 \
+	$(top_srcdir)/config/ax_count_cpus.m4 \
 	$(top_srcdir)/config/ax_python_devel.m4 \
 	$(top_srcdir)/config/ax_restore_flags.m4 \
 	$(top_srcdir)/config/ax_save_flags.m4 \
@@ -159,6 +165,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
 	$(top_srcdir)/config/kernel-bdi.m4 \
 	$(top_srcdir)/config/kernel-bio.m4 \
+	$(top_srcdir)/config/kernel-bio_max_segs.m4 \
 	$(top_srcdir)/config/kernel-blk-queue.m4 \
 	$(top_srcdir)/config/kernel-blkdev.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations.m4 \
@@ -180,6 +187,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-fst-mount.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
+	$(top_srcdir)/config/kernel-generic_fillattr.m4 \
 	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
 	$(top_srcdir)/config/kernel-generic_readlink.m4 \
 	$(top_srcdir)/config/kernel-get-disk-ro.m4 \
@@ -206,7 +214,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
 	$(top_srcdir)/config/kernel-make-request-fn.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
-	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
+	$(top_srcdir)/config/kernel-mkdir.m4 \
+	$(top_srcdir)/config/kernel-mknod.m4 \
 	$(top_srcdir)/config/kernel-mod-param.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
@@ -224,7 +233,12 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
+	$(top_srcdir)/config/kernel-siginfo.m4 \
+	$(top_srcdir)/config/kernel-signal-stop.m4 \
+	$(top_srcdir)/config/kernel-special-state.m4 \
+	$(top_srcdir)/config/kernel-stdarg.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
+	$(top_srcdir)/config/kernel-symlink.m4 \
 	$(top_srcdir)/config/kernel-timer.m4 \
 	$(top_srcdir)/config/kernel-tmpfile.m4 \
 	$(top_srcdir)/config/kernel-totalhigh_pages.m4 \
@@ -238,6 +252,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-vfs-iov_iter.m4 \
 	$(top_srcdir)/config/kernel-vfs-iterate.m4 \
 	$(top_srcdir)/config/kernel-vfs-rw-iterate.m4 \
+	$(top_srcdir)/config/kernel-vfs-set_page_dirty.m4 \
 	$(top_srcdir)/config/kernel-wait.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
 	$(top_srcdir)/config/kernel-zlib.m4 \
@@ -439,7 +454,8 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/libzfs.pc.in \
-	$(top_srcdir)/config/Abigail.am $(top_srcdir)/config/Rules.am \
+	$(top_srcdir)/config/Abigail.am \
+	$(top_srcdir)/config/CppCheck.am $(top_srcdir)/config/Rules.am \
 	$(top_srcdir)/config/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = \
@@ -474,7 +490,9 @@ CODE_COVERAGE_ENABLED = @CODE_COVERAGE_ENABLED@
 CODE_COVERAGE_LDFLAGS = @CODE_COVERAGE_LDFLAGS@
 CODE_COVERAGE_LIBS = @CODE_COVERAGE_LIBS@
 CPP = @CPP@
+CPPCHECK = @CPPCHECK@
 CPPFLAGS = @CPPFLAGS@
+CPU_COUNT = @CPU_COUNT@
 CYGPATH_W = @CYGPATH_W@
 DEBUGINFO_ZFS = @DEBUGINFO_ZFS@
 DEBUG_CFLAGS = @DEBUG_CFLAGS@
@@ -740,6 +758,7 @@ top_srcdir = @top_srcdir@
 udevdir = @udevdir@
 udevruledir = @udevruledir@
 zfsexecdir = @zfsexecdir@
+PHONY = checkabi storeabi cppcheck
 DEFAULT_INCLUDES = -include $(top_builddir)/zfs_config.h \
 	-I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(top_srcdir)/module/icp/include \
@@ -761,7 +780,6 @@ AM_CPPFLAGS = -D_GNU_SOURCE -D_REENTRANT -D_FILE_OFFSET_BITS=64 \
 	-DSYSCONFDIR=\"$(sysconfdir)\" $(DEBUG_CPPFLAGS) \
 	$(CODE_COVERAGE_CPPFLAGS) $(am__append_4) $(am__append_5)
 AM_LDFLAGS = $(DEBUG_LDFLAGS) $(ASAN_LDFLAGS) $(am__append_6)
-PHONY = checkabi storeabi
 pkgconfig_DATA = libzfs.pc
 lib_LTLIBRARIES = libzfs.la
 USER_C = libzfs_changelist.c libzfs_config.c libzfs_crypto.c \
@@ -798,6 +816,8 @@ libzfs_la_LIBADD = $(abs_top_builddir)/lib/libshare/libshare.la \
 	$(abs_top_builddir)/lib/libuutil/libuutil.la -lm \
 	$(LIBCRYPTO_LIBS) $(ZLIB_LIBS) $(LTLIBINTL) $(am__append_10)
 libzfs_la_LDFLAGS = -pthread $(am__append_9) -version-info 4:0:0
+CPPCHECKFLAGS = --std=c99 --quiet --max-configs=1 --error-exitcode=2 \
+	--inline-suppr -U_KERNEL
 
 # Library ABI
 
@@ -808,7 +828,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/Rules.am $(top_srcdir)/config/Abigail.am $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/Rules.am $(top_srcdir)/config/Abigail.am $(top_srcdir)/config/CppCheck.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -828,7 +848,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__maybe_remake_depfiles)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__maybe_remake_depfiles);; \
 	esac;
-$(top_srcdir)/config/Rules.am $(top_srcdir)/config/Abigail.am $(am__empty):
+$(top_srcdir)/config/Rules.am $(top_srcdir)/config/Abigail.am $(top_srcdir)/config/CppCheck.am $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
@@ -1321,6 +1341,9 @@ storeabi:
 	for lib in $(lib_LTLIBRARIES) ; do \
 		abidw $${lib%.la}.so > ../$${lib%.la}.abi ; \
 	done
+
+cppcheck:
+	$(CPPCHECK) -j$(CPU_COUNT) $(CPPCHECKFLAGS) $(DEFAULT_INCLUDES) $(SOURCES)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

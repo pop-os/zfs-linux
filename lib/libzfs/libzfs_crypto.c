@@ -518,7 +518,7 @@ get_key_material(libzfs_handle_t *hdl, boolean_t do_verify, boolean_t newkey,
 	switch (keyloc) {
 	case ZFS_KEYLOCATION_PROMPT:
 		if (isatty(fileno(stdin))) {
-			can_retry = B_TRUE;
+			can_retry = keyformat != ZFS_KEYFORMAT_RAW;
 			ret = get_key_interactive(hdl, fsname, keyformat,
 			    do_verify, newkey, &km, &kmlen);
 		} else {
@@ -532,6 +532,8 @@ get_key_material(libzfs_handle_t *hdl, boolean_t do_verify, boolean_t newkey,
 
 		break;
 	case ZFS_KEYLOCATION_URI:
+		ret = ENOTSUP;
+
 		for (handler = uri_handlers; handler->zuh_scheme != NULL;
 		    handler++) {
 			if (strcmp(handler->zuh_scheme, uri_scheme) != 0)
@@ -544,9 +546,11 @@ get_key_material(libzfs_handle_t *hdl, boolean_t do_verify, boolean_t newkey,
 			break;
 		}
 
-		ret = ENOTSUP;
-		zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
-		    "URI scheme is not supported"));
+		if (ret == ENOTSUP) {
+			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+			    "URI scheme is not supported"));
+			goto error;
+		}
 
 		break;
 	default:
@@ -956,7 +960,7 @@ zfs_crypto_create(libzfs_handle_t *hdl, char *parent_name, nvlist_t *props,
 		}
 
 		ret = populate_create_encryption_params_nvlists(hdl, NULL,
-		    B_FALSE, keyformat, keylocation, props, &wkeydata,
+		    B_TRUE, keyformat, keylocation, props, &wkeydata,
 		    &wkeylen);
 		if (ret != 0)
 			goto out;

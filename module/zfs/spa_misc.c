@@ -347,10 +347,10 @@ int spa_asize_inflation = 24;
 
 /*
  * Normally, we don't allow the last 3.2% (1/(2^spa_slop_shift)) of space in
- * the pool to be consumed.  This ensures that we don't run the pool
- * completely out of space, due to unaccounted changes (e.g. to the MOS).
- * It also limits the worst-case time to allocate space.  If we have
- * less than this amount of free space, most ZPL operations (e.g. write,
+ * the pool to be consumed (bounded by spa_max_slop).  This ensures that we
+ * don't run the pool completely out of space, due to unaccounted changes (e.g.
+ * to the MOS).  It also limits the worst-case time to allocate space.  If we
+ * have less than this amount of free space, most ZPL operations (e.g.  write,
  * create) will return ENOSPC.
  *
  * Certain operations (e.g. file removal, most administrative actions) can
@@ -374,10 +374,15 @@ int spa_asize_inflation = 24;
  * 3.2%, in an effort to have it be at least spa_min_slop (128MB),
  * but we never allow it to be more than half the pool size.
  *
+ * Further, on very large pools, the slop space will be smaller than
+ * 3.2%, to avoid reserving much more space than we actually need; bounded
+ * by spa_max_slop (128GB).
+ *
  * See also the comments in zfs_space_check_t.
  */
 int spa_slop_shift = 5;
-uint64_t spa_min_slop = 128 * 1024 * 1024;
+uint64_t spa_min_slop = 128ULL * 1024 * 1024;
+uint64_t spa_max_slop = 128ULL * 1024 * 1024 * 1024;
 int spa_allocators = 4;
 
 
@@ -1274,9 +1279,9 @@ spa_vdev_config_exit(spa_t *spa, vdev_t *vd, uint64_t txg, int error, char *tag)
 		 */
 		vdev_autotrim_stop_wait(vd);
 
-		spa_config_enter(spa, SCL_ALL, spa, RW_WRITER);
+		spa_config_enter(spa, SCL_STATE_ALL, spa, RW_WRITER);
 		vdev_free(vd);
-		spa_config_exit(spa, SCL_ALL, spa);
+		spa_config_exit(spa, SCL_STATE_ALL, spa);
 	}
 
 	/*
@@ -1775,17 +1780,38 @@ spa_get_worst_case_asize(spa_t *spa, uint64_t lsize)
 }
 
 /*
- * Return the amount of slop space in bytes.  It is 1/32 of the pool (3.2%),
- * or at least 128MB, unless that would cause it to be more than half the
- * pool size.
+ * Return the amount of slop space in bytes.  It is typically 1/32 of the pool
+ * (3.2%).  On very small pools, it may be slightly larger than this.  On very
+ * large pools, it will be capped to the value of spa_max_slop.
  *
- * See the comment above spa_slop_shift for details.
+ * See the comment above spa_slop_shift for more details.
  */
 uint64_t
 spa_get_slop_space(spa_t *spa)
 {
-	uint64_t space = spa_get_dspace(spa);
-	return (MAX(space >> spa_slop_shift, MIN(space >> 1, spa_min_slop)));
+	uint64_t space = 0;
+	uint64_t slop = 0;
+
+	/*
+	 * Make sure spa_dedup_dspace has been set.
+	 */
+	if (spa->spa_dedup_dspace == ~0ULL)
+		spa_update_dspace(spa);
+
+	/*
+	 * spa_get_dspace() includes the space only logically "used" by
+	 * deduplicated data, so since it's not useful to reserve more
+	 * space with more deduplicated data, we subtract that out here.
+	 */
+	space = spa_get_dspace(spa) - spa->spa_dedup_dspace;
+	slop = MIN(space >> spa_slop_shift, spa_max_slop);
+
+	/*
+	 * Slop space should be at least spa_min_slop, but no more than half
+	 * the entire pool.
+	 */
+	slop = MAX(slop, MIN(space >> 1, spa_min_slop));
+	return (slop);
 }
 
 uint64_t
@@ -1823,7 +1849,14 @@ spa_update_dspace(spa_t *spa)
 		spa_config_enter(spa, SCL_VDEV, FTAG, RW_READER);
 		vdev_t *vd =
 		    vdev_lookup_top(spa, spa->spa_vdev_removal->svr_vdev_id);
-		if (vd->vdev_mg->mg_class == spa_normal_class(spa)) {
+		/*
+		 * If the stars align, we can wind up here after
+		 * vdev_remove_complete() has cleared vd->vdev_mg but before
+		 * spa->spa_vdev_removal gets cleared, so we must check before
+		 * we dereference.
+		 */
+		if (vd->vdev_mg &&
+		    vd->vdev_mg->mg_class == spa_normal_class(spa)) {
 			spa->spa_dspace -= spa_deflate(spa) ?
 			    vd->vdev_stat.vs_dspace : vd->vdev_stat.vs_space;
 		}
@@ -2888,10 +2921,10 @@ ZFS_MODULE_PARAM(zfs, zfs_, recover, INT, ZMOD_RW,
 ZFS_MODULE_PARAM(zfs, zfs_, free_leak_on_eio, INT, ZMOD_RW,
 	"Set to ignore IO errors during free and permanently leak the space");
 
-ZFS_MODULE_PARAM(zfs, zfs_, deadman_checktime_ms, ULONG, ZMOD_RW,
+ZFS_MODULE_PARAM(zfs_deadman, zfs_deadman_, checktime_ms, ULONG, ZMOD_RW,
 	"Dead I/O check interval in milliseconds");
 
-ZFS_MODULE_PARAM(zfs, zfs_, deadman_enabled, INT, ZMOD_RW,
+ZFS_MODULE_PARAM(zfs_deadman, zfs_deadman_, enabled, INT, ZMOD_RW,
 	"Enable deadman timer");
 
 ZFS_MODULE_PARAM(zfs_spa, spa_, asize_inflation, INT, ZMOD_RW,

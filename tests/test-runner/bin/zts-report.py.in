@@ -206,6 +206,8 @@ maybe = {
     'cli_root/zpool_import/import_rewind_config_changed':
         ['FAIL', rewind_reason],
     'cli_root/zpool_import/zpool_import_missing_003_pos': ['SKIP', '6839'],
+    'cli_root/zpool_initialize/zpool_initialize_import_export':
+        ['FAIL', '11948'],
     'cli_root/zpool_trim/setup': ['SKIP', trim_reason],
     'cli_root/zpool_upgrade/zpool_upgrade_004_pos': ['FAIL', '6141'],
     'delegate/setup': ['SKIP', exec_reason],
@@ -219,6 +221,7 @@ maybe = {
     'mmp/mmp_on_uberblocks': ['FAIL', known_reason],
     'pyzfs/pyzfs_unittest': ['SKIP', python_deps_reason],
     'no_space/enospc_002_pos': ['FAIL', enospc_reason],
+    'pool_checkpoint/checkpoint_discard_busy': ['FAIL', '11946'],
     'projectquota/setup': ['SKIP', exec_reason],
     'redundancy/redundancy_004_neg': ['FAIL', '7290'],
     'reservation/reservation_008_pos': ['FAIL', '7741'],
@@ -252,9 +255,15 @@ if sys.platform.startswith('freebsd'):
         'cli_root/zfs_share/zfs_share_concurrent_shares':
             ['FAIL', known_reason],
         'cli_root/zpool_import/zpool_import_012_pos': ['FAIL', known_reason],
+        'cli_root/zpool_import/zpool_import_features_001_pos':
+            ['FAIL', '11854'],
+        'cli_root/zpool_import/zpool_import_features_002_neg':
+            ['FAIL', '11854'],
+        'cli_root/zpool_import/zpool_import_features_003_pos':
+            ['FAIL', '11854'],
         'delegate/zfs_allow_003_pos': ['FAIL', known_reason],
-        'removal/removal_condense_export': ['FAIL', known_reason],
-        'removal/removal_with_export': ['FAIL', known_reason],
+        'inheritance/inherit_001_pos': ['FAIL', '11829'],
+        'pool_checkpoint/checkpoint_zhack_feat': ['FAIL', '11854'],
         'resilver/resilver_restart_001': ['FAIL', known_reason],
         'zvol/zvol_misc/zvol_misc_volmode': ['FAIL', known_reason],
     })

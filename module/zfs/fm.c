@@ -70,7 +70,7 @@
 #include <sys/time.h>
 #include <sys/zfs_ioctl.h>
 
-int zfs_zevent_len_max = 0;
+int zfs_zevent_len_max = 512;
 int zfs_zevent_cols = 80;
 int zfs_zevent_console = 0;
 
@@ -586,25 +586,29 @@ zfs_zevent_minor_to_state(minor_t minor, zfs_zevent_t **ze)
 	return (0);
 }
 
-int
+zfs_file_t *
 zfs_zevent_fd_hold(int fd, minor_t *minorp, zfs_zevent_t **ze)
 {
-	int error;
+	zfs_file_t *fp = zfs_file_get(fd);
+	if (fp == NULL)
+		return (NULL);
 
-	error = zfsdev_getminor(fd, minorp);
+	int error = zfsdev_getminor(fp, minorp);
 	if (error == 0)
 		error = zfs_zevent_minor_to_state(*minorp, ze);
 
-	if (error)
-		zfs_zevent_fd_rele(fd);
+	if (error) {
+		zfs_zevent_fd_rele(fp);
+		fp = NULL;
+	}
 
-	return (error);
+	return (fp);
 }
 
 void
-zfs_zevent_fd_rele(int fd)
+zfs_zevent_fd_rele(zfs_file_t *fp)
 {
-	zfs_file_put(fd);
+	zfs_file_put(fp);
 }
 
 /*
@@ -658,8 +662,7 @@ zfs_zevent_next(zfs_zevent_t *ze, nvlist_t **event, uint64_t *event_size,
 
 #ifdef _KERNEL
 	/* Include events dropped due to rate limiting */
-	*dropped += ratelimit_dropped;
-	ratelimit_dropped = 0;
+	*dropped += atomic_swap_64(&ratelimit_dropped, 0);
 #endif
 	ze->ze_dropped = 0;
 out:
@@ -1621,9 +1624,6 @@ fm_init(void)
 {
 	zevent_len_cur = 0;
 	zevent_flags = 0;
-
-	if (zfs_zevent_len_max == 0)
-		zfs_zevent_len_max = ERPT_MAX_ERRS * MAX(max_ncpus, 4);
 
 	/* Initialize zevent allocation and generation kstats */
 	fm_ksp = kstat_create("zfs", 0, "fm", "misc", KSTAT_TYPE_NAMED,
