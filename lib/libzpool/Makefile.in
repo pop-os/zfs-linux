@@ -19,6 +19,10 @@
 # should include these rules and override or extend them as needed.
 #
 
+#
+# Default rules for running cppcheck against the the user space components.
+#
+
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
     false; \
@@ -114,11 +118,13 @@ subdir = lib/libzpool
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/always-compiler-options.m4 \
+	$(top_srcdir)/config/always-cppcheck.m4 \
 	$(top_srcdir)/config/always-python.m4 \
 	$(top_srcdir)/config/always-pyzfs.m4 \
 	$(top_srcdir)/config/always-sed.m4 \
 	$(top_srcdir)/config/always-system.m4 \
 	$(top_srcdir)/config/ax_code_coverage.m4 \
+	$(top_srcdir)/config/ax_count_cpus.m4 \
 	$(top_srcdir)/config/ax_python_devel.m4 \
 	$(top_srcdir)/config/ax_restore_flags.m4 \
 	$(top_srcdir)/config/ax_save_flags.m4 \
@@ -133,6 +139,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
 	$(top_srcdir)/config/kernel-bdi.m4 \
 	$(top_srcdir)/config/kernel-bio.m4 \
+	$(top_srcdir)/config/kernel-bio_max_segs.m4 \
 	$(top_srcdir)/config/kernel-blk-queue.m4 \
 	$(top_srcdir)/config/kernel-blkdev.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations.m4 \
@@ -154,6 +161,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-fst-mount.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
+	$(top_srcdir)/config/kernel-generic_fillattr.m4 \
 	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
 	$(top_srcdir)/config/kernel-generic_readlink.m4 \
 	$(top_srcdir)/config/kernel-get-disk-ro.m4 \
@@ -180,7 +188,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
 	$(top_srcdir)/config/kernel-make-request-fn.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
-	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
+	$(top_srcdir)/config/kernel-mkdir.m4 \
+	$(top_srcdir)/config/kernel-mknod.m4 \
 	$(top_srcdir)/config/kernel-mod-param.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
@@ -198,7 +207,12 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
+	$(top_srcdir)/config/kernel-siginfo.m4 \
+	$(top_srcdir)/config/kernel-signal-stop.m4 \
+	$(top_srcdir)/config/kernel-special-state.m4 \
+	$(top_srcdir)/config/kernel-stdarg.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
+	$(top_srcdir)/config/kernel-symlink.m4 \
 	$(top_srcdir)/config/kernel-timer.m4 \
 	$(top_srcdir)/config/kernel-tmpfile.m4 \
 	$(top_srcdir)/config/kernel-totalhigh_pages.m4 \
@@ -212,6 +226,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-vfs-iov_iter.m4 \
 	$(top_srcdir)/config/kernel-vfs-iterate.m4 \
 	$(top_srcdir)/config/kernel-vfs-rw-iterate.m4 \
+	$(top_srcdir)/config/kernel-vfs-set_page_dirty.m4 \
 	$(top_srcdir)/config/kernel-wait.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
 	$(top_srcdir)/config/kernel-zlib.m4 \
@@ -324,10 +339,10 @@ am__objects_2 = zfeature_common.lo zfs_comutil.lo zfs_deleg.lo \
 	vdev_removal.lo vdev_root.lo vdev_trim.lo zap.lo zap_leaf.lo \
 	zap_micro.lo zcp.lo zcp_get.lo zcp_global.lo zcp_iter.lo \
 	zcp_set.lo zcp_synctask.lo zfeature.lo zfs_byteswap.lo \
-	zfs_debug.lo zfs_fm.lo zfs_fuid.lo zfs_sa.lo zfs_znode.lo \
-	zfs_ratelimit.lo zfs_rlock.lo zil.lo zio.lo zio_checksum.lo \
-	zio_compress.lo zio_crypt.lo zio_inject.lo zle.lo zrlock.lo \
-	zthr.lo
+	zfs_debug.lo zfs_fm.lo zfs_fuid.lo zfs_racct.lo zfs_sa.lo \
+	zfs_znode.lo zfs_ratelimit.lo zfs_rlock.lo zil.lo zio.lo \
+	zio_checksum.lo zio_compress.lo zio_crypt.lo zio_inject.lo \
+	zle.lo zrlock.lo zthr.lo
 am__objects_3 = lapi.lo lauxlib.lo lbaselib.lo lcode.lo lcompat.lo \
 	lcorolib.lo lctype.lo ldebug.lo ldo.lo lfunc.lo lgc.lo llex.lo \
 	lmem.lo lobject.lo lopcodes.lo lparser.lo lstate.lo lstring.lo \
@@ -440,14 +455,14 @@ am__depfiles_remade = ./$(DEPDIR)/abd.Plo ./$(DEPDIR)/abd_os.Plo \
 	./$(DEPDIR)/zfs_fletcher_superscalar4.Plo \
 	./$(DEPDIR)/zfs_fm.Plo ./$(DEPDIR)/zfs_fuid.Plo \
 	./$(DEPDIR)/zfs_namecheck.Plo ./$(DEPDIR)/zfs_prop.Plo \
-	./$(DEPDIR)/zfs_ratelimit.Plo ./$(DEPDIR)/zfs_rlock.Plo \
-	./$(DEPDIR)/zfs_sa.Plo ./$(DEPDIR)/zfs_znode.Plo \
-	./$(DEPDIR)/zil.Plo ./$(DEPDIR)/zio.Plo \
-	./$(DEPDIR)/zio_checksum.Plo ./$(DEPDIR)/zio_compress.Plo \
-	./$(DEPDIR)/zio_crypt.Plo ./$(DEPDIR)/zio_inject.Plo \
-	./$(DEPDIR)/zle.Plo ./$(DEPDIR)/zpool_prop.Plo \
-	./$(DEPDIR)/zprop_common.Plo ./$(DEPDIR)/zrlock.Plo \
-	./$(DEPDIR)/zthr.Plo
+	./$(DEPDIR)/zfs_racct.Plo ./$(DEPDIR)/zfs_ratelimit.Plo \
+	./$(DEPDIR)/zfs_rlock.Plo ./$(DEPDIR)/zfs_sa.Plo \
+	./$(DEPDIR)/zfs_znode.Plo ./$(DEPDIR)/zil.Plo \
+	./$(DEPDIR)/zio.Plo ./$(DEPDIR)/zio_checksum.Plo \
+	./$(DEPDIR)/zio_compress.Plo ./$(DEPDIR)/zio_crypt.Plo \
+	./$(DEPDIR)/zio_inject.Plo ./$(DEPDIR)/zle.Plo \
+	./$(DEPDIR)/zpool_prop.Plo ./$(DEPDIR)/zprop_common.Plo \
+	./$(DEPDIR)/zrlock.Plo ./$(DEPDIR)/zthr.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -493,7 +508,8 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/config/Rules.am \
+am__DIST_COMMON = $(srcdir)/Makefile.in \
+	$(top_srcdir)/config/CppCheck.am $(top_srcdir)/config/Rules.am \
 	$(top_srcdir)/config/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = \
@@ -530,7 +546,9 @@ CODE_COVERAGE_ENABLED = @CODE_COVERAGE_ENABLED@
 CODE_COVERAGE_LDFLAGS = @CODE_COVERAGE_LDFLAGS@
 CODE_COVERAGE_LIBS = @CODE_COVERAGE_LIBS@
 CPP = @CPP@
+CPPCHECK = @CPPCHECK@
 CPPFLAGS = @CPPFLAGS@
+CPU_COUNT = @CPU_COUNT@
 CYGPATH_W = @CYGPATH_W@
 DEBUGINFO_ZFS = @DEBUGINFO_ZFS@
 DEBUG_CFLAGS = @DEBUG_CFLAGS@
@@ -796,6 +814,7 @@ top_srcdir = @top_srcdir@
 udevdir = @udevdir@
 udevruledir = @udevruledir@
 zfsexecdir = @zfsexecdir@
+PHONY = cppcheck
 DEFAULT_INCLUDES = -include $(top_builddir)/zfs_config.h \
 	-I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(top_srcdir)/module/icp/include \
@@ -955,6 +974,7 @@ KERNEL_C = \
 	zfs_debug.c \
 	zfs_fm.c \
 	zfs_fuid.c \
+	zfs_racct.c \
 	zfs_sa.c \
 	zfs_znode.c \
 	zfs_ratelimit.c \
@@ -1009,11 +1029,13 @@ libzpool_la_LIBADD = $(abs_top_builddir)/lib/libicp/libicp.la \
 	$(abs_top_builddir)/lib/libzstd/libzstd.la $(LIBCLOCK_GETTIME) \
 	$(ZLIB_LIBS) -ldl $(am__append_9)
 libzpool_la_LDFLAGS = -pthread $(am__append_8) -version-info 4:0:0
+CPPCHECKFLAGS = --std=c99 --quiet --max-configs=1 --error-exitcode=2 \
+	--inline-suppr -U_KERNEL
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/Rules.am $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/Rules.am $(top_srcdir)/config/CppCheck.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1033,7 +1055,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__maybe_remake_depfiles)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__maybe_remake_depfiles);; \
 	esac;
-$(top_srcdir)/config/Rules.am $(am__empty):
+$(top_srcdir)/config/Rules.am $(top_srcdir)/config/CppCheck.am $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
@@ -1239,6 +1261,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_fuid.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_namecheck.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_prop.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_racct.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_ratelimit.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_rlock.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs_sa.Plo@am__quote@ # am--include-marker
@@ -1570,6 +1593,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/zfs_fuid.Plo
 	-rm -f ./$(DEPDIR)/zfs_namecheck.Plo
 	-rm -f ./$(DEPDIR)/zfs_prop.Plo
+	-rm -f ./$(DEPDIR)/zfs_racct.Plo
 	-rm -f ./$(DEPDIR)/zfs_ratelimit.Plo
 	-rm -f ./$(DEPDIR)/zfs_rlock.Plo
 	-rm -f ./$(DEPDIR)/zfs_sa.Plo
@@ -1781,6 +1805,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/zfs_fuid.Plo
 	-rm -f ./$(DEPDIR)/zfs_namecheck.Plo
 	-rm -f ./$(DEPDIR)/zfs_prop.Plo
+	-rm -f ./$(DEPDIR)/zfs_racct.Plo
 	-rm -f ./$(DEPDIR)/zfs_ratelimit.Plo
 	-rm -f ./$(DEPDIR)/zfs_rlock.Plo
 	-rm -f ./$(DEPDIR)/zfs_sa.Plo
@@ -1835,6 +1860,9 @@ uninstall-am: uninstall-libLTLIBRARIES
 
 @TARGET_CPU_POWERPC_TRUE@vdev_raidz_math_powerpc_altivec.$(OBJEXT): CFLAGS += -maltivec
 @TARGET_CPU_POWERPC_TRUE@vdev_raidz_math_powerpc_altivec.l$(OBJEXT): CFLAGS += -maltivec
+
+cppcheck:
+	$(CPPCHECK) -j$(CPU_COUNT) $(CPPCHECKFLAGS) $(DEFAULT_INCLUDES) $(SOURCES)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

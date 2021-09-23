@@ -97,11 +97,13 @@ subdir = tests/zfs-tests/cmd
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/always-compiler-options.m4 \
+	$(top_srcdir)/config/always-cppcheck.m4 \
 	$(top_srcdir)/config/always-python.m4 \
 	$(top_srcdir)/config/always-pyzfs.m4 \
 	$(top_srcdir)/config/always-sed.m4 \
 	$(top_srcdir)/config/always-system.m4 \
 	$(top_srcdir)/config/ax_code_coverage.m4 \
+	$(top_srcdir)/config/ax_count_cpus.m4 \
 	$(top_srcdir)/config/ax_python_devel.m4 \
 	$(top_srcdir)/config/ax_restore_flags.m4 \
 	$(top_srcdir)/config/ax_save_flags.m4 \
@@ -116,6 +118,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
 	$(top_srcdir)/config/kernel-bdi.m4 \
 	$(top_srcdir)/config/kernel-bio.m4 \
+	$(top_srcdir)/config/kernel-bio_max_segs.m4 \
 	$(top_srcdir)/config/kernel-blk-queue.m4 \
 	$(top_srcdir)/config/kernel-blkdev.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations.m4 \
@@ -137,6 +140,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-fst-mount.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
+	$(top_srcdir)/config/kernel-generic_fillattr.m4 \
 	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
 	$(top_srcdir)/config/kernel-generic_readlink.m4 \
 	$(top_srcdir)/config/kernel-get-disk-ro.m4 \
@@ -163,7 +167,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-lseek-execute.m4 \
 	$(top_srcdir)/config/kernel-make-request-fn.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
-	$(top_srcdir)/config/kernel-mkdir-umode-t.m4 \
+	$(top_srcdir)/config/kernel-mkdir.m4 \
+	$(top_srcdir)/config/kernel-mknod.m4 \
 	$(top_srcdir)/config/kernel-mod-param.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
@@ -181,7 +186,12 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-sget-args.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
+	$(top_srcdir)/config/kernel-siginfo.m4 \
+	$(top_srcdir)/config/kernel-signal-stop.m4 \
+	$(top_srcdir)/config/kernel-special-state.m4 \
+	$(top_srcdir)/config/kernel-stdarg.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
+	$(top_srcdir)/config/kernel-symlink.m4 \
 	$(top_srcdir)/config/kernel-timer.m4 \
 	$(top_srcdir)/config/kernel-tmpfile.m4 \
 	$(top_srcdir)/config/kernel-totalhigh_pages.m4 \
@@ -195,6 +205,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-vfs-iov_iter.m4 \
 	$(top_srcdir)/config/kernel-vfs-iterate.m4 \
 	$(top_srcdir)/config/kernel-vfs-rw-iterate.m4 \
+	$(top_srcdir)/config/kernel-vfs-set_page_dirty.m4 \
 	$(top_srcdir)/config/kernel-wait.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
 	$(top_srcdir)/config/kernel-zlib.m4 \
@@ -294,7 +305,7 @@ DIST_SUBDIRS = badsend btree_test chg_usr_exec devname2devid \
 	dir_rd_update file_check file_trunc file_write get_diff \
 	largest_file libzfs_input_check mkbusy mkfile mkfiles mktree \
 	mmap_exec mmap_libaio mmapwrite nvlist_to_lua randwritecomp \
-	readmmap rename_dir rm_lnkcnt_zero_file stride_dd \
+	readmmap rename_dir rm_lnkcnt_zero_file send_doall stride_dd \
 	threadsappend randfree_file user_ns_exec xattrtest
 am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -350,7 +361,9 @@ CODE_COVERAGE_ENABLED = @CODE_COVERAGE_ENABLED@
 CODE_COVERAGE_LDFLAGS = @CODE_COVERAGE_LDFLAGS@
 CODE_COVERAGE_LIBS = @CODE_COVERAGE_LIBS@
 CPP = @CPP@
+CPPCHECK = @CPPCHECK@
 CPPFLAGS = @CPPFLAGS@
+CPU_COUNT = @CPU_COUNT@
 CYGPATH_W = @CYGPATH_W@
 DEBUGINFO_ZFS = @DEBUGINFO_ZFS@
 DEBUG_CFLAGS = @DEBUG_CFLAGS@
@@ -621,8 +634,8 @@ SUBDIRS = badsend btree_test chg_usr_exec devname2devid dir_rd_update \
 	file_check file_trunc file_write get_diff largest_file \
 	libzfs_input_check mkbusy mkfile mkfiles mktree mmap_exec \
 	mmap_libaio mmapwrite nvlist_to_lua randwritecomp readmmap \
-	rename_dir rm_lnkcnt_zero_file stride_dd threadsappend \
-	$(am__append_1)
+	rename_dir rm_lnkcnt_zero_file send_doall stride_dd \
+	threadsappend $(am__append_1)
 all: all-recursive
 
 .SUFFIXES:

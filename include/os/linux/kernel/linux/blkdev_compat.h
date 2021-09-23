@@ -92,10 +92,13 @@ blk_queue_set_write_cache(struct request_queue *q, bool wc, bool fua)
 static inline void
 blk_queue_set_read_ahead(struct request_queue *q, unsigned long ra_pages)
 {
+#if !defined(HAVE_BLK_QUEUE_UPDATE_READAHEAD) && \
+	!defined(HAVE_DISK_UPDATE_READAHEAD)
 #ifdef HAVE_BLK_QUEUE_BDI_DYNAMIC
 	q->backing_dev_info->ra_pages = ra_pages;
 #else
 	q->backing_dev_info.ra_pages = ra_pages;
+#endif
 #endif
 }
 
@@ -277,18 +280,22 @@ bio_set_bi_error(struct bio *bio, int error)
 static inline int
 zfs_check_media_change(struct block_device *bdev)
 {
+#ifdef HAVE_BLOCK_DEVICE_OPERATIONS_REVALIDATE_DISK
 	struct gendisk *gd = bdev->bd_disk;
 	const struct block_device_operations *bdo = gd->fops;
+#endif
 
 	if (!bdev_check_media_change(bdev))
 		return (0);
 
+#ifdef HAVE_BLOCK_DEVICE_OPERATIONS_REVALIDATE_DISK
 	/*
 	 * Force revalidation, to mimic the old behavior of
 	 * check_disk_change()
 	 */
 	if (bdo->revalidate_disk)
 		bdo->revalidate_disk(gd);
+#endif
 
 	return (0);
 }
@@ -520,7 +527,9 @@ blk_generic_start_io_acct(struct request_queue *q __attribute__((unused)),
     struct gendisk *disk __attribute__((unused)),
     int rw __attribute__((unused)), struct bio *bio)
 {
-#if defined(HAVE_BIO_IO_ACCT)
+#if defined(HAVE_DISK_IO_ACCT)
+	return (disk_start_io_acct(disk, bio_sectors(bio), bio_op(bio)));
+#elif defined(HAVE_BIO_IO_ACCT)
 	return (bio_start_io_acct(bio));
 #elif defined(HAVE_GENERIC_IO_ACCT_3ARG)
 	unsigned long start_time = jiffies;
@@ -541,7 +550,9 @@ blk_generic_end_io_acct(struct request_queue *q __attribute__((unused)),
     struct gendisk *disk __attribute__((unused)),
     int rw __attribute__((unused)), struct bio *bio, unsigned long start_time)
 {
-#if defined(HAVE_BIO_IO_ACCT)
+#if defined(HAVE_DISK_IO_ACCT)
+	disk_end_io_acct(disk, bio_op(bio), start_time);
+#elif defined(HAVE_BIO_IO_ACCT)
 	bio_end_io_acct(bio, start_time);
 #elif defined(HAVE_GENERIC_IO_ACCT_3ARG)
 	generic_end_io_acct(rw, &disk->part0, start_time);

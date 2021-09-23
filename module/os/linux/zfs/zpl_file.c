@@ -33,6 +33,9 @@
 #include <sys/zfs_vfsops.h>
 #include <sys/zfs_vnops.h>
 #include <sys/zfs_project.h>
+#ifdef HAVE_VFS_SET_PAGE_DIRTY_NOBUFFERS
+#include <linux/pagemap.h>
+#endif
 
 /*
  * When using fallocate(2) to preallocate space, inflate the requested
@@ -342,9 +345,6 @@ zpl_iter_write(struct kiocb *kiocb, struct iov_iter *from)
 	ssize_t wrote = count - uio.uio_resid;
 	kiocb->ki_pos += wrote;
 
-	if (wrote > 0)
-		iov_iter_advance(from, wrote);
-
 	return (wrote);
 }
 
@@ -507,7 +507,7 @@ zpl_llseek(struct file *filp, loff_t offset, int whence)
 
 		spl_inode_lock_shared(ip);
 		cookie = spl_fstrans_mark();
-		error = -zfs_holey(ip, whence, &offset);
+		error = -zfs_holey(ITOZ(ip), whence, &offset);
 		spl_fstrans_unmark(cookie);
 		if (error == 0)
 			error = lseek_execute(filp, ip, offset, maxbytes);
@@ -867,9 +867,9 @@ __zpl_ioctl_setflags(struct inode *ip, uint32_t ioctl_flags, xvattr_t *xva)
 	if ((fchange(ioctl_flags, zfs_flags, FS_IMMUTABLE_FL, ZFS_IMMUTABLE) ||
 	    fchange(ioctl_flags, zfs_flags, FS_APPEND_FL, ZFS_APPENDONLY)) &&
 	    !capable(CAP_LINUX_IMMUTABLE))
-		return (-EACCES);
+		return (-EPERM);
 
-	if (!inode_owner_or_capable(ip))
+	if (!zpl_inode_owner_or_capable(kcred->user_ns, ip))
 		return (-EACCES);
 
 	xva_init(xva);
@@ -1010,6 +1010,9 @@ const struct address_space_operations zpl_address_space_operations = {
 	.writepage	= zpl_writepage,
 	.writepages	= zpl_writepages,
 	.direct_IO	= zpl_direct_IO,
+#ifdef HAVE_VFS_SET_PAGE_DIRTY_NOBUFFERS
+	.set_page_dirty = __set_page_dirty_nobuffers,
+#endif
 };
 
 const struct file_operations zpl_file_operations = {
