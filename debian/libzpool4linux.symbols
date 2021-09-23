@@ -1870,6 +1870,7 @@ libzpool.so.4 libzpool4linux #MINVER#
  spa_lookup_by_guid@Base 0.8.2
  spa_max_replication@Base 0.8.2
  spa_max_replication_override@Base 0.8.2
+ spa_max_slop@Base 2.0.6
  spa_maxblocksize@Base 0.8.2
  spa_maxdnodesize@Base 0.8.2
  spa_meta_objset@Base 0.8.2
@@ -2784,6 +2785,7 @@ libzpool.so.4 libzpool4linux #MINVER#
  zfs_compressed_arc_enabled@Base 0.8.2
  zfs_condense_indirect_commit_entry_delay_ms@Base 0.8.2
  zfs_condense_indirect_vdevs_enable@Base 0.8.2
+ zfs_condense_indirect_obsolete_pct@Base 2.0.5
  zfs_condense_max_obsolete_bytes@Base 0.8.2
  zfs_condense_min_mapping_bytes@Base 0.8.2
  zfs_condense_pct@Base 0.8.2
@@ -2855,7 +2857,6 @@ libzpool.so.4 libzpool4linux #MINVER#
  zfs_fuid_table_load@Base 0.8.2
  zfs_g_debuglevel@Base 2.0
  zfs_history_event_names@Base 0.8.2
- zfs_indirect_condense_obsolete_pct@Base 0.8.2
  zfs_initialize_chunk_size@Base 0.8.2
  zfs_initialize_limit@Base 0.8.2
  zfs_initialize_value@Base 0.8.2
@@ -2943,6 +2944,8 @@ libzpool.so.4 libzpool4linux #MINVER#
  zfs_prop_values@Base 0.8.2
  zfs_prop_visible@Base 0.8.2
  zfs_prop_written@Base 0.8.2
+ zfs_racct_read@Base 2.0.4
+ zfs_racct_write@Base 2.0.4
  zfs_rangelock_enter@Base 0.8.3
  zfs_rangelock_exit@Base 0.8.3
  zfs_rangelock_fini@Base 0.8.3
