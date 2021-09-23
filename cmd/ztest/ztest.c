@@ -132,7 +132,7 @@
 #include <libnvpair.h>
 #include <libzutil.h>
 #include <sys/crypto/icp.h>
-#ifdef __GLIBC__
+#if (__GLIBC__ && !__UCLIBC__)
 #include <execinfo.h> /* for backtrace() */
 #endif
 
@@ -556,7 +556,7 @@ dump_debug_buffer(void)
 static void sig_handler(int signo)
 {
 	struct sigaction action;
-#ifdef __GLIBC__ /* backtrace() is a GNU extension */
+#if (__GLIBC__ && !__UCLIBC__) /* backtrace() is a GNU extension */
 	int nptrs;
 	void *buffer[BACKTRACE_SZ];
 
@@ -2163,8 +2163,8 @@ ztest_get_done(zgd_t *zgd, int error)
 }
 
 static int
-ztest_get_data(void *arg, lr_write_t *lr, char *buf, struct lwb *lwb,
-    zio_t *zio)
+ztest_get_data(void *arg, uint64_t arg2, lr_write_t *lr, char *buf,
+    struct lwb *lwb, zio_t *zio)
 {
 	ztest_ds_t *zd = arg;
 	objset_t *os = zd->zd_os;

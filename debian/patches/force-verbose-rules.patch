@@ -1,9 +1,11 @@
 Description: force libtool to produce verbose output
 Author: Mo Zhou
 Forwarded: no need
---- a/config/Rules.am
-+++ b/config/Rules.am
-@@ -20,7 +20,7 @@
+Index: zfs/config/Rules.am
+===================================================================
+--- zfs.orig/config/Rules.am
++++ zfs/config/Rules.am
+@@ -21,7 +21,7 @@ DEFAULT_INCLUDES += \
  	-I$(top_srcdir)/lib/libspl/include/os/freebsd
  endif
  

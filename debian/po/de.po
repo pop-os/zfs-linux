@@ -85,7 +85,7 @@ msgstr ""
 "der Kernel unter der GNU General Public License Version 2 (GPL-2) "
 "lizenziert. Obwohl beide freie Open-Source-Lizenzen sind, sind sie "
 "restriktiv. Die Kombination beider führt zu Problemen, da sie verhindern, "
-"das Programmcode, der exklusiv unter einer Lizenz steht, mit Code im "
+"dass Programmcode, der exklusiv unter einer Lizenz steht, mit Code im "
 "gleichen Programm zusammen verwandt wird, der exklusiv unter der anderen "
 "Lizenz steht."
 

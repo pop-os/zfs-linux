@@ -973,12 +973,14 @@ AC_DEFUN([AM_PATH_PYTHON],
     m4_default([$3], [AC_MSG_ERROR([no suitable Python interpreter found])])
   else
 
-  dnl Query Python for its version number.  Getting [:3] seems to be
-  dnl the best way to do this; it's what "site.py" does in the standard
-  dnl library.
+  dnl Query Python for its version number.  Although site.py simply uses
+  dnl sys.version[:3], printing that failed with Python 3.10, since the
+  dnl trailing zero was eliminated. So now we output just the major
+  dnl and minor version numbers, as numbers. Apparently the tertiary
+  dnl version is not of interest.
 
   AC_CACHE_CHECK([for $am_display_PYTHON version], [am_cv_python_version],
-    [am_cv_python_version=`$PYTHON -c "import sys; sys.stdout.write(sys.version[[:3]])"`])
+    [am_cv_python_version=`$PYTHON -c "import sys; print('%u.%u' % sys.version_info[[:2]])"`])
   AC_SUBST([PYTHON_VERSION], [$am_cv_python_version])
 
   dnl Use the values of $prefix and $exec_prefix for the corresponding
@@ -1468,11 +1470,13 @@ AC_SUBST([am__untar])
 
 m4_include([config/always-arch.m4])
 m4_include([config/always-compiler-options.m4])
+m4_include([config/always-cppcheck.m4])
 m4_include([config/always-python.m4])
 m4_include([config/always-pyzfs.m4])
 m4_include([config/always-sed.m4])
 m4_include([config/always-system.m4])
 m4_include([config/ax_code_coverage.m4])
+m4_include([config/ax_count_cpus.m4])
 m4_include([config/ax_python_devel.m4])
 m4_include([config/ax_restore_flags.m4])
 m4_include([config/ax_save_flags.m4])
@@ -1487,6 +1491,7 @@ m4_include([config/kernel-aio-fsync.m4])
 m4_include([config/kernel-automount.m4])
 m4_include([config/kernel-bdi.m4])
 m4_include([config/kernel-bio.m4])
+m4_include([config/kernel-bio_max_segs.m4])
 m4_include([config/kernel-blk-queue.m4])
 m4_include([config/kernel-blkdev.m4])
 m4_include([config/kernel-block-device-operations.m4])
@@ -1508,6 +1513,7 @@ m4_include([config/kernel-follow-down-one.m4])
 m4_include([config/kernel-fpu.m4])
 m4_include([config/kernel-fst-mount.m4])
 m4_include([config/kernel-fsync.m4])
+m4_include([config/kernel-generic_fillattr.m4])
 m4_include([config/kernel-generic_io_acct.m4])
 m4_include([config/kernel-generic_readlink.m4])
 m4_include([config/kernel-get-disk-ro.m4])
@@ -1534,7 +1540,8 @@ m4_include([config/kernel-kuidgid.m4])
 m4_include([config/kernel-lseek-execute.m4])
 m4_include([config/kernel-make-request-fn.m4])
 m4_include([config/kernel-misc-minor.m4])
-m4_include([config/kernel-mkdir-umode-t.m4])
+m4_include([config/kernel-mkdir.m4])
+m4_include([config/kernel-mknod.m4])
 m4_include([config/kernel-mod-param.m4])
 m4_include([config/kernel-objtool.m4])
 m4_include([config/kernel-pde-data.m4])
@@ -1552,7 +1559,12 @@ m4_include([config/kernel-setattr-prepare.m4])
 m4_include([config/kernel-sget-args.m4])
 m4_include([config/kernel-show-options.m4])
 m4_include([config/kernel-shrink.m4])
+m4_include([config/kernel-siginfo.m4])
+m4_include([config/kernel-signal-stop.m4])
+m4_include([config/kernel-special-state.m4])
+m4_include([config/kernel-stdarg.m4])
 m4_include([config/kernel-super-userns.m4])
+m4_include([config/kernel-symlink.m4])
 m4_include([config/kernel-timer.m4])
 m4_include([config/kernel-tmpfile.m4])
 m4_include([config/kernel-totalhigh_pages.m4])
@@ -1566,6 +1578,7 @@ m4_include([config/kernel-vfs-getattr.m4])
 m4_include([config/kernel-vfs-iov_iter.m4])
 m4_include([config/kernel-vfs-iterate.m4])
 m4_include([config/kernel-vfs-rw-iterate.m4])
+m4_include([config/kernel-vfs-set_page_dirty.m4])
 m4_include([config/kernel-wait.m4])
 m4_include([config/kernel-xattr-handler.m4])
 m4_include([config/kernel-zlib.m4])

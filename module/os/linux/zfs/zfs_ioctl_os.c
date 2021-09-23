@@ -136,22 +136,20 @@ zfsdev_state_init(struct file *filp)
 	return (0);
 }
 
-static int
+static void
 zfsdev_state_destroy(struct file *filp)
 {
-	zfsdev_state_t *zs;
+	zfsdev_state_t *zs = filp->private_data;
 
-	ASSERT(MUTEX_HELD(&zfsdev_state_lock));
-	ASSERT(filp->private_data != NULL);
+	ASSERT(zs != NULL);
+	ASSERT3S(zs->zs_minor, >, 0);
 
-	zs = filp->private_data;
-	zs->zs_minor = -1;
 	zfs_onexit_destroy(zs->zs_onexit);
 	zfs_zevent_destroy(zs->zs_zevent);
 	zs->zs_onexit = NULL;
 	zs->zs_zevent = NULL;
-
-	return (0);
+	membar_producer();
+	zs->zs_minor = -1;
 }
 
 static int
@@ -169,13 +167,9 @@ zfsdev_open(struct inode *ino, struct file *filp)
 static int
 zfsdev_release(struct inode *ino, struct file *filp)
 {
-	int error;
+	zfsdev_state_destroy(filp);
 
-	mutex_enter(&zfsdev_state_lock);
-	error = zfsdev_state_destroy(filp);
-	mutex_exit(&zfsdev_state_lock);
-
-	return (-error);
+	return (0);
 }
 
 static long
@@ -209,7 +203,7 @@ zfs_max_nvlist_src_size_os(void)
 	if (zfs_max_nvlist_src_size != 0)
 		return (zfs_max_nvlist_src_size);
 
-	return (KMALLOC_MAX_SIZE);
+	return (MIN(ptob(zfs_totalram_pages) / 4, 128 * 1024 * 1024));
 }
 
 void
@@ -283,7 +277,7 @@ zfsdev_detach(void)
 #endif
 
 static int __init
-_init(void)
+openzfs_init(void)
 {
 	int error;
 
@@ -309,7 +303,7 @@ _init(void)
 }
 
 static void __exit
-_fini(void)
+openzfs_fini(void)
 {
 	zfs_sysfs_fini();
 	zfs_kmod_fini();
@@ -319,8 +313,8 @@ _fini(void)
 }
 
 #if defined(_KERNEL)
-module_init(_init);
-module_exit(_fini);
+module_init(openzfs_init);
+module_exit(openzfs_fini);
 #endif
 
 ZFS_MODULE_DESCRIPTION("ZFS");

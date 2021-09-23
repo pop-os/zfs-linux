@@ -40,10 +40,8 @@ extern "C" {
 
 extern int zfs_open(struct inode *ip, int mode, int flag, cred_t *cr);
 extern int zfs_close(struct inode *ip, int flag, cred_t *cr);
-extern int zfs_holey(struct inode *ip, int cmd, loff_t *off);
 extern int zfs_write_simple(znode_t *zp, const void *data, size_t len,
     loff_t pos, size_t *resid);
-extern int zfs_access(struct inode *ip, int mode, int flag, cred_t *cr);
 extern int zfs_lookup(znode_t *dzp, char *nm, znode_t **zpp, int flags,
     cred_t *cr, int *direntflags, pathname_t *realpnp);
 extern int zfs_create(znode_t *dzp, char *name, vattr_t *vap, int excl,
@@ -56,7 +54,8 @@ extern int zfs_mkdir(znode_t *dzp, char *dirname, vattr_t *vap,
 extern int zfs_rmdir(znode_t *dzp, char *name, znode_t *cwd,
     cred_t *cr, int flags);
 extern int zfs_readdir(struct inode *ip, zpl_dir_context_t *ctx, cred_t *cr);
-extern int zfs_getattr_fast(struct inode *ip, struct kstat *sp);
+extern int zfs_getattr_fast(struct user_namespace *, struct inode *ip,
+	struct kstat *sp);
 extern int zfs_setattr(znode_t *zp, vattr_t *vap, int flag, cred_t *cr);
 extern int zfs_rename(znode_t *sdzp, char *snm, znode_t *tdzp,
     char *tnm, cred_t *cr, int flags);

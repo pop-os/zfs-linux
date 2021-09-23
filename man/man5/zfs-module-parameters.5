@@ -14,7 +14,7 @@
 .\" CDDL HEADER, with the fields enclosed by brackets "[]" replaced with your
 .\" own identifying information:
 .\" Portions Copyright [yyyy] [name of copyright owner]
-.TH ZFS-MODULE-PARAMETERS 5 "Aug 24, 2020" OpenZFS
+.TH ZFS-MODULE-PARAMETERS 5 "Mar 31, 2021" OpenZFS
 .SH NAME
 zfs\-module\-parameters \- ZFS module parameters
 .SH DESCRIPTION
@@ -1186,7 +1186,7 @@ amount of memory. When the limit is exceeded, the ioctl fails with EINVAL and a
 description of the error is sent to the zfs-dbgmsg log. This parameter should
 not need to be touched under normal circumstances. On FreeBSD, the default is
 based on the system limit on user wired memory. On Linux, the default is
-\fBKMALLOC_MAX_SIZE\fR .
+\fB128MB\fR.
 .sp
 Default value: \fB0\fR (kernel decides)
 .RE
@@ -1368,6 +1368,19 @@ milliseconds during mapping generation. Intended for use with the test suite
 to throttle vdev removal speed.
 .sp
 Default value: \fB0\fR (no throttle).
+.RE
+
+.sp
+.ne 2
+.na
+\fBzfs_condense_indirect_obsolete_pct\fR (int)
+.ad
+.RS 12n
+Minimum percent of obsolete bytes in vdev mapping required to attempt to
+condense (see \fBzfs_condense_indirect_vdevs_enable\fR). Intended for use
+with the test suite to facilitate triggering condensing as needed.
+.sp
+Default value: \fB25\fR%.
 .RE
 
 .sp
@@ -1620,7 +1633,8 @@ Default value: \fB64\fR.
 \fBzfs_slow_io_events_per_second\fR (int)
 .ad
 .RS 12n
-Rate limit delay zevents (which report slow I/Os) to this many per second.
+Rate limit delay and deadman zevents (which report slow I/Os) to this many per
+second.
 .sp
 Default value: 20
 .RE
@@ -3745,11 +3759,10 @@ Use \fB1\fR for yes and \fB0\fR for no (default).
 \fBzfs_zevent_len_max\fR (int)
 .ad
 .RS 12n
-Max event queue length. A value of 0 will result in a calculated value which
-increases with the number of CPUs in the system (minimum 64 events). Events
-in the queue can be viewed with the \fBzpool events\fR command.
+Max event queue length.
+Events in the queue can be viewed with the \fBzpool events\fR command.
 .sp
-Default value: \fB0\fR.
+Default value: \fB512\fR.
 .RE
 
 .sp
