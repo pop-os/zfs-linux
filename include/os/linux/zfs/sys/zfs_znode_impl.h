@@ -36,20 +36,20 @@
 #include <sys/list.h>
 #include <sys/dmu.h>
 #include <sys/sa.h>
+#include <sys/time.h>
 #include <sys/zfs_vfsops.h>
 #include <sys/rrwlock.h>
 #include <sys/zfs_sa.h>
 #include <sys/zfs_stat.h>
 #include <sys/zfs_rlock.h>
 
-
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
 #define	ZNODE_OS_FIELDS			\
+	inode_timespec_t z_btime; /* creation/birth time (cached) */ \
 	struct inode	z_inode;
-
 
 /*
  * Convert between znode pointers and inode pointers
@@ -70,8 +70,8 @@ extern "C" {
 #define	Z_ISDEV(type)	(S_ISCHR(type) || S_ISBLK(type) || S_ISFIFO(type))
 #define	Z_ISDIR(type)	S_ISDIR(type)
 
-#define	zn_has_cached_data(zp)	((zp)->z_is_mapped)
-#define	zn_rlimit_fsize(zp, uio, td)	(0)
+#define	zn_has_cached_data(zp)		((zp)->z_is_mapped)
+#define	zn_rlimit_fsize(zp, uio)	(0)
 
 /*
  * zhold() wraps igrab() on Linux, and igrab() may fail when the
@@ -164,7 +164,6 @@ struct znode;
 extern int	zfs_sync(struct super_block *, int, cred_t *);
 extern int	zfs_inode_alloc(struct super_block *, struct inode **ip);
 extern void	zfs_inode_destroy(struct inode *);
-extern void	zfs_inode_update(struct znode *);
 extern void	zfs_mark_inode_dirty(struct inode *);
 extern boolean_t zfs_relatime_need_update(const struct inode *);
 

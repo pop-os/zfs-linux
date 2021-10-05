@@ -136,20 +136,22 @@ zfsdev_state_init(struct file *filp)
 	return (0);
 }
 
-static void
+static int
 zfsdev_state_destroy(struct file *filp)
 {
-	zfsdev_state_t *zs = filp->private_data;
+	zfsdev_state_t *zs;
 
-	ASSERT(zs != NULL);
-	ASSERT3S(zs->zs_minor, >, 0);
+	ASSERT(MUTEX_HELD(&zfsdev_state_lock));
+	ASSERT(filp->private_data != NULL);
 
+	zs = filp->private_data;
+	zs->zs_minor = -1;
 	zfs_onexit_destroy(zs->zs_onexit);
 	zfs_zevent_destroy(zs->zs_zevent);
 	zs->zs_onexit = NULL;
 	zs->zs_zevent = NULL;
-	membar_producer();
-	zs->zs_minor = -1;
+
+	return (0);
 }
 
 static int
@@ -167,9 +169,13 @@ zfsdev_open(struct inode *ino, struct file *filp)
 static int
 zfsdev_release(struct inode *ino, struct file *filp)
 {
-	zfsdev_state_destroy(filp);
+	int error;
 
-	return (0);
+	mutex_enter(&zfsdev_state_lock);
+	error = zfsdev_state_destroy(filp);
+	mutex_exit(&zfsdev_state_lock);
+
+	return (-error);
 }
 
 static long
@@ -204,6 +210,12 @@ zfs_max_nvlist_src_size_os(void)
 		return (zfs_max_nvlist_src_size);
 
 	return (MIN(ptob(zfs_totalram_pages) / 4, 128 * 1024 * 1024));
+}
+
+/* Update the VFS's cache of mountpoint properties */
+void
+zfs_ioctl_update_mount_cache(const char *dsname)
+{
 }
 
 void

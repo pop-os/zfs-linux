@@ -149,7 +149,7 @@ vdev_raidz_math_get_ops(void)
  * Select parity generation method for raidz_map
  */
 int
-vdev_raidz_math_generate(raidz_map_t *rm)
+vdev_raidz_math_generate(raidz_map_t *rm, raidz_row_t *rr)
 {
 	raidz_gen_f gen_parity = NULL;
 
@@ -174,7 +174,7 @@ vdev_raidz_math_generate(raidz_map_t *rm)
 	if (gen_parity == NULL)
 		return (RAIDZ_ORIGINAL_IMPL);
 
-	gen_parity(rm);
+	gen_parity(rr);
 
 	return (0);
 }
@@ -241,8 +241,8 @@ reconstruct_fun_pqr_sel(raidz_map_t *rm, const int *parity_valid,
  * @nbaddata     - Number of failed data columns
  */
 int
-vdev_raidz_math_reconstruct(raidz_map_t *rm, const int *parity_valid,
-    const int *dt, const int nbaddata)
+vdev_raidz_math_reconstruct(raidz_map_t *rm, raidz_row_t *rr,
+    const int *parity_valid, const int *dt, const int nbaddata)
 {
 	raidz_rec_f rec_fn = NULL;
 
@@ -265,7 +265,7 @@ vdev_raidz_math_reconstruct(raidz_map_t *rm, const int *parity_valid,
 	if (rec_fn == NULL)
 		return (RAIDZ_ORIGINAL_IMPL);
 	else
-		return (rec_fn(rm, dt));
+		return (rec_fn(rr, dt));
 }
 
 const char *raidz_gen_name[] = {
@@ -465,6 +465,7 @@ benchmark_raidz(void)
 	raidz_supp_impl_cnt = c;	/* number of supported impl */
 
 #if defined(_KERNEL)
+	abd_t *pabd;
 	zio_t *bench_zio = NULL;
 	raidz_map_t *bench_rm = NULL;
 	uint64_t bench_parity;
@@ -491,6 +492,12 @@ benchmark_raidz(void)
 	/* Benchmark data reconstruction methods */
 	bench_rm = vdev_raidz_map_alloc(bench_zio, SPA_MINBLOCKSHIFT,
 	    BENCH_COLS, PARITY_PQR);
+
+	/* Ensure that fake parity blocks are initialized */
+	for (c = 0; c < bench_rm->rm_row[0]->rr_firstdatacol; c++) {
+		pabd = bench_rm->rm_row[0]->rr_col[c].rc_abd;
+		memset(abd_to_buf(pabd), 0xAA, abd_get_size(pabd));
+	}
 
 	for (int fn = 0; fn < RAIDZ_REC_NUM; fn++)
 		benchmark_raidz_impl(bench_rm, fn, benchmark_rec_impl);

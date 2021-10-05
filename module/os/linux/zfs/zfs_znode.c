@@ -217,7 +217,7 @@ zfs_znode_fini(void)
  * created or destroyed.  This kind of locking would normally reside in the
  * znode itself but in this case that's impossible because the znode and SA
  * buffer may not yet exist.  Therefore the locking is handled externally
- * with an array of mutexs and AVLs trees which contain per-object locks.
+ * with an array of mutexes and AVLs trees which contain per-object locks.
  *
  * In zfs_znode_hold_enter() a per-object lock is created as needed, inserted
  * in to the correct AVL tree and finally the per-object lock is held.  In
@@ -479,14 +479,10 @@ zfs_set_inode_flags(znode_t *zp, struct inode *ip)
 }
 
 /*
- * Update the embedded inode given the znode.  We should work toward
- * eliminating this function as soon as possible by removing values
- * which are duplicated between the znode and inode.  If the generic
- * inode has the correct field it should be used, and the ZFS code
- * updated to access the inode.  This can be done incrementally.
+ * Update the embedded inode given the znode.
  */
 void
-zfs_inode_update(znode_t *zp)
+zfs_znode_update_vfs(znode_t *zp)
 {
 	zfsvfs_t	*zfsvfs;
 	struct inode	*ip;
@@ -529,9 +525,9 @@ zfs_znode_alloc(zfsvfs_t *zfsvfs, dmu_buf_t *db, int blksz,
 	uint64_t tmp_gen;
 	uint64_t links;
 	uint64_t z_uid, z_gid;
-	uint64_t atime[2], mtime[2], ctime[2];
+	uint64_t atime[2], mtime[2], ctime[2], btime[2];
 	uint64_t projid = ZFS_DEFAULT_PROJID;
-	sa_bulk_attr_t bulk[11];
+	sa_bulk_attr_t bulk[12];
 	int count = 0;
 
 	ASSERT(zfsvfs != NULL);
@@ -573,6 +569,7 @@ zfs_znode_alloc(zfsvfs_t *zfsvfs, dmu_buf_t *db, int blksz,
 	SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_ATIME(zfsvfs), NULL, &atime, 16);
 	SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_MTIME(zfsvfs), NULL, &mtime, 16);
 	SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_CTIME(zfsvfs), NULL, &ctime, 16);
+	SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_CRTIME(zfsvfs), NULL, &btime, 16);
 
 	if (sa_bulk_lookup(zp->z_sa_hdl, bulk, count) != 0 || tmp_gen == 0 ||
 	    (dmu_objset_projectquota_enabled(zfsvfs->z_os) &&
@@ -600,9 +597,10 @@ zfs_znode_alloc(zfsvfs_t *zfsvfs, dmu_buf_t *db, int blksz,
 	ZFS_TIME_DECODE(&ip->i_atime, atime);
 	ZFS_TIME_DECODE(&ip->i_mtime, mtime);
 	ZFS_TIME_DECODE(&ip->i_ctime, ctime);
+	ZFS_TIME_DECODE(&zp->z_btime, btime);
 
 	ip->i_ino = zp->z_id;
-	zfs_inode_update(zp);
+	zfs_znode_update_vfs(zp);
 	zfs_inode_set_ops(zfsvfs, ip);
 
 	/*
@@ -1173,12 +1171,12 @@ zfs_rezget(znode_t *zp)
 	uint64_t obj_num = zp->z_id;
 	uint64_t mode;
 	uint64_t links;
-	sa_bulk_attr_t bulk[10];
+	sa_bulk_attr_t bulk[11];
 	int err;
 	int count = 0;
 	uint64_t gen;
 	uint64_t z_uid, z_gid;
-	uint64_t atime[2], mtime[2], ctime[2];
+	uint64_t atime[2], mtime[2], ctime[2], btime[2];
 	uint64_t projid = ZFS_DEFAULT_PROJID;
 	znode_hold_t *zh;
 
@@ -1248,6 +1246,7 @@ zfs_rezget(znode_t *zp)
 	    &mtime, 16);
 	SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_CTIME(zfsvfs), NULL,
 	    &ctime, 16);
+	SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_CRTIME(zfsvfs), NULL, &btime, 16);
 
 	if (sa_bulk_lookup(zp->z_sa_hdl, bulk, count)) {
 		zfs_znode_dmu_fini(zp);
@@ -1273,6 +1272,7 @@ zfs_rezget(znode_t *zp)
 	ZFS_TIME_DECODE(&ZTOI(zp)->i_atime, atime);
 	ZFS_TIME_DECODE(&ZTOI(zp)->i_mtime, mtime);
 	ZFS_TIME_DECODE(&ZTOI(zp)->i_ctime, ctime);
+	ZFS_TIME_DECODE(&zp->z_btime, btime);
 
 	if ((uint32_t)gen != ZTOI(zp)->i_generation) {
 		zfs_znode_dmu_fini(zp);
@@ -1285,7 +1285,7 @@ zfs_rezget(znode_t *zp)
 
 	zp->z_blksz = doi.doi_data_block_size;
 	zp->z_atime_dirty = B_FALSE;
-	zfs_inode_update(zp);
+	zfs_znode_update_vfs(zp);
 
 	/*
 	 * If the file has zero links, then it has been unlinked on the send
@@ -1803,7 +1803,7 @@ log:
 
 	dmu_tx_commit(tx);
 
-	zfs_inode_update(zp);
+	zfs_znode_update_vfs(zp);
 	error = 0;
 
 out:
@@ -2134,8 +2134,10 @@ zfs_obj_to_path_impl(objset_t *osp, uint64_t obj, sa_handle_t *hdl,
 		size_t complen;
 		int is_xattrdir = 0;
 
-		if (prevdb)
+		if (prevdb) {
+			ASSERT(prevhdl != NULL);
 			zfs_release_sa_handle(prevhdl, prevdb, FTAG);
+		}
 
 		if ((error = zfs_obj_to_pobj(osp, sa_hdl, sa_table, &pobj,
 		    &is_xattrdir)) != 0)

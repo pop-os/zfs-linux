@@ -22,7 +22,7 @@
 /*
  * Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2020 by Delphix. All rights reserved.
+ * Copyright (c) 2014, 2021 by Delphix. All rights reserved.
  * Copyright 2016 Igor Kozhukhov <ikozhukhov@gmail.com>
  * Copyright 2017 RackTop Systems.
  * Copyright (c) 2018 Datto Inc.
@@ -538,19 +538,17 @@ zfs_mount_at(zfs_handle_t *zhp, const char *options, int flags,
 			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 			    "Insufficient privileges"));
 		} else if (rc == ENOTSUP) {
-			char buf[256];
 			int spa_version;
 
 			VERIFY(zfs_spa_version(zhp, &spa_version) == 0);
-			(void) snprintf(buf, sizeof (buf),
-			    dgettext(TEXT_DOMAIN, "Can't mount a version %lld "
+			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+			    "Can't mount a version %llu "
 			    "file system on a version %d pool. Pool must be"
 			    " upgraded to mount this file system."),
 			    (u_longlong_t)zfs_prop_get_int(zhp,
 			    ZFS_PROP_VERSION), spa_version);
-			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN, buf));
 		} else {
-			zfs_error_aux(hdl, strerror(rc));
+			zfs_error_aux(hdl, "%s", strerror(rc));
 		}
 		return (zfs_error_fmt(hdl, EZFS_MOUNTFAILED,
 		    dgettext(TEXT_DOMAIN, "cannot mount '%s'"),
@@ -576,7 +574,28 @@ unmount_one(libzfs_handle_t *hdl, const char *mountpoint, int flags)
 
 	error = do_unmount(mountpoint, flags);
 	if (error != 0) {
-		return (zfs_error_fmt(hdl, EZFS_UMOUNTFAILED,
+		int libzfs_err;
+
+		switch (error) {
+		case EBUSY:
+			libzfs_err = EZFS_BUSY;
+			break;
+		case EIO:
+			libzfs_err = EZFS_IO;
+			break;
+		case ENOENT:
+			libzfs_err = EZFS_NOENT;
+			break;
+		case ENOMEM:
+			libzfs_err = EZFS_NOMEM;
+			break;
+		case EPERM:
+			libzfs_err = EZFS_PERM;
+			break;
+		default:
+			libzfs_err = EZFS_UMOUNTFAILED;
+		}
+		return (zfs_error_fmt(hdl, libzfs_err,
 		    dgettext(TEXT_DOMAIN, "cannot unmount '%s'"),
 		    mountpoint));
 	}

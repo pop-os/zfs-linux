@@ -35,8 +35,6 @@
 #include <sys/dsl_pool.h>
 #include <sys/metaslab_impl.h>
 #include <sys/spa.h>
-#include <sys/spa_impl.h>
-#include <sys/kstat.h>
 #include <sys/abd.h>
 
 /*
@@ -338,14 +336,12 @@ vdev_queue_max_async_writes(spa_t *spa)
 	 * Sync tasks correspond to interactive user actions. To reduce the
 	 * execution time of those actions we push data out as fast as possible.
 	 */
-	if (spa_has_pending_synctask(spa))
+	dirty = dp->dp_dirty_total;
+	if (dirty > max_bytes || spa_has_pending_synctask(spa))
 		return (zfs_vdev_async_write_max_active);
 
-	dirty = dp->dp_dirty_total;
 	if (dirty < min_bytes)
 		return (zfs_vdev_async_write_min_active);
-	if (dirty > max_bytes)
-		return (zfs_vdev_async_write_max_active);
 
 	/*
 	 * linear interpolation:
@@ -518,35 +514,17 @@ vdev_queue_fini(vdev_t *vd)
 static void
 vdev_queue_io_add(vdev_queue_t *vq, zio_t *zio)
 {
-	spa_t *spa = zio->io_spa;
-	spa_history_kstat_t *shk = &spa->spa_stats.io_history;
-
 	ASSERT3U(zio->io_priority, <, ZIO_PRIORITY_NUM_QUEUEABLE);
 	avl_add(vdev_queue_class_tree(vq, zio->io_priority), zio);
 	avl_add(vdev_queue_type_tree(vq, zio->io_type), zio);
-
-	if (shk->kstat != NULL) {
-		mutex_enter(&shk->lock);
-		kstat_waitq_enter(shk->kstat->ks_data);
-		mutex_exit(&shk->lock);
-	}
 }
 
 static void
 vdev_queue_io_remove(vdev_queue_t *vq, zio_t *zio)
 {
-	spa_t *spa = zio->io_spa;
-	spa_history_kstat_t *shk = &spa->spa_stats.io_history;
-
 	ASSERT3U(zio->io_priority, <, ZIO_PRIORITY_NUM_QUEUEABLE);
 	avl_remove(vdev_queue_class_tree(vq, zio->io_priority), zio);
 	avl_remove(vdev_queue_type_tree(vq, zio->io_type), zio);
-
-	if (shk->kstat != NULL) {
-		mutex_enter(&shk->lock);
-		kstat_waitq_exit(shk->kstat->ks_data);
-		mutex_exit(&shk->lock);
-	}
 }
 
 static boolean_t
@@ -566,9 +544,6 @@ vdev_queue_is_interactive(zio_priority_t p)
 static void
 vdev_queue_pending_add(vdev_queue_t *vq, zio_t *zio)
 {
-	spa_t *spa = zio->io_spa;
-	spa_history_kstat_t *shk = &spa->spa_stats.io_history;
-
 	ASSERT(MUTEX_HELD(&vq->vq_lock));
 	ASSERT3U(zio->io_priority, <, ZIO_PRIORITY_NUM_QUEUEABLE);
 	vq->vq_class[zio->io_priority].vqc_active++;
@@ -579,20 +554,11 @@ vdev_queue_pending_add(vdev_queue_t *vq, zio_t *zio)
 		vq->vq_nia_credit--;
 	}
 	avl_add(&vq->vq_active_tree, zio);
-
-	if (shk->kstat != NULL) {
-		mutex_enter(&shk->lock);
-		kstat_runq_enter(shk->kstat->ks_data);
-		mutex_exit(&shk->lock);
-	}
 }
 
 static void
 vdev_queue_pending_remove(vdev_queue_t *vq, zio_t *zio)
 {
-	spa_t *spa = zio->io_spa;
-	spa_history_kstat_t *shk = &spa->spa_stats.io_history;
-
 	ASSERT(MUTEX_HELD(&vq->vq_lock));
 	ASSERT3U(zio->io_priority, <, ZIO_PRIORITY_NUM_QUEUEABLE);
 	vq->vq_class[zio->io_priority].vqc_active--;
@@ -604,21 +570,6 @@ vdev_queue_pending_remove(vdev_queue_t *vq, zio_t *zio)
 	} else if (vq->vq_ia_active == 0)
 		vq->vq_nia_credit++;
 	avl_remove(&vq->vq_active_tree, zio);
-
-	if (shk->kstat != NULL) {
-		kstat_io_t *ksio = shk->kstat->ks_data;
-
-		mutex_enter(&shk->lock);
-		kstat_runq_exit(ksio);
-		if (zio->io_type == ZIO_TYPE_READ) {
-			ksio->reads++;
-			ksio->nread += zio->io_size;
-		} else if (zio->io_type == ZIO_TYPE_WRITE) {
-			ksio->writes++;
-			ksio->nwritten += zio->io_size;
-		}
-		mutex_exit(&shk->lock);
-	}
 }
 
 static void
@@ -648,7 +599,6 @@ static zio_t *
 vdev_queue_aggregate(vdev_queue_t *vq, zio_t *zio)
 {
 	zio_t *first, *last, *aio, *dio, *mandatory, *nio;
-	zio_link_t *zl = NULL;
 	uint64_t maxgap = 0;
 	uint64_t size;
 	uint64_t limit;
@@ -675,6 +625,13 @@ vdev_queue_aggregate(vdev_queue_t *vq, zio_t *zio)
 	 */
 	if (zio->io_type == ZIO_TYPE_TRIM && !zfs_vdev_aggregate_trim)
 		return (NULL);
+
+	/*
+	 * I/Os to distributed spares are directly dispatched to the dRAID
+	 * leaf vdevs for aggregation.  See the comment at the end of the
+	 * zio_vdev_io_start() function.
+	 */
+	ASSERT(vq->vq_vdev->vdev_ops != &vdev_draid_spare_ops);
 
 	first = last = zio;
 
@@ -784,7 +741,7 @@ vdev_queue_aggregate(vdev_queue_t *vq, zio_t *zio)
 	size = IO_SPAN(first, last);
 	ASSERT3U(size, <=, maxblocksize);
 
-	abd = abd_alloc_gang_abd();
+	abd = abd_alloc_gang();
 	if (abd == NULL)
 		return (NULL);
 
@@ -839,19 +796,12 @@ vdev_queue_aggregate(vdev_queue_t *vq, zio_t *zio)
 	ASSERT3U(abd_get_size(aio->io_abd), ==, aio->io_size);
 
 	/*
-	 * We need to drop the vdev queue's lock during zio_execute() to
-	 * avoid a deadlock that we could encounter due to lock order
-	 * reversal between vq_lock and io_lock in zio_change_priority().
+	 * Callers must call zio_vdev_io_bypass() and zio_execute() for
+	 * aggregated (parent) I/Os so that we could avoid dropping the
+	 * queue's lock here to avoid a deadlock that we could encounter
+	 * due to lock order reversal between vq_lock and io_lock in
+	 * zio_change_priority().
 	 */
-	mutex_exit(&vq->vq_lock);
-	while ((dio = zio_walk_parents(aio, &zl)) != NULL) {
-		ASSERT3U(dio->io_type, ==, aio->io_type);
-
-		zio_vdev_io_bypass(dio);
-		zio_execute(dio);
-	}
-	mutex_enter(&vq->vq_lock);
-
 	return (aio);
 }
 
@@ -889,23 +839,24 @@ again:
 	ASSERT3U(zio->io_priority, ==, p);
 
 	aio = vdev_queue_aggregate(vq, zio);
-	if (aio != NULL)
+	if (aio != NULL) {
 		zio = aio;
-	else
+	} else {
 		vdev_queue_io_remove(vq, zio);
 
-	/*
-	 * If the I/O is or was optional and therefore has no data, we need to
-	 * simply discard it. We need to drop the vdev queue's lock to avoid a
-	 * deadlock that we could encounter since this I/O will complete
-	 * immediately.
-	 */
-	if (zio->io_flags & ZIO_FLAG_NODATA) {
-		mutex_exit(&vq->vq_lock);
-		zio_vdev_io_bypass(zio);
-		zio_execute(zio);
-		mutex_enter(&vq->vq_lock);
-		goto again;
+		/*
+		 * If the I/O is or was optional and therefore has no data, we
+		 * need to simply discard it. We need to drop the vdev queue's
+		 * lock to avoid a deadlock that we could encounter since this
+		 * I/O will complete immediately.
+		 */
+		if (zio->io_flags & ZIO_FLAG_NODATA) {
+			mutex_exit(&vq->vq_lock);
+			zio_vdev_io_bypass(zio);
+			zio_execute(zio);
+			mutex_enter(&vq->vq_lock);
+			goto again;
+		}
 	}
 
 	vdev_queue_pending_add(vq, zio);
@@ -918,7 +869,8 @@ zio_t *
 vdev_queue_io(zio_t *zio)
 {
 	vdev_queue_t *vq = &zio->io_vd->vdev_queue;
-	zio_t *nio;
+	zio_t *dio, *nio;
+	zio_link_t *zl = NULL;
 
 	if (zio->io_flags & ZIO_FLAG_DONT_QUEUE)
 		return (zio);
@@ -954,9 +906,9 @@ vdev_queue_io(zio_t *zio)
 	}
 
 	zio->io_flags |= ZIO_FLAG_DONT_CACHE | ZIO_FLAG_DONT_QUEUE;
+	zio->io_timestamp = gethrtime();
 
 	mutex_enter(&vq->vq_lock);
-	zio->io_timestamp = gethrtime();
 	vdev_queue_io_add(vq, zio);
 	nio = vdev_queue_io_to_issue(vq);
 	mutex_exit(&vq->vq_lock);
@@ -965,6 +917,11 @@ vdev_queue_io(zio_t *zio)
 		return (NULL);
 
 	if (nio->io_done == vdev_queue_agg_io_done) {
+		while ((dio = zio_walk_parents(nio, &zl)) != NULL) {
+			ASSERT3U(dio->io_type, ==, nio->io_type);
+			zio_vdev_io_bypass(dio);
+			zio_execute(dio);
+		}
 		zio_nowait(nio);
 		return (NULL);
 	}
@@ -976,19 +933,24 @@ void
 vdev_queue_io_done(zio_t *zio)
 {
 	vdev_queue_t *vq = &zio->io_vd->vdev_queue;
-	zio_t *nio;
+	zio_t *dio, *nio;
+	zio_link_t *zl = NULL;
+
+	hrtime_t now = gethrtime();
+	vq->vq_io_complete_ts = now;
+	vq->vq_io_delta_ts = zio->io_delta = now - zio->io_timestamp;
 
 	mutex_enter(&vq->vq_lock);
-
 	vdev_queue_pending_remove(vq, zio);
-
-	zio->io_delta = gethrtime() - zio->io_timestamp;
-	vq->vq_io_complete_ts = gethrtime();
-	vq->vq_io_delta_ts = vq->vq_io_complete_ts - zio->io_timestamp;
 
 	while ((nio = vdev_queue_io_to_issue(vq)) != NULL) {
 		mutex_exit(&vq->vq_lock);
 		if (nio->io_done == vdev_queue_agg_io_done) {
+			while ((dio = zio_walk_parents(nio, &zl)) != NULL) {
+				ASSERT3U(dio->io_type, ==, nio->io_type);
+				zio_vdev_io_bypass(dio);
+				zio_execute(dio);
+			}
 			zio_nowait(nio);
 		} else {
 			zio_vdev_io_reissue(nio);

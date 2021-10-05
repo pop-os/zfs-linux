@@ -184,6 +184,9 @@
 /* copy_to_iter() is available */
 #undef HAVE_COPY_TO_ITER
 
+/* yes */
+#undef HAVE_CPU_HOTPLUG
+
 /* current_time() exists */
 #undef HAVE_CURRENT_TIME
 
@@ -338,12 +341,6 @@
 /* iov_iter_fault_in_readable() is available */
 #undef HAVE_IOV_ITER_FAULT_IN_READABLE
 
-/* iov_iter_init() is available */
-#undef HAVE_IOV_ITER_INIT
-
-/* iov_iter_init() is available */
-#undef HAVE_IOV_ITER_INIT_LEGACY
-
 /* iov_iter_revert() is available */
 #undef HAVE_IOV_ITER_REVERT
 
@@ -463,6 +460,9 @@
 
 /* Define if host toolchain supports PCLMULQDQ */
 #undef HAVE_PCLMULQDQ
+
+/* percpu_counter_add_batch() is defined */
+#undef HAVE_PERCPU_COUNTER_ADD_BATCH
 
 /* percpu_counter_init() wants gfp_t */
 #undef HAVE_PERCPU_COUNTER_INIT_WITH_GFP

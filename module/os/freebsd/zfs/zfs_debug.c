@@ -42,8 +42,11 @@ kstat_t *zfs_dbgmsg_kstat;
 /*
  * Internal ZFS debug messages are enabled by default.
  *
- * # Print debug messages
+ * # Print debug messages as they're logged
  * dtrace -n 'zfs-dbgmsg { print(stringof(arg0)); }'
+ *
+ * # Print all logged dbgmsg entries
+ * sysctl kstat.zfs.misc.dbgmsg
  *
  * # Disable the kernel debug message log.
  * sysctl vfs.zfs.dbgmsg_enable=0
@@ -178,7 +181,7 @@ __set_error(const char *file, const char *func, int line, int err)
 	 * $ echo 512 >/sys/module/zfs/parameters/zfs_flags
 	 */
 	if (zfs_flags & ZFS_DEBUG_SET_ERROR)
-		__dprintf(B_FALSE, file, func, line, "error %lu", err);
+		__dprintf(B_FALSE, file, func, line, "error %lu", (ulong_t)err);
 }
 
 #ifdef _KERNEL

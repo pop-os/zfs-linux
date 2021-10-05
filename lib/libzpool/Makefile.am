@@ -123,6 +123,8 @@ KERNEL_C = \
 	unique.c \
 	vdev.c \
 	vdev_cache.c \
+	vdev_draid.c \
+	vdev_draid_rand.c \
 	vdev_file.c \
 	vdev_indirect_births.c \
 	vdev_indirect.c \
@@ -216,7 +218,7 @@ libzpool_la_LIBADD = \
 	$(abs_top_builddir)/lib/libnvpair/libnvpair.la \
 	$(abs_top_builddir)/lib/libzstd/libzstd.la
 
-libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl
+libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm
 
 libzpool_la_LDFLAGS = -pthread
 
@@ -228,7 +230,7 @@ if BUILD_FREEBSD
 libzpool_la_LIBADD += -lgeom
 endif
 
-libzpool_la_LDFLAGS += -version-info 4:0:0
+libzpool_la_LDFLAGS += -version-info 5:0:0
 
 if TARGET_CPU_POWERPC
 vdev_raidz_math_powerpc_altivec.$(OBJEXT): CFLAGS += -maltivec
