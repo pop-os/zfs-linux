@@ -301,7 +301,7 @@ update_pages(znode_t *zp, int64_t start, int len, objset_t *os)
  *	 the file is memory mapped.
  */
 int
-mappedread(znode_t *zp, int nbytes, uio_t *uio)
+mappedread(znode_t *zp, int nbytes, zfs_uio_t *uio)
 {
 	struct inode *ip = ZTOI(zp);
 	struct address_space *mp = ip->i_mapping;
@@ -323,7 +323,7 @@ mappedread(znode_t *zp, int nbytes, uio_t *uio)
 			unlock_page(pp);
 
 			pb = kmap(pp);
-			error = uiomove(pb + off, bytes, UIO_READ, uio);
+			error = zfs_uiomove(pb + off, bytes, UIO_READ, uio);
 			kunmap(pp);
 
 			if (mapping_writably_mapped(mp))
@@ -375,8 +375,8 @@ zfs_write_simple(znode_t *zp, const void *data, size_t len,
 	iov.iov_base = (void *)data;
 	iov.iov_len = len;
 
-	uio_t uio;
-	uio_iovec_init(&uio, &iov, 1, pos, UIO_SYSSPACE, len, 0);
+	zfs_uio_t uio;
+	zfs_uio_iovec_init(&uio, &iov, 1, pos, UIO_SYSSPACE, len, 0);
 
 	cookie = spl_fstrans_mark();
 	error = zfs_write(zp, &uio, 0, kcred);
@@ -384,12 +384,18 @@ zfs_write_simple(znode_t *zp, const void *data, size_t len,
 
 	if (error == 0) {
 		if (residp != NULL)
-			*residp = uio_resid(&uio);
-		else if (uio_resid(&uio) != 0)
+			*residp = zfs_uio_resid(&uio);
+		else if (zfs_uio_resid(&uio) != 0)
 			error = SET_ERROR(EIO);
 	}
 
 	return (error);
+}
+
+static void
+zfs_rele_async_task(void *arg)
+{
+	iput(arg);
 }
 
 void
@@ -411,9 +417,10 @@ zfs_zrele_async(znode_t *zp)
 	 */
 	if (!atomic_add_unless(&ip->i_count, -1, 1)) {
 		VERIFY(taskq_dispatch(dsl_pool_zrele_taskq(dmu_objset_pool(os)),
-		    (task_func_t *)iput, ip, TQ_SLEEP) != TASKQID_INVALID);
+		    zfs_rele_async_task, ip, TQ_SLEEP) != TASKQID_INVALID);
 	}
 }
+
 
 /*
  * Lookup an entry in a directory, or an extended attribute directory.
@@ -525,7 +532,7 @@ zfs_lookup(znode_t *zdp, char *nm, znode_t **zpp, int flags, cred_t *cr,
 
 	error = zfs_dirlook(zdp, nm, zpp, flags, direntflags, realpnp);
 	if ((error == 0) && (*zpp))
-		zfs_inode_update(*zpp);
+		zfs_znode_update_vfs(*zpp);
 
 	ZFS_EXIT(zfsvfs);
 	return (error);
@@ -788,8 +795,8 @@ out:
 		if (zp)
 			zrele(zp);
 	} else {
-		zfs_inode_update(dzp);
-		zfs_inode_update(zp);
+		zfs_znode_update_vfs(dzp);
+		zfs_znode_update_vfs(zp);
 		*zpp = zp;
 	}
 
@@ -911,8 +918,8 @@ out:
 		if (zp)
 			zrele(zp);
 	} else {
-		zfs_inode_update(dzp);
-		zfs_inode_update(zp);
+		zfs_znode_update_vfs(dzp);
+		zfs_znode_update_vfs(zp);
 		*ipp = ZTOI(zp);
 	}
 
@@ -1138,8 +1145,8 @@ out:
 		pn_free(realnmp);
 
 	zfs_dirent_unlock(dl);
-	zfs_inode_update(dzp);
-	zfs_inode_update(zp);
+	zfs_znode_update_vfs(dzp);
+	zfs_znode_update_vfs(zp);
 
 	if (delete_now)
 		zrele(zp);
@@ -1147,7 +1154,7 @@ out:
 		zfs_zrele_async(zp);
 
 	if (xzp) {
-		zfs_inode_update(xzp);
+		zfs_znode_update_vfs(xzp);
 		zfs_zrele_async(xzp);
 	}
 
@@ -1344,8 +1351,8 @@ out:
 	if (error != 0) {
 		zrele(zp);
 	} else {
-		zfs_inode_update(dzp);
-		zfs_inode_update(zp);
+		zfs_znode_update_vfs(dzp);
+		zfs_znode_update_vfs(zp);
 	}
 	ZFS_EXIT(zfsvfs);
 	return (error);
@@ -1470,8 +1477,8 @@ top:
 out:
 	zfs_dirent_unlock(dl);
 
-	zfs_inode_update(dzp);
-	zfs_inode_update(zp);
+	zfs_znode_update_vfs(dzp);
+	zfs_znode_update_vfs(zp);
 	zrele(zp);
 
 	if (zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
@@ -2542,7 +2549,7 @@ out:
 				err2 = zfs_setattr_dir(attrzp);
 			zrele(attrzp);
 		}
-		zfs_inode_update(zp);
+		zfs_znode_update_vfs(zp);
 	}
 
 out2:
@@ -3000,17 +3007,17 @@ out:
 	zfs_dirent_unlock(sdl);
 	zfs_dirent_unlock(tdl);
 
-	zfs_inode_update(sdzp);
+	zfs_znode_update_vfs(sdzp);
 	if (sdzp == tdzp)
 		rw_exit(&sdzp->z_name_lock);
 
 	if (sdzp != tdzp)
-		zfs_inode_update(tdzp);
+		zfs_znode_update_vfs(tdzp);
 
-	zfs_inode_update(szp);
+	zfs_znode_update_vfs(szp);
 	zrele(szp);
 	if (tzp) {
-		zfs_inode_update(tzp);
+		zfs_znode_update_vfs(tzp);
 		zrele(tzp);
 	}
 
@@ -3139,7 +3146,7 @@ top:
 
 	/*
 	 * Create a new object for the symlink.
-	 * for version 4 ZPL datsets the symlink will be an SA attribute
+	 * for version 4 ZPL datasets the symlink will be an SA attribute
 	 */
 	zfs_mknode(dzp, vap, tx, cr, 0, &zp, &acl_ids);
 
@@ -3169,8 +3176,8 @@ top:
 			txtype |= TX_CI;
 		zfs_log_symlink(zilog, tx, txtype, dzp, zp, name, link);
 
-		zfs_inode_update(dzp);
-		zfs_inode_update(zp);
+		zfs_znode_update_vfs(dzp);
+		zfs_znode_update_vfs(zp);
 	}
 
 	zfs_acl_ids_free(&acl_ids);
@@ -3208,7 +3215,7 @@ top:
  */
 /* ARGSUSED */
 int
-zfs_readlink(struct inode *ip, uio_t *uio, cred_t *cr)
+zfs_readlink(struct inode *ip, zfs_uio_t *uio, cred_t *cr)
 {
 	znode_t		*zp = ITOZ(ip);
 	zfsvfs_t	*zfsvfs = ITOZSB(ip);
@@ -3419,8 +3426,8 @@ top:
 	if (is_tmpfile && zfsvfs->z_os->os_sync != ZFS_SYNC_DISABLED)
 		txg_wait_synced(dmu_objset_pool(zfsvfs->z_os), txg);
 
-	zfs_inode_update(tdzp);
-	zfs_inode_update(szp);
+	zfs_znode_update_vfs(tdzp);
+	zfs_znode_update_vfs(szp);
 	ZFS_EXIT(zfsvfs);
 	return (error);
 }
@@ -3949,6 +3956,13 @@ zfs_fid(struct inode *ip, fid_t *fidp)
 	int		size, i, error;
 
 	ZFS_ENTER(zfsvfs);
+
+	if (fidp->fid_len < SHORT_FID_LEN) {
+		fidp->fid_len = SHORT_FID_LEN;
+		ZFS_EXIT(zfsvfs);
+		return (SET_ERROR(ENOSPC));
+	}
+
 	ZFS_VERIFY_ZP(zp);
 
 	if ((error = sa_lookup(zp->z_sa_hdl, SA_ZPL_GEN(zfsvfs),
@@ -3977,164 +3991,6 @@ zfs_fid(struct inode *ip, fid_t *fidp)
 	ZFS_EXIT(zfsvfs);
 	return (0);
 }
-
-#ifdef HAVE_UIO_ZEROCOPY
-/*
- * The smallest read we may consider to loan out an arcbuf.
- * This must be a power of 2.
- */
-int zcr_blksz_min = (1 << 10);	/* 1K */
-/*
- * If set to less than the file block size, allow loaning out of an
- * arcbuf for a partial block read.  This must be a power of 2.
- */
-int zcr_blksz_max = (1 << 17);	/* 128K */
-
-
-/*ARGSUSED*/
-static int
-zfs_reqzcbuf(struct inode *ip, enum uio_rw ioflag, xuio_t *xuio, cred_t *cr)
-{
-	znode_t	*zp = ITOZ(ip);
-	zfsvfs_t *zfsvfs = ITOZSB(ip);
-	int max_blksz = zfsvfs->z_max_blksz;
-	uio_t *uio = &xuio->xu_uio;
-	ssize_t size = uio->uio_resid;
-	offset_t offset = uio->uio_loffset;
-	int blksz;
-	int fullblk, i;
-	arc_buf_t *abuf;
-	ssize_t maxsize;
-	int preamble, postamble;
-
-	if (xuio->xu_type != UIOTYPE_ZEROCOPY)
-		return (SET_ERROR(EINVAL));
-
-	ZFS_ENTER(zfsvfs);
-	ZFS_VERIFY_ZP(zp);
-	switch (ioflag) {
-	case UIO_WRITE:
-		/*
-		 * Loan out an arc_buf for write if write size is bigger than
-		 * max_blksz, and the file's block size is also max_blksz.
-		 */
-		blksz = max_blksz;
-		if (size < blksz || zp->z_blksz != blksz) {
-			ZFS_EXIT(zfsvfs);
-			return (SET_ERROR(EINVAL));
-		}
-		/*
-		 * Caller requests buffers for write before knowing where the
-		 * write offset might be (e.g. NFS TCP write).
-		 */
-		if (offset == -1) {
-			preamble = 0;
-		} else {
-			preamble = P2PHASE(offset, blksz);
-			if (preamble) {
-				preamble = blksz - preamble;
-				size -= preamble;
-			}
-		}
-
-		postamble = P2PHASE(size, blksz);
-		size -= postamble;
-
-		fullblk = size / blksz;
-		(void) dmu_xuio_init(xuio,
-		    (preamble != 0) + fullblk + (postamble != 0));
-
-		/*
-		 * Have to fix iov base/len for partial buffers.  They
-		 * currently represent full arc_buf's.
-		 */
-		if (preamble) {
-			/* data begins in the middle of the arc_buf */
-			abuf = dmu_request_arcbuf(sa_get_db(zp->z_sa_hdl),
-			    blksz);
-			ASSERT(abuf);
-			(void) dmu_xuio_add(xuio, abuf,
-			    blksz - preamble, preamble);
-		}
-
-		for (i = 0; i < fullblk; i++) {
-			abuf = dmu_request_arcbuf(sa_get_db(zp->z_sa_hdl),
-			    blksz);
-			ASSERT(abuf);
-			(void) dmu_xuio_add(xuio, abuf, 0, blksz);
-		}
-
-		if (postamble) {
-			/* data ends in the middle of the arc_buf */
-			abuf = dmu_request_arcbuf(sa_get_db(zp->z_sa_hdl),
-			    blksz);
-			ASSERT(abuf);
-			(void) dmu_xuio_add(xuio, abuf, 0, postamble);
-		}
-		break;
-	case UIO_READ:
-		/*
-		 * Loan out an arc_buf for read if the read size is larger than
-		 * the current file block size.  Block alignment is not
-		 * considered.  Partial arc_buf will be loaned out for read.
-		 */
-		blksz = zp->z_blksz;
-		if (blksz < zcr_blksz_min)
-			blksz = zcr_blksz_min;
-		if (blksz > zcr_blksz_max)
-			blksz = zcr_blksz_max;
-		/* avoid potential complexity of dealing with it */
-		if (blksz > max_blksz) {
-			ZFS_EXIT(zfsvfs);
-			return (SET_ERROR(EINVAL));
-		}
-
-		maxsize = zp->z_size - uio->uio_loffset;
-		if (size > maxsize)
-			size = maxsize;
-
-		if (size < blksz) {
-			ZFS_EXIT(zfsvfs);
-			return (SET_ERROR(EINVAL));
-		}
-		break;
-	default:
-		ZFS_EXIT(zfsvfs);
-		return (SET_ERROR(EINVAL));
-	}
-
-	uio->uio_extflg = UIO_XUIO;
-	XUIO_XUZC_RW(xuio) = ioflag;
-	ZFS_EXIT(zfsvfs);
-	return (0);
-}
-
-/*ARGSUSED*/
-static int
-zfs_retzcbuf(struct inode *ip, xuio_t *xuio, cred_t *cr)
-{
-	int i;
-	arc_buf_t *abuf;
-	int ioflag = XUIO_XUZC_RW(xuio);
-
-	ASSERT(xuio->xu_type == UIOTYPE_ZEROCOPY);
-
-	i = dmu_xuio_cnt(xuio);
-	while (i-- > 0) {
-		abuf = dmu_xuio_arcbuf(xuio, i);
-		/*
-		 * if abuf == NULL, it must be a write buffer
-		 * that has been returned in zfs_write().
-		 */
-		if (abuf)
-			dmu_return_arcbuf(abuf);
-		ASSERT(abuf || ioflag == UIO_WRITE);
-	}
-
-	dmu_xuio_fini(xuio);
-	return (0);
-}
-#endif /* HAVE_UIO_ZEROCOPY */
 
 #if defined(_KERNEL)
 EXPORT_SYMBOL(zfs_open);

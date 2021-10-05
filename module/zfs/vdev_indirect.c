@@ -315,7 +315,6 @@ vdev_indirect_map_free(zio_t *zio)
 
 static const zio_vsd_ops_t vdev_indirect_vsd_ops = {
 	.vsd_free = vdev_indirect_map_free,
-	.vsd_cksum_report = zio_vsd_default_cksum_report
 };
 
 /*
@@ -530,8 +529,9 @@ spa_condense_indirect_complete_sync(void *arg, dmu_tx_t *tx)
 	zfs_dbgmsg("finished condense of vdev %llu in txg %llu: "
 	    "new mapping object %llu has %llu entries "
 	    "(was %llu entries)",
-	    vd->vdev_id, dmu_tx_get_txg(tx), vic->vic_mapping_object,
-	    new_count, old_count);
+	    (u_longlong_t)vd->vdev_id, (u_longlong_t)dmu_tx_get_txg(tx),
+	    (u_longlong_t)vic->vic_mapping_object,
+	    (u_longlong_t)new_count, (u_longlong_t)old_count);
 
 	vdev_config_dirty(spa->spa_root_vdev);
 }
@@ -797,7 +797,7 @@ spa_condense_indirect_start_sync(vdev_t *vd, dmu_tx_t *tx)
 
 	zfs_dbgmsg("starting condense of vdev %llu in txg %llu: "
 	    "posm=%llu nm=%llu",
-	    vd->vdev_id, dmu_tx_get_txg(tx),
+	    (u_longlong_t)vd->vdev_id, (u_longlong_t)dmu_tx_get_txg(tx),
 	    (u_longlong_t)scip->scip_prev_obsolete_sm_object,
 	    (u_longlong_t)scip->scip_next_mapping_object);
 
@@ -885,7 +885,7 @@ spa_start_indirect_condensing_thread(spa_t *spa)
 	ASSERT3P(spa->spa_condense_zthr, ==, NULL);
 	spa->spa_condense_zthr = zthr_create("z_indirect_condense",
 	    spa_condense_indirect_thread_check,
-	    spa_condense_indirect_thread, spa);
+	    spa_condense_indirect_thread, spa, minclsyspri);
 }
 
 /*
@@ -1187,7 +1187,7 @@ vdev_indirect_child_io_done(zio_t *zio)
 	pio->io_error = zio_worst_error(pio->io_error, zio->io_error);
 	mutex_exit(&pio->io_lock);
 
-	abd_put(zio->io_abd);
+	abd_free(zio->io_abd);
 }
 
 /*
@@ -1485,14 +1485,12 @@ vdev_indirect_all_checksum_errors(zio_t *zio)
 
 			vdev_t *vd = ic->ic_vdev;
 
-			int ret = zfs_ereport_post_checksum(zio->io_spa, vd,
+			(void) zfs_ereport_post_checksum(zio->io_spa, vd,
 			    NULL, zio, is->is_target_offset, is->is_size,
 			    NULL, NULL, NULL);
-			if (ret != EALREADY) {
-				mutex_enter(&vd->vdev_stat_lock);
-				vd->vdev_stat.vs_checksum_errors++;
-				mutex_exit(&vd->vdev_stat_lock);
-			}
+			mutex_enter(&vd->vdev_stat_lock);
+			vd->vdev_stat.vs_checksum_errors++;
+			mutex_exit(&vd->vdev_stat_lock);
 		}
 	}
 }
@@ -1580,7 +1578,7 @@ vdev_indirect_splits_enumerate_randomly(indirect_vsd_t *iv, zio_t *zio)
 			indirect_child_t *ic = list_head(&is->is_unique_child);
 			int children = is->is_unique_children;
 
-			for (int i = spa_get_random(children); i > 0; i--)
+			for (int i = random_in_range(children); i > 0; i--)
 				ic = list_next(&is->is_unique_child, ic);
 
 			ASSERT3P(ic, !=, NULL);
@@ -1744,7 +1742,7 @@ vdev_indirect_reconstruct_io_done(zio_t *zio)
 	 * Known_good will be TRUE when reconstruction is known to be possible.
 	 */
 	if (zfs_reconstruct_indirect_damage_fraction != 0 &&
-	    spa_get_random(zfs_reconstruct_indirect_damage_fraction) == 0)
+	    random_in_range(zfs_reconstruct_indirect_damage_fraction) == 0)
 		known_good = (vdev_indirect_splits_damage(iv, zio) == 0);
 
 	/*
@@ -1856,9 +1854,13 @@ vdev_indirect_io_done(zio_t *zio)
 }
 
 vdev_ops_t vdev_indirect_ops = {
+	.vdev_op_init = NULL,
+	.vdev_op_fini = NULL,
 	.vdev_op_open = vdev_indirect_open,
 	.vdev_op_close = vdev_indirect_close,
 	.vdev_op_asize = vdev_default_asize,
+	.vdev_op_min_asize = vdev_default_min_asize,
+	.vdev_op_min_alloc = NULL,
 	.vdev_op_io_start = vdev_indirect_io_start,
 	.vdev_op_io_done = vdev_indirect_io_done,
 	.vdev_op_state_change = NULL,
@@ -1867,6 +1869,11 @@ vdev_ops_t vdev_indirect_ops = {
 	.vdev_op_rele = NULL,
 	.vdev_op_remap = vdev_indirect_remap,
 	.vdev_op_xlate = NULL,
+	.vdev_op_rebuild_asize = NULL,
+	.vdev_op_metaslab_init = NULL,
+	.vdev_op_config_generate = NULL,
+	.vdev_op_nparity = NULL,
+	.vdev_op_ndisks = NULL,
 	.vdev_op_type = VDEV_TYPE_INDIRECT,	/* name of this vdev type */
 	.vdev_op_leaf = B_FALSE			/* leaf vdev */
 };

@@ -28,6 +28,7 @@
  * Copyright 2016 Nexenta Systems, Inc.
  * Copyright (c) 2017 Open-E, Inc. All Rights Reserved.
  * Copyright (c) 2019 Datto Inc.
+ * Copyright (c) 2021, Colm Buckley <colm@tuatha.org>
  */
 
 #ifndef	_LIBZFS_H
@@ -391,6 +392,8 @@ typedef enum {
 	ZPOOL_STATUS_REBUILDING,	/* device being rebuilt */
 	ZPOOL_STATUS_REBUILD_SCRUB,	/* recommend scrubbing the pool */
 	ZPOOL_STATUS_NON_NATIVE_ASHIFT,	/* (e.g. 512e dev with ashift of 9) */
+	ZPOOL_STATUS_COMPATIBILITY_ERR,	/* bad 'compatibility' property */
+	ZPOOL_STATUS_INCOMPATIBLE_FEAT,	/* feature set outside compatibility */
 
 	/*
 	 * Finally, the following indicates a healthy pool.
@@ -455,6 +458,7 @@ extern void zpool_explain_recover(libzfs_handle_t *, const char *, int,
     nvlist_t *);
 extern int zpool_checkpoint(zpool_handle_t *);
 extern int zpool_discard_checkpoint(zpool_handle_t *);
+extern boolean_t zpool_is_draid_spare(const char *);
 
 /*
  * Basic handle manipulations.  These functions do not create or destroy the
@@ -662,6 +666,9 @@ typedef struct sendflags {
 
 	/* recursive send  (ie, -R) */
 	boolean_t replicate;
+
+	/* for recursive send, skip sending missing snapshots */
+	boolean_t skipmissing;
 
 	/* for incrementals, do all intermediate snapshots */
 	boolean_t doall;
@@ -910,6 +917,20 @@ int zfs_smb_acl_rename(libzfs_handle_t *, char *, char *, char *, char *);
  */
 extern int zpool_enable_datasets(zpool_handle_t *, const char *, int);
 extern int zpool_disable_datasets(zpool_handle_t *, boolean_t);
+
+/*
+ * Parse a features file for -o compatibility
+ */
+typedef enum {
+	ZPOOL_COMPATIBILITY_OK,
+	ZPOOL_COMPATIBILITY_WARNTOKEN,
+	ZPOOL_COMPATIBILITY_BADTOKEN,
+	ZPOOL_COMPATIBILITY_BADFILE,
+	ZPOOL_COMPATIBILITY_NOFILES
+} zpool_compat_status_t;
+
+extern zpool_compat_status_t zpool_load_compat(const char *,
+    boolean_t *, char *, size_t);
 
 #ifdef __FreeBSD__
 

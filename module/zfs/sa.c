@@ -1292,7 +1292,7 @@ sa_build_index(sa_handle_t *hdl, sa_buf_type_t buftype)
 			mutex_exit(&sa->sa_lock);
 			zfs_dbgmsg("Buffer Header: %x != SA_MAGIC:%x "
 			    "object=%#llx\n", sa_hdr_phys->sa_magic, SA_MAGIC,
-			    db->db.db_object);
+			    (u_longlong_t)db->db.db_object);
 			return (SET_ERROR(EIO));
 		}
 		sa_byteswap(hdl, buftype);
@@ -1502,7 +1502,7 @@ sa_lookup(sa_handle_t *hdl, sa_attr_type_t attr, void *buf, uint32_t buflen)
 
 #ifdef _KERNEL
 int
-sa_lookup_uio(sa_handle_t *hdl, sa_attr_type_t attr, uio_t *uio)
+sa_lookup_uio(sa_handle_t *hdl, sa_attr_type_t attr, zfs_uio_t *uio)
 {
 	int error;
 	sa_bulk_attr_t bulk;
@@ -1515,8 +1515,8 @@ sa_lookup_uio(sa_handle_t *hdl, sa_attr_type_t attr, uio_t *uio)
 
 	mutex_enter(&hdl->sa_lock);
 	if ((error = sa_attr_op(hdl, &bulk, 1, SA_LOOKUP, NULL)) == 0) {
-		error = uiomove((void *)bulk.sa_addr, MIN(bulk.sa_size,
-		    uio_resid(uio)), UIO_READ, uio);
+		error = zfs_uiomove((void *)bulk.sa_addr, MIN(bulk.sa_size,
+		    zfs_uio_resid(uio)), UIO_READ, uio);
 	}
 	mutex_exit(&hdl->sa_lock);
 	return (error);

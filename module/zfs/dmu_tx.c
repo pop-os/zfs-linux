@@ -230,9 +230,6 @@ dmu_tx_count_write(dmu_tx_hold_t *txh, uint64_t off, uint64_t len)
 
 	(void) zfs_refcount_add_many(&txh->txh_space_towrite, len, FTAG);
 
-	if (zfs_refcount_count(&txh->txh_space_towrite) > 2 * DMU_MAX_ACCESS)
-		err = SET_ERROR(EFBIG);
-
 	if (dn == NULL)
 		return;
 
@@ -616,7 +613,8 @@ dmu_tx_dirty_buf(dmu_tx_t *tx, dmu_buf_impl_t *db)
 			/* XXX txh_arg2 better not be zero... */
 
 			dprintf("found txh type %x beginblk=%llx endblk=%llx\n",
-			    txh->txh_type, beginblk, endblk);
+			    txh->txh_type, (u_longlong_t)beginblk,
+			    (u_longlong_t)endblk);
 
 			switch (txh->txh_type) {
 			case THT_WRITE:
@@ -1015,6 +1013,22 @@ dmu_tx_unassign(dmu_tx_t *tx)
  * details on the throttle). This is used by the VFS operations, after
  * they have already called dmu_tx_wait() (though most likely on a
  * different tx).
+ *
+ * It is guaranteed that subsequent successful calls to dmu_tx_assign()
+ * will assign the tx to monotonically increasing txgs. Of course this is
+ * not strong monotonicity, because the same txg can be returned multiple
+ * times in a row. This guarantee holds both for subsequent calls from
+ * one thread and for multiple threads. For example, it is impossible to
+ * observe the following sequence of events:
+ *
+ *          Thread 1                            Thread 2
+ *
+ *     dmu_tx_assign(T1, ...)
+ *     1 <- dmu_tx_get_txg(T1)
+ *                                       dmu_tx_assign(T2, ...)
+ *                                       2 <- dmu_tx_get_txg(T2)
+ *     dmu_tx_assign(T3, ...)
+ *     1 <- dmu_tx_get_txg(T3)
  */
 int
 dmu_tx_assign(dmu_tx_t *tx, uint64_t txg_how)

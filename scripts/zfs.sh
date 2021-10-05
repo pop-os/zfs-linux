@@ -14,6 +14,7 @@ fi
 PROG=zfs.sh
 VERBOSE="no"
 UNLOAD="no"
+LOAD="yes"
 STACK_TRACER="no"
 
 ZED_PIDFILE=${ZED_PIDFILE:-/var/run/zed.pid}
@@ -44,12 +45,13 @@ DESCRIPTION:
 OPTIONS:
 	-h      Show this message
 	-v      Verbose
+	-r	Reload modules
 	-u      Unload modules
 	-S      Enable kernel stack tracer
 EOF
 }
 
-while getopts 'hvuS' OPTION; do
+while getopts 'hvruS' OPTION; do
 	case $OPTION in
 	h)
 		usage
@@ -58,8 +60,13 @@ while getopts 'hvuS' OPTION; do
 	v)
 		VERBOSE="yes"
 		;;
+	r)
+		UNLOAD="yes"
+		LOAD="yes"
+		;;
 	u)
 		UNLOAD="yes"
+		LOAD="no"
 		;;
 	S)
 		STACK_TRACER="yes"
@@ -120,9 +127,7 @@ load_module_linux() {
 		echo "Loading: $FILE ($VERSION)"
 	fi
 
-	$LDMOD "$KMOD" >/dev/null 2>&1
-	# shellcheck disable=SC2181
-	if [ $? -ne 0 ]; then
+	if ! $LDMOD "$KMOD" >/dev/null 2>&1; then
 		echo "Failed to load $KMOD"
 		return 1
 	fi
@@ -198,6 +203,9 @@ unload_modules_linux() {
 
 		if [ "$USE_COUNT" = "0" ] ; then
 			unload_module_linux "$KMOD" || return 1
+		elif [ "$USE_COUNT" != "" ] ; then
+			echo "Module ${NAME} is still in use!"
+			return 1
 		fi
 	done
 
@@ -261,7 +269,8 @@ if [ "$UNLOAD" = "yes" ]; then
 	           unload_modules_linux
 		   ;;
 	esac
-else
+fi
+if [ "$LOAD" = "yes" ]; then
 	case $UNAME in
 		FreeBSD)
 		   load_modules_freebsd

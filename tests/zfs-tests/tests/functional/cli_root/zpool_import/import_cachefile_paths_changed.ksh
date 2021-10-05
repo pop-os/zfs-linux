@@ -106,10 +106,12 @@ test_new_paths "$VDEV0 $VDEV1" "$VDEV0 $VDEV1"
 test_new_paths "mirror $VDEV0 $VDEV1" "$VDEV0 $VDEV1"
 test_new_paths "$VDEV0 log $VDEV1" "$VDEV0 $VDEV1"
 test_new_paths "raidz $VDEV0 $VDEV1 $VDEV2" "$VDEV0 $VDEV1 $VDEV2"
+test_new_paths "draid $VDEV0 $VDEV1 $VDEV2" "$VDEV0 $VDEV1 $VDEV2"
 
 test_duplicate_pools "$VDEV0 $VDEV1" "$VDEV0 $VDEV1"
 test_duplicate_pools "mirror $VDEV0 $VDEV1" "$VDEV0 $VDEV1"
 test_duplicate_pools "$VDEV0 log $VDEV1" "$VDEV0 $VDEV1"
 test_duplicate_pools "raidz $VDEV0 $VDEV1 $VDEV2" "$VDEV0 $VDEV1 $VDEV2"
+test_duplicate_pools "draid $VDEV0 $VDEV1 $VDEV2" "$VDEV0 $VDEV1 $VDEV2"
 
 log_pass "zpool import with cachefile succeeded after changing device paths."

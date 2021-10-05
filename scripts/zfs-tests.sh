@@ -242,7 +242,7 @@ constrain_path() {
 	# install to /usr/local/sbin. To avoid testing the wrong utils we
 	# need /usr/local to come before / in the path search order.
 	SYSTEM_DIRS="/usr/local/bin /usr/local/sbin"
-	SYSTEM_DIRS="$SYSTEM_DIRS /usr/bin /usr/sbin /bin /sbin"
+	SYSTEM_DIRS="$SYSTEM_DIRS /usr/bin /usr/sbin /bin /sbin $LIBEXEC_DIR"
 
 	if [ "$INTREE" = "yes" ]; then
 		# Constrained path set to ./zfs/bin/
@@ -355,7 +355,6 @@ while getopts 'hvqxkfScn:d:s:r:?t:T:u:I:' OPTION; do
 		exit 1
 		;;
 	v)
-		# shellcheck disable=SC2034
 		VERBOSE="yes"
 		;;
 	q)
@@ -568,18 +567,17 @@ fi
 
 . "$STF_SUITE/include/default.cfg"
 
-msg
-msg "--- Configuration ---"
-msg "Runfiles:        $RUNFILES"
-msg "STF_TOOLS:       $STF_TOOLS"
-msg "STF_SUITE:       $STF_SUITE"
-msg "STF_PATH:        $STF_PATH"
-
 #
 # No DISKS have been provided so a basic file or loopback based devices
 # must be created for the test suite to use.
 #
 if [ -z "${DISKS}" ]; then
+	#
+	# If this is a performance run, prevent accidental use of
+	# loopback devices.
+	#
+	[ "$TAGS" = "perf" ] && fail "Running perf tests without disks."
+
 	#
 	# Create sparse files for the test suite.  These may be used
 	# directory or have loopback devices layered on them.
@@ -620,8 +618,14 @@ if [ -z "${DISKS}" ]; then
 	fi
 fi
 
+#
+# It may be desirable to test with fewer disks than the default when running
+# the performance tests, but the functional tests require at least three.
+#
 NUM_DISKS=$(echo "${DISKS}" | awk '{print NF}')
-[ "$NUM_DISKS" -lt 3 ] && fail "Not enough disks ($NUM_DISKS/3 minimum)"
+if [ "$TAGS" != "perf" ]; then
+	[ "$NUM_DISKS" -lt 3 ] && fail "Not enough disks ($NUM_DISKS/3 minimum)"
+fi
 
 #
 # Disable SELinux until the ZFS Test Suite has been updated accordingly.
@@ -638,6 +642,12 @@ if [ -e /sys/module/zfs/parameters/zfs_dbgmsg_enable ]; then
 	sudo /bin/sh -c "echo 0 >/proc/spl/kstat/zfs/dbgmsg"
 fi
 
+msg
+msg "--- Configuration ---"
+msg "Runfiles:        $RUNFILES"
+msg "STF_TOOLS:       $STF_TOOLS"
+msg "STF_SUITE:       $STF_SUITE"
+msg "STF_PATH:        $STF_PATH"
 msg "FILEDIR:         $FILEDIR"
 msg "FILES:           $FILES"
 msg "LOOPBACKS:       $LOOPBACKS"

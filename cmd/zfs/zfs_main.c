@@ -53,7 +53,6 @@
 #include <grp.h>
 #include <pwd.h>
 #include <signal.h>
-#include <sys/debug.h>
 #include <sys/list.h>
 #include <sys/mkdev.h>
 #include <sys/mntent.h>
@@ -71,7 +70,6 @@
 #include <zfs_prop.h>
 #include <zfs_deleg.h>
 #include <libzutil.h>
-#include <libuutil.h>
 #ifdef HAVE_IDMAP
 #include <aclutils.h>
 #include <directory.h>
@@ -270,7 +268,7 @@ get_usage(zfs_help_t idx)
 		return (gettext("\tclone [-p] [-o property=value] ... "
 		    "<snapshot> <filesystem|volume>\n"));
 	case HELP_CREATE:
-		return (gettext("\tcreate [-Pnpv] [-o property=value] ... "
+		return (gettext("\tcreate [-Pnpuv] [-o property=value] ... "
 		    "<filesystem>\n"
 		    "\tcreate [-Pnpsv] [-b blocksize] [-o property=value] ... "
 		    "-V <size> <volume>\n"));
@@ -319,7 +317,7 @@ get_usage(zfs_help_t idx)
 	case HELP_SEND:
 		return (gettext("\tsend [-DnPpRvLecwhb] [-[i|I] snapshot] "
 		    "<snapshot>\n"
-		    "\tsend [-nvPLecw] [-i snapshot|bookmark] "
+		    "\tsend [-DnvPLecw] [-i snapshot|bookmark] "
 		    "<filesystem|volume|snapshot>\n"
 		    "\tsend [-DnPpvLec] [-i bookmark|snapshot] "
 		    "--redact <bookmark> <snapshot>\n"
@@ -730,6 +728,32 @@ finish_progress(char *done)
 	pt_header = NULL;
 }
 
+/* This function checks if the passed fd refers to /dev/null or /dev/zero */
+#ifdef __linux__
+static boolean_t
+is_dev_nullzero(int fd)
+{
+	struct stat st;
+	fstat(fd, &st);
+	return (major(st.st_rdev) == 1 && (minor(st.st_rdev) == 3 /* null */ ||
+	    minor(st.st_rdev) == 5 /* zero */));
+}
+#endif
+
+static void
+note_dev_error(int err, int fd)
+{
+#ifdef __linux__
+	if (err == EINVAL && is_dev_nullzero(fd)) {
+		(void) fprintf(stderr,
+		    gettext("Error: Writing directly to /dev/{null,zero} files"
+		    " on certain kernels is not currently implemented.\n"
+		    "(As a workaround, "
+		    "try \"zfs send [...] | cat > /dev/null\")\n"));
+	}
+#endif
+}
+
 static int
 zfs_mount_and_share(libzfs_handle_t *hdl, const char *dataset, zfs_type_t type)
 {
@@ -893,6 +917,107 @@ usage:
 }
 
 /*
+ * Return a default volblocksize for the pool which always uses more than
+ * half of the data sectors.  This primarily applies to dRAID which always
+ * writes full stripe widths.
+ */
+static uint64_t
+default_volblocksize(zpool_handle_t *zhp, nvlist_t *props)
+{
+	uint64_t volblocksize, asize = SPA_MINBLOCKSIZE;
+	nvlist_t *tree, **vdevs;
+	uint_t nvdevs;
+
+	nvlist_t *config = zpool_get_config(zhp, NULL);
+
+	if (nvlist_lookup_nvlist(config, ZPOOL_CONFIG_VDEV_TREE, &tree) != 0 ||
+	    nvlist_lookup_nvlist_array(tree, ZPOOL_CONFIG_CHILDREN,
+	    &vdevs, &nvdevs) != 0) {
+		return (ZVOL_DEFAULT_BLOCKSIZE);
+	}
+
+	for (int i = 0; i < nvdevs; i++) {
+		nvlist_t *nv = vdevs[i];
+		uint64_t ashift, ndata, nparity;
+
+		if (nvlist_lookup_uint64(nv, ZPOOL_CONFIG_ASHIFT, &ashift) != 0)
+			continue;
+
+		if (nvlist_lookup_uint64(nv, ZPOOL_CONFIG_DRAID_NDATA,
+		    &ndata) == 0) {
+			/* dRAID minimum allocation width */
+			asize = MAX(asize, ndata * (1ULL << ashift));
+		} else if (nvlist_lookup_uint64(nv, ZPOOL_CONFIG_NPARITY,
+		    &nparity) == 0) {
+			/* raidz minimum allocation width */
+			if (nparity == 1)
+				asize = MAX(asize, 2 * (1ULL << ashift));
+			else
+				asize = MAX(asize, 4 * (1ULL << ashift));
+		} else {
+			/* mirror or (non-redundant) leaf vdev */
+			asize = MAX(asize, 1ULL << ashift);
+		}
+	}
+
+	/*
+	 * Calculate the target volblocksize such that more than half
+	 * of the asize is used. The following table is for 4k sectors.
+	 *
+	 * n   asize   blksz  used  |   n   asize   blksz  used
+	 * -------------------------+---------------------------------
+	 * 1   4,096   8,192  100%  |   9  36,864  32,768   88%
+	 * 2   8,192   8,192  100%  |  10  40,960  32,768   80%
+	 * 3  12,288   8,192   66%  |  11  45,056  32,768   72%
+	 * 4  16,384  16,384  100%  |  12  49,152  32,768   66%
+	 * 5  20,480  16,384   80%  |  13  53,248  32,768   61%
+	 * 6  24,576  16,384   66%  |  14  57,344  32,768   57%
+	 * 7  28,672  16,384   57%  |  15  61,440  32,768   53%
+	 * 8  32,768  32,768  100%  |  16  65,536  65,636  100%
+	 *
+	 * This is primarily a concern for dRAID which always allocates
+	 * a full stripe width.  For dRAID the default stripe width is
+	 * n=8 in which case the volblocksize is set to 32k. Ignoring
+	 * compression there are no unused sectors.  This same reasoning
+	 * applies to raidz[2,3] so target 4 sectors to minimize waste.
+	 */
+	uint64_t tgt_volblocksize = ZVOL_DEFAULT_BLOCKSIZE;
+	while (tgt_volblocksize * 2 <= asize)
+		tgt_volblocksize *= 2;
+
+	const char *prop = zfs_prop_to_name(ZFS_PROP_VOLBLOCKSIZE);
+	if (nvlist_lookup_uint64(props, prop, &volblocksize) == 0) {
+
+		/* Issue a warning when a non-optimal size is requested. */
+		if (volblocksize < ZVOL_DEFAULT_BLOCKSIZE) {
+			(void) fprintf(stderr, gettext("Warning: "
+			    "volblocksize (%llu) is less than the default "
+			    "minimum block size (%llu).\nTo reduce wasted "
+			    "space a volblocksize of %llu is recommended.\n"),
+			    (u_longlong_t)volblocksize,
+			    (u_longlong_t)ZVOL_DEFAULT_BLOCKSIZE,
+			    (u_longlong_t)tgt_volblocksize);
+		} else if (volblocksize < tgt_volblocksize) {
+			(void) fprintf(stderr, gettext("Warning: "
+			    "volblocksize (%llu) is much less than the "
+			    "minimum allocation\nunit (%llu), which wastes "
+			    "at least %llu%% of space. To reduce wasted "
+			    "space,\nuse a larger volblocksize (%llu is "
+			    "recommended), fewer dRAID data disks\n"
+			    "per group, or smaller sector size (ashift).\n"),
+			    (u_longlong_t)volblocksize, (u_longlong_t)asize,
+			    (u_longlong_t)((100 * (asize - volblocksize)) /
+			    asize), (u_longlong_t)tgt_volblocksize);
+		}
+	} else {
+		volblocksize = tgt_volblocksize;
+		fnvlist_add_uint64(props, prop, volblocksize);
+	}
+
+	return (volblocksize);
+}
+
+/*
  * zfs create [-Pnpv] [-o prop=value] ... fs
  * zfs create [-Pnpsv] [-b blocksize] [-o prop=value] ... -V vol size
  *
@@ -911,6 +1036,8 @@ usage:
  * check of arguments and properties, but does not check for permissions,
  * available space, etc.
  *
+ * The '-u' flag prevents the newly created file system from being mounted.
+ *
  * The '-v' flag is for verbose output.
  *
  * The '-P' flag is used for parseable output.  It implies '-v'.
@@ -927,17 +1054,19 @@ zfs_do_create(int argc, char **argv)
 	boolean_t bflag = B_FALSE;
 	boolean_t parents = B_FALSE;
 	boolean_t dryrun = B_FALSE;
+	boolean_t nomount = B_FALSE;
 	boolean_t verbose = B_FALSE;
 	boolean_t parseable = B_FALSE;
 	int ret = 1;
 	nvlist_t *props;
 	uint64_t intval;
+	char *strval;
 
 	if (nvlist_alloc(&props, NV_UNIQUE_NAME, 0) != 0)
 		nomem();
 
 	/* check options */
-	while ((c = getopt(argc, argv, ":PV:b:nso:pv")) != -1) {
+	while ((c = getopt(argc, argv, ":PV:b:nso:puv")) != -1) {
 		switch (c) {
 		case 'V':
 			type = ZFS_TYPE_VOLUME;
@@ -984,6 +1113,9 @@ zfs_do_create(int argc, char **argv)
 		case 's':
 			noreserve = B_TRUE;
 			break;
+		case 'u':
+			nomount = B_TRUE;
+			break;
 		case 'v':
 			verbose = B_TRUE;
 			break;
@@ -1003,6 +1135,11 @@ zfs_do_create(int argc, char **argv)
 		    "used when creating a volume\n"));
 		goto badusage;
 	}
+	if (nomount && type != ZFS_TYPE_FILESYSTEM) {
+		(void) fprintf(stderr, gettext("'-u' can only be "
+		    "used when creating a filesystem\n"));
+		goto badusage;
+	}
 
 	argc -= optind;
 	argv += optind;
@@ -1018,7 +1155,7 @@ zfs_do_create(int argc, char **argv)
 		goto badusage;
 	}
 
-	if (dryrun || (type == ZFS_TYPE_VOLUME && !noreserve)) {
+	if (dryrun || type == ZFS_TYPE_VOLUME) {
 		char msg[ZFS_MAX_DATASET_NAME_LEN * 2];
 		char *p;
 
@@ -1040,18 +1177,24 @@ zfs_do_create(int argc, char **argv)
 		}
 	}
 
-	/*
-	 * if volsize is not a multiple of volblocksize, round it up to the
-	 * nearest multiple of the volblocksize
-	 */
 	if (type == ZFS_TYPE_VOLUME) {
-		uint64_t volblocksize;
+		const char *prop = zfs_prop_to_name(ZFS_PROP_VOLBLOCKSIZE);
+		uint64_t volblocksize = default_volblocksize(zpool_handle,
+		    real_props);
 
-		if (nvlist_lookup_uint64(props,
-		    zfs_prop_to_name(ZFS_PROP_VOLBLOCKSIZE),
-		    &volblocksize) != 0)
-			volblocksize = ZVOL_DEFAULT_BLOCKSIZE;
+		if (volblocksize != ZVOL_DEFAULT_BLOCKSIZE &&
+		    nvlist_lookup_string(props, prop, &strval) != 0) {
+			if (asprintf(&strval, "%llu",
+			    (u_longlong_t)volblocksize) == -1)
+				nomem();
+			nvlist_add_string(props, prop, strval);
+			free(strval);
+		}
 
+		/*
+		 * If volsize is not a multiple of volblocksize, round it
+		 * up to the nearest multiple of the volblocksize.
+		 */
 		if (volsize % volblocksize) {
 			volsize = P2ROUNDUP_TYPED(volsize, volblocksize,
 			    uint64_t);
@@ -1064,11 +1207,9 @@ zfs_do_create(int argc, char **argv)
 		}
 	}
 
-
 	if (type == ZFS_TYPE_VOLUME && !noreserve) {
 		uint64_t spa_version;
 		zfs_prop_t resv_prop;
-		char *strval;
 
 		spa_version = zpool_get_prop_int(zpool_handle,
 		    ZPOOL_PROP_VERSION, NULL);
@@ -1157,6 +1298,11 @@ zfs_do_create(int argc, char **argv)
 	if (log_history) {
 		(void) zpool_log_history(g_zfs, history_str);
 		log_history = B_FALSE;
+	}
+
+	if (nomount) {
+		ret = 0;
+		goto error;
 	}
 
 	ret = zfs_mount_and_share(g_zfs, argv[0], ZFS_TYPE_DATASET);
@@ -4256,6 +4402,7 @@ zfs_do_send(int argc, char **argv)
 
 	struct option long_options[] = {
 		{"replicate",	no_argument,		NULL, 'R'},
+		{"skip-missing",	no_argument,		NULL, 's'},
 		{"redact",	required_argument,	NULL, 'd'},
 		{"props",	no_argument,		NULL, 'p'},
 		{"parsable",	no_argument,		NULL, 'P'},
@@ -4274,7 +4421,7 @@ zfs_do_send(int argc, char **argv)
 	};
 
 	/* check options */
-	while ((c = getopt_long(argc, argv, ":i:I:RDpvnPLeht:cwbd:S",
+	while ((c = getopt_long(argc, argv, ":i:I:RsDpvnPLeht:cwbd:S",
 	    long_options, NULL)) != -1) {
 		switch (c) {
 		case 'i':
@@ -4290,6 +4437,9 @@ zfs_do_send(int argc, char **argv)
 			break;
 		case 'R':
 			flags.replicate = B_TRUE;
+			break;
+		case 's':
+			flags.skipmissing = B_TRUE;
 			break;
 		case 'd':
 			redactbook = optarg;
@@ -4448,11 +4598,23 @@ zfs_do_send(int argc, char **argv)
 
 		err = zfs_send_saved(zhp, &flags, STDOUT_FILENO,
 		    resume_token);
+		if (err != 0)
+			note_dev_error(errno, STDOUT_FILENO);
 		zfs_close(zhp);
 		return (err != 0);
 	} else if (resume_token != NULL) {
-		return (zfs_send_resume(g_zfs, &flags, STDOUT_FILENO,
-		    resume_token));
+		err = zfs_send_resume(g_zfs, &flags, STDOUT_FILENO,
+		    resume_token);
+		if (err != 0)
+			note_dev_error(errno, STDOUT_FILENO);
+		return (err);
+	}
+
+	if (flags.skipmissing && !flags.replicate) {
+		(void) fprintf(stderr,
+		    gettext("skip-missing flag can only be used in "
+		    "conjunction with replicate\n"));
+		usage(B_FALSE);
 	}
 
 	/*
@@ -4496,6 +4658,8 @@ zfs_do_send(int argc, char **argv)
 		err = zfs_send_one(zhp, fromname, STDOUT_FILENO, &flags,
 		    redactbook);
 		zfs_close(zhp);
+		if (err != 0)
+			note_dev_error(errno, STDOUT_FILENO);
 		return (err != 0);
 	}
 
@@ -4572,6 +4736,7 @@ zfs_do_send(int argc, char **argv)
 		nvlist_free(dbgnv);
 	}
 	zfs_close(zhp);
+	note_dev_error(errno, STDOUT_FILENO);
 
 	return (err != 0);
 }
