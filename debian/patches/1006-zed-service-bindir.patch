@@ -9,9 +9,11 @@ Author: Chris Dos <chris@chrisdos.com>
 Bug-Debian: https://bugs.debian.org/849813
 Bug-Debian: https://bugs.debian.org/826994
 Forwarded: no
---- a/etc/systemd/system/zfs-zed.service.in
-+++ b/etc/systemd/system/zfs-zed.service.in
-@@ -4,7 +4,7 @@
+Index: zfs/etc/systemd/system/zfs-zed.service.in
+===================================================================
+--- zfs.orig/etc/systemd/system/zfs-zed.service.in
++++ zfs/etc/systemd/system/zfs-zed.service.in
+@@ -4,7 +4,7 @@ Documentation=man:zed(8)
  ConditionPathIsDirectory=/sys/module/zfs
  
  [Service]
@@ -20,9 +22,11 @@ Forwarded: no
  Restart=on-abort
  
  [Install]
---- a/etc/zfs/zfs-functions.in
-+++ b/etc/zfs/zfs-functions.in
-@@ -89,7 +89,7 @@
+Index: zfs/etc/zfs/zfs-functions.in
+===================================================================
+--- zfs.orig/etc/zfs/zfs-functions.in
++++ zfs/etc/zfs/zfs-functions.in
+@@ -87,7 +87,7 @@ fi
  
  # Paths to what we need
  ZFS="@sbindir@/zfs"

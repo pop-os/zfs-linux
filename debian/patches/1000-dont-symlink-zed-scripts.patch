@@ -2,7 +2,7 @@ Description: track default symlinks, instead of symlinking
 Forwarded: no need
 --- a/cmd/zed/zed.d/Makefile.am
 +++ b/cmd/zed/zed.d/Makefile.am
-@@ -48,6 +48,6 @@
+@@ -49,7 +49,7 @@ install-data-hook:
  	for f in $(zedconfdefaults); do \
  	  test -f "$(DESTDIR)$(zedconfdir)/$${f}" -o \
  	       -L "$(DESTDIR)$(zedconfdir)/$${f}" || \
@@ -10,3 +10,4 @@ Forwarded: no need
 +	    echo "$${f}" >> "$(DESTDIR)$(zedexecdir)/DEFAULT-ENABLED" ; \
  	done
  	chmod 0600 "$(DESTDIR)$(zedconfdir)/zed.rc"
+ 
