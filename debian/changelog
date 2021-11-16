@@ -1,3 +1,16 @@
+zfs-linux (2.1.1-1) UNRELEASED; urgency=medium
+
+  * New upstream version 2.1.1 (Closes: #991896)
+  * d/patches: update for 2.1.x series
+  * d/control: require abigail-tools >= 1.8
+  * d/rules: allow abigail to fail
+  * zfsutils-linux: move {zfs,zpool}{concepts,props} from man8 to man7
+  * zfsutils-linux: install new files
+  * libzpool: update soversion from 4 to 5, update symbols
+  * Add PPC get_user workaround from Ubuntu
+
+ -- Aron Xu <aron@debian.org>  Wed, 17 Nov 2021 02:22:08 +0800
+
 zfs-linux (2.0.6-1) unstable; urgency=medium
 
   [ Ben K ]
