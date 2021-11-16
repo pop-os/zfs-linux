@@ -27,9 +27,11 @@ sbin/zstreamdump
 usr/bin/zvol_wait /sbin/
 usr/lib/modules-load.d/ lib/
 usr/lib/zfs-linux/zpool.d/
+usr/lib/zfs-linux/zpool_influxdb
 usr/sbin/arc_summary
 usr/sbin/arcstat
 usr/sbin/dbufstat
+usr/share/zfs/compatibility.d/
 usr/share/bash-completion/completions
 usr/share/man/man8/arcstat.8
 usr/share/man/man1/zhack.1
@@ -117,3 +119,7 @@ usr/share/man/man7/zpoolconcepts.7
 usr/share/man/man7/zpoolprops.7
 usr/share/man/man8/zstream.8
 usr/share/man/man8/zstreamdump.8
+usr/share/man/man4/spl.4
+usr/share/man/man4/zfs.4
+usr/share/man/man7/zpool-features.7
+usr/share/man/man8/zpool_influxdb.8
