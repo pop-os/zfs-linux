@@ -11,5 +11,5 @@ debian/libuutil3linux.install
 debian/libzfs4linux-udeb.install
 debian/libzfs4linux.install
 debian/libzfslinux-dev.install
-debian/libzpool4linux-udeb.install
-debian/libzpool4linux.install
+debian/libzpool5linux-udeb.install
+debian/libzpool5linux.install

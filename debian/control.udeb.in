@@ -41,7 +41,7 @@ Description: OpenZFS library (debian-installer)
  .
  This is a minimal package for use in debian-installer.
 
-Package: libzpool4-udeb
+Package: libzpool5-udeb
 Package-Type: udeb
 Section: contrib/debian-installer
 Architecture: linux-any
@@ -62,7 +62,7 @@ Architecture: linux-any
 Depends: libnvpair3-udeb (= ${binary:Version}),
          libuutil3-udeb (= ${binary:Version}),
          libzfs4-udeb (= ${binary:Version}),
-         libzpool4-udeb (= ${binary:Version}),
+         libzpool5-udeb (= ${binary:Version}),
          zfs-modules,
          ${misc:Depends},
          ${shlibs:Depends}

@@ -326,8 +326,10 @@ libzfs.so.4 libzfs4linux #MINVER#
  zpool_in_use@Base 0.8.2
  zpool_initialize@Base 0.8.2
  zpool_initialize_wait@Base 2.0
+ zpool_is_draid_spare@Base 2.1
  zpool_iter@Base 0.8.2
  zpool_label_disk@Base 0.8.2
+ zpool_load_compat@Base 2.1
  zpool_log_history@Base 0.8.2
  zpool_mount_datasets@Base 0.8.2
  zpool_name_to_prop@Base 0.8.2

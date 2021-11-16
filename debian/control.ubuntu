@@ -80,7 +80,7 @@ Depends: libssl-dev | libssl1.0-dev,
          libuutil3linux (= ${binary:Version}),
          libzfs4linux (= ${binary:Version}),
          libzfsbootenv1linux (= ${binary:Version}),
-         libzpool4linux (= ${binary:Version}),
+         libzpool5linux (= ${binary:Version}),
          ${misc:Depends}
 Provides: libnvpair-dev, libuutil-dev
 Description: OpenZFS filesystem development files for Linux
@@ -88,7 +88,7 @@ Description: OpenZFS filesystem development files for Linux
  libraries of OpenZFS filesystem.
  .
  This package includes the development files of libnvpair3, libuutil3,
- libzpool4 and libzfs4.
+ libzpool5 and libzfs4.
 
 Package: libzfs4linux
 Section: contrib/libs
@@ -116,12 +116,12 @@ Description: OpenZFS filesystem library for Linux
  .
  The zfsbootenv library provides support for modifying ZFS label information.
 
-Package: libzpool4linux
+Package: libzpool5linux
 Section: contrib/libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Breaks: libzpool2, libzpool4
-Replaces: libzpool2, libzpool4
+Breaks: libzpool2, libzpool5
+Replaces: libzpool2, libzpool5
 Description: OpenZFS pool library for Linux
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
@@ -230,7 +230,7 @@ Pre-Depends: ${misc:Pre-Depends}
 Depends: libnvpair3linux (= ${binary:Version}),
          libuutil3linux (= ${binary:Version}),
          libzfs4linux (= ${binary:Version}),
-         libzpool4linux (= ${binary:Version}),
+         libzpool5linux (= ${binary:Version}),
          python3,
          ${misc:Depends},
          ${shlibs:Depends}
