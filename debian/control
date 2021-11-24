@@ -95,7 +95,7 @@ Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Breaks: libzfs2, libzfs4
 Replaces: libzfs2, libzfs4
-Description: OpenZFS filesystem library for Linux
+Description: OpenZFS filesystem library for Linux - general support
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
  compression, encryption, snapshots, and more.
@@ -108,7 +108,7 @@ Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Breaks: libzfs2, libzfs4
 Replaces: libzfs2, libzfs4
-Description: OpenZFS filesystem library for Linux
+Description: OpenZFS filesystem library for Linux - label info support
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
  compression, encryption, snapshots, and more.
