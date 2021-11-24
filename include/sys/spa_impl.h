@@ -57,6 +57,11 @@
 extern "C" {
 #endif
 
+typedef struct spa_alloc {
+	kmutex_t	spaa_lock;
+	avl_tree_t	spaa_tree;
+} ____cacheline_aligned spa_alloc_t;
+
 typedef struct spa_error_entry {
 	zbookmark_phys_t	se_bookmark;
 	char			*se_name;
@@ -226,6 +231,7 @@ struct spa {
 	boolean_t	spa_is_exporting;	/* true while exporting pool */
 	metaslab_class_t *spa_normal_class;	/* normal data class */
 	metaslab_class_t *spa_log_class;	/* intent log data class */
+	metaslab_class_t *spa_embedded_log_class; /* log on normal vdevs */
 	metaslab_class_t *spa_special_class;	/* special allocation class */
 	metaslab_class_t *spa_dedup_class;	/* dedup allocation class */
 	uint64_t	spa_first_txg;		/* first txg after spa_open() */
@@ -240,21 +246,20 @@ struct spa {
 	kcondvar_t	spa_evicting_os_cv;	/* Objset Eviction Completion */
 	txg_list_t	spa_vdev_txg_list;	/* per-txg dirty vdev list */
 	vdev_t		*spa_root_vdev;		/* top-level vdev container */
-	int		spa_min_ashift;		/* of vdevs in normal class */
-	int		spa_max_ashift;		/* of vdevs in normal class */
+	uint64_t	spa_min_ashift;		/* of vdevs in normal class */
+	uint64_t	spa_max_ashift;		/* of vdevs in normal class */
+	uint64_t	spa_min_alloc;		/* of vdevs in normal class */
 	uint64_t	spa_config_guid;	/* config pool guid */
 	uint64_t	spa_load_guid;		/* spa_load initialized guid */
 	uint64_t	spa_last_synced_guid;	/* last synced guid */
 	list_t		spa_config_dirty_list;	/* vdevs with dirty config */
 	list_t		spa_state_dirty_list;	/* vdevs with dirty state */
 	/*
-	 * spa_alloc_locks and spa_alloc_trees are arrays, whose lengths are
-	 * stored in spa_alloc_count. There is one tree and one lock for each
-	 * allocator, to help improve allocation performance in write-heavy
-	 * workloads.
+	 * spa_allocs is an array, whose lengths is stored in spa_alloc_count.
+	 * There is one tree and one lock for each allocator, to help improve
+	 * allocation performance in write-heavy workloads.
 	 */
-	kmutex_t	*spa_alloc_locks;
-	avl_tree_t	*spa_alloc_trees;
+	spa_alloc_t	*spa_allocs;
 	int		spa_alloc_count;
 
 	spa_aux_vdev_t	spa_spares;		/* hot spares */
@@ -421,6 +426,8 @@ struct spa {
 	kcondvar_t	spa_waiters_cv;
 	int		spa_waiters;		/* number of waiting threads */
 	boolean_t	spa_waiters_cancel;	/* waiters should return */
+
+	char		*spa_compatibility;	/* compatibility file(s) */
 
 	/*
 	 * spa_refcount & spa_config_lock must be the last elements

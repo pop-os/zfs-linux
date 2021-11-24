@@ -24,6 +24,7 @@
  * Copyright (c) 2012, 2018 by Delphix. All rights reserved.
  * Copyright 2015 RackTop Systems.
  * Copyright (c) 2016, Intel Corporation.
+ * Copyright (c) 2021, Colm Buckley <colm@tuatha.org>
  */
 
 /*
@@ -46,6 +47,7 @@
  * using our derived config, and record the results.
  */
 
+#include <aio.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -60,7 +62,6 @@
 #include <sys/dktp/fdisk.h>
 #include <sys/vdev_impl.h>
 #include <sys/fs/zfs.h>
-#include <sys/vdev_impl.h>
 
 #include <thread_pool.h>
 #include <libzutil.h>
@@ -551,12 +552,14 @@ get_configs(libpc_handle_t *hdl, pool_list_t *pl, boolean_t active_ok,
 				 *	pool guid
 				 *	name
 				 *	comment (if available)
+				 *	compatibility features (if available)
 				 *	pool state
 				 *	hostid (if available)
 				 *	hostname (if available)
 				 */
 				uint64_t state, version;
 				char *comment = NULL;
+				char *compatibility = NULL;
 
 				version = fnvlist_lookup_uint64(tmp,
 				    ZPOOL_CONFIG_VERSION);
@@ -575,6 +578,13 @@ get_configs(libpc_handle_t *hdl, pool_list_t *pl, boolean_t active_ok,
 				    ZPOOL_CONFIG_COMMENT, &comment) == 0)
 					fnvlist_add_string(config,
 					    ZPOOL_CONFIG_COMMENT, comment);
+
+				if (nvlist_lookup_string(tmp,
+				    ZPOOL_CONFIG_COMPATIBILITY,
+				    &compatibility) == 0)
+					fnvlist_add_string(config,
+					    ZPOOL_CONFIG_COMPATIBILITY,
+					    compatibility);
 
 				state = fnvlist_lookup_uint64(tmp,
 				    ZPOOL_CONFIG_POOL_STATE);
@@ -879,16 +889,16 @@ label_offset(uint64_t size, int l)
 }
 
 /*
- * Given a file descriptor, read the label information and return an nvlist
- * describing the configuration, if there is one.  The number of valid
- * labels found will be returned in num_labels when non-NULL.
+ * The same description applies as to zpool_read_label below,
+ * except here we do it without aio, presumably because an aio call
+ * errored out in a way we think not using it could circumvent.
  */
-int
-zpool_read_label(int fd, nvlist_t **config, int *num_labels)
+static int
+zpool_read_label_slow(int fd, nvlist_t **config, int *num_labels)
 {
 	struct stat64 statbuf;
 	int l, count = 0;
-	vdev_label_t *label;
+	vdev_phys_t *label;
 	nvlist_t *expected_config = NULL;
 	uint64_t expected_guid = 0, size;
 	int error;
@@ -905,13 +915,14 @@ zpool_read_label(int fd, nvlist_t **config, int *num_labels)
 
 	for (l = 0; l < VDEV_LABELS; l++) {
 		uint64_t state, guid, txg;
+		off_t offset = label_offset(size, l) + VDEV_SKIP_SIZE;
 
-		if (pread64(fd, label, sizeof (vdev_label_t),
-		    label_offset(size, l)) != sizeof (vdev_label_t))
+		if (pread64(fd, label, sizeof (vdev_phys_t),
+		    offset) != sizeof (vdev_phys_t))
 			continue;
 
-		if (nvlist_unpack(label->vl_vdev_phys.vp_nvlist,
-		    sizeof (label->vl_vdev_phys.vp_nvlist), config, 0) != 0)
+		if (nvlist_unpack(label->vp_nvlist,
+		    sizeof (label->vp_nvlist), config, 0) != 0)
 			continue;
 
 		if (nvlist_lookup_uint64(*config, ZPOOL_CONFIG_GUID,
@@ -949,6 +960,136 @@ zpool_read_label(int fd, nvlist_t **config, int *num_labels)
 		*num_labels = count;
 
 	free(label);
+	*config = expected_config;
+
+	return (0);
+}
+
+/*
+ * Given a file descriptor, read the label information and return an nvlist
+ * describing the configuration, if there is one.  The number of valid
+ * labels found will be returned in num_labels when non-NULL.
+ */
+int
+zpool_read_label(int fd, nvlist_t **config, int *num_labels)
+{
+	struct stat64 statbuf;
+	struct aiocb aiocbs[VDEV_LABELS];
+	struct aiocb *aiocbps[VDEV_LABELS];
+	vdev_phys_t *labels;
+	nvlist_t *expected_config = NULL;
+	uint64_t expected_guid = 0, size;
+	int error, l, count = 0;
+
+	*config = NULL;
+
+	if (fstat64_blk(fd, &statbuf) == -1)
+		return (0);
+	size = P2ALIGN_TYPED(statbuf.st_size, sizeof (vdev_label_t), uint64_t);
+
+	error = posix_memalign((void **)&labels, PAGESIZE,
+	    VDEV_LABELS * sizeof (*labels));
+	if (error)
+		return (-1);
+
+	memset(aiocbs, 0, sizeof (aiocbs));
+	for (l = 0; l < VDEV_LABELS; l++) {
+		off_t offset = label_offset(size, l) + VDEV_SKIP_SIZE;
+
+		aiocbs[l].aio_fildes = fd;
+		aiocbs[l].aio_offset = offset;
+		aiocbs[l].aio_buf = &labels[l];
+		aiocbs[l].aio_nbytes = sizeof (vdev_phys_t);
+		aiocbs[l].aio_lio_opcode = LIO_READ;
+		aiocbps[l] = &aiocbs[l];
+	}
+
+	if (lio_listio(LIO_WAIT, aiocbps, VDEV_LABELS, NULL) != 0) {
+		int saved_errno = errno;
+		boolean_t do_slow = B_FALSE;
+		error = -1;
+
+		if (errno == EAGAIN || errno == EINTR || errno == EIO) {
+			/*
+			 * A portion of the requests may have been submitted.
+			 * Clean them up.
+			 */
+			for (l = 0; l < VDEV_LABELS; l++) {
+				errno = 0;
+				switch (aio_error(&aiocbs[l])) {
+				case EINVAL:
+					break;
+				case EINPROGRESS:
+					// This shouldn't be possible to
+					// encounter, die if we do.
+					ASSERT(B_FALSE);
+				case EOPNOTSUPP:
+				case ENOSYS:
+					do_slow = B_TRUE;
+				case 0:
+				default:
+					(void) aio_return(&aiocbs[l]);
+				}
+			}
+		}
+		if (do_slow) {
+			/*
+			 * At least some IO involved access unsafe-for-AIO
+			 * files. Let's try again, without AIO this time.
+			 */
+			error = zpool_read_label_slow(fd, config, num_labels);
+			saved_errno = errno;
+		}
+		free(labels);
+		errno = saved_errno;
+		return (error);
+	}
+
+	for (l = 0; l < VDEV_LABELS; l++) {
+		uint64_t state, guid, txg;
+
+		if (aio_return(&aiocbs[l]) != sizeof (vdev_phys_t))
+			continue;
+
+		if (nvlist_unpack(labels[l].vp_nvlist,
+		    sizeof (labels[l].vp_nvlist), config, 0) != 0)
+			continue;
+
+		if (nvlist_lookup_uint64(*config, ZPOOL_CONFIG_GUID,
+		    &guid) != 0 || guid == 0) {
+			nvlist_free(*config);
+			continue;
+		}
+
+		if (nvlist_lookup_uint64(*config, ZPOOL_CONFIG_POOL_STATE,
+		    &state) != 0 || state > POOL_STATE_L2CACHE) {
+			nvlist_free(*config);
+			continue;
+		}
+
+		if (state != POOL_STATE_SPARE && state != POOL_STATE_L2CACHE &&
+		    (nvlist_lookup_uint64(*config, ZPOOL_CONFIG_POOL_TXG,
+		    &txg) != 0 || txg == 0)) {
+			nvlist_free(*config);
+			continue;
+		}
+
+		if (expected_guid) {
+			if (expected_guid == guid)
+				count++;
+
+			nvlist_free(*config);
+		} else {
+			expected_config = *config;
+			expected_guid = guid;
+			count++;
+		}
+	}
+
+	if (num_labels != NULL)
+		*num_labels = count;
+
+	free(labels);
 	*config = expected_config;
 
 	return (0);
@@ -1302,7 +1443,8 @@ zpool_find_import_impl(libpc_handle_t *hdl, importargs_t *iarg,
 				 * would prevent a zdb -e of active pools with
 				 * no cachefile.
 				 */
-				fd = open(slice->rn_name, O_RDONLY | O_EXCL);
+				fd = open(slice->rn_name,
+				    O_RDONLY | O_EXCL | O_CLOEXEC);
 				if (fd >= 0 || iarg->can_be_active) {
 					if (fd >= 0)
 						close(fd);
@@ -1365,7 +1507,7 @@ discover_cached_paths(libpc_handle_t *hdl, nvlist_t *nv,
 
 	/*
 	 * Once we have the path, we need to add the directory to
-	 * our directoy cache.
+	 * our directory cache.
 	 */
 	if (nvlist_lookup_string(nv, ZPOOL_CONFIG_PATH, &path) == 0) {
 		return (zpool_find_import_scan_dir(hdl, lock, cache,
@@ -1394,7 +1536,7 @@ zpool_find_import_cached(libpc_handle_t *hdl, importargs_t *iarg)
 
 	verify(iarg->poolname == NULL || iarg->guid == 0);
 
-	if ((fd = open(iarg->cachefile, O_RDONLY)) < 0) {
+	if ((fd = open(iarg->cachefile, O_RDONLY | O_CLOEXEC)) < 0) {
 		zutil_error_aux(hdl, "%s", strerror(errno));
 		(void) zutil_error(hdl, EZFS_BADCACHE,
 		    dgettext(TEXT_DOMAIN, "failed to open cache file"));

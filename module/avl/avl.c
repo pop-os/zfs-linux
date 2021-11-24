@@ -492,7 +492,6 @@ avl_insert(avl_tree_t *tree, void *new_data, avl_index_t where)
 	int which_child = AVL_INDEX2CHILD(where);
 	size_t off = tree->avl_offset;
 
-	ASSERT(tree);
 #ifdef _LP64
 	ASSERT(((uintptr_t)new_data & 0x7) == 0);
 #endif
@@ -679,8 +678,6 @@ avl_remove(avl_tree_t *tree, void *data)
 	int right;
 	int which_child;
 	size_t off = tree->avl_offset;
-
-	ASSERT(tree);
 
 	delete = AVL_DATA2NODE(data, off);
 
@@ -1011,7 +1008,7 @@ avl_destroy_nodes(avl_tree_t *tree, void **cookie)
 	--tree->avl_numnodes;
 
 	/*
-	 * If we just did a right child or there isn't one, go up to parent.
+	 * If we just removed a right child or there isn't one, go up to parent.
 	 */
 	if (child == 1 || parent->avl_child[1] == NULL) {
 		node = parent;

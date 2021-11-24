@@ -12,7 +12,7 @@
 # as much functionality as possible while still executing relatively
 # quickly.  The included tests should take no more than a few seconds
 # each to run at most.  This provides a convenient way to sanity test a
-# change before commiting to a full test run which takes several hours.
+# change before committing to a full test run which takes several hours.
 #
 # Approximate run time: 15 minutes
 #
@@ -616,3 +616,7 @@ tags = ['functional', 'zvol', 'zvol_cli']
 [tests/functional/zvol/zvol_swap]
 tests = ['zvol_swap_001_pos', 'zvol_swap_002_pos']
 tags = ['functional', 'zvol', 'zvol_swap']
+
+[tests/functional/zpool_influxdb]
+tests = ['zpool_influxdb']
+tags = ['functional', 'zpool_influxdb']

@@ -250,7 +250,7 @@ vdev_remove_initiate_sync(void *arg, dmu_tx_t *tx)
 	spa_vdev_removal_t *svr = NULL;
 	uint64_t txg __maybe_unused = dmu_tx_get_txg(tx);
 
-	ASSERT3P(vd->vdev_ops, !=, &vdev_raidz_ops);
+	ASSERT0(vdev_get_nparity(vd));
 	svr = spa_vdev_removal_create(vd);
 
 	ASSERT(vd->vdev_removing);
@@ -345,8 +345,9 @@ vdev_remove_initiate_sync(void *arg, dmu_tx_t *tx)
 	vdev_config_dirty(vd);
 
 	zfs_dbgmsg("starting removal thread for vdev %llu (%px) in txg %llu "
-	    "im_obj=%llu", vd->vdev_id, vd, dmu_tx_get_txg(tx),
-	    vic->vic_mapping_object);
+	    "im_obj=%llu", (u_longlong_t)vd->vdev_id, vd,
+	    (u_longlong_t)dmu_tx_get_txg(tx),
+	    (u_longlong_t)vic->vic_mapping_object);
 
 	spa_history_log_internal(spa, "vdev remove started", tx,
 	    "%s vdev %llu %s", spa_name(spa), (u_longlong_t)vd->vdev_id,
@@ -474,7 +475,8 @@ spa_restart_removal(spa_t *spa)
 	if (!spa_writeable(spa))
 		return;
 
-	zfs_dbgmsg("restarting removal of %llu", svr->svr_vdev_id);
+	zfs_dbgmsg("restarting removal of %llu",
+	    (u_longlong_t)svr->svr_vdev_id);
 	svr->svr_thread = thread_create(NULL, 0, spa_vdev_remove_thread, spa,
 	    0, &p0, TS_RUN, minclsyspri);
 }
@@ -1120,7 +1122,7 @@ static void
 vdev_remove_enlist_zaps(vdev_t *vd, nvlist_t *zlist)
 {
 	ASSERT3P(zlist, !=, NULL);
-	ASSERT3P(vd->vdev_ops, !=, &vdev_raidz_ops);
+	ASSERT0(vdev_get_nparity(vd));
 
 	if (vd->vdev_leaf_zap != 0) {
 		char zkey[32];
@@ -1196,7 +1198,7 @@ vdev_remove_complete(spa_t *spa)
 	    ESC_ZFS_VDEV_REMOVE_DEV);
 
 	zfs_dbgmsg("finishing device removal for vdev %llu in txg %llu",
-	    vd->vdev_id, txg);
+	    (u_longlong_t)vd->vdev_id, (u_longlong_t)txg);
 
 	/*
 	 * Discard allocation state.
@@ -1206,6 +1208,11 @@ vdev_remove_complete(spa_t *spa)
 		metaslab_group_destroy(vd->vdev_mg);
 		vd->vdev_mg = NULL;
 		spa_log_sm_set_blocklimit(spa);
+	}
+	if (vd->vdev_log_mg != NULL) {
+		ASSERT0(vd->vdev_ms_count);
+		metaslab_group_destroy(vd->vdev_log_mg);
+		vd->vdev_log_mg = NULL;
 	}
 	ASSERT0(vd->vdev_stat.vs_space);
 	ASSERT0(vd->vdev_stat.vs_dspace);
@@ -1485,8 +1492,9 @@ spa_vdev_remove_thread(void *arg)
 
 		vca.vca_msp = msp;
 		zfs_dbgmsg("copying %llu segments for metaslab %llu",
-		    zfs_btree_numnodes(&svr->svr_allocd_segs->rt_root),
-		    msp->ms_id);
+		    (u_longlong_t)zfs_btree_numnodes(
+		    &svr->svr_allocd_segs->rt_root),
+		    (u_longlong_t)msp->ms_id);
 
 		while (!svr->svr_thread_exit &&
 		    !range_tree_is_empty(svr->svr_allocd_segs)) {
@@ -1587,8 +1595,8 @@ spa_vdev_remove_thread(void *arg)
 		    vca.vca_write_error_bytes > 0)) {
 			zfs_dbgmsg("canceling removal due to IO errors: "
 			    "[read_error_bytes=%llu] [write_error_bytes=%llu]",
-			    vca.vca_read_error_bytes,
-			    vca.vca_write_error_bytes);
+			    (u_longlong_t)vca.vca_read_error_bytes,
+			    (u_longlong_t)vca.vca_write_error_bytes);
 			spa_vdev_remove_cancel_impl(spa);
 		}
 	} else {
@@ -1760,7 +1768,7 @@ spa_vdev_remove_cancel_sync(void *arg, dmu_tx_t *tx)
 	vdev_config_dirty(vd);
 
 	zfs_dbgmsg("canceled device removal for vdev %llu in %llu",
-	    vd->vdev_id, dmu_tx_get_txg(tx));
+	    (u_longlong_t)vd->vdev_id, (u_longlong_t)dmu_tx_get_txg(tx));
 	spa_history_log_internal(spa, "vdev remove canceled", tx,
 	    "%s vdev %llu %s", spa_name(spa),
 	    (u_longlong_t)vd->vdev_id,
@@ -1780,6 +1788,8 @@ spa_vdev_remove_cancel_impl(spa_t *spa)
 		spa_config_enter(spa, SCL_ALLOC | SCL_VDEV, FTAG, RW_WRITER);
 		vdev_t *vd = vdev_lookup_top(spa, vdid);
 		metaslab_group_activate(vd->vdev_mg);
+		ASSERT(!vd->vdev_islog);
+		metaslab_group_activate(vd->vdev_log_mg);
 		spa_config_exit(spa, SCL_ALLOC | SCL_VDEV, FTAG);
 	}
 
@@ -1858,6 +1868,7 @@ spa_vdev_remove_log(vdev_t *vd, uint64_t *txg)
 
 	ASSERT(vd->vdev_islog);
 	ASSERT(vd == vd->vdev_top);
+	ASSERT3P(vd->vdev_log_mg, ==, NULL);
 	ASSERT(MUTEX_HELD(&spa_namespace_lock));
 
 	/*
@@ -1893,6 +1904,7 @@ spa_vdev_remove_log(vdev_t *vd, uint64_t *txg)
 
 	if (error != 0) {
 		metaslab_group_activate(mg);
+		ASSERT3P(vd->vdev_log_mg, ==, NULL);
 		return (error);
 	}
 	ASSERT0(vd->vdev_stat.vs_alloc);
@@ -2047,7 +2059,7 @@ spa_vdev_remove_top_check(vdev_t *vd)
 
 	/*
 	 * All vdevs in normal class must have the same ashift
-	 * and not be raidz.
+	 * and not be raidz or draid.
 	 */
 	vdev_t *rvd = spa->spa_root_vdev;
 	int num_indirect = 0;
@@ -2070,7 +2082,7 @@ spa_vdev_remove_top_check(vdev_t *vd)
 			num_indirect++;
 		if (!vdev_is_concrete(cvd))
 			continue;
-		if (cvd->vdev_ops == &vdev_raidz_ops)
+		if (vdev_get_nparity(cvd) != 0)
 			return (SET_ERROR(EINVAL));
 		/*
 		 * Need the mirror to be mirror of leaf vdevs only
@@ -2121,6 +2133,8 @@ spa_vdev_remove_top(vdev_t *vd, uint64_t *txg)
 	 */
 	metaslab_group_t *mg = vd->vdev_mg;
 	metaslab_group_passivate(mg);
+	ASSERT(!vd->vdev_islog);
+	metaslab_group_passivate(vd->vdev_log_mg);
 
 	/*
 	 * Wait for the youngest allocations and frees to sync,
@@ -2157,6 +2171,8 @@ spa_vdev_remove_top(vdev_t *vd, uint64_t *txg)
 
 	if (error != 0) {
 		metaslab_group_activate(mg);
+		ASSERT(!vd->vdev_islog);
+		metaslab_group_activate(vd->vdev_log_mg);
 		spa_async_request(spa, SPA_ASYNC_INITIALIZE_RESTART);
 		spa_async_request(spa, SPA_ASYNC_TRIM_RESTART);
 		spa_async_request(spa, SPA_ASYNC_AUTOTRIM_RESTART);
@@ -2223,18 +2239,30 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 		 * in this pool.
 		 */
 		if (vd == NULL || unspare) {
-			if (vd == NULL)
-				vd = spa_lookup_by_guid(spa, guid, B_TRUE);
-			ev = spa_event_create(spa, vd, NULL,
-			    ESC_ZFS_VDEV_REMOVE_AUX);
+			char *type;
+			boolean_t draid_spare = B_FALSE;
 
-			vd_type = VDEV_TYPE_SPARE;
-			vd_path = spa_strdup(fnvlist_lookup_string(
-			    nv, ZPOOL_CONFIG_PATH));
-			spa_vdev_remove_aux(spa->spa_spares.sav_config,
-			    ZPOOL_CONFIG_SPARES, spares, nspares, nv);
-			spa_load_spares(spa);
-			spa->spa_spares.sav_sync = B_TRUE;
+			if (nvlist_lookup_string(nv, ZPOOL_CONFIG_TYPE, &type)
+			    == 0 && strcmp(type, VDEV_TYPE_DRAID_SPARE) == 0)
+				draid_spare = B_TRUE;
+
+			if (vd == NULL && draid_spare) {
+				error = SET_ERROR(ENOTSUP);
+			} else {
+				if (vd == NULL)
+					vd = spa_lookup_by_guid(spa,
+					    guid, B_TRUE);
+				ev = spa_event_create(spa, vd, NULL,
+				    ESC_ZFS_VDEV_REMOVE_AUX);
+
+				vd_type = VDEV_TYPE_SPARE;
+				vd_path = spa_strdup(fnvlist_lookup_string(
+				    nv, ZPOOL_CONFIG_PATH));
+				spa_vdev_remove_aux(spa->spa_spares.sav_config,
+				    ZPOOL_CONFIG_SPARES, spares, nspares, nv);
+				spa_load_spares(spa);
+				spa->spa_spares.sav_sync = B_TRUE;
+			}
 		} else {
 			error = SET_ERROR(EBUSY);
 		}

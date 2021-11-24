@@ -1,15 +1,15 @@
 # Translation of zfs-linux debconf template to Swedish
-# Copyright (C) 2019 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2021 Martin Bagge <brother@persilja.net>
 # This file is distributed under the same license as the zfs-linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2013, 2019
+# Martin Bagge <brother@persilja.net>, 2013, 2019, 2021
 msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
 "POT-Creation-Date: 2021-03-30 14:43+0800\n"
-"PO-Revision-Date: 2019-01-02 12:24+0100\n"
-"Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
+"PO-Revision-Date: 2021-09-07 21:28+0200\n"
+"Last-Translator: Martin Bagge / brother <brother@persilja.net>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
@@ -81,6 +81,11 @@ msgid ""
 "prevents using pieces of code exclusively available under one license with "
 "pieces of code exclusively available under the other in the same binary."
 msgstr ""
+"OpenZFS använder licensen Common Development and Distribution License (CDDL) "
+"och Linuxkärnan använder GNU General Public License Version 2 (GPL-2). Båda "
+"dessa är fria och öppna licenser men de är också begränsande. Detta leder "
+"till besvär när kodbitar ska kombineras i samma binärfil. I båda fallen "
+"råder ett exklusivt förbud mot detta."
 
 #. Type: note
 #. Description

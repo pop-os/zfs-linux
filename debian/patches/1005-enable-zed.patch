@@ -3,7 +3,7 @@ Description: Enable zed emails
  sending function by default (if zed is installed).  This is consistent with
  the default behavior of mdadm.
 Author: Richard Laager <rlaager@wiktel.com>
-Forwarded: no
+Forwarded: not-needed
 
 --- a/cmd/zed/zed.d/zed.rc
 +++ b/cmd/zed/zed.d/zed.rc

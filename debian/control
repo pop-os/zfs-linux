@@ -5,7 +5,7 @@ Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.d
 Uploaders: Aron Xu <aron@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>,
            Mo Zhou <lumin@debian.org>
-Build-Depends: abigail-tools,
+Build-Depends: abigail-tools (>= 1.8),
                debhelper-compat (= 12),
                dh-python,
                dkms (>> 2.1.1.2-5),
@@ -79,7 +79,7 @@ Depends: libssl-dev | libssl1.0-dev,
          libuutil3linux (= ${binary:Version}),
          libzfs4linux (= ${binary:Version}),
          libzfsbootenv1linux (= ${binary:Version}),
-         libzpool4linux (= ${binary:Version}),
+         libzpool5linux (= ${binary:Version}),
          ${misc:Depends}
 Provides: libnvpair-dev, libuutil-dev
 Description: OpenZFS filesystem development files for Linux
@@ -87,7 +87,7 @@ Description: OpenZFS filesystem development files for Linux
  libraries of OpenZFS filesystem.
  .
  This package includes the development files of libnvpair3, libuutil3,
- libzpool4 and libzfs4.
+ libzpool5 and libzfs4.
 
 Package: libzfs4linux
 Section: contrib/libs
@@ -95,7 +95,7 @@ Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Breaks: libzfs2, libzfs4
 Replaces: libzfs2, libzfs4
-Description: OpenZFS filesystem library for Linux
+Description: OpenZFS filesystem library for Linux - general support
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
  compression, encryption, snapshots, and more.
@@ -108,19 +108,19 @@ Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Breaks: libzfs2, libzfs4
 Replaces: libzfs2, libzfs4
-Description: OpenZFS filesystem library for Linux
+Description: OpenZFS filesystem library for Linux - label info support
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
  compression, encryption, snapshots, and more.
  .
  The zfsbootenv library provides support for modifying ZFS label information.
 
-Package: libzpool4linux
+Package: libzpool5linux
 Section: contrib/libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Breaks: libzpool2, libzpool4
-Replaces: libzpool2, libzpool4
+Breaks: libzpool2, libzpool5
+Replaces: libzpool2, libzpool5
 Description: OpenZFS pool library for Linux
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
@@ -231,7 +231,7 @@ Pre-Depends: ${misc:Pre-Depends}
 Depends: libnvpair3linux (= ${binary:Version}),
          libuutil3linux (= ${binary:Version}),
          libzfs4linux (= ${binary:Version}),
-         libzpool4linux (= ${binary:Version}),
+         libzpool5linux (= ${binary:Version}),
          python3,
          ${misc:Depends},
          ${shlibs:Depends}
@@ -306,41 +306,3 @@ Description: OpenZFS test infrastructure and support scripts
  This package provides the OpenZFS test infrastructure for destructively
  testing and validating a system using OpenZFS. It is entirely optional
  and should only be installed and used in test environments.
-
-Package: spl
-Section: contrib/metapackages
-Architecture: all
-Depends: ${misc:Depends}
-Suggests: zfs-test
-Description: Solaris Porting Layer user-space utilities for Linux (dummy)
- The Solaris Porting Layer (SPL) is a Linux kernel module which provides
- many of the Solaris kernel APIs. This shim layer makes it possible to
- run Solaris kernel code in the Linux kernel with relatively minimal
- modification. The Solaris Porting LAyer Tests (SPLAT) is a Linux kernel
- module which provides a testing harness for the SPL module.
- .
- SPL can be particularly useful when you want to track upstream Illumos
- (or any other OpenSolaris fork) development closely and don't want the
- overhead of maintaining a large patch which converts Solaris primitives
- to Linux primitives.
- .
- This is a transitional dummy package. It can safely be removed.
-
-Package: spl-dkms
-Section: contrib/metapackages
-Architecture: all
-Depends: zfs-dkms, ${misc:Depends}
-Description: Solaris Porting Layer kernel modules for Linux (dummy)
- The Solaris Porting Layer (SPL) is a Linux kernel module which provides
- many of the Solaris kernel APIs. This shim layer makes it possible to
- run Solaris kernel code in the Linux kernel with relatively minimal
- modification. The Solaris Porting LAyer Tests (SPLAT) is a Linux kernel
- module which provides a testing harness for the SPL module.
- .
- SPL can be particularly useful when you want to track upstream Illumos
- (or any other OpenSolaris fork) development closely and don't want the
- overhead of maintaining a large patch which converts Solaris primitives
- to Linux primitives.
- .
- This is a transitional dummy package. It can safely be removed.
- SPL dkms files had been merged into zfs-dkms as of ZFS 0.8.X series.

@@ -53,7 +53,6 @@
 #include <sys/avl.h>
 #include <sys/ddt.h>
 #include <sys/zfs_onexit.h>
-#include <sys/dmu_send.h>
 #include <sys/dsl_destroy.h>
 #include <sys/blkptr.h>
 #include <sys/dsl_bookmark.h>
@@ -79,10 +78,10 @@ struct receive_record_arg {
 	dmu_replay_record_t header;
 	void *payload; /* Pointer to a buffer containing the payload */
 	/*
-	 * If the record is a write, pointer to the arc_buf_t containing the
+	 * If the record is a WRITE or SPILL, pointer to the abd containing the
 	 * payload.
 	 */
-	arc_buf_t *arc_buf;
+	abd_t *abd;
 	int payload_size;
 	uint64_t bytes_read; /* bytes read from stream when record created */
 	boolean_t eos_marker; /* Marks the end of the stream */
@@ -95,8 +94,8 @@ struct receive_writer_arg {
 	bqueue_t q;
 
 	/*
-	 * These three args are used to signal to the main thread that we're
-	 * done.
+	 * These three members are used to signal to the main thread when
+	 * we're done.
 	 */
 	kmutex_t mutex;
 	kcondvar_t cv;
@@ -174,18 +173,6 @@ byteswap_record(dmu_replay_record_t *drr)
 		ZIO_CHECKSUM_BSWAP(&drr->drr_u.drr_write.drr_key.ddk_cksum);
 		DO64(drr_write.drr_key.ddk_prop);
 		DO64(drr_write.drr_compressed_size);
-		break;
-	case DRR_WRITE_BYREF:
-		DO64(drr_write_byref.drr_object);
-		DO64(drr_write_byref.drr_offset);
-		DO64(drr_write_byref.drr_length);
-		DO64(drr_write_byref.drr_toguid);
-		DO64(drr_write_byref.drr_refguid);
-		DO64(drr_write_byref.drr_refobject);
-		DO64(drr_write_byref.drr_refoffset);
-		ZIO_CHECKSUM_BSWAP(&drr->drr_u.drr_write_byref.
-		    drr_key.ddk_cksum);
-		DO64(drr_write_byref.drr_key.ddk_prop);
 		break;
 	case DRR_WRITE_EMBEDDED:
 		DO64(drr_write_embedded.drr_object);
@@ -1903,58 +1890,106 @@ flush_write_batch_impl(struct receive_writer_arg *rwa)
 	struct receive_record_arg *rrd;
 	while ((rrd = list_head(&rwa->write_batch)) != NULL) {
 		struct drr_write *drrw = &rrd->header.drr_u.drr_write;
-		arc_buf_t *abuf = rrd->arc_buf;
+		abd_t *abd = rrd->abd;
 
 		ASSERT3U(drrw->drr_object, ==, rwa->last_object);
 
-		if (rwa->byteswap && !arc_is_encrypted(abuf) &&
-		    arc_get_compression(abuf) == ZIO_COMPRESS_OFF) {
-			dmu_object_byteswap_t byteswap =
-			    DMU_OT_BYTESWAP(drrw->drr_type);
-			dmu_ot_byteswap[byteswap].ob_func(abuf->b_data,
-			    DRR_WRITE_PAYLOAD_SIZE(drrw));
-		}
-
-		/*
-		 * If we are receiving an incremental large-block stream into
-		 * a dataset that previously did a non-large-block receive,
-		 * the WRITE record may be larger than the object's block
-		 * size.  dmu_assign_arcbuf_by_dnode() handles this as long
-		 * as the arcbuf is not compressed, so decompress it here if
-		 * necessary.
-		 */
-		if (drrw->drr_logical_size != dn->dn_datablksz &&
-		    arc_get_compression(abuf) != ZIO_COMPRESS_OFF) {
+		if (drrw->drr_logical_size != dn->dn_datablksz) {
+			/*
+			 * The WRITE record is larger than the object's block
+			 * size.  We must be receiving an incremental
+			 * large-block stream into a dataset that previously did
+			 * a non-large-block receive.  Lightweight writes must
+			 * be exactly one block, so we need to decompress the
+			 * data (if compressed) and do a normal dmu_write().
+			 */
 			ASSERT3U(drrw->drr_logical_size, >, dn->dn_datablksz);
-			zbookmark_phys_t zb = {
-				.zb_objset = dmu_objset_id(rwa->os),
-				.zb_object = rwa->last_object,
-				.zb_level = 0,
-				.zb_blkid =
-				    drrw->drr_offset >> dn->dn_datablkshift,
-			};
+			if (DRR_WRITE_COMPRESSED(drrw)) {
+				abd_t *decomp_abd =
+				    abd_alloc_linear(drrw->drr_logical_size,
+				    B_FALSE);
+
+				err = zio_decompress_data(
+				    drrw->drr_compressiontype,
+				    abd, abd_to_buf(decomp_abd),
+				    abd_get_size(abd),
+				    abd_get_size(decomp_abd), NULL);
+
+				if (err == 0) {
+					dmu_write_by_dnode(dn,
+					    drrw->drr_offset,
+					    drrw->drr_logical_size,
+					    abd_to_buf(decomp_abd), tx);
+				}
+				abd_free(decomp_abd);
+			} else {
+				dmu_write_by_dnode(dn,
+				    drrw->drr_offset,
+				    drrw->drr_logical_size,
+				    abd_to_buf(abd), tx);
+			}
+			if (err == 0)
+				abd_free(abd);
+		} else {
+			zio_prop_t zp;
+			dmu_write_policy(rwa->os, dn, 0, 0, &zp);
+
+			enum zio_flag zio_flags = 0;
+
+			if (rwa->raw) {
+				zp.zp_encrypt = B_TRUE;
+				zp.zp_compress = drrw->drr_compressiontype;
+				zp.zp_byteorder = ZFS_HOST_BYTEORDER ^
+				    !!DRR_IS_RAW_BYTESWAPPED(drrw->drr_flags) ^
+				    rwa->byteswap;
+				bcopy(drrw->drr_salt, zp.zp_salt,
+				    ZIO_DATA_SALT_LEN);
+				bcopy(drrw->drr_iv, zp.zp_iv,
+				    ZIO_DATA_IV_LEN);
+				bcopy(drrw->drr_mac, zp.zp_mac,
+				    ZIO_DATA_MAC_LEN);
+				if (DMU_OT_IS_ENCRYPTED(zp.zp_type)) {
+					zp.zp_nopwrite = B_FALSE;
+					zp.zp_copies = MIN(zp.zp_copies,
+					    SPA_DVAS_PER_BP - 1);
+				}
+				zio_flags |= ZIO_FLAG_RAW;
+			} else if (DRR_WRITE_COMPRESSED(drrw)) {
+				ASSERT3U(drrw->drr_compressed_size, >, 0);
+				ASSERT3U(drrw->drr_logical_size, >=,
+				    drrw->drr_compressed_size);
+				zp.zp_compress = drrw->drr_compressiontype;
+				zio_flags |= ZIO_FLAG_RAW_COMPRESS;
+			} else if (rwa->byteswap) {
+				/*
+				 * Note: compressed blocks never need to be
+				 * byteswapped, because WRITE records for
+				 * metadata blocks are never compressed. The
+				 * exception is raw streams, which are written
+				 * in the original byteorder, and the byteorder
+				 * bit is preserved in the BP by setting
+				 * zp_byteorder above.
+				 */
+				dmu_object_byteswap_t byteswap =
+				    DMU_OT_BYTESWAP(drrw->drr_type);
+				dmu_ot_byteswap[byteswap].ob_func(
+				    abd_to_buf(abd),
+				    DRR_WRITE_PAYLOAD_SIZE(drrw));
+			}
 
 			/*
-			 * The size of loaned arc bufs is counted in
-			 * arc_loaned_bytes.  When we untransform
-			 * (decompress) the buf, its size increases.  To
-			 * ensure that arc_loaned_bytes remains accurate, we
-			 * need to return (un-loan) the buf (with its
-			 * compressed size) and then re-loan it (with its
-			 * new, uncompressed size).
+			 * Since this data can't be read until the receive
+			 * completes, we can do a "lightweight" write for
+			 * improved performance.
 			 */
-			arc_return_buf(abuf, FTAG);
-			VERIFY0(arc_untransform(abuf, dmu_objset_spa(rwa->os),
-			    &zb, B_FALSE));
-			arc_loan_inuse_buf(abuf, FTAG);
+			err = dmu_lightweight_write_by_dnode(dn,
+			    drrw->drr_offset, abd, &zp, zio_flags, tx);
 		}
 
-		err = dmu_assign_arcbuf_by_dnode(dn,
-		    drrw->drr_offset, abuf, tx);
 		if (err != 0) {
 			/*
 			 * This rrd is left on the list, so the caller will
-			 * free it (and the arc_buf).
+			 * free it (and the abd).
 			 */
 			break;
 		}
@@ -1987,7 +2022,7 @@ flush_write_batch(struct receive_writer_arg *rwa)
 	if (err != 0) {
 		struct receive_record_arg *rrd;
 		while ((rrd = list_remove_head(&rwa->write_batch)) != NULL) {
-			dmu_return_arcbuf(rrd->arc_buf);
+			abd_free(rrd->abd);
 			kmem_free(rrd, sizeof (*rrd));
 		}
 	}
@@ -2090,9 +2125,8 @@ receive_write_embedded(struct receive_writer_arg *rwa,
 
 static int
 receive_spill(struct receive_writer_arg *rwa, struct drr_spill *drrs,
-    arc_buf_t *abuf)
+    abd_t *abd)
 {
-	dmu_tx_t *tx;
 	dmu_buf_t *db, *db_spill;
 	int err;
 
@@ -2107,7 +2141,7 @@ receive_spill(struct receive_writer_arg *rwa, struct drr_spill *drrs,
 	 * the DRR_FLAG_SPILL_BLOCK flag.
 	 */
 	if (rwa->spill && DRR_SPILL_IS_UNMODIFIED(drrs->drr_flags)) {
-		dmu_return_arcbuf(abuf);
+		abd_free(abd);
 		return (0);
 	}
 
@@ -2131,7 +2165,7 @@ receive_spill(struct receive_writer_arg *rwa, struct drr_spill *drrs,
 		return (err);
 	}
 
-	tx = dmu_tx_create(rwa->os);
+	dmu_tx_t *tx = dmu_tx_create(rwa->os);
 
 	dmu_tx_hold_spill(tx, db->db_object);
 
@@ -2150,18 +2184,35 @@ receive_spill(struct receive_writer_arg *rwa, struct drr_spill *drrs,
 	 */
 	if (db_spill->db_size != drrs->drr_length) {
 		dmu_buf_will_fill(db_spill, tx);
-		VERIFY(0 == dbuf_spill_set_blksz(db_spill,
+		VERIFY0(dbuf_spill_set_blksz(db_spill,
 		    drrs->drr_length, tx));
 	}
 
-	if (rwa->byteswap && !arc_is_encrypted(abuf) &&
-	    arc_get_compression(abuf) == ZIO_COMPRESS_OFF) {
-		dmu_object_byteswap_t byteswap =
-		    DMU_OT_BYTESWAP(drrs->drr_type);
-		dmu_ot_byteswap[byteswap].ob_func(abuf->b_data,
-		    DRR_SPILL_PAYLOAD_SIZE(drrs));
+	arc_buf_t *abuf;
+	if (rwa->raw) {
+		boolean_t byteorder = ZFS_HOST_BYTEORDER ^
+		    !!DRR_IS_RAW_BYTESWAPPED(drrs->drr_flags) ^
+		    rwa->byteswap;
+
+		abuf = arc_loan_raw_buf(dmu_objset_spa(rwa->os),
+		    drrs->drr_object, byteorder, drrs->drr_salt,
+		    drrs->drr_iv, drrs->drr_mac, drrs->drr_type,
+		    drrs->drr_compressed_size, drrs->drr_length,
+		    drrs->drr_compressiontype, 0);
+	} else {
+		abuf = arc_loan_buf(dmu_objset_spa(rwa->os),
+		    DMU_OT_IS_METADATA(drrs->drr_type),
+		    drrs->drr_length);
+		if (rwa->byteswap) {
+			dmu_object_byteswap_t byteswap =
+			    DMU_OT_BYTESWAP(drrs->drr_type);
+			dmu_ot_byteswap[byteswap].ob_func(abd_to_buf(abd),
+			    DRR_SPILL_PAYLOAD_SIZE(drrs));
+		}
 	}
 
+	bcopy(abd_to_buf(abd), abuf->b_data, DRR_SPILL_PAYLOAD_SIZE(drrs));
+	abd_free(abd);
 	dbuf_assign_arcbuf((dmu_buf_impl_t *)db_spill, abuf, tx);
 
 	dmu_buf_rele(db, FTAG);
@@ -2452,51 +2503,17 @@ receive_read_record(dmu_recv_cookie_t *drc)
 	case DRR_WRITE:
 	{
 		struct drr_write *drrw = &drc->drc_rrd->header.drr_u.drr_write;
-		arc_buf_t *abuf;
-		boolean_t is_meta = DMU_OT_IS_METADATA(drrw->drr_type);
-
-		if (drc->drc_raw) {
-			boolean_t byteorder = ZFS_HOST_BYTEORDER ^
-			    !!DRR_IS_RAW_BYTESWAPPED(drrw->drr_flags) ^
-			    drc->drc_byteswap;
-
-			abuf = arc_loan_raw_buf(dmu_objset_spa(drc->drc_os),
-			    drrw->drr_object, byteorder, drrw->drr_salt,
-			    drrw->drr_iv, drrw->drr_mac, drrw->drr_type,
-			    drrw->drr_compressed_size, drrw->drr_logical_size,
-			    drrw->drr_compressiontype, 0);
-		} else if (DRR_WRITE_COMPRESSED(drrw)) {
-			ASSERT3U(drrw->drr_compressed_size, >, 0);
-			ASSERT3U(drrw->drr_logical_size, >=,
-			    drrw->drr_compressed_size);
-			ASSERT(!is_meta);
-			abuf = arc_loan_compressed_buf(
-			    dmu_objset_spa(drc->drc_os),
-			    drrw->drr_compressed_size, drrw->drr_logical_size,
-			    drrw->drr_compressiontype, 0);
-		} else {
-			abuf = arc_loan_buf(dmu_objset_spa(drc->drc_os),
-			    is_meta, drrw->drr_logical_size);
-		}
-
-		err = receive_read_payload_and_next_header(drc,
-		    DRR_WRITE_PAYLOAD_SIZE(drrw), abuf->b_data);
+		int size = DRR_WRITE_PAYLOAD_SIZE(drrw);
+		abd_t *abd = abd_alloc_linear(size, B_FALSE);
+		err = receive_read_payload_and_next_header(drc, size,
+		    abd_to_buf(abd));
 		if (err != 0) {
-			dmu_return_arcbuf(abuf);
+			abd_free(abd);
 			return (err);
 		}
-		drc->drc_rrd->arc_buf = abuf;
+		drc->drc_rrd->abd = abd;
 		receive_read_prefetch(drc, drrw->drr_object, drrw->drr_offset,
 		    drrw->drr_logical_size);
-		return (err);
-	}
-	case DRR_WRITE_BYREF:
-	{
-		struct drr_write_byref *drrwb =
-		    &drc->drc_rrd->header.drr_u.drr_write_byref;
-		err = receive_read_payload_and_next_header(drc, 0, NULL);
-		receive_read_prefetch(drc, drrwb->drr_object, drrwb->drr_offset,
-		    drrwb->drr_length);
 		return (err);
 	}
 	case DRR_WRITE_EMBEDDED:
@@ -2537,29 +2554,14 @@ receive_read_record(dmu_recv_cookie_t *drc)
 	case DRR_SPILL:
 	{
 		struct drr_spill *drrs = &drc->drc_rrd->header.drr_u.drr_spill;
-		arc_buf_t *abuf;
-		/* DRR_SPILL records are either raw or uncompressed */
-		if (drc->drc_raw) {
-			boolean_t byteorder = ZFS_HOST_BYTEORDER ^
-			    !!DRR_IS_RAW_BYTESWAPPED(drrs->drr_flags) ^
-			    drc->drc_byteswap;
-
-			abuf = arc_loan_raw_buf(dmu_objset_spa(drc->drc_os),
-			    drrs->drr_object, byteorder, drrs->drr_salt,
-			    drrs->drr_iv, drrs->drr_mac, drrs->drr_type,
-			    drrs->drr_compressed_size, drrs->drr_length,
-			    drrs->drr_compressiontype, 0);
-		} else {
-			abuf = arc_loan_buf(dmu_objset_spa(drc->drc_os),
-			    DMU_OT_IS_METADATA(drrs->drr_type),
-			    drrs->drr_length);
-		}
-		err = receive_read_payload_and_next_header(drc,
-		    DRR_SPILL_PAYLOAD_SIZE(drrs), abuf->b_data);
+		int size = DRR_SPILL_PAYLOAD_SIZE(drrs);
+		abd_t *abd = abd_alloc_linear(size, B_FALSE);
+		err = receive_read_payload_and_next_header(drc, size,
+		    abd_to_buf(abd));
 		if (err != 0)
-			dmu_return_arcbuf(abuf);
+			abd_free(abd);
 		else
-			drc->drc_rrd->arc_buf = abuf;
+			drc->drc_rrd->abd = abd;
 		return (err);
 	}
 	case DRR_OBJECT_RANGE:
@@ -2586,8 +2588,8 @@ dprintf_drr(struct receive_record_arg *rrd, int err)
 		dprintf("drr_type = OBJECT obj = %llu type = %u "
 		    "bonustype = %u blksz = %u bonuslen = %u cksumtype = %u "
 		    "compress = %u dn_slots = %u err = %d\n",
-		    drro->drr_object, drro->drr_type,  drro->drr_bonustype,
-		    drro->drr_blksz, drro->drr_bonuslen,
+		    (u_longlong_t)drro->drr_object, drro->drr_type,
+		    drro->drr_bonustype, drro->drr_blksz, drro->drr_bonuslen,
 		    drro->drr_checksumtype, drro->drr_compress,
 		    drro->drr_dn_slots, err);
 		break;
@@ -2598,7 +2600,8 @@ dprintf_drr(struct receive_record_arg *rrd, int err)
 		    &rrd->header.drr_u.drr_freeobjects;
 		dprintf("drr_type = FREEOBJECTS firstobj = %llu "
 		    "numobjs = %llu err = %d\n",
-		    drrfo->drr_firstobj, drrfo->drr_numobjs, err);
+		    (u_longlong_t)drrfo->drr_firstobj,
+		    (u_longlong_t)drrfo->drr_numobjs, err);
 		break;
 	}
 	case DRR_WRITE:
@@ -2607,10 +2610,12 @@ dprintf_drr(struct receive_record_arg *rrd, int err)
 		dprintf("drr_type = WRITE obj = %llu type = %u offset = %llu "
 		    "lsize = %llu cksumtype = %u flags = %u "
 		    "compress = %u psize = %llu err = %d\n",
-		    drrw->drr_object, drrw->drr_type, drrw->drr_offset,
-		    drrw->drr_logical_size, drrw->drr_checksumtype,
-		    drrw->drr_flags, drrw->drr_compressiontype,
-		    drrw->drr_compressed_size, err);
+		    (u_longlong_t)drrw->drr_object, drrw->drr_type,
+		    (u_longlong_t)drrw->drr_offset,
+		    (u_longlong_t)drrw->drr_logical_size,
+		    drrw->drr_checksumtype, drrw->drr_flags,
+		    drrw->drr_compressiontype,
+		    (u_longlong_t)drrw->drr_compressed_size, err);
 		break;
 	}
 	case DRR_WRITE_BYREF:
@@ -2621,11 +2626,14 @@ dprintf_drr(struct receive_record_arg *rrd, int err)
 		    "length = %llu toguid = %llx refguid = %llx "
 		    "refobject = %llu refoffset = %llu cksumtype = %u "
 		    "flags = %u err = %d\n",
-		    drrwbr->drr_object, drrwbr->drr_offset,
-		    drrwbr->drr_length, drrwbr->drr_toguid,
-		    drrwbr->drr_refguid, drrwbr->drr_refobject,
-		    drrwbr->drr_refoffset, drrwbr->drr_checksumtype,
-		    drrwbr->drr_flags, err);
+		    (u_longlong_t)drrwbr->drr_object,
+		    (u_longlong_t)drrwbr->drr_offset,
+		    (u_longlong_t)drrwbr->drr_length,
+		    (u_longlong_t)drrwbr->drr_toguid,
+		    (u_longlong_t)drrwbr->drr_refguid,
+		    (u_longlong_t)drrwbr->drr_refobject,
+		    (u_longlong_t)drrwbr->drr_refoffset,
+		    drrwbr->drr_checksumtype, drrwbr->drr_flags, err);
 		break;
 	}
 	case DRR_WRITE_EMBEDDED:
@@ -2635,7 +2643,9 @@ dprintf_drr(struct receive_record_arg *rrd, int err)
 		dprintf("drr_type = WRITE_EMBEDDED obj = %llu offset = %llu "
 		    "length = %llu compress = %u etype = %u lsize = %u "
 		    "psize = %u err = %d\n",
-		    drrwe->drr_object, drrwe->drr_offset, drrwe->drr_length,
+		    (u_longlong_t)drrwe->drr_object,
+		    (u_longlong_t)drrwe->drr_offset,
+		    (u_longlong_t)drrwe->drr_length,
 		    drrwe->drr_compression, drrwe->drr_etype,
 		    drrwe->drr_lsize, drrwe->drr_psize, err);
 		break;
@@ -2645,7 +2655,9 @@ dprintf_drr(struct receive_record_arg *rrd, int err)
 		struct drr_free *drrf = &rrd->header.drr_u.drr_free;
 		dprintf("drr_type = FREE obj = %llu offset = %llu "
 		    "length = %lld err = %d\n",
-		    drrf->drr_object, drrf->drr_offset, drrf->drr_length,
+		    (u_longlong_t)drrf->drr_object,
+		    (u_longlong_t)drrf->drr_offset,
+		    (longlong_t)drrf->drr_length,
 		    err);
 		break;
 	}
@@ -2653,7 +2665,8 @@ dprintf_drr(struct receive_record_arg *rrd, int err)
 	{
 		struct drr_spill *drrs = &rrd->header.drr_u.drr_spill;
 		dprintf("drr_type = SPILL obj = %llu length = %llu "
-		    "err = %d\n", drrs->drr_object, drrs->drr_length, err);
+		    "err = %d\n", (u_longlong_t)drrs->drr_object,
+		    (u_longlong_t)drrs->drr_length, err);
 		break;
 	}
 	case DRR_OBJECT_RANGE:
@@ -2662,7 +2675,8 @@ dprintf_drr(struct receive_record_arg *rrd, int err)
 		    &rrd->header.drr_u.drr_object_range;
 		dprintf("drr_type = OBJECT_RANGE firstobj = %llu "
 		    "numslots = %llu flags = %u err = %d\n",
-		    drror->drr_firstobj, drror->drr_numslots,
+		    (u_longlong_t)drror->drr_firstobj,
+		    (u_longlong_t)drror->drr_numslots,
 		    drror->drr_flags, err);
 		break;
 	}
@@ -2688,9 +2702,9 @@ receive_process_record(struct receive_writer_arg *rwa,
 	if (rrd->header.drr_type != DRR_WRITE) {
 		err = flush_write_batch(rwa);
 		if (err != 0) {
-			if (rrd->arc_buf != NULL) {
-				dmu_return_arcbuf(rrd->arc_buf);
-				rrd->arc_buf = NULL;
+			if (rrd->abd != NULL) {
+				abd_free(rrd->abd);
+				rrd->abd = NULL;
 				rrd->payload = NULL;
 			} else if (rrd->payload != NULL) {
 				kmem_free(rrd->payload, rrd->payload_size);
@@ -2727,8 +2741,8 @@ receive_process_record(struct receive_writer_arg *rwa,
 			 * the rrd or arc_buf.
 			 */
 			ASSERT(err != 0);
-			dmu_return_arcbuf(rrd->arc_buf);
-			rrd->arc_buf = NULL;
+			abd_free(rrd->abd);
+			rrd->abd = NULL;
 		}
 		break;
 	}
@@ -2750,10 +2764,10 @@ receive_process_record(struct receive_writer_arg *rwa,
 	case DRR_SPILL:
 	{
 		struct drr_spill *drrs = &rrd->header.drr_u.drr_spill;
-		err = receive_spill(rwa, drrs, rrd->arc_buf);
+		err = receive_spill(rwa, drrs, rrd->abd);
 		if (err != 0)
-			dmu_return_arcbuf(rrd->arc_buf);
-		rrd->arc_buf = NULL;
+			abd_free(rrd->abd);
+		rrd->abd = NULL;
 		rrd->payload = NULL;
 		break;
 	}
@@ -2801,9 +2815,9 @@ receive_writer_thread(void *arg)
 		int err = 0;
 		if (rwa->err == 0) {
 			err = receive_process_record(rwa, rrd);
-		} else if (rrd->arc_buf != NULL) {
-			dmu_return_arcbuf(rrd->arc_buf);
-			rrd->arc_buf = NULL;
+		} else if (rrd->abd != NULL) {
+			abd_free(rrd->abd);
+			rrd->abd = NULL;
 			rrd->payload = NULL;
 		} else if (rrd->payload != NULL) {
 			kmem_free(rrd->payload, rrd->payload_size);

@@ -115,7 +115,7 @@
  * Similarly to ZIL blocks, the core part of each dnode_phys_t needs to be left
  * in plaintext for scrubbing and claiming, but the bonus buffers might contain
  * sensitive user data. The function zio_crypt_init_uios_dnode() handles parsing
- * which which pieces of the block need to be encrypted. For more details about
+ * which pieces of the block need to be encrypted. For more details about
  * dnode authentication and encryption, see zio_crypt_init_uios_dnode().
  *
  * OBJECT SET AUTHENTICATION:
@@ -376,7 +376,7 @@ error:
 static int
 zio_do_crypt_uio(boolean_t encrypt, uint64_t crypt, crypto_key_t *key,
     crypto_ctx_template_t tmpl, uint8_t *ivbuf, uint_t datalen,
-    uio_t *puio, uio_t *cuio, uint8_t *authbuf, uint_t auth_len)
+    zfs_uio_t *puio, zfs_uio_t *cuio, uint8_t *authbuf, uint_t auth_len)
 {
 	int ret;
 	crypto_data_t plaindata, cipherdata;
@@ -479,7 +479,7 @@ zio_crypt_key_wrap(crypto_key_t *cwkey, zio_crypt_key_t *key, uint8_t *iv,
     uint8_t *mac, uint8_t *keydata_out, uint8_t *hmac_keydata_out)
 {
 	int ret;
-	uio_t puio, cuio;
+	zfs_uio_t puio, cuio;
 	uint64_t aad[3];
 	iovec_t plain_iovecs[2], cipher_iovecs[3];
 	uint64_t crypt = key->zk_crypt;
@@ -495,7 +495,7 @@ zio_crypt_key_wrap(crypto_key_t *cwkey, zio_crypt_key_t *key, uint8_t *iv,
 	if (ret != 0)
 		goto error;
 
-	/* initialize uio_ts */
+	/* initialize zfs_uio_ts */
 	plain_iovecs[0].iov_base = key->zk_master_keydata;
 	plain_iovecs[0].iov_len = keydata_len;
 	plain_iovecs[1].iov_base = key->zk_hmac_keydata;
@@ -550,7 +550,7 @@ zio_crypt_key_unwrap(crypto_key_t *cwkey, uint64_t crypt, uint64_t version,
     uint8_t *mac, zio_crypt_key_t *key)
 {
 	crypto_mechanism_t mech;
-	uio_t puio, cuio;
+	zfs_uio_t puio, cuio;
 	uint64_t aad[3];
 	iovec_t plain_iovecs[2], cipher_iovecs[3];
 	uint_t enc_len, keydata_len, aad_len;
@@ -563,7 +563,7 @@ zio_crypt_key_unwrap(crypto_key_t *cwkey, uint64_t crypt, uint64_t version,
 
 	keydata_len = zio_crypt_table[crypt].ci_keylen;
 
-	/* initialize uio_ts */
+	/* initialize zfs_uio_ts */
 	plain_iovecs[0].iov_base = key->zk_master_keydata;
 	plain_iovecs[0].iov_len = keydata_len;
 	plain_iovecs[1].iov_base = key->zk_hmac_keydata;
@@ -1045,17 +1045,23 @@ zio_crypt_do_dnode_hmac_updates(crypto_context_t ctx, uint64_t version,
     boolean_t should_bswap, dnode_phys_t *dnp)
 {
 	int ret, i;
-	dnode_phys_t *adnp;
+	dnode_phys_t *adnp, tmp_dncore;
+	size_t dn_core_size = offsetof(dnode_phys_t, dn_blkptr);
 	boolean_t le_bswap = (should_bswap == ZFS_HOST_BYTEORDER);
 	crypto_data_t cd;
-	uint8_t tmp_dncore[offsetof(dnode_phys_t, dn_blkptr)];
 
 	cd.cd_format = CRYPTO_DATA_RAW;
 	cd.cd_offset = 0;
 
-	/* authenticate the core dnode (masking out non-portable bits) */
-	bcopy(dnp, tmp_dncore, sizeof (tmp_dncore));
-	adnp = (dnode_phys_t *)tmp_dncore;
+	/*
+	 * Authenticate the core dnode (masking out non-portable bits).
+	 * We only copy the first 64 bytes we operate on to avoid the overhead
+	 * of copying 512-64 unneeded bytes. The compiler seems to be fine
+	 * with that.
+	 */
+	bcopy(dnp, &tmp_dncore, dn_core_size);
+	adnp = &tmp_dncore;
+
 	if (le_bswap) {
 		adnp->dn_datablkszsec = BSWAP_16(adnp->dn_datablkszsec);
 		adnp->dn_bonuslen = BSWAP_16(adnp->dn_bonuslen);
@@ -1065,7 +1071,7 @@ zio_crypt_do_dnode_hmac_updates(crypto_context_t ctx, uint64_t version,
 	adnp->dn_flags &= DNODE_CRYPT_PORTABLE_FLAGS_MASK;
 	adnp->dn_used = 0;
 
-	cd.cd_length = sizeof (tmp_dncore);
+	cd.cd_length = dn_core_size;
 	cd.cd_raw.iov_base = (char *)adnp;
 	cd.cd_raw.iov_len = cd.cd_length;
 
@@ -1283,7 +1289,7 @@ error:
 }
 
 static void
-zio_crypt_destroy_uio(uio_t *uio)
+zio_crypt_destroy_uio(zfs_uio_t *uio)
 {
 	if (uio->uio_iov)
 		kmem_free(uio->uio_iov, uio->uio_iovcnt * sizeof (iovec_t));
@@ -1373,8 +1379,8 @@ zio_crypt_do_indirect_mac_checksum_abd(boolean_t generate, abd_t *abd,
  */
 static int
 zio_crypt_init_uios_zil(boolean_t encrypt, uint8_t *plainbuf,
-    uint8_t *cipherbuf, uint_t datalen, boolean_t byteswap, uio_t *puio,
-    uio_t *cuio, uint_t *enc_len, uint8_t **authbuf, uint_t *auth_len,
+    uint8_t *cipherbuf, uint_t datalen, boolean_t byteswap, zfs_uio_t *puio,
+    zfs_uio_t *cuio, uint_t *enc_len, uint8_t **authbuf, uint_t *auth_len,
     boolean_t *no_crypt)
 {
 	int ret;
@@ -1569,7 +1575,7 @@ error:
 static int
 zio_crypt_init_uios_dnode(boolean_t encrypt, uint64_t version,
     uint8_t *plainbuf, uint8_t *cipherbuf, uint_t datalen, boolean_t byteswap,
-    uio_t *puio, uio_t *cuio, uint_t *enc_len, uint8_t **authbuf,
+    zfs_uio_t *puio, zfs_uio_t *cuio, uint_t *enc_len, uint8_t **authbuf,
     uint_t *auth_len, boolean_t *no_crypt)
 {
 	int ret;
@@ -1752,7 +1758,7 @@ error:
 
 static int
 zio_crypt_init_uios_normal(boolean_t encrypt, uint8_t *plainbuf,
-    uint8_t *cipherbuf, uint_t datalen, uio_t *puio, uio_t *cuio,
+    uint8_t *cipherbuf, uint_t datalen, zfs_uio_t *puio, zfs_uio_t *cuio,
     uint_t *enc_len)
 {
 	int ret;
@@ -1812,8 +1818,8 @@ error:
 static int
 zio_crypt_init_uios(boolean_t encrypt, uint64_t version, dmu_object_type_t ot,
     uint8_t *plainbuf, uint8_t *cipherbuf, uint_t datalen, boolean_t byteswap,
-    uint8_t *mac, uio_t *puio, uio_t *cuio, uint_t *enc_len, uint8_t **authbuf,
-    uint_t *auth_len, boolean_t *no_crypt)
+    uint8_t *mac, zfs_uio_t *puio, zfs_uio_t *cuio, uint_t *enc_len,
+    uint8_t **authbuf, uint_t *auth_len, boolean_t *no_crypt)
 {
 	int ret;
 	iovec_t *mac_iov;
@@ -1872,7 +1878,7 @@ zio_do_crypt_data(boolean_t encrypt, zio_crypt_key_t *key,
 	uint64_t crypt = key->zk_crypt;
 	uint_t keydata_len = zio_crypt_table[crypt].ci_keylen;
 	uint_t enc_len, auth_len;
-	uio_t puio, cuio;
+	zfs_uio_t puio, cuio;
 	uint8_t enc_keydata[MASTER_KEY_MAX_LEN];
 	crypto_key_t tmp_ckey, *ckey = NULL;
 	crypto_ctx_template_t tmpl;
@@ -1938,8 +1944,8 @@ zio_do_crypt_data(boolean_t encrypt, zio_crypt_key_t *key,
 		/* If the hardware implementation fails fall back to software */
 	}
 
-	bzero(&puio, sizeof (uio_t));
-	bzero(&cuio, sizeof (uio_t));
+	bzero(&puio, sizeof (zfs_uio_t));
+	bzero(&cuio, sizeof (zfs_uio_t));
 
 	/* create uios for encryption */
 	ret = zio_crypt_init_uios(encrypt, key->zk_version, ot, plainbuf,

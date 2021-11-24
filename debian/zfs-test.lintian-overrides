@@ -8,6 +8,6 @@ executable-not-elf-or-script usr/share/zfs/zfs-tests/tests/functional/cli_root/z
 script-not-executable usr/share/zfs/zfs-tests/include/default.cfg
 script-not-executable usr/share/zfs/zfs-tests/tests/functional/cli_root/zfs_wait/zfs_wait.kshlib
 script-not-executable usr/share/zfs/zfs-tests/tests/functional/cli_root/zpool_wait/zpool_wait.kshlib
-script-not-executable usr/share/zfs/zfs-tests/tests/functional/persist_l2arc/persist_l2arc.cfg
+script-not-executable usr/share/zfs/zfs-tests/tests/functional/l2arc/l2arc.cfg
 script-not-executable usr/share/zfs/zfs-tests/tests/functional/redacted_send/redacted.kshlib
 package-contains-documentation-outside-usr-share-doc usr/share/zfs/zfs-tests/*

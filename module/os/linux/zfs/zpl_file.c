@@ -151,7 +151,7 @@ zpl_aio_fsync(struct kiocb *kiocb, int datasync)
 
 #elif defined(HAVE_FSYNC_RANGE)
 /*
- * Linux 3.1 - 3.x API,
+ * Linux 3.1 API,
  * As of 3.1 the responsibility to call filemap_write_and_wait_range() has
  * been pushed down in to the .fsync() vfs hook.  Additionally, the i_mutex
  * lock is no longer held by the caller, for zfs we don't require the lock
@@ -245,13 +245,13 @@ zpl_file_accessed(struct file *filp)
  * Otherwise, for older kernels extract the iovec and pass it instead.
  */
 static void
-zpl_uio_init(uio_t *uio, struct kiocb *kiocb, struct iov_iter *to,
+zpl_uio_init(zfs_uio_t *uio, struct kiocb *kiocb, struct iov_iter *to,
     loff_t pos, ssize_t count, size_t skip)
 {
 #if defined(HAVE_VFS_IOV_ITER)
-	uio_iov_iter_init(uio, to, pos, count, skip);
+	zfs_uio_iov_iter_init(uio, to, pos, count, skip);
 #else
-	uio_iovec_init(uio, to->iov, to->nr_segs, pos,
+	zfs_uio_iovec_init(uio, to->iov, to->nr_segs, pos,
 	    to->type & ITER_KVEC ? UIO_SYSSPACE : UIO_USERSPACE,
 	    count, skip);
 #endif
@@ -264,7 +264,7 @@ zpl_iter_read(struct kiocb *kiocb, struct iov_iter *to)
 	fstrans_cookie_t cookie;
 	struct file *filp = kiocb->ki_filp;
 	ssize_t count = iov_iter_count(to);
-	uio_t uio;
+	zfs_uio_t uio;
 
 	zpl_uio_init(&uio, kiocb, to, kiocb->ki_pos, count, 0);
 
@@ -320,7 +320,7 @@ zpl_iter_write(struct kiocb *kiocb, struct iov_iter *from)
 	fstrans_cookie_t cookie;
 	struct file *filp = kiocb->ki_filp;
 	struct inode *ip = filp->f_mapping->host;
-	uio_t uio;
+	zfs_uio_t uio;
 	size_t count = 0;
 	ssize_t ret;
 
@@ -364,8 +364,8 @@ zpl_aio_read(struct kiocb *kiocb, const struct iovec *iov,
 	if (ret)
 		return (ret);
 
-	uio_t uio;
-	uio_iovec_init(&uio, iov, nr_segs, kiocb->ki_pos, UIO_USERSPACE,
+	zfs_uio_t uio;
+	zfs_uio_iovec_init(&uio, iov, nr_segs, kiocb->ki_pos, UIO_USERSPACE,
 	    count, 0);
 
 	crhold(cr);
@@ -407,8 +407,8 @@ zpl_aio_write(struct kiocb *kiocb, const struct iovec *iov,
 	if (ret)
 		return (ret);
 
-	uio_t uio;
-	uio_iovec_init(&uio, iov, nr_segs, kiocb->ki_pos, UIO_USERSPACE,
+	zfs_uio_t uio;
+	zfs_uio_iovec_init(&uio, iov, nr_segs, kiocb->ki_pos, UIO_USERSPACE,
 	    count, 0);
 
 	crhold(cr);
@@ -594,8 +594,8 @@ zpl_mmap(struct file *filp, struct vm_area_struct *vma)
  * only used to support mmap(2).  There will be an identical copy of the
  * data in the ARC which is kept up to date via .write() and .writepage().
  */
-static int
-zpl_readpage(struct file *filp, struct page *pp)
+static inline int
+zpl_readpage_common(struct page *pp)
 {
 	struct inode *ip;
 	struct page *pl[1];
@@ -623,6 +623,18 @@ zpl_readpage(struct file *filp, struct page *pp)
 	return (error);
 }
 
+static int
+zpl_readpage(struct file *filp, struct page *pp)
+{
+	return (zpl_readpage_common(pp));
+}
+
+static int
+zpl_readpage_filler(void *data, struct page *pp)
+{
+	return (zpl_readpage_common(pp));
+}
+
 /*
  * Populate a set of pages with data for the Linux page cache.  This
  * function will only be called for read ahead and never for demand
@@ -633,8 +645,7 @@ static int
 zpl_readpages(struct file *filp, struct address_space *mapping,
     struct list_head *pages, unsigned nr_pages)
 {
-	return (read_cache_pages(mapping, pages,
-	    (filler_t *)zpl_readpage, filp));
+	return (read_cache_pages(mapping, pages, zpl_readpage_filler, NULL));
 }
 
 static int

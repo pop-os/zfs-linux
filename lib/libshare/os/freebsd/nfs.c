@@ -68,7 +68,7 @@ nfs_exports_lock(void)
 	int err;
 
 	nfs_lock_fd = open(ZFS_EXPORTS_LOCK,
-	    O_RDWR | O_CREAT, 0600);
+	    O_RDWR | O_CREAT | O_CLOEXEC, 0600);
 	if (nfs_lock_fd == -1) {
 		err = errno;
 		fprintf(stderr, "failed to lock %s: %s\n",
@@ -233,8 +233,8 @@ nfs_copy_entries(char *filename, const char *mountpoint)
 	int error = SA_OK;
 	char *line;
 
-	FILE *oldfp = fopen(ZFS_EXPORTS_FILE, "r");
-	FILE *newfp = fopen(filename, "w+");
+	FILE *oldfp = fopen(ZFS_EXPORTS_FILE, "re");
+	FILE *newfp = fopen(filename, "w+e");
 	if (newfp == NULL) {
 		fprintf(stderr, "failed to open %s file: %s", filename,
 		    strerror(errno));
@@ -296,7 +296,7 @@ nfs_enable_share(sa_share_impl_t impl_share)
 		return (error);
 	}
 
-	FILE *fp = fopen(filename, "a+");
+	FILE *fp = fopen(filename, "a+e");
 	if (fp == NULL) {
 		fprintf(stderr, "failed to open %s file: %s", filename,
 		    strerror(errno));
@@ -369,7 +369,7 @@ nfs_is_shared(sa_share_impl_t impl_share)
 	char *mntpoint = impl_share->sa_mountpoint;
 	size_t mntlen = strlen(mntpoint);
 
-	FILE *fp = fopen(ZFS_EXPORTS_FILE, "r");
+	FILE *fp = fopen(ZFS_EXPORTS_FILE, "re");
 	if (fp == NULL)
 		return (B_FALSE);
 
