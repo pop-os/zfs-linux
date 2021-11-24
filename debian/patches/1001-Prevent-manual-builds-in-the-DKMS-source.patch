@@ -3,7 +3,7 @@ Description: Block manual building in the DKMS source tree.
   block manual building of the DKMS source tree.
 Author: unknown
 Origin: ubuntu
-Forwarded: no
+Forwarded: not-needed
 Reviewed-By: Petter Reinholdtsen <pere@hungry.com>
 Last-Update: 2017-10-06
 
