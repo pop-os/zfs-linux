@@ -1,4 +1,4 @@
-zfs-linux (2.1.1-1) UNRELEASED; urgency=medium
+zfs-linux (2.1.1-1) experimental; urgency=medium
 
   * New upstream version 2.1.1 (Closes: #991896)
   * d/patches: update for 2.1.x series
@@ -8,8 +8,16 @@ zfs-linux (2.1.1-1) UNRELEASED; urgency=medium
   * zfsutils-linux: install new files
   * libzpool: update soversion from 4 to 5, update symbols
   * Add PPC get_user workaround from Ubuntu
+  * d/patches: clean up patches and make lintian happy
+  * d/control: update short desc for libzfs4linux and libzfsbootenv1linux
+  * d/patches: update Forwarded header
+  * d/copyright: update copyright information
+  * d/control: remove transition dummpy packages spl and spl-dkms
+  * d/zfs-test.lintian-overrides: update file path
+  * Close debconf translation bugs for those already merged
+    Closes: #984731, #985130, #985360, #986337, #987342, #993892
 
- -- Aron Xu <aron@debian.org>  Wed, 17 Nov 2021 02:22:08 +0800
+ -- Aron Xu <aron@debian.org>  Wed, 24 Nov 2021 21:50:39 +0800
 
 zfs-linux (2.0.6-1) unstable; urgency=medium
 
