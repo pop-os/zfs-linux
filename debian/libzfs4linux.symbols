@@ -488,7 +488,7 @@ libzfs_core.so.3 libzfs4linux #MINVER#
  atomic_inc_ulong_nv@Base 2.0
  atomic_inc_ushort@Base 2.0
  atomic_inc_ushort_nv@Base 2.0
- (arch=s390x ppc64el arm64 armhf armel mips64el mipsel riscv64)atomic_lock@Base 2.0
+ (optional)atomic_load_64@Base 2.1
  atomic_or_16@Base 2.0
  atomic_or_16_nv@Base 2.0
  atomic_or_32@Base 2.0
@@ -506,6 +506,7 @@ libzfs_core.so.3 libzfs4linux #MINVER#
  atomic_or_ushort@Base 2.0
  atomic_or_ushort_nv@Base 2.0
  atomic_set_long_excl@Base 2.0
+ (optional)atomic_store_64@Base 2.1
  atomic_sub_16@Base 2.0
  atomic_sub_16_nv@Base 2.0
  atomic_sub_32@Base 2.0

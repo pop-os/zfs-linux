@@ -1115,7 +1115,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  get_clones_stat_impl@Base 0.8.2
  get_dataset_depth@Base 0.8.2
  get_receive_resume_stats_impl@Base 0.8.2
- (arch=amd64 arm64)gf_clmul_mod_lt@Base 0.8.2
+ (optional)gf_clmul_mod_lt@Base 0.8.2
  gmac_alloc_ctx@Base 0.8.2
  gmac_init_ctx@Base 0.8.2
  gswq@Base 0.8.2
@@ -2258,6 +2258,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  vdev_raidz_math_reconstruct@Base 0.8.2
  vdev_raidz_ops@Base 0.8.2
  vdev_raidz_pow2@Base 0.8.2
+ (arch=ppc64el ppc64)vdev_raidz_powerpc_altivec_impl@Base 2.1
  vdev_raidz_reconstruct@Base 0.8.2
  vdev_raidz_scalar_impl@Base 0.8.2
  (arch=amd64)vdev_raidz_sse2_impl@Base 0.8.2
