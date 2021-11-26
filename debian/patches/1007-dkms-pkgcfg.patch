@@ -1,0 +1,13 @@
+Index: zfs/scripts/dkms.mkconf
+===================================================================
+--- zfs.orig/scripts/dkms.mkconf
++++ zfs/scripts/dkms.mkconf
+@@ -2,7 +2,7 @@
+ 
+ PROG=$0
+ 
+-pkgcfg=/etc/sysconfig/zfs
++pkgcfg=/etc/dkms/zfs.conf
+ 
+ while getopts "n:v:c:f:" opt; do
+ 	case $opt in
