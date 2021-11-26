@@ -1,3 +1,9 @@
+zfs-linux (2.1.1-2) experimental; urgency=medium
+
+  * d/lib{uutil3,zfs4,zpool5}linux.symbols: updated
+
+ -- Aron Xu <aron@debian.org>  Sat, 27 Nov 2021 02:37:32 +0800
+
 zfs-linux (2.1.1-1) experimental; urgency=medium
 
   * New upstream version 2.1.1 (Closes: #991896)

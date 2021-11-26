@@ -78,7 +78,6 @@ libuutil.so.3 libuutil3linux #MINVER#
  atomic_inc_ulong_nv@Base 0.8.2
  atomic_inc_ushort@Base 0.8.2
  atomic_inc_ushort_nv@Base 0.8.2
- (arch=s390x ppc64el arm64 armhf armel mips64el mipsel riscv64)atomic_lock@Base 0.8.2
  atomic_or_16@Base 0.8.2
  atomic_or_16_nv@Base 0.8.2
  atomic_or_32@Base 0.8.2
