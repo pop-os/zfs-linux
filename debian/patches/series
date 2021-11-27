@@ -18,3 +18,4 @@ force-verbose-rules.patch
 move-arcstat-1-to-8.patch
 #ubuntu/4701-enable-ARC-FILL-LOCKED-flag.patch
 4900-ppc-get-user-workaround.patch
+4901-zvol_wait-Ignore-locked-zvols.patch
