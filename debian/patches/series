@@ -6,6 +6,7 @@
 1004-prefer-python3-tests.patch
 1005-enable-zed.patch
 1006-zed-service-bindir.patch
+1007-dkms-pkgcfg.patch
 2100-zfs-load-module.patch
 3100-remove-libzfs-module-timeout.patch
 #ubuntu/4000-zsys-support.patch
@@ -17,3 +18,4 @@ force-verbose-rules.patch
 move-arcstat-1-to-8.patch
 #ubuntu/4701-enable-ARC-FILL-LOCKED-flag.patch
 4900-ppc-get-user-workaround.patch
+4901-zvol_wait-Ignore-locked-zvols.patch
