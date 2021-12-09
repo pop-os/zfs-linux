@@ -1,3 +1,12 @@
+zfs-linux (2.1.1-3) unstable; urgency=medium
+
+  * Fix pkgcfg path in dkms.mkconf
+  * Add patch to avoid zfs-volume-wait timeout with locked encrypted
+    zvols (Closes: #997980, LP: #1888405)
+  * Update README.{Source,Debian} to reflect current situation (Closes: #986301)
+
+ -- Aron Xu <aron@debian.org>  Wed, 08 Dec 2021 16:55:48 +0800
+
 zfs-linux (2.1.1-2) experimental; urgency=medium
 
   * d/lib{uutil3,zfs4,zpool5}linux.symbols: updated
