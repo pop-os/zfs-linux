@@ -56,7 +56,6 @@ libzpool.so.5 libzpool5linux #MINVER#
  Skein_512_Output@Base 0.8.2
  Skein_512_Process_Block@Base 0.8.2
  Skein_512_Update@Base 0.8.2
- ZSTD_isError@Base 2.0
  __dmu_object_info_from_dnode@Base 0.8.2
  __dprintf@Base 0.8.2
  __set_error@Base 0.8.2
@@ -672,6 +671,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  dnode_hold@Base 0.8.2
  dnode_hold_impl@Base 0.8.2
  dnode_init@Base 0.8.2
+ dnode_is_dirty@Base 2.1.2
  dnode_new_blkid@Base 0.8.2
  dnode_next_offset@Base 0.8.2
  dnode_reallocate@Base 0.8.2
@@ -2709,6 +2709,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  zfs_ZSTD_insertAndFindFirstIndex@Base 2.0
  zfs_ZSTD_insertBlock@Base 2.0
  zfs_ZSTD_invalidateRepCodes@Base 2.0
+ zfs_ZSTD_isError@Base 2.1.2
  zfs_ZSTD_isFrame@Base 2.0
  zfs_ZSTD_ldm_adjustParameters@Base 2.0
  zfs_ZSTD_ldm_blockCompress@Base 2.0
