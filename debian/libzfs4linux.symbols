@@ -564,6 +564,8 @@ libzfs_core.so.3 libzfs4linux #MINVER#
  efi_type@Base 2.0
  efi_use_whole_disk@Base 2.0
  efi_write@Base 2.0
+ for_each_vdev_cb@Base 2.1.2
+ for_each_vdev_in_nvlist@Base 2.1.2
  get_system_hostid@Base 2.0
  getexecname@Base 2.0
  getextmntent@Base 2.0
@@ -659,6 +661,7 @@ libzfs_core.so.3 libzfs4linux #MINVER#
  tpool_suspended@Base 2.0
  tpool_wait@Base 2.0
  update_vdev_config_dev_strs@Base 2.0
+ update_vdevs_config_dev_sysfs_path@Base 2.1.2
  zfs_append_partition@Base 2.0
  zfs_dev_flush@Base 2.0
  zfs_dev_is_dm@Base 2.0
