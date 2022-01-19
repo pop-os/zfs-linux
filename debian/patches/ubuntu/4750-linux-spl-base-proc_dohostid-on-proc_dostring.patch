@@ -1,0 +1,156 @@
+From 7de4c88b39473f358add601e8c227ca9002b1bee Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=D0=BD=D0=B0=D0=B1?= <nabijaczleweli@nabijaczleweli.xyz>
+Date: Sun, 11 Apr 2021 01:18:40 +0200
+Subject: [PATCH] linux/spl: base proc_dohostid() on proc_dostring()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This fixes /proc/sys/kernel/spl/hostid on kernels with mainline commit
+32927393dc1ccd60fb2bdc05b9e8e88753761469 ("sysctl: pass kernel pointers
+to ->proc_handler") ‒ 5.7-rc1 and up
+
+The access_ok() check in copy_to_user() in proc_copyout_string() would
+always fail, so all userspace reads and writes would fail with EINVAL
+
+proc_dostring() strips only the final new-line,
+but simple_strtoul() doesn't actually need a back-trimmed string ‒
+writing "012345678   \n" is still allowed, as is "012345678zupsko", &c.
+
+This alters what happens when an invalid value is written ‒
+previously it'd get set to what-ever simple_strtoul() returned
+(probably 0, thereby resetting it to default), now it does nothing
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Ahelenia Ziemiańska <nabijaczleweli@nabijaczleweli.xyz>
+Closes #11878
+Closes #11879
+---
+ module/os/linux/spl/spl-proc.c | 93 +++++++---------------------------
+ 1 file changed, 17 insertions(+), 76 deletions(-)
+
+diff --git a/module/os/linux/spl/spl-proc.c b/module/os/linux/spl/spl-proc.c
+index 3e58598d4..63cd7cc2e 100644
+--- a/module/os/linux/spl/spl-proc.c
++++ b/module/os/linux/spl/spl-proc.c
+@@ -53,60 +53,6 @@ static struct proc_dir_entry *proc_spl_taskq_all = NULL;
+ static struct proc_dir_entry *proc_spl_taskq = NULL;
+ struct proc_dir_entry *proc_spl_kstat = NULL;
+ 
+-static int
+-proc_copyin_string(char *kbuffer, int kbuffer_size, const char *ubuffer,
+-    int ubuffer_size)
+-{
+-	int size;
+-
+-	if (ubuffer_size > kbuffer_size)
+-		return (-EOVERFLOW);
+-
+-	if (copy_from_user((void *)kbuffer, (void *)ubuffer, ubuffer_size))
+-		return (-EFAULT);
+-
+-	/* strip trailing whitespace */
+-	size = strnlen(kbuffer, ubuffer_size);
+-	while (size-- >= 0)
+-		if (!isspace(kbuffer[size]))
+-			break;
+-
+-	/* empty string */
+-	if (size < 0)
+-		return (-EINVAL);
+-
+-	/* no space to terminate */
+-	if (size == kbuffer_size)
+-		return (-EOVERFLOW);
+-
+-	kbuffer[size + 1] = 0;
+-	return (0);
+-}
+-
+-static int
+-proc_copyout_string(char *ubuffer, int ubuffer_size, const char *kbuffer,
+-    char *append)
+-{
+-	/*
+-	 * NB if 'append' != NULL, it's a single character to append to the
+-	 * copied out string - usually "\n", for /proc entries and
+-	 * (i.e. a terminating zero byte) for sysctl entries
+-	 */
+-	int size = MIN(strlen(kbuffer), ubuffer_size);
+-
+-	if (copy_to_user(ubuffer, kbuffer, size))
+-		return (-EFAULT);
+-
+-	if (append != NULL && size < ubuffer_size) {
+-		if (copy_to_user(ubuffer + size, append, 1))
+-			return (-EFAULT);
+-
+-		size++;
+-	}
+-
+-	return (size);
+-}
+-
+ #ifdef DEBUG_KMEM
+ static int
+ proc_domemused(struct ctl_table *table, int write,
+@@ -187,39 +133,34 @@ static int
+ proc_dohostid(struct ctl_table *table, int write,
+     void __user *buffer, size_t *lenp, loff_t *ppos)
+ {
+-	int len, rc = 0;
+ 	char *end, str[32];
++	unsigned long hid;
++	spl_ctl_table dummy = *table;
++
++	dummy.data = str;
++	dummy.maxlen = sizeof (str) - 1;
++
++	if (!write)
++		snprintf(str, sizeof (str), "%lx",
++		    (unsigned long) zone_get_hostid(NULL));
++
++	/* always returns 0 */
++	proc_dostring(&dummy, write, buffer, lenp, ppos);
+ 
+ 	if (write) {
+ 		/*
+ 		 * We can't use proc_doulongvec_minmax() in the write
+-		 * case here because hostid while a hex value has no
+-		 * leading 0x which confuses the helper function.
++		 * case here because hostid, while a hex value, has no
++		 * leading 0x, which confuses the helper function.
+ 		 */
+-		rc = proc_copyin_string(str, sizeof (str), buffer, *lenp);
+-		if (rc < 0)
+-			return (rc);
+ 
+-		spl_hostid = simple_strtoul(str, &end, 16);
++		hid = simple_strtoul(str, &end, 16);
+ 		if (str == end)
+ 			return (-EINVAL);
+-
+-	} else {
+-		len = snprintf(str, sizeof (str), "%lx",
+-		    (unsigned long) zone_get_hostid(NULL));
+-		if (*ppos >= len)
+-			rc = 0;
+-		else
+-			rc = proc_copyout_string(buffer,
+-			    *lenp, str + *ppos, "\n");
+-
+-		if (rc >= 0) {
+-			*lenp = rc;
+-			*ppos += rc;
+-		}
++		spl_hostid = hid;
+ 	}
+ 
+-	return (rc);
++	return (0);
+ }
+ 
+ static void
+-- 
+2.32.0
+

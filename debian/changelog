@@ -1,7 +1,27 @@
+zfs-linux (2.0.6-1ubuntu2) impish; urgency=medium
+
+  * Revert workaround on fill locked flag patch (LP: #1906476)
+    - disable 4701-enable-ARC-FILL-LOCKED-flag.patch as this
+      is causing zfs_node.c panics
+
+ -- Colin Ian King <colin.king@canonical.com>  Sun, 26 Sep 2021 12:59:43 +0100
+
+zfs-linux (2.0.6-1ubuntu1) impish; urgency=medium
+
+  * Re-sync with Debian 2.0.6-1 for point release fixes (LP: #1945006)
+  * Enable Ubuntu specific debian patches
+  * Add scrub testing changes in kernel-smoke-test-scrub (LP: #1934910)
+    On some slower small memory systems we need to check until resilvering
+    has completed. The most reliably method is to poll on a scrub until
+    it finishes successfully. Give up after ~10 minutes and flag a failure
+    if the scrub can't start or complete successfully.
+
+ -- Colin Ian King <colin.king@canonical.com>  Fri, 24 Sep 2021 09:57:11 +0100
+
 zfs-linux (2.0.6-1) unstable; urgency=medium
 
   [ Ben K ]
-  * Fix grammar (or maybe it was a typo) of "das/dass" in debian/po/de.po.
+  * Fix grammar (or maybe it was a typo) of "das/dass" in debian/po/de.po. I am new to this so please tell me, if did something wrong.
 
   [ Aron Xu ]
   * d/README.Debian: update the scrub time
