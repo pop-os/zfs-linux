@@ -1,3 +1,9 @@
+zfs-linux (2.1.2-1ubuntu1pop0) focal; urgency=medium
+
+  * Pop!_OS backport
+
+ -- Jeremy Soller <jeremy@system76.com>  Wed, 26 Jan 2022 14:42:05 -0700
+
 zfs-linux (2.1.2-1ubuntu1) jammy; urgency=medium
 
   * Merge from Debian:
