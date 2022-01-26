@@ -1,11 +1,12 @@
 Source: zfs-linux
 Section: contrib/kernel
 Priority: optional
-Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.debian.net>
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.debian.net>
 Uploaders: Aron Xu <aron@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>,
            Mo Zhou <lumin@debian.org>
-Build-Depends: abigail-tools (>= 1.8),
+Build-Depends: abigail-tools (>= 2.0),
                debhelper-compat (= 12),
                dh-python,
                dkms (>> 2.1.1.2-5),
@@ -194,10 +195,9 @@ Description: OpenZFS filesystem kernel modules for Linux
  OpenZFS.
 
 Package: zfs-initramfs
-Architecture: all
+Architecture: amd64 arm64 ppc64el s390x riscv64
 Depends: busybox-initramfs | busybox-static | busybox,
          initramfs-tools,
-         zfs-modules | zfs-dkms,
          zfsutils-linux (>= ${source:Version}),
          ${misc:Depends}
 Breaks: zfsutils-linux (<= 0.7.11-2)
@@ -211,9 +211,8 @@ Description: OpenZFS root filesystem capabilities for Linux - initramfs
  for the initramfs-tools infrastructure.
 
 Package: zfs-dracut
-Architecture: all
+Architecture: amd64 arm64 ppc64el s390x riscv64
 Depends: dracut,
-         zfs-modules | zfs-dkms,
          zfsutils-linux (>= ${source:Version}),
          ${misc:Depends}
 Description: OpenZFS root filesystem capabilities for Linux - dracut
@@ -235,7 +234,7 @@ Depends: libnvpair3linux (= ${binary:Version}),
          python3,
          ${misc:Depends},
          ${shlibs:Depends}
-Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
+Recommends: lsb-base, zfs-zed
 Breaks: openrc,
         spl (<< 0.7.9-2),
         spl-dkms (<< 0.8.0~rc1),
@@ -259,8 +258,7 @@ Package: zfs-zed
 Section: contrib/admin
 Architecture: linux-any
 Pre-Depends: ${misc:Pre-Depends}
-Depends: zfs-modules | zfs-dkms,
-         zfsutils-linux (>= ${binary:Version}),
+Depends: zfsutils-linux (>= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
 Description: OpenZFS Event Daemon
@@ -290,7 +288,6 @@ Depends: acl,
          python3-pyzfs,
          sudo,
          sysstat,
-         zfs-modules | zfs-dkms,
          zfsutils-linux (>=${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}

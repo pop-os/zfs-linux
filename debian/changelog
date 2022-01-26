@@ -1,3 +1,15 @@
+zfs-linux (2.1.2-1ubuntu1) jammy; urgency=medium
+
+  * Merge from Debian:
+    - Revert upstream sh->C rewrite of mount generator to keep zsys support
+    - Enable zsys support and ubuntu-specific patches
+    - Drop duplicate patches applied in debian/upstream, reorder to have
+      ubuntu patches last
+    - Enforce abigail check on amd64, build-depend on abigail 2.0.0+
+    - Autopkgtest improvements
+
+ -- Dimitri John Ledkov <dimitri.ledkov@canonical.com>  Mon, 17 Jan 2022 15:17:13 +0000
+
 zfs-linux (2.1.2-1) unstable; urgency=medium
 
   * New upstream version 2.1.2
@@ -40,6 +52,44 @@ zfs-linux (2.1.1-1) experimental; urgency=medium
     Closes: #984731, #985130, #985360, #986337, #987342, #993892
 
  -- Aron Xu <aron@debian.org>  Wed, 24 Nov 2021 21:50:39 +0800
+
+zfs-linux (2.0.6-1ubuntu4) jammy; urgency=medium
+
+  * No-change rebuild against libssl3
+
+ -- Steve Langasek <steve.langasek@ubuntu.com>  Thu, 09 Dec 2021 00:23:48 +0000
+
+zfs-linux (2.0.6-1ubuntu3) jammy; urgency=medium
+
+  * No-change rebuild to add python3.10.
+
+ -- Matthias Klose <doko@ubuntu.com>  Sat, 16 Oct 2021 22:01:03 +0200
+
+zfs-linux (2.0.6-1ubuntu2.1) impish; urgency=medium
+
+  * Fix uid function in zfs initramfs script. LP: #1946808
+
+ -- Dimitri John Ledkov <dimitri.ledkov@canonical.com>  Wed, 13 Oct 2021 11:12:37 +0100
+
+zfs-linux (2.0.6-1ubuntu2) impish; urgency=medium
+
+  * Revert workaround on fill locked flag patch (LP: #1906476)
+    - disable 4701-enable-ARC-FILL-LOCKED-flag.patch as this
+      is causing zfs_node.c panics
+
+ -- Colin Ian King <colin.king@canonical.com>  Sun, 26 Sep 2021 12:59:43 +0100
+
+zfs-linux (2.0.6-1ubuntu1) impish; urgency=medium
+
+  * Re-sync with Debian 2.0.6-1 for point release fixes (LP: #1945006)
+  * Enable Ubuntu specific debian patches
+  * Add scrub testing changes in kernel-smoke-test-scrub (LP: #1934910)
+    On some slower small memory systems we need to check until resilvering
+    has completed. The most reliably method is to poll on a scrub until
+    it finishes successfully. Give up after ~10 minutes and flag a failure
+    if the scrub can't start or complete successfully.
+
+ -- Colin Ian King <colin.king@canonical.com>  Fri, 24 Sep 2021 09:57:11 +0100
 
 zfs-linux (2.0.6-1) unstable; urgency=medium
 
