@@ -1,0 +1,270 @@
+From 5303fc4c9565803eeee07237d7c867c3cebe2a0a Mon Sep 17 00:00:00 2001
+From: Mark Johnston <markjdb@gmail.com>
+Date: Fri, 21 Jan 2022 13:28:13 -0500
+Subject: [PATCH 18/27] Avoid memory allocations in the ARC eviction thread
+
+When the eviction thread goes to shrink an ARC state, it allocates a set
+of marker buffers used to hold its place in the state's sublists.
+
+This can be problematic in low memory conditions, since
+1) the allocation can be substantial, as we allocate NCPU markers;
+2) on at least FreeBSD, page reclamation can block in
+   arc_wait_for_eviction()
+
+In particular, in stress tests it's possible to hit a deadlock on
+FreeBSD when the number of free pages is very low, wherein the system is
+waiting for the page daemon to reclaim memory, the page daemon is
+waiting for the ARC eviction thread to finish, and the ARC eviction
+thread is blocked waiting for more memory.
+
+Try to reduce the likelihood of such deadlocks by pre-allocating markers
+for the eviction thread at ARC initialization time.  When evicting
+buffers from an ARC state, check to see if the current thread is the ARC
+eviction thread, and use the pre-allocated markers for that purpose
+rather than dynamically allocating them.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Alexander Motin <mav@FreeBSD.org>
+Reviewed-by: George Amanakis <gamanakis@gmail.com>
+Signed-off-by: Mark Johnston <markj@FreeBSD.org>
+Closes #12985
+---
+ include/sys/zthr.h |   1 +
+ module/zfs/arc.c   | 138 ++++++++++++++++++++++++++++-----------------
+ module/zfs/zthr.c  |   6 ++
+ 3 files changed, 92 insertions(+), 53 deletions(-)
+
+diff --git a/include/sys/zthr.h b/include/sys/zthr.h
+index 19be89eeeb..4881b45726 100644
+--- a/include/sys/zthr.h
++++ b/include/sys/zthr.h
+@@ -38,6 +38,7 @@ extern void zthr_resume(zthr_t *t);
+ extern void zthr_wait_cycle_done(zthr_t *t);
+ 
+ extern boolean_t zthr_iscancelled(zthr_t *t);
++extern boolean_t zthr_iscurthread(zthr_t *t);
+ extern boolean_t zthr_has_waiters(zthr_t *t);
+ 
+ #endif /* _SYS_ZTHR_H */
+diff --git a/module/zfs/arc.c b/module/zfs/arc.c
+index 9f22f877d2..6dcd2d1dee 100644
+--- a/module/zfs/arc.c
++++ b/module/zfs/arc.c
+@@ -328,6 +328,8 @@ static zthr_t *arc_reap_zthr;
+  * arc_evict(), which improves arc_is_overflowing().
+  */
+ static zthr_t *arc_evict_zthr;
++static arc_buf_hdr_t **arc_state_evict_markers;
++static int arc_state_evict_marker_count;
+ 
+ static kmutex_t arc_evict_lock;
+ static boolean_t arc_evict_needed = B_FALSE;
+@@ -4154,6 +4156,38 @@ arc_evict_state_impl(multilist_t *ml, int idx, arc_buf_hdr_t *marker,
+ 	return (bytes_evicted);
+ }
+ 
++/*
++ * Allocate an array of buffer headers used as placeholders during arc state
++ * eviction.
++ */
++static arc_buf_hdr_t **
++arc_state_alloc_markers(int count)
++{
++	arc_buf_hdr_t **markers;
++
++	markers = kmem_zalloc(sizeof (*markers) * count, KM_SLEEP);
++	for (int i = 0; i < count; i++) {
++		markers[i] = kmem_cache_alloc(hdr_full_cache, KM_SLEEP);
++
++		/*
++		 * A b_spa of 0 is used to indicate that this header is
++		 * a marker. This fact is used in arc_evict_type() and
++		 * arc_evict_state_impl().
++		 */
++		markers[i]->b_spa = 0;
++
++	}
++	return (markers);
++}
++
++static void
++arc_state_free_markers(arc_buf_hdr_t **markers, int count)
++{
++	for (int i = 0; i < count; i++)
++		kmem_cache_free(hdr_full_cache, markers[i]);
++	kmem_free(markers, sizeof (*markers) * count);
++}
++
+ /*
+  * Evict buffers from the given arc state, until we've removed the
+  * specified number of bytes. Move the removed buffers to the
+@@ -4185,19 +4219,15 @@ arc_evict_state(arc_state_t *state, uint64_t spa, uint64_t bytes,
+ 	 * pick up where we left off for each individual sublist, rather
+ 	 * than starting from the tail each time.
+ 	 */
+-	markers = kmem_zalloc(sizeof (*markers) * num_sublists, KM_SLEEP);
++	if (zthr_iscurthread(arc_evict_zthr)) {
++		markers = arc_state_evict_markers;
++		ASSERT3S(num_sublists, <=, arc_state_evict_marker_count);
++	} else {
++		markers = arc_state_alloc_markers(num_sublists);
++	}
+ 	for (int i = 0; i < num_sublists; i++) {
+ 		multilist_sublist_t *mls;
+ 
+-		markers[i] = kmem_cache_alloc(hdr_full_cache, KM_SLEEP);
+-
+-		/*
+-		 * A b_spa of 0 is used to indicate that this header is
+-		 * a marker. This fact is used in arc_evict_type() and
+-		 * arc_evict_state_impl().
+-		 */
+-		markers[i]->b_spa = 0;
+-
+ 		mls = multilist_sublist_lock(ml, i);
+ 		multilist_sublist_insert_tail(mls, markers[i]);
+ 		multilist_sublist_unlock(mls);
+@@ -4279,10 +4309,9 @@ arc_evict_state(arc_state_t *state, uint64_t spa, uint64_t bytes,
+ 		multilist_sublist_t *mls = multilist_sublist_lock(ml, i);
+ 		multilist_sublist_remove(mls, markers[i]);
+ 		multilist_sublist_unlock(mls);
+-
+-		kmem_cache_free(hdr_full_cache, markers[i]);
+ 	}
+-	kmem_free(markers, sizeof (*markers) * num_sublists);
++	if (markers != arc_state_evict_markers)
++		arc_state_free_markers(markers, num_sublists);
+ 
+ 	return (total_evicted);
+ }
+@@ -7599,53 +7628,52 @@ arc_tuning_update(boolean_t verbose)
+ 	WARN_IF_TUNING_IGNORED(zfs_arc_sys_free, arc_sys_free, verbose);
+ }
+ 
++static void
++arc_state_multilist_init(multilist_t *ml,
++    multilist_sublist_index_func_t *index_func, int *maxcountp)
++{
++	multilist_create(ml, sizeof (arc_buf_hdr_t),
++	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node), index_func);
++	*maxcountp = MAX(*maxcountp, multilist_get_num_sublists(ml));
++}
++
+ static void
+ arc_state_init(void)
+ {
+-	multilist_create(&arc_mru->arcs_list[ARC_BUFC_METADATA],
+-	    sizeof (arc_buf_hdr_t),
+-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
+-	    arc_state_multilist_index_func);
+-	multilist_create(&arc_mru->arcs_list[ARC_BUFC_DATA],
+-	    sizeof (arc_buf_hdr_t),
+-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
+-	    arc_state_multilist_index_func);
+-	multilist_create(&arc_mru_ghost->arcs_list[ARC_BUFC_METADATA],
+-	    sizeof (arc_buf_hdr_t),
+-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
+-	    arc_state_multilist_index_func);
+-	multilist_create(&arc_mru_ghost->arcs_list[ARC_BUFC_DATA],
+-	    sizeof (arc_buf_hdr_t),
+-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
+-	    arc_state_multilist_index_func);
+-	multilist_create(&arc_mfu->arcs_list[ARC_BUFC_METADATA],
+-	    sizeof (arc_buf_hdr_t),
+-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
+-	    arc_state_multilist_index_func);
+-	multilist_create(&arc_mfu->arcs_list[ARC_BUFC_DATA],
+-	    sizeof (arc_buf_hdr_t),
+-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
+-	    arc_state_multilist_index_func);
+-	multilist_create(&arc_mfu_ghost->arcs_list[ARC_BUFC_METADATA],
+-	    sizeof (arc_buf_hdr_t),
+-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
+-	    arc_state_multilist_index_func);
+-	multilist_create(&arc_mfu_ghost->arcs_list[ARC_BUFC_DATA],
+-	    sizeof (arc_buf_hdr_t),
+-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
+-	    arc_state_multilist_index_func);
++	int num_sublists = 0;
++
++	arc_state_multilist_init(&arc_mru->arcs_list[ARC_BUFC_METADATA],
++	    arc_state_multilist_index_func, &num_sublists);
++	arc_state_multilist_init(&arc_mru->arcs_list[ARC_BUFC_DATA],
++	    arc_state_multilist_index_func, &num_sublists);
++	arc_state_multilist_init(&arc_mru_ghost->arcs_list[ARC_BUFC_METADATA],
++	    arc_state_multilist_index_func, &num_sublists);
++	arc_state_multilist_init(&arc_mru_ghost->arcs_list[ARC_BUFC_DATA],
++	    arc_state_multilist_index_func, &num_sublists);
++	arc_state_multilist_init(&arc_mfu->arcs_list[ARC_BUFC_METADATA],
++	    arc_state_multilist_index_func, &num_sublists);
++	arc_state_multilist_init(&arc_mfu->arcs_list[ARC_BUFC_DATA],
++	    arc_state_multilist_index_func, &num_sublists);
++	arc_state_multilist_init(&arc_mfu_ghost->arcs_list[ARC_BUFC_METADATA],
++	    arc_state_multilist_index_func, &num_sublists);
++	arc_state_multilist_init(&arc_mfu_ghost->arcs_list[ARC_BUFC_DATA],
++	    arc_state_multilist_index_func, &num_sublists);
++
+ 	/*
+ 	 * L2 headers should never be on the L2 state list since they don't
+ 	 * have L1 headers allocated.  Special index function asserts that.
+ 	 */
+-	multilist_create(&arc_l2c_only->arcs_list[ARC_BUFC_METADATA],
+-	    sizeof (arc_buf_hdr_t),
+-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
+-	    arc_state_l2c_multilist_index_func);
+-	multilist_create(&arc_l2c_only->arcs_list[ARC_BUFC_DATA],
+-	    sizeof (arc_buf_hdr_t),
+-	    offsetof(arc_buf_hdr_t, b_l1hdr.b_arc_node),
+-	    arc_state_l2c_multilist_index_func);
++	arc_state_multilist_init(&arc_l2c_only->arcs_list[ARC_BUFC_METADATA],
++	    arc_state_l2c_multilist_index_func, &num_sublists);
++	arc_state_multilist_init(&arc_l2c_only->arcs_list[ARC_BUFC_DATA],
++	    arc_state_l2c_multilist_index_func, &num_sublists);
++
++	/*
++	 * Keep track of the number of markers needed to reclaim buffers from
++	 * any ARC state.  The markers will be pre-allocated so as to minimize
++	 * the number of memory allocations performed by the eviction thread.
++	 */
++	arc_state_evict_marker_count = num_sublists;
+ 
+ 	zfs_refcount_create(&arc_anon->arcs_esize[ARC_BUFC_METADATA]);
+ 	zfs_refcount_create(&arc_anon->arcs_esize[ARC_BUFC_DATA]);
+@@ -7989,6 +8017,8 @@ arc_init(void)
+ 		kstat_install(arc_ksp);
+ 	}
+ 
++	arc_state_evict_markers =
++	    arc_state_alloc_markers(arc_state_evict_marker_count);
+ 	arc_evict_zthr = zthr_create("arc_evict",
+ 	    arc_evict_cb_check, arc_evict_cb, NULL, defclsyspri);
+ 	arc_reap_zthr = zthr_create_timer("arc_reap",
+@@ -8056,6 +8086,8 @@ arc_fini(void)
+ 
+ 	(void) zthr_cancel(arc_evict_zthr);
+ 	(void) zthr_cancel(arc_reap_zthr);
++	arc_state_free_markers(arc_state_evict_markers,
++	    arc_state_evict_marker_count);
+ 
+ 	mutex_destroy(&arc_evict_lock);
+ 	list_destroy(&arc_evict_waiters);
+diff --git a/module/zfs/zthr.c b/module/zfs/zthr.c
+index 33fdda7b68..52ddffae7a 100644
+--- a/module/zfs/zthr.c
++++ b/module/zfs/zthr.c
+@@ -469,6 +469,12 @@ zthr_iscancelled(zthr_t *t)
+ 	return (cancelled);
+ }
+ 
++boolean_t
++zthr_iscurthread(zthr_t *t)
++{
++	return (t->zthr_thread == curthread);
++}
++
+ /*
+  * Wait for the zthr to finish its current function. Similar to
+  * zthr_iscancelled, you can use zthr_has_waiters to have the zthr_func end
+-- 
+2.32.0
+

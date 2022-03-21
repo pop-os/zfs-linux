@@ -1,0 +1,62 @@
+From 913ae452184edf34c175aad9efc41a8deb9292c2 Mon Sep 17 00:00:00 2001
+From: Ryan Moeller <freqlabs@FreeBSD.org>
+Date: Thu, 16 Dec 2021 16:22:15 -0500
+Subject: [PATCH 01/27] FreeBSD: Provide correct file generation number
+
+va_seq was actually a thin veil over va_gen, so z_gen is a more
+appropriate value than z_seq to populate the field with.
+
+Drop the unnecessary compat obfuscation and provide the correct
+file generation number.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Alexander Motin <mav@FreeBSD.org>
+Signed-off-by: Ryan Moeller <freqlabs@freebsd.org>
+Closes #12851
+---
+ include/os/freebsd/spl/sys/vnode.h   | 1 -
+ module/os/freebsd/zfs/zfs_ctldir.c   | 2 +-
+ module/os/freebsd/zfs/zfs_vnops_os.c | 2 +-
+ 3 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/include/os/freebsd/spl/sys/vnode.h b/include/os/freebsd/spl/sys/vnode.h
+index 3bc8a18eeb..bcfc177a47 100644
+--- a/include/os/freebsd/spl/sys/vnode.h
++++ b/include/os/freebsd/spl/sys/vnode.h
+@@ -132,7 +132,6 @@ vn_flush_cached_data(vnode_t *vp, boolean_t sync)
+ /* TODO: This field needs conversion! */
+ #define	va_nblocks	va_bytes
+ #define	va_blksize	va_blocksize
+-#define	va_seq		va_gen
+ 
+ #define	MAXOFFSET_T	OFF_MAX
+ #define	EXCL		0
+diff --git a/module/os/freebsd/zfs/zfs_ctldir.c b/module/os/freebsd/zfs/zfs_ctldir.c
+index cde40e8769..3a5c9f8caf 100644
+--- a/module/os/freebsd/zfs/zfs_ctldir.c
++++ b/module/os/freebsd/zfs/zfs_ctldir.c
+@@ -496,7 +496,7 @@ zfsctl_common_getattr(vnode_t *vp, vattr_t *vap)
+ 	 */
+ 	vap->va_blksize = 0;
+ 	vap->va_nblocks = 0;
+-	vap->va_seq = 0;
++	vap->va_gen = 0;
+ 	vn_fsid(vp, vap);
+ 	vap->va_mode = zfsctl_ctldir_mode;
+ 	vap->va_type = VDIR;
+diff --git a/module/os/freebsd/zfs/zfs_vnops_os.c b/module/os/freebsd/zfs/zfs_vnops_os.c
+index 8e48f78b73..31ce860b44 100644
+--- a/module/os/freebsd/zfs/zfs_vnops_os.c
++++ b/module/os/freebsd/zfs/zfs_vnops_os.c
+@@ -2065,7 +2065,7 @@ zfs_getattr(vnode_t *vp, vattr_t *vap, int flags, cred_t *cr)
+ 	vap->va_size = zp->z_size;
+ 	if (vp->v_type == VBLK || vp->v_type == VCHR)
+ 		vap->va_rdev = zfs_cmpldev(rdev);
+-	vap->va_seq = zp->z_seq;
++	vap->va_gen = zp->z_gen;
+ 	vap->va_flags = 0;	/* FreeBSD: Reset chflags(2) flags. */
+ 	vap->va_filerev = zp->z_seq;
+ 
+-- 
+2.32.0
+

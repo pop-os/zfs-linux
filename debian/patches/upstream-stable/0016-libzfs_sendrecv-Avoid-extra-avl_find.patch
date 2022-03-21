@@ -1,0 +1,34 @@
+From ddb5a7a182bd7e6fdbee121411132ab2d8f487df Mon Sep 17 00:00:00 2001
+From: Ryan Moeller <freqlabs@FreeBSD.org>
+Date: Tue, 27 Jul 2021 13:47:27 +0000
+Subject: [PATCH 16/27] libzfs_sendrecv: Avoid extra avl_find
+
+avl_add does avl_find internally, then avl_insert.  We're already doing
+the avl_find, so using avl_insert directly avoids repeating the search.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Ryan Moeller <freqlabs@FreeBSD.org>
+Closes #12967
+---
+ lib/libzfs/libzfs_sendrecv.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/lib/libzfs/libzfs_sendrecv.c b/lib/libzfs/libzfs_sendrecv.c
+index 3e2eb5d911..13ac21df93 100644
+--- a/lib/libzfs/libzfs_sendrecv.c
++++ b/lib/libzfs/libzfs_sendrecv.c
+@@ -206,8 +206,9 @@ fsavl_create(nvlist_t *fss)
+ 			 * Note: if there are multiple snaps with the
+ 			 * same GUID, we ignore all but one.
+ 			 */
+-			if (avl_find(fsavl, fn, NULL) == NULL)
+-				avl_add(fsavl, fn);
++			avl_index_t where = 0;
++			if (avl_find(fsavl, fn, &where) == NULL)
++				avl_insert(fsavl, fn, where);
+ 			else
+ 				free(fn);
+ 		}
+-- 
+2.32.0
+

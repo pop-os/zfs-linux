@@ -1,0 +1,33 @@
+From 1833de81033e0bac0f68d1d3dc5f35454efc019a Mon Sep 17 00:00:00 2001
+From: Philipp Riederer <pt@philipptoelke.de>
+Date: Mon, 20 Dec 2021 19:50:46 +0100
+Subject: [PATCH 06/27] Fix error propagation from lzc_send_redacted
+
+Any error from lzc_send_redacted is overwritten by the error of
+send_conclusion_record; skip writing the conclusion record if there
+was an earlier error.
+
+Reviewed-by: Paul Dagnelie <pcd@delphix.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Philipp Riederer <philipp@riederer.email>
+Closes #12766
+---
+ lib/libzfs/libzfs_sendrecv.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/libzfs/libzfs_sendrecv.c b/lib/libzfs/libzfs_sendrecv.c
+index 86ff8c91a9..3e2eb5d911 100644
+--- a/lib/libzfs/libzfs_sendrecv.c
++++ b/lib/libzfs/libzfs_sendrecv.c
+@@ -2532,7 +2532,7 @@ zfs_send_one(zfs_handle_t *zhp, const char *from, int fd, sendflags_t *flags,
+ 			    "progress thread exited nonzero")));
+ 	}
+ 
+-	if (flags->props || flags->holds || flags->backup) {
++	if (err == 0 && (flags->props || flags->holds || flags->backup)) {
+ 		/* Write the final end record. */
+ 		err = send_conclusion_record(fd, NULL);
+ 		if (err != 0)
+-- 
+2.32.0
+

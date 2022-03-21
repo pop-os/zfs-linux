@@ -200,7 +200,7 @@ Depends: busybox-initramfs | busybox-static | busybox,
          initramfs-tools,
          zfsutils-linux (>= ${source:Version}),
          ${misc:Depends}
-Breaks: zfsutils-linux (<= 0.7.11-2)
+Breaks: zfsutils-linux (<= 0.7.11-2), busybox-initramfs (<< 1:1.30.1-7ubuntu3)
 Replaces: zfsutils-linux (<= 0.7.11-2)
 Description: OpenZFS root filesystem capabilities for Linux - initramfs
  OpenZFS is a storage platform that encompasses the functionality of

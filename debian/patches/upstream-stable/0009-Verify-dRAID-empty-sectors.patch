@@ -1,0 +1,225 @@
+From 6575defc527ff78d2754f0d95815ea995724c2b2 Mon Sep 17 00:00:00 2001
+From: Brian Behlendorf <behlendorf1@llnl.gov>
+Date: Tue, 4 Jan 2022 16:46:32 -0800
+Subject: [PATCH 09/27] Verify dRAID empty sectors
+
+Verify that all empty sectors are zero filled before using them to
+calculate parity.  Failure to do so can result in incorrect parity
+columns being generated and written to disk if the contents of an
+empty sector are non-zero.  This was possible because the checksum
+only protects the data portions of the buffer, not the empty sector
+padding.
+
+This issue has been addressed by updating raidz_parity_verify() to
+check that all dRAID empty sectors are zero filled.  Any sectors
+which are non-zero will be fixed, repair IO issued, and a checksum
+error logged.  They can then be safely used to verify the parity.
+
+This specific type of damage is unlikely to occur since it requires
+a disk to have silently returned bad data, for an empty sector, while
+performing a scrub.  However, if a pool were to have been damaged
+in this way, scrubbing the pool with this change applied will repair
+both the empty sector and parity columns as long as the data checksum
+is valid.  Checksum errors will be reported in the `zpool status`
+output for any repairs which are made.
+
+Reviewed-by: Tony Hutter <hutter2@llnl.gov>
+Reviewed-by: Mark Maybee <mark.maybee@delphix.com>
+Reviewed-by: Brian Atkinson <batkinson@lanl.gov>
+Signed-off-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Closes #12857
+---
+ include/sys/vdev_draid.h                      |  1 +
+ include/sys/vdev_raidz.h                      |  2 +
+ module/zfs/vdev_draid.c                       | 47 +++++++++++++++++++
+ module/zfs/vdev_raidz.c                       | 16 +++++--
+ .../zpool_events/zpool_events_errors.ksh      | 11 +++--
+ 5 files changed, 67 insertions(+), 10 deletions(-)
+
+diff --git a/include/sys/vdev_draid.h b/include/sys/vdev_draid.h
+index 52ce4ba161..dd334acbac 100644
+--- a/include/sys/vdev_draid.h
++++ b/include/sys/vdev_draid.h
+@@ -96,6 +96,7 @@ extern boolean_t vdev_draid_readable(vdev_t *, uint64_t);
+ extern boolean_t vdev_draid_missing(vdev_t *, uint64_t, uint64_t, uint64_t);
+ extern uint64_t vdev_draid_asize_to_psize(vdev_t *, uint64_t);
+ extern void vdev_draid_map_alloc_empty(zio_t *, struct raidz_row *);
++extern int vdev_draid_map_verify_empty(zio_t *, struct raidz_row *);
+ extern nvlist_t *vdev_draid_read_config_spare(vdev_t *);
+ 
+ /* Functions for dRAID distributed spares. */
+diff --git a/include/sys/vdev_raidz.h b/include/sys/vdev_raidz.h
+index ee597eb0db..c7cf0af6d9 100644
+--- a/include/sys/vdev_raidz.h
++++ b/include/sys/vdev_raidz.h
+@@ -32,6 +32,7 @@ extern "C" {
+ #endif
+ 
+ struct zio;
++struct raidz_col;
+ struct raidz_row;
+ struct raidz_map;
+ #if !defined(_KERNEL)
+@@ -49,6 +50,7 @@ void vdev_raidz_generate_parity(struct raidz_map *);
+ void vdev_raidz_reconstruct(struct raidz_map *, const int *, int);
+ void vdev_raidz_child_done(zio_t *);
+ void vdev_raidz_io_done(zio_t *);
++void vdev_raidz_checksum_error(zio_t *, struct raidz_col *, abd_t *);
+ 
+ extern const zio_vsd_ops_t vdev_raidz_vsd_ops;
+ 
+diff --git a/module/zfs/vdev_draid.c b/module/zfs/vdev_draid.c
+index b8f82d52e8..2d83c1ac97 100644
+--- a/module/zfs/vdev_draid.c
++++ b/module/zfs/vdev_draid.c
+@@ -841,6 +841,53 @@ vdev_draid_map_alloc_empty(zio_t *zio, raidz_row_t *rr)
+ 	ASSERT3U(skip_off, ==, rr->rr_nempty * skip_size);
+ }
+ 
++/*
++ * Verify that all empty sectors are zero filled before using them to
++ * calculate parity.  Otherwise, silent corruption in an empty sector will
++ * result in bad parity being generated.  That bad parity will then be
++ * considered authoritative and overwrite the good parity on disk.  This
++ * is possible because the checksum is only calculated over the data,
++ * thus it cannot be used to detect damage in empty sectors.
++ */
++int
++vdev_draid_map_verify_empty(zio_t *zio, raidz_row_t *rr)
++{
++	uint64_t skip_size = 1ULL << zio->io_vd->vdev_top->vdev_ashift;
++	uint64_t parity_size = rr->rr_col[0].rc_size;
++	uint64_t skip_off = parity_size - skip_size;
++	uint64_t empty_off = 0;
++	int ret = 0;
++
++	ASSERT3U(zio->io_type, ==, ZIO_TYPE_READ);
++	ASSERT3P(rr->rr_abd_empty, !=, NULL);
++	ASSERT3U(rr->rr_bigcols, >, 0);
++
++	void *zero_buf = kmem_zalloc(skip_size, KM_SLEEP);
++
++	for (int c = rr->rr_bigcols; c < rr->rr_cols; c++) {
++		raidz_col_t *rc = &rr->rr_col[c];
++
++		ASSERT3P(rc->rc_abd, !=, NULL);
++		ASSERT3U(rc->rc_size, ==, parity_size);
++
++		if (abd_cmp_buf_off(rc->rc_abd, zero_buf, skip_off,
++		    skip_size) != 0) {
++			vdev_raidz_checksum_error(zio, rc, rc->rc_abd);
++			abd_zero_off(rc->rc_abd, skip_off, skip_size);
++			rc->rc_error = SET_ERROR(ECKSUM);
++			ret++;
++		}
++
++		empty_off += skip_size;
++	}
++
++	ASSERT3U(empty_off, ==, abd_get_size(rr->rr_abd_empty));
++
++	kmem_free(zero_buf, skip_size);
++
++	return (ret);
++}
++
+ /*
+  * Given a logical address within a dRAID configuration, return the physical
+  * address on the first drive in the group that this address maps to
+diff --git a/module/zfs/vdev_raidz.c b/module/zfs/vdev_raidz.c
+index 1feebf7089..9a7cf66564 100644
+--- a/module/zfs/vdev_raidz.c
++++ b/module/zfs/vdev_raidz.c
+@@ -1654,8 +1654,8 @@ vdev_raidz_io_start(zio_t *zio)
+ /*
+  * Report a checksum error for a child of a RAID-Z device.
+  */
+-static void
+-raidz_checksum_error(zio_t *zio, raidz_col_t *rc, abd_t *bad_data)
++void
++vdev_raidz_checksum_error(zio_t *zio, raidz_col_t *rc, abd_t *bad_data)
+ {
+ 	vdev_t *vd = zio->io_vd->vdev_child[rc->rc_devidx];
+ 
+@@ -1725,6 +1725,13 @@ raidz_parity_verify(zio_t *zio, raidz_row_t *rr)
+ 		abd_copy(orig[c], rc->rc_abd, rc->rc_size);
+ 	}
+ 
++	/*
++	 * Verify any empty sectors are zero filled to ensure the parity
++	 * is calculated correctly even if these non-data sectors are damaged.
++	 */
++	if (rr->rr_nempty && rr->rr_abd_empty != NULL)
++		ret += vdev_draid_map_verify_empty(zio, rr);
++
+ 	/*
+ 	 * Regenerates parity even for !tried||rc_error!=0 columns.  This
+ 	 * isn't harmful but it does have the side effect of fixing stuff
+@@ -1739,7 +1746,7 @@ raidz_parity_verify(zio_t *zio, raidz_row_t *rr)
+ 			continue;
+ 
+ 		if (abd_cmp(orig[c], rc->rc_abd) != 0) {
+-			raidz_checksum_error(zio, rc, orig[c]);
++			vdev_raidz_checksum_error(zio, rc, orig[c]);
+ 			rc->rc_error = SET_ERROR(ECKSUM);
+ 			ret++;
+ 		}
+@@ -1799,7 +1806,6 @@ vdev_raidz_io_done_verified(zio_t *zio, raidz_row_t *rr)
+ 	    (zio->io_flags & ZIO_FLAG_RESILVER)) {
+ 		int n = raidz_parity_verify(zio, rr);
+ 		unexpected_errors += n;
+-		ASSERT3U(parity_errors + n, <=, rr->rr_firstdatacol);
+ 	}
+ 
+ 	if (zio->io_error == 0 && spa_writeable(zio->io_spa) &&
+@@ -1925,7 +1931,7 @@ raidz_reconstruct(zio_t *zio, int *ltgts, int ntgts, int nparity)
+ 					 */
+ 					if (rc->rc_error == 0 &&
+ 					    c >= rr->rr_firstdatacol) {
+-						raidz_checksum_error(zio,
++						vdev_raidz_checksum_error(zio,
+ 						    rc, rc->rc_orig_data);
+ 						rc->rc_error =
+ 						    SET_ERROR(ECKSUM);
+diff --git a/tests/zfs-tests/tests/functional/cli_root/zpool_events/zpool_events_errors.ksh b/tests/zfs-tests/tests/functional/cli_root/zpool_events/zpool_events_errors.ksh
+index 4645e245c9..a6833f167c 100755
+--- a/tests/zfs-tests/tests/functional/cli_root/zpool_events/zpool_events_errors.ksh
++++ b/tests/zfs-tests/tests/functional/cli_root/zpool_events/zpool_events_errors.ksh
+@@ -28,11 +28,12 @@
+ #	in zpool status.
+ #
+ # STRATEGY:
+-#	1. Create a raidz or mirror pool
++#	1. Create a mirror, raidz, or draid pool
+ #	2. Inject read/write IO errors or checksum errors
+ #	3. Verify the number of errors in zpool status match the corresponding
+ #	   number of error events.
+-#	4. Repeat for all combinations of raidz/mirror and io/checksum errors.
++#	4. Repeat for all combinations of mirror/raidz/draid and io/checksum
++#	   errors.
+ #
+ 
+ . $STF_SUITE/include/libtest.shlib
+@@ -74,7 +75,7 @@ log_must mkdir -p $MOUNTDIR
+ 
+ # Run error test on a specific type of pool
+ #
+-# $1: pool - raidz, mirror
++# $1: pool - mirror, raidz, draid
+ # $2: test type - corrupt (checksum error), io
+ # $3: read, write
+ function do_test
+@@ -142,8 +143,8 @@ function do_test
+ 	log_must zpool destroy $POOL
+ }
+ 
+-# Test all types of errors on mirror and raidz pools
+-for pooltype in mirror raidz ; do
++# Test all types of errors on mirror, raidz, and draid pools
++for pooltype in mirror raidz draid; do
+ 	do_test $pooltype corrupt read
+ 	do_test $pooltype io read
+ 	do_test $pooltype io write
+-- 
+2.32.0
+

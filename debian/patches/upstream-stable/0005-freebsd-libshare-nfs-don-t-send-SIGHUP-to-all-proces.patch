@@ -1,0 +1,55 @@
+From a1a52a356ba7c41c7318a893e0aafd9faacca939 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=D0=BD=D0=B0=D0=B1?= <nabijaczleweli@nabijaczleweli.xyz>
+Date: Mon, 17 May 2021 18:03:26 +0200
+Subject: [PATCH 05/27] freebsd/libshare: nfs: don't send SIGHUP to all
+ processes
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+pidfile_open() sets *pidptr to -1 if the process currently holding
+the lock is between pidfile_open() and pidfile_write(),
+the subsequent kill(mountdpid) would potentially SIGHUP all
+non-system processes except init: just sleep for half a millisecond
+and try again in that case
+
+Reviewed-by: Don Brady <don.brady@delphix.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: John Kennedy <john.kennedy@delphix.com>
+Signed-off-by: Ahelenia Ziemiańska <nabijaczleweli@nabijaczleweli.xyz>
+Closes #12067
+---
+ lib/libshare/os/freebsd/nfs.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/lib/libshare/os/freebsd/nfs.c b/lib/libshare/os/freebsd/nfs.c
+index 56df3e6664..97092bdc0f 100644
+--- a/lib/libshare/os/freebsd/nfs.c
++++ b/lib/libshare/os/freebsd/nfs.c
+@@ -423,9 +423,10 @@ nfs_commit_shares(void)
+ 	struct pidfh *pfh;
+ 	pid_t mountdpid;
+ 
++start:
+ 	pfh = pidfile_open(_PATH_MOUNTDPID, 0600, &mountdpid);
+ 	if (pfh != NULL) {
+-		/* Mountd is not running. */
++		/* mountd(8) is not running. */
+ 		pidfile_remove(pfh);
+ 		return (SA_OK);
+ 	}
+@@ -433,6 +434,11 @@ nfs_commit_shares(void)
+ 		/* Cannot open pidfile for some reason. */
+ 		return (SA_SYSTEM_ERR);
+ 	}
++	if (mountdpid == -1) {
++		/* mountd(8) exists, but didn't write the PID yet */
++		usleep(500);
++		goto start;
++	}
+ 	/* We have mountd(8) PID in mountdpid variable. */
+ 	kill(mountdpid, SIGHUP);
+ 	return (SA_OK);
+-- 
+2.32.0
+

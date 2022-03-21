@@ -1,0 +1,94 @@
+From f4def7ec6c9a003dd6c85a8a78531bf5eb5996e0 Mon Sep 17 00:00:00 2001
+From: Ryan Moeller <ryan@iXsystems.com>
+Date: Fri, 14 Jan 2022 15:38:32 -0500
+Subject: [PATCH 13/27] FreeBSD: Fix leaked strings in libspl mnttab
+
+The FreeBSD implementations of various libspl functions for getting
+mounted device information were found to leak several strings which
+were being allocated in statfs2mnttab but never freed.
+
+The Solaris getmntany(3C) and related interfaces are expected to return
+strings residing in static buffers that need to be copied rather than
+freed by the caller.
+
+Use static thread-local storage to stash the mnttab structure strings
+from FreeBSD's statfs info rather than strings allocated on the heap by
+strdup(3).
+
+While here, remove some stray commented out lines.
+
+Reviewed-by: Alexander Motin <mav@FreeBSD.org>
+Reviewed-by: Rich Ercolani <rincebrain@gmail.com>
+Signed-off-by: Ryan Moeller <ryan@iXsystems.com>
+Closes #12961
+---
+ lib/libspl/os/freebsd/mnttab.c | 25 ++++++++++++++++---------
+ 1 file changed, 16 insertions(+), 9 deletions(-)
+
+diff --git a/lib/libspl/os/freebsd/mnttab.c b/lib/libspl/os/freebsd/mnttab.c
+index bd3e3e4e3e..d830257fbd 100644
+--- a/lib/libspl/os/freebsd/mnttab.c
++++ b/lib/libspl/os/freebsd/mnttab.c
+@@ -91,16 +91,28 @@ optadd(char *mntopts, size_t size, const char *opt)
+ 	strlcat(mntopts, opt, size);
+ }
+ 
++static __thread char gfstypename[MFSNAMELEN];
++static __thread char gmntfromname[MNAMELEN];
++static __thread char gmntonname[MNAMELEN];
++static __thread char gmntopts[MNTMAXSTR];
++
+ void
+ statfs2mnttab(struct statfs *sfs, struct mnttab *mp)
+ {
+-	static char mntopts[MNTMAXSTR];
+ 	long flags;
+ 
+-	mntopts[0] = '\0';
++	strlcpy(gfstypename, sfs->f_fstypename, sizeof (gfstypename));
++	mp->mnt_fstype = gfstypename;
++
++	strlcpy(gmntfromname, sfs->f_mntfromname, sizeof (gmntfromname));
++	mp->mnt_special = gmntfromname;
++
++	strlcpy(gmntonname, sfs->f_mntonname, sizeof (gmntonname));
++	mp->mnt_mountp = gmntonname;
+ 
+ 	flags = sfs->f_flags;
+-#define	OPTADD(opt)	optadd(mntopts, sizeof (mntopts), (opt))
++	gmntopts[0] = '\0';
++#define	OPTADD(opt)	optadd(gmntopts, sizeof (gmntopts), (opt))
+ 	if (flags & MNT_RDONLY)
+ 		OPTADD(MNTOPT_RO);
+ 	else
+@@ -121,10 +133,7 @@ statfs2mnttab(struct statfs *sfs, struct mnttab *mp)
+ 	else
+ 		OPTADD(MNTOPT_EXEC);
+ #undef	OPTADD
+-	mp->mnt_special = strdup(sfs->f_mntfromname);
+-	mp->mnt_mountp = strdup(sfs->f_mntonname);
+-	mp->mnt_fstype = strdup(sfs->f_fstypename);
+-	mp->mnt_mntopts = strdup(mntopts);
++	mp->mnt_mntopts = gmntopts;
+ }
+ 
+ static struct statfs *gsfs = NULL;
+@@ -166,7 +175,6 @@ fail:
+ int
+ getmntany(FILE *fd __unused, struct mnttab *mgetp, struct mnttab *mrefp)
+ {
+-	//	struct statfs *sfs;
+ 	int i, error;
+ 
+ 	error = statfs_init();
+@@ -195,7 +203,6 @@ getmntany(FILE *fd __unused, struct mnttab *mgetp, struct mnttab *mrefp)
+ int
+ getmntent(FILE *fp, struct mnttab *mp)
+ {
+-	//	struct statfs *sfs;
+ 	int error, nfs;
+ 
+ 	nfs = (int)lseek(fileno(fp), 0, SEEK_CUR);
+-- 
+2.32.0
+

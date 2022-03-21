@@ -1,0 +1,36 @@
+From 5d8c081193d4fdfdd58a0edf4dc87aa18f75ed33 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=D0=BD=D0=B0=D0=B1?= <nabijaczleweli@nabijaczleweli.xyz>
+Date: Thu, 23 Dec 2021 20:39:29 +0100
+Subject: [PATCH 08/27] FreeBSD: fix unpropagated error
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When performing I/O on FreeBSD using a file based vdev ensure all
+errors encountered when reading/writing are propagated through the
+zio pipeline.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Alexander Motin <mav@FreeBSD.org>
+Reviewed-by: Ryan Moeller <ryan@ixsystems.com>
+Signed-off-by: Ahelenia Ziemiańska <nabijaczleweli@nabijaczleweli.xyz>
+Closes #12904
+---
+ module/os/freebsd/zfs/vdev_file.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/module/os/freebsd/zfs/vdev_file.c b/module/os/freebsd/zfs/vdev_file.c
+index fc04a74761..742ac9786d 100644
+--- a/module/os/freebsd/zfs/vdev_file.c
++++ b/module/os/freebsd/zfs/vdev_file.c
+@@ -234,6 +234,7 @@ vdev_file_io_strategy(void *arg)
+ 		err = zfs_file_pwrite(vf->vf_file, buf, size, off, &resid);
+ 		abd_return_buf(zio->io_abd, buf, size);
+ 	}
++	zio->io_error = err;
+ 	if (resid != 0 && zio->io_error == 0)
+ 		zio->io_error = ENOSPC;
+ 
+-- 
+2.32.0
+

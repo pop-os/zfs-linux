@@ -1,0 +1,36 @@
+From c9c9d634aa6f4aeaf867b534a967f2dc73bfa25a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=D0=BD=D0=B0=D0=B1?= <nabijaczleweli@nabijaczleweli.xyz>
+Date: Thu, 13 Jan 2022 20:07:54 +0100
+Subject: [PATCH 12/27] linux: libzfs: mount: fix uninitialised flags
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+They're later |=d with constants, but never reset
+
+Caught by valgrind while investigating
+https://github.com/openzfs/zfs/pull/12928#issuecomment-1007496550
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Ahelenia Ziemiańska <nabijaczleweli@nabijaczleweli.xyz>
+Closes #12954
+---
+ lib/libzfs/os/linux/libzfs_mount_os.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/libzfs/os/linux/libzfs_mount_os.c b/lib/libzfs/os/linux/libzfs_mount_os.c
+index 21d6405386..b800e069e7 100644
+--- a/lib/libzfs/os/linux/libzfs_mount_os.c
++++ b/lib/libzfs/os/linux/libzfs_mount_os.c
+@@ -327,7 +327,7 @@ do_mount(zfs_handle_t *zhp, const char *mntpt, char *opts, int flags)
+ 
+ 	if (!libzfs_envvar_is_set("ZFS_MOUNT_HELPER")) {
+ 		char badopt[MNT_LINE_MAX] = {0};
+-		unsigned long mntflags = flags, zfsflags;
++		unsigned long mntflags = flags, zfsflags = 0;
+ 		char myopts[MNT_LINE_MAX] = {0};
+ 
+ 		if (zfs_parse_mount_options(opts, &mntflags,
+-- 
+2.32.0
+

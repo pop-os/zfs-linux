@@ -1,0 +1,32 @@
+From 1009e609920f83d803224d1345332fb82dc85009 Mon Sep 17 00:00:00 2001
+From: Finix1979 <yanchongwen@hotmail.com>
+Date: Wed, 26 Jan 2022 05:12:49 +0800
+Subject: [PATCH 27/27] Linux <4.8 compat: submit_bio() rw arg
+
+When using the two argument version of submit_bio() in kernel's prior
+to 4.8 the first argument should be specified.  It's used by block
+dump to report the bio direction.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Finix Yan <yancw@info2soft.com>
+Closes #13006
+---
+ module/os/linux/zfs/vdev_disk.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/module/os/linux/zfs/vdev_disk.c b/module/os/linux/zfs/vdev_disk.c
+index a432a73645..581a790865 100644
+--- a/module/os/linux/zfs/vdev_disk.c
++++ b/module/os/linux/zfs/vdev_disk.c
+@@ -446,7 +446,7 @@ vdev_submit_bio_impl(struct bio *bio)
+ #ifdef HAVE_1ARG_SUBMIT_BIO
+ 	(void) submit_bio(bio);
+ #else
+-	(void) submit_bio(0, bio);
++	(void) submit_bio(bio_data_dir(bio), bio);
+ #endif
+ }
+ 
+-- 
+2.32.0
+

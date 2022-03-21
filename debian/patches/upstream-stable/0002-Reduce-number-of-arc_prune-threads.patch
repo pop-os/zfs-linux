@@ -1,0 +1,84 @@
+From 786abf53211d25102e9463e1ec10b6032f189db2 Mon Sep 17 00:00:00 2001
+From: Alexander Motin <mav@FreeBSD.org>
+Date: Wed, 22 Dec 2021 20:07:13 -0500
+Subject: [PATCH 02/27] Reduce number of arc_prune threads
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+On FreeBSD vnode reclamation is single-threaded, protected by single
+global lock.  Linux seems to be able to use a thread per mount point,
+but at this time it creates more harm than good.
+
+Reduce number of threads to 1, adding tunable in case somebody wants
+to try more.
+
+Reviewed-by: Ryan Moeller <ryan@ixsystems.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Chris Dunlop <chris@onthe.net.au>
+Reviewed-by: Ahelenia Ziemiańska <nabijaczleweli@nabijaczleweli.xyz>
+Signed-off-by: Alexander Motin <mav@FreeBSD.org>
+Closes #12896
+Issue #9966
+---
+ man/man4/zfs.4   |  7 +++++++
+ module/zfs/arc.c | 13 ++++++++++---
+ 2 files changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/man/man4/zfs.4 b/man/man4/zfs.4
+index 20b24d898d..657afc6169 100644
+--- a/man/man4/zfs.4
++++ b/man/man4/zfs.4
+@@ -671,6 +671,13 @@ Minimum time "prescient prefetched" blocks are locked in the ARC.
+ These blocks are meant to be prefetched fairly aggressively ahead of
+ the code that may use them.
+ .
++.It Sy zfs_arc_prune_task_threads Ns = Ns Sy 1 Pq int
++Number of arc_prune threads.
++.Fx
++does not need more than one.
++Linux may theoretically use one per mount point up to number of CPUs,
++but that was not proven to be useful.
++.
+ .It Sy zfs_max_missing_tvds Ns = Ns Sy 0 Pq int
+ Number of missing top-level vdevs which will be allowed during
+ pool import (only in read-only mode).
+diff --git a/module/zfs/arc.c b/module/zfs/arc.c
+index 875986de99..9f22f877d2 100644
+--- a/module/zfs/arc.c
++++ b/module/zfs/arc.c
+@@ -463,6 +463,11 @@ int zfs_arc_meta_strategy = ARC_STRATEGY_META_BALANCED;
+ int zfs_arc_meta_adjust_restarts = 4096;
+ int zfs_arc_lotsfree_percent = 10;
+ 
++/*
++ * Number of arc_prune threads
++ */
++static int zfs_arc_prune_task_threads = 1;
++
+ /* The 6 states: */
+ arc_state_t ARC_anon;
+ arc_state_t ARC_mru;
+@@ -7972,9 +7977,8 @@ arc_init(void)
+ 	    offsetof(arc_prune_t, p_node));
+ 	mutex_init(&arc_prune_mtx, NULL, MUTEX_DEFAULT, NULL);
+ 
+-	arc_prune_taskq = taskq_create("arc_prune", 100, defclsyspri,
+-	    boot_ncpus, INT_MAX, TASKQ_PREPOPULATE | TASKQ_DYNAMIC |
+-	    TASKQ_THREADS_CPU_PCT);
++	arc_prune_taskq = taskq_create("arc_prune", zfs_arc_prune_task_threads,
++	    defclsyspri, 100, INT_MAX, TASKQ_PREPOPULATE | TASKQ_DYNAMIC);
+ 
+ 	arc_ksp = kstat_create("zfs", 0, "arcstats", "misc", KSTAT_TYPE_NAMED,
+ 	    sizeof (arc_stats) / sizeof (kstat_named_t), KSTAT_FLAG_VIRTUAL);
+@@ -11106,4 +11110,7 @@ ZFS_MODULE_PARAM(zfs_arc, zfs_arc_, eviction_pct, INT, ZMOD_RW,
+ 
+ ZFS_MODULE_PARAM(zfs_arc, zfs_arc_, evict_batch_limit, INT, ZMOD_RW,
+ 	"The number of headers to evict per sublist before moving to the next");
++
++ZFS_MODULE_PARAM(zfs_arc, zfs_arc_, prune_task_threads, INT, ZMOD_RW,
++	"Number of arc_prune threads");
+ /* END CSTYLED */
+-- 
+2.32.0
+

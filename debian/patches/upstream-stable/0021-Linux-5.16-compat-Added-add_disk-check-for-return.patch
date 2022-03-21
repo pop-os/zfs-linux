@@ -1,0 +1,90 @@
+From c31c1146b6d795f305f7e09a3de13bcdd66f2ac4 Mon Sep 17 00:00:00 2001
+From: Rich Ercolani <rincebrain@gmail.com>
+Date: Fri, 14 Jan 2022 05:08:33 -0500
+Subject: [PATCH 21/27] Linux 5.16 compat: Added add_disk check for return
+
+add_disk went from void to must-check int return.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Coleman Kane <ckane@colemankane.org>
+Signed-off-by: Rich Ercolani <rincebrain@gmail.com>
+Closes #12975
+---
+ config/kernel-add-disk.m4     | 27 +++++++++++++++++++++++++++
+ config/kernel.m4              |  2 ++
+ module/os/linux/zfs/zvol_os.c |  4 ++++
+ 3 files changed, 33 insertions(+)
+ create mode 100644 config/kernel-add-disk.m4
+
+diff --git a/config/kernel-add-disk.m4 b/config/kernel-add-disk.m4
+new file mode 100644
+index 0000000000..3bc40f1e7d
+--- /dev/null
++++ b/config/kernel-add-disk.m4
+@@ -0,0 +1,27 @@
++dnl #
++dnl # 5.16 API change
++dnl # add_disk grew a must-check return code
++dnl #
++AC_DEFUN([ZFS_AC_KERNEL_SRC_ADD_DISK], [
++
++	ZFS_LINUX_TEST_SRC([add_disk_ret], [
++		#include <linux/genhd.h>
++	], [
++		struct gendisk *disk = NULL;
++		int err = add_disk(disk);
++		err = err;
++	])
++
++])
++
++AC_DEFUN([ZFS_AC_KERNEL_ADD_DISK], [
++	AC_MSG_CHECKING([whether add_disk() returns int])
++	ZFS_LINUX_TEST_RESULT([add_disk_ret],
++	[
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_ADD_DISK_RET, 1,
++		    [add_disk() returns int])
++	], [
++		AC_MSG_RESULT(no)
++	])
++])
+diff --git a/config/kernel.m4 b/config/kernel.m4
+index bdd3caed2b..b3ed966b72 100644
+--- a/config/kernel.m4
++++ b/config/kernel.m4
+@@ -135,6 +135,7 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
+ 	ZFS_AC_KERNEL_SRC_VFS_SET_PAGE_DIRTY_NOBUFFERS
+ 	ZFS_AC_KERNEL_SRC_STANDALONE_LINUX_STDARG
+ 	ZFS_AC_KERNEL_SRC_PAGEMAP_FOLIO_WAIT_BIT
++	ZFS_AC_KERNEL_SRC_ADD_DISK
+ 
+ 	AC_MSG_CHECKING([for available kernel interfaces])
+ 	ZFS_LINUX_TEST_COMPILE_ALL([kabi])
+@@ -243,6 +244,7 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_RESULT], [
+ 	ZFS_AC_KERNEL_VFS_SET_PAGE_DIRTY_NOBUFFERS
+ 	ZFS_AC_KERNEL_STANDALONE_LINUX_STDARG
+ 	ZFS_AC_KERNEL_PAGEMAP_FOLIO_WAIT_BIT
++	ZFS_AC_KERNEL_ADD_DISK
+ ])
+ 
+ dnl #
+diff --git a/module/os/linux/zfs/zvol_os.c b/module/os/linux/zfs/zvol_os.c
+index 69479b3f79..7a979eb91e 100644
+--- a/module/os/linux/zfs/zvol_os.c
++++ b/module/os/linux/zfs/zvol_os.c
+@@ -1110,7 +1110,11 @@ out_doi:
+ 		rw_enter(&zvol_state_lock, RW_WRITER);
+ 		zvol_insert(zv);
+ 		rw_exit(&zvol_state_lock);
++#ifdef HAVE_ADD_DISK_RET
++		error = add_disk(zv->zv_zso->zvo_disk);
++#else
+ 		add_disk(zv->zv_zso->zvo_disk);
++#endif
+ 	} else {
+ 		ida_simple_remove(&zvol_ida, idx);
+ 	}
+-- 
+2.32.0
+

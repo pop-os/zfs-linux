@@ -1,0 +1,30 @@
+From b3e08539510a3372fe55369a41547021f3d55c86 Mon Sep 17 00:00:00 2001
+From: Rich Ercolani <rincebrain@gmail.com>
+Date: Fri, 14 Jan 2022 05:09:08 -0500
+Subject: [PATCH 20/27] Linux 5.16 compat: Check slab.h for kvmalloc
+
+As it says on the tin - the folio work moved a bunch out of mm.h.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Coleman Kane <ckane@colemankane.org>
+Signed-off-by: Rich Ercolani <rincebrain@gmail.com>
+Closes #12975
+---
+ config/kernel-kmem.m4 | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/config/kernel-kmem.m4 b/config/kernel-kmem.m4
+index 43f9e72f88..03c2a41fbd 100644
+--- a/config/kernel-kmem.m4
++++ b/config/kernel-kmem.m4
+@@ -64,6 +64,7 @@ dnl #
+ AC_DEFUN([ZFS_AC_KERNEL_SRC_KVMALLOC], [
+ 	ZFS_LINUX_TEST_SRC([kvmalloc], [
+ 		#include <linux/mm.h>
++		#include <linux/slab.h>
+ 	],[
+ 		void *p __attribute__ ((unused));
+ 
+-- 
+2.32.0
+

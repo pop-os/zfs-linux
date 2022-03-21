@@ -1,0 +1,201 @@
+From 1828b68a0b27c9ae195316722df8967ea1b29ab2 Mon Sep 17 00:00:00 2001
+From: Ryan Moeller <ryan@iXsystems.com>
+Date: Thu, 23 Dec 2021 19:03:23 +0000
+Subject: [PATCH 14/27] FreeBSD: Fix zvol_*_open() locking
+
+These are the changes for FreeBSD corresponding to the changes made for
+Linux in #12863, see that PR for details.
+
+Changes from #12863 are applied for zvol_geom_open and zvol_cdev_open
+on FreeBSD.  This also adds a check for the zvol dying which we had
+in zvol_geom_open but was missing in zvol_cdev_open.  The check causes
+the open to fail early with ENXIO when we are in the middle of changing
+volmode.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Alexander Motin <mav@FreeBSD.org>
+Signed-off-by: Ryan Moeller <ryan@iXsystems.com>
+Closes #12934
+---
+ module/os/freebsd/zfs/zvol_os.c | 90 +++++++++++++++++++++------------
+ 1 file changed, 59 insertions(+), 31 deletions(-)
+
+diff --git a/module/os/freebsd/zfs/zvol_os.c b/module/os/freebsd/zfs/zvol_os.c
+index 4503691925..ffd96d159e 100644
+--- a/module/os/freebsd/zfs/zvol_os.c
++++ b/module/os/freebsd/zfs/zvol_os.c
+@@ -210,7 +210,6 @@ zvol_geom_open(struct g_provider *pp, int flag, int count)
+ 	zvol_state_t *zv;
+ 	int err = 0;
+ 	boolean_t drop_suspend = B_FALSE;
+-	boolean_t drop_namespace = B_FALSE;
+ 
+ 	if (!zpool_on_zvol && tsd_get(zfs_geom_probe_vdev_key) != NULL) {
+ 		/*
+@@ -226,6 +225,12 @@ zvol_geom_open(struct g_provider *pp, int flag, int count)
+ 
+ retry:
+ 	rw_enter(&zvol_state_lock, ZVOL_RW_READER);
++	/*
++	 * Obtain a copy of private under zvol_state_lock to make sure either
++	 * the result of zvol free code setting private to NULL is observed,
++	 * or the zv is protected from being freed because of the positive
++	 * zv_open_count.
++	 */
+ 	zv = pp->private;
+ 	if (zv == NULL) {
+ 		rw_exit(&zvol_state_lock);
+@@ -233,18 +238,6 @@ retry:
+ 		goto out_locked;
+ 	}
+ 
+-	if (zv->zv_open_count == 0 && !mutex_owned(&spa_namespace_lock)) {
+-		/*
+-		 * We need to guarantee that the namespace lock is held
+-		 * to avoid spurious failures in zvol_first_open.
+-		 */
+-		drop_namespace = B_TRUE;
+-		if (!mutex_tryenter(&spa_namespace_lock)) {
+-			rw_exit(&zvol_state_lock);
+-			mutex_enter(&spa_namespace_lock);
+-			goto retry;
+-		}
+-	}
+ 	mutex_enter(&zv->zv_state_lock);
+ 	if (zv->zv_zso->zso_dying) {
+ 		rw_exit(&zvol_state_lock);
+@@ -276,8 +269,27 @@ retry:
+ 	ASSERT(MUTEX_HELD(&zv->zv_state_lock));
+ 
+ 	if (zv->zv_open_count == 0) {
++		boolean_t drop_namespace = B_FALSE;
++
+ 		ASSERT(ZVOL_RW_READ_HELD(&zv->zv_suspend_lock));
++
++		/*
++		 * Take spa_namespace_lock to prevent lock inversion when
++		 * zvols from one pool are opened as vdevs in another.
++		 */
++		if (!mutex_owned(&spa_namespace_lock)) {
++			if (!mutex_tryenter(&spa_namespace_lock)) {
++				mutex_exit(&zv->zv_state_lock);
++				rw_exit(&zv->zv_suspend_lock);
++				kern_yield(PRI_USER);
++				goto retry;
++			} else {
++				drop_namespace = B_TRUE;
++			}
++		}
+ 		err = zvol_first_open(zv, !(flag & FWRITE));
++		if (drop_namespace)
++			mutex_exit(&spa_namespace_lock);
+ 		if (err)
+ 			goto out_zv_locked;
+ 		pp->mediasize = zv->zv_volsize;
+@@ -285,6 +297,8 @@ retry:
+ 		pp->stripesize = zv->zv_volblocksize;
+ 	}
+ 
++	ASSERT(MUTEX_HELD(&zv->zv_state_lock));
++
+ 	/*
+ 	 * Check for a bad on-disk format version now since we
+ 	 * lied about owning the dataset readonly before.
+@@ -317,8 +331,6 @@ out_opened:
+ out_zv_locked:
+ 	mutex_exit(&zv->zv_state_lock);
+ out_locked:
+-	if (drop_namespace)
+-		mutex_exit(&spa_namespace_lock);
+ 	if (drop_suspend)
+ 		rw_exit(&zv->zv_suspend_lock);
+ 	return (err);
+@@ -859,10 +871,15 @@ zvol_cdev_open(struct cdev *dev, int flags, int fmt, struct thread *td)
+ 	struct zvol_state_dev *zsd;
+ 	int err = 0;
+ 	boolean_t drop_suspend = B_FALSE;
+-	boolean_t drop_namespace = B_FALSE;
+ 
+ retry:
+ 	rw_enter(&zvol_state_lock, ZVOL_RW_READER);
++	/*
++	 * Obtain a copy of si_drv2 under zvol_state_lock to make sure either
++	 * the result of zvol free code setting si_drv2 to NULL is observed,
++	 * or the zv is protected from being freed because of the positive
++	 * zv_open_count.
++	 */
+ 	zv = dev->si_drv2;
+ 	if (zv == NULL) {
+ 		rw_exit(&zvol_state_lock);
+@@ -870,20 +887,12 @@ retry:
+ 		goto out_locked;
+ 	}
+ 
+-	if (zv->zv_open_count == 0 && !mutex_owned(&spa_namespace_lock)) {
+-		/*
+-		 * We need to guarantee that the namespace lock is held
+-		 * to avoid spurious failures in zvol_first_open.
+-		 */
+-		drop_namespace = B_TRUE;
+-		if (!mutex_tryenter(&spa_namespace_lock)) {
+-			rw_exit(&zvol_state_lock);
+-			mutex_enter(&spa_namespace_lock);
+-			goto retry;
+-		}
+-	}
+ 	mutex_enter(&zv->zv_state_lock);
+-
++	if (zv->zv_zso->zso_dying) {
++		rw_exit(&zvol_state_lock);
++		err = SET_ERROR(ENXIO);
++		goto out_zv_locked;
++	}
+ 	ASSERT3S(zv->zv_volmode, ==, ZFS_VOLMODE_DEV);
+ 
+ 	/*
+@@ -909,12 +918,33 @@ retry:
+ 	ASSERT(MUTEX_HELD(&zv->zv_state_lock));
+ 
+ 	if (zv->zv_open_count == 0) {
++		boolean_t drop_namespace = B_FALSE;
++
+ 		ASSERT(ZVOL_RW_READ_HELD(&zv->zv_suspend_lock));
++
++		/*
++		 * Take spa_namespace_lock to prevent lock inversion when
++		 * zvols from one pool are opened as vdevs in another.
++		 */
++		if (!mutex_owned(&spa_namespace_lock)) {
++			if (!mutex_tryenter(&spa_namespace_lock)) {
++				rw_exit(&zvol_state_lock);
++				mutex_enter(&spa_namespace_lock);
++				kern_yield(PRI_USER);
++				goto retry;
++			} else {
++				drop_namespace = B_TRUE;
++			}
++		}
+ 		err = zvol_first_open(zv, !(flags & FWRITE));
++		if (drop_namespace)
++			mutex_exit(&spa_namespace_lock);
+ 		if (err)
+ 			goto out_zv_locked;
+ 	}
+ 
++	ASSERT(MUTEX_HELD(&zv->zv_state_lock));
++
+ 	if ((flags & FWRITE) && (zv->zv_flags & ZVOL_RDONLY)) {
+ 		err = SET_ERROR(EROFS);
+ 		goto out_opened;
+@@ -949,8 +979,6 @@ out_opened:
+ out_zv_locked:
+ 	mutex_exit(&zv->zv_state_lock);
+ out_locked:
+-	if (drop_namespace)
+-		mutex_exit(&spa_namespace_lock);
+ 	if (drop_suspend)
+ 		rw_exit(&zv->zv_suspend_lock);
+ 	return (err);
+-- 
+2.32.0
+

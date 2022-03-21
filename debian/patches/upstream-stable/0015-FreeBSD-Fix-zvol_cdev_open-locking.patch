@@ -1,0 +1,37 @@
+From af1630c88361ea84eac9bea92949383fee4c6761 Mon Sep 17 00:00:00 2001
+From: Ryan Moeller <ryan@iXsystems.com>
+Date: Wed, 26 Jan 2022 14:23:39 -0500
+Subject: [PATCH 15/27] FreeBSD: Fix zvol_cdev_open locking
+
+First open locking changes were correctly applied to zvol_geom_open but
+incorrectly applied to zvol_cdev_open, causing spa_namespace_lock to be
+held indefinitely.
+
+Make the first open locking in zvol_cdev_open match zvol_geom_open.
+
+Reviewed-by: Alexander Motin <mav@FreeBSD.org>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Ryan Moeller <ryan@iXsystems.com>
+Closes #13016
+---
+ module/os/freebsd/zfs/zvol_os.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/module/os/freebsd/zfs/zvol_os.c b/module/os/freebsd/zfs/zvol_os.c
+index ffd96d159e..0b347e7f98 100644
+--- a/module/os/freebsd/zfs/zvol_os.c
++++ b/module/os/freebsd/zfs/zvol_os.c
+@@ -928,8 +928,8 @@ retry:
+ 		 */
+ 		if (!mutex_owned(&spa_namespace_lock)) {
+ 			if (!mutex_tryenter(&spa_namespace_lock)) {
+-				rw_exit(&zvol_state_lock);
+-				mutex_enter(&spa_namespace_lock);
++				mutex_exit(&zv->zv_state_lock);
++				rw_exit(&zv->zv_suspend_lock);
+ 				kern_yield(PRI_USER);
+ 				goto retry;
+ 			} else {
+-- 
+2.32.0
+

@@ -1,0 +1,42 @@
+From 1259dc6e6a8387c4302f73077f6dbeb3f2e4be13 Mon Sep 17 00:00:00 2001
+From: chrisrd <chris@onthe.net.au>
+Date: Wed, 5 Jan 2022 12:07:33 +1100
+Subject: [PATCH 10/27] zfs_prune: reset sc.nr_to_scan
+
+sc.nr_to_scan is an input to super_cache_clean (via
+shrinker->scan_objects), used to set the number of objects to scan
+in the various caches. However super_cache_scan also modifies
+sc.nr_to_scan, so when used in a loop we need to reset
+sc.nr_to_scan back to our desired nr_to_scan for the next
+iteration.
+
+Issue discovered and solution suggested by
+Tenzin Lhakhang @tlhakhan.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Chris Dunlop <chris@onthe.net.au>
+Issue #12433
+Closes #12908
+---
+ module/os/linux/zfs/zfs_vfsops.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/module/os/linux/zfs/zfs_vfsops.c b/module/os/linux/zfs/zfs_vfsops.c
+index 5d672af0e8..469b82efee 100644
+--- a/module/os/linux/zfs/zfs_vfsops.c
++++ b/module/os/linux/zfs/zfs_vfsops.c
+@@ -1259,6 +1259,11 @@ zfs_prune(struct super_block *sb, unsigned long nr_to_scan, int *objects)
+ 		*objects = 0;
+ 		for_each_online_node(sc.nid) {
+ 			*objects += (*shrinker->scan_objects)(shrinker, &sc);
++			/*
++			 * reset sc.nr_to_scan, modified by
++			 * scan_objects == super_cache_scan
++			 */
++			sc.nr_to_scan = nr_to_scan;
+ 		}
+ 	} else {
+ 			*objects = (*shrinker->scan_objects)(shrinker, &sc);
+-- 
+2.32.0
+

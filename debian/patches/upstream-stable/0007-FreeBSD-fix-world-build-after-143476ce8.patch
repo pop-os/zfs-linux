@@ -1,0 +1,31 @@
+From 14bf91a0431e6b410ec9cf029172dfc5a99eb58f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Martin=20Matu=C5=A1ka?= <mm@FreeBSD.org>
+Date: Mon, 20 Dec 2021 23:28:43 +0100
+Subject: [PATCH 07/27] FreeBSD: fix world build after 143476ce8
+
+Do not redefine the fallthrough macro when building with libcpp.
+
+Reviewed-by: Ryan Moeller <ryan@iXsystems.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Martin Matuska <mm@FreeBSD.org>
+Closes #12880
+---
+ lib/libspl/include/sys/feature_tests.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/libspl/include/sys/feature_tests.h b/lib/libspl/include/sys/feature_tests.h
+index a36fd7b8cf..c9564b2c32 100644
+--- a/lib/libspl/include/sys/feature_tests.h
++++ b/lib/libspl/include/sys/feature_tests.h
+@@ -30,7 +30,7 @@
+ #define	____cacheline_aligned
+ #define	__NORETURN		__attribute__((__noreturn__))
+ 
+-#if !defined(fallthrough)
++#if !defined(fallthrough) && !defined(_LIBCPP_VERSION)
+ #if defined(HAVE_IMPLICIT_FALLTHROUGH)
+ #define	fallthrough		__attribute__((__fallthrough__))
+ #else
+-- 
+2.32.0
+

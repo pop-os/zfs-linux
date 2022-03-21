@@ -1,0 +1,79 @@
+From 0da15f9194bfd181f26207c9daac420e6a3f9609 Mon Sep 17 00:00:00 2001
+From: Mark Johnston <markjdb@gmail.com>
+Date: Fri, 21 Jan 2022 14:54:05 -0500
+Subject: [PATCH 19/27] Fix handling of errors from dmu_write_uio_dbuf() on
+ FreeBSD
+
+FreeBSD's implementation of zfs_uio_fault_move() returns EFAULT when a
+page fault occurs while copying data in or out of user buffers.  The VFS
+treats such errors specially and will retry the I/O operation (which may
+have made some partial progress).
+
+When the FreeBSD and Linux implementations of zfs_write() were merged,
+the handling of errors from dmu_write_uio_dbuf() changed such that
+EFAULT is not handled as a partial write.  For example, when appending
+to a file, the z_size field of the znode is not updated after a partial
+write resulting in EFAULT.
+
+Restore the old handling of errors from dmu_write_uio_dbuf() to fix
+this.  This should have no impact on Linux, which has special handling
+for EFAULT already.
+
+Reviewed-by: Andriy Gapon <avg@FreeBSD.org>
+Reviewed-by: Ryan Moeller <ryan@iXsystems.com>
+Signed-off-by: Mark Johnston <markj@FreeBSD.org>
+Closes #12964
+---
+ module/zfs/zfs_vnops.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/module/zfs/zfs_vnops.c b/module/zfs/zfs_vnops.c
+index 170e392abe..54749810d4 100644
+--- a/module/zfs/zfs_vnops.c
++++ b/module/zfs/zfs_vnops.c
+@@ -323,7 +323,7 @@ out:
+ int
+ zfs_write(znode_t *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
+ {
+-	int error = 0;
++	int error = 0, error1;
+ 	ssize_t start_resid = zfs_uio_resid(uio);
+ 
+ 	/*
+@@ -561,7 +561,11 @@ zfs_write(znode_t *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
+ 				continue;
+ 			}
+ #endif
+-			if (error != 0) {
++			/*
++			 * On FreeBSD, EFAULT should be propagated back to the
++			 * VFS, which will handle faulting and will retry.
++			 */
++			if (error != 0 && error != EFAULT) {
+ 				dmu_tx_commit(tx);
+ 				break;
+ 			}
+@@ -645,7 +649,7 @@ zfs_write(znode_t *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
+ 		while ((end_size = zp->z_size) < zfs_uio_offset(uio)) {
+ 			(void) atomic_cas_64(&zp->z_size, end_size,
+ 			    zfs_uio_offset(uio));
+-			ASSERT(error == 0);
++			ASSERT(error == 0 || error == EFAULT);
+ 		}
+ 		/*
+ 		 * If we are replaying and eof is non zero then force
+@@ -655,7 +659,10 @@ zfs_write(znode_t *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
+ 		if (zfsvfs->z_replay && zfsvfs->z_replay_eof != 0)
+ 			zp->z_size = zfsvfs->z_replay_eof;
+ 
+-		error = sa_bulk_update(zp->z_sa_hdl, bulk, count, tx);
++		error1 = sa_bulk_update(zp->z_sa_hdl, bulk, count, tx);
++		if (error1 != 0)
++			/* Avoid clobbering EFAULT. */
++			error = error1;
+ 
+ 		zfs_log_write(zilog, tx, TX_WRITE, zp, woff, tx_bytes, ioflag,
+ 		    NULL, NULL);
+-- 
+2.32.0
+

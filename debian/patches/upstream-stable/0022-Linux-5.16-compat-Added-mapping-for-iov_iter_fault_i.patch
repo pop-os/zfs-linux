@@ -1,0 +1,89 @@
+From 70b7b1975d70c80f9294efbf6964cfed236cf59f Mon Sep 17 00:00:00 2001
+From: Rich Ercolani <rincebrain@gmail.com>
+Date: Fri, 14 Jan 2022 05:07:33 -0500
+Subject: [PATCH 22/27] Linux 5.16 compat: Added mapping for
+ iov_iter_fault_in_readable
+
+Linux decided to rename this for some reason. At some point, we
+should probably invert this mapping, but for now...
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Coleman Kane <ckane@colemankane.org>
+Signed-off-by: Rich Ercolani <rincebrain@gmail.com>
+Closes #12975
+---
+ config/kernel-add-disk.m4      |  1 -
+ config/kernel-vfs-iov_iter.m4  | 22 ++++++++++++++++++++--
+ include/os/linux/spl/sys/uio.h |  4 ++++
+ 3 files changed, 24 insertions(+), 3 deletions(-)
+
+diff --git a/config/kernel-add-disk.m4 b/config/kernel-add-disk.m4
+index 3bc40f1e7d..5d1779eb43 100644
+--- a/config/kernel-add-disk.m4
++++ b/config/kernel-add-disk.m4
+@@ -13,7 +13,6 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_ADD_DISK], [
+ 	])
+ 
+ ])
+-
+ AC_DEFUN([ZFS_AC_KERNEL_ADD_DISK], [
+ 	AC_MSG_CHECKING([whether add_disk() returns int])
+ 	ZFS_LINUX_TEST_RESULT([add_disk_ret],
+diff --git a/config/kernel-vfs-iov_iter.m4 b/config/kernel-vfs-iov_iter.m4
+index ecdda939f1..57f78745a2 100644
+--- a/config/kernel-vfs-iov_iter.m4
++++ b/config/kernel-vfs-iov_iter.m4
+@@ -41,6 +41,17 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_VFS_IOV_ITER], [
+ 		error = iov_iter_fault_in_readable(&iter, size);
+ 	])
+ 
++	ZFS_LINUX_TEST_SRC([fault_in_iov_iter_readable], [
++		#include <linux/fs.h>
++		#include <linux/uio.h>
++	],[
++		struct iov_iter iter = { 0 };
++		size_t size = 512;
++		int error __attribute__ ((unused));
++
++		error = fault_in_iov_iter_readable(&iter, size);
++	])
++
+ 	ZFS_LINUX_TEST_SRC([iov_iter_count], [
+ 		#include <linux/fs.h>
+ 		#include <linux/uio.h>
+@@ -123,8 +134,15 @@ AC_DEFUN([ZFS_AC_KERNEL_VFS_IOV_ITER], [
+ 		AC_DEFINE(HAVE_IOV_ITER_FAULT_IN_READABLE, 1,
+ 		    [iov_iter_fault_in_readable() is available])
+ 	],[
+-		AC_MSG_RESULT(no)
+-		enable_vfs_iov_iter="no"
++		AC_MSG_CHECKING([whether fault_in_iov_iter_readable() is available])
++		ZFS_LINUX_TEST_RESULT([fault_in_iov_iter_readable], [
++			AC_MSG_RESULT(yes)
++			AC_DEFINE(HAVE_FAULT_IN_IOV_ITER_READABLE, 1,
++			    [fault_in_iov_iter_readable() is available])
++		],[
++			AC_MSG_RESULT(no)
++			enable_vfs_iov_iter="no"
++		])
+ 	])
+ 
+ 	AC_MSG_CHECKING([whether iov_iter_count() is available])
+diff --git a/include/os/linux/spl/sys/uio.h b/include/os/linux/spl/sys/uio.h
+index 66af2b0b53..439eec9862 100644
+--- a/include/os/linux/spl/sys/uio.h
++++ b/include/os/linux/spl/sys/uio.h
+@@ -34,6 +34,10 @@
+ #include <asm/uaccess.h>
+ #include <sys/types.h>
+ 
++#if defined(HAVE_VFS_IOV_ITER) && defined(HAVE_FAULT_IN_IOV_ITER_READABLE)
++#define	iov_iter_fault_in_readable(a, b)	fault_in_iov_iter_readable(a, b)
++#endif
++
+ typedef struct iovec iovec_t;
+ 
+ typedef enum zfs_uio_rw {
+-- 
+2.32.0
+
