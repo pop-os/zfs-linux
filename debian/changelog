@@ -1,3 +1,9 @@
+zfs-linux (2.1.2-1ubuntu3pop0) focal; urgency=medium
+
+  * Pop!_OS backport
+
+ -- Jeremy Soller <jeremy@system76.com>  Mon, 21 Mar 2022 14:56:26 -0600
+
 zfs-linux (2.1.2-1ubuntu3) jammy; urgency=medium
 
   * Apply pending stable updates with bug fixes and v5.16, v5.17 compat.
