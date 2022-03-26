@@ -1,8 +1,16 @@
 zfs-linux (2.1.4-1) UNRELEASED; urgency=medium
 
   * New upstream version 2.1.4
+  * Sync debian/patches/ubuntu directory from 2.1.2-1ubuntu3.
+    - Ubuntu patches are not applied on Debian.
+    + Reorder patches in patches/series to keep ubuntu patches last.
+    + Autopkgtest improvements for kernel-smoke-test-scrub.
+    + Thanks to Dimitri John Ledkov <dimitri.ledkov@canonical.com>.
+    + Thanks to Dave Jones <dave.jones@canonical.com>.
+    + Sync debian/control.ubuntu from downstream debian/control.
+  * Rebase existing patchset to new upstream release.
 
- -- Mo Zhou <lumin@debian.org>  Fri, 25 Mar 2022 23:33:12 -0400
+ -- Mo Zhou <lumin@debian.org>  Fri, 25 Mar 2022 23:52:52 -0400
 
 zfs-linux (2.1.2-1) unstable; urgency=medium
 
