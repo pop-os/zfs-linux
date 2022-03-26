@@ -2132,7 +2132,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  vdev_draid_generate_perms@Base 2.1
  vdev_draid_lookup_map@Base 2.1
  vdev_draid_map_alloc_empty@Base 2.1
- vdev_draid_map_verify_empty@Base 2.1.4-1
+ vdev_draid_map_verify_empty@Base 2.1.4
  vdev_draid_missing@Base 2.1
  vdev_draid_ops@Base 2.1
  vdev_draid_rand@Base 2.1
@@ -3335,7 +3335,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  zthr_destroy@Base 0.8.2
  zthr_has_waiters@Base 2.0
  zthr_iscancelled@Base 0.8.2
- zthr_iscurthread@Base 2.1.4-1
+ zthr_iscurthread@Base 2.1.4
  zthr_resume@Base 0.8.2
  zthr_wait_cycle_done@Base 2.0
  zthr_wakeup@Base 0.8.2
