@@ -6,7 +6,7 @@ XSBC-Original-Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@
 Uploaders: Aron Xu <aron@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>,
            Mo Zhou <lumin@debian.org>
-Build-Depends: abigail-tools (>= 1.8),
+Build-Depends: abigail-tools (>= 2.0),
                debhelper-compat (= 12),
                dh-python,
                dkms (>> 2.1.1.2-5),
@@ -96,7 +96,7 @@ Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Breaks: libzfs2, libzfs4
 Replaces: libzfs2, libzfs4
-Description: OpenZFS filesystem library for Linux
+Description: OpenZFS filesystem library for Linux - general support
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
  compression, encryption, snapshots, and more.
@@ -109,7 +109,7 @@ Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Breaks: libzfs2, libzfs4
 Replaces: libzfs2, libzfs4
-Description: OpenZFS filesystem library for Linux
+Description: OpenZFS filesystem library for Linux - label info support
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
  compression, encryption, snapshots, and more.
@@ -198,9 +198,9 @@ Package: zfs-initramfs
 Architecture: amd64 arm64 ppc64el s390x riscv64
 Depends: busybox-initramfs | busybox-static | busybox,
          initramfs-tools,
-	 zfsutils-linux (>= ${binary:Version}),
+         zfsutils-linux (>= ${source:Version}),
          ${misc:Depends}
-Breaks: zfsutils-linux (<= 0.7.11-2)
+Breaks: zfsutils-linux (<= 0.7.11-2), busybox-initramfs (<< 1:1.30.1-7ubuntu3)
 Replaces: zfsutils-linux (<= 0.7.11-2)
 Description: OpenZFS root filesystem capabilities for Linux - initramfs
  OpenZFS is a storage platform that encompasses the functionality of
@@ -213,7 +213,7 @@ Description: OpenZFS root filesystem capabilities for Linux - initramfs
 Package: zfs-dracut
 Architecture: amd64 arm64 ppc64el s390x riscv64
 Depends: dracut,
-         zfsutils-linux (>= ${binary:Version}),
+         zfsutils-linux (>= ${source:Version}),
          ${misc:Depends}
 Description: OpenZFS root filesystem capabilities for Linux - dracut
  OpenZFS is a storage platform that encompasses the functionality of
@@ -238,8 +238,8 @@ Recommends: lsb-base, zfs-zed
 Breaks: openrc,
         spl (<< 0.7.9-2),
         spl-dkms (<< 0.8.0~rc1),
-        zfs-dkms (<< ${binary:Version}),
-        zfs-dkms (>> ${binary:Version}...)
+        zfs-dkms (<< ${source:Version}),
+        zfs-dkms (>> ${source:Version}...)
 Replaces: spl (<< 0.7.9-2), spl-dkms
 Suggests: nfs-kernel-server,
           samba-common-bin (>= 3.0.23),
@@ -303,41 +303,3 @@ Description: OpenZFS test infrastructure and support scripts
  This package provides the OpenZFS test infrastructure for destructively
  testing and validating a system using OpenZFS. It is entirely optional
  and should only be installed and used in test environments.
-
-Package: spl
-Section: contrib/metapackages
-Architecture: all
-Depends: ${misc:Depends}
-Suggests: zfs-test
-Description: Solaris Porting Layer user-space utilities for Linux (dummy)
- The Solaris Porting Layer (SPL) is a Linux kernel module which provides
- many of the Solaris kernel APIs. This shim layer makes it possible to
- run Solaris kernel code in the Linux kernel with relatively minimal
- modification. The Solaris Porting LAyer Tests (SPLAT) is a Linux kernel
- module which provides a testing harness for the SPL module.
- .
- SPL can be particularly useful when you want to track upstream Illumos
- (or any other OpenSolaris fork) development closely and don't want the
- overhead of maintaining a large patch which converts Solaris primitives
- to Linux primitives.
- .
- This is a transitional dummy package. It can safely be removed.
-
-Package: spl-dkms
-Section: contrib/metapackages
-Architecture: all
-Depends: zfs-dkms, ${misc:Depends}
-Description: Solaris Porting Layer kernel modules for Linux (dummy)
- The Solaris Porting Layer (SPL) is a Linux kernel module which provides
- many of the Solaris kernel APIs. This shim layer makes it possible to
- run Solaris kernel code in the Linux kernel with relatively minimal
- modification. The Solaris Porting LAyer Tests (SPLAT) is a Linux kernel
- module which provides a testing harness for the SPL module.
- .
- SPL can be particularly useful when you want to track upstream Illumos
- (or any other OpenSolaris fork) development closely and don't want the
- overhead of maintaining a large patch which converts Solaris primitives
- to Linux primitives.
- .
- This is a transitional dummy package. It can safely be removed.
- SPL dkms files had been merged into zfs-dkms as of ZFS 0.8.X series.
