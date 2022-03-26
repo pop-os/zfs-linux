@@ -37,6 +37,9 @@
 /* posix_acl has refcount_t */
 #undef HAVE_ACL_REFCOUNT
 
+/* add_disk() returns int */
+#undef HAVE_ADD_DISK_RET
+
 /* Define if host toolchain supports AES */
 #undef HAVE_AES
 
@@ -206,6 +209,9 @@
 /* DECLARE_EVENT_CLASS() is available */
 #undef HAVE_DECLARE_EVENT_CLASS
 
+/* dequeue_signal() takes 4 arguments */
+#undef HAVE_DEQUEUE_SIGNAL_4ARG
+
 /* lookup_bdev() wants dev_t arg */
 #undef HAVE_DEVT_LOOKUP_BDEV
 
@@ -235,6 +241,12 @@
 
 /* sops->evict_inode() exists */
 #undef HAVE_EVICT_INODE
+
+/* FALLOC_FL_ZERO_RANGE is defined */
+#undef HAVE_FALLOC_FL_ZERO_RANGE
+
+/* fault_in_iov_iter_readable() is available */
+#undef HAVE_FAULT_IN_IOV_ITER_READABLE
 
 /* fops->aio_fsync() exists */
 #undef HAVE_FILE_AIO_FSYNC
@@ -379,6 +391,9 @@
 
 /* kernel has asm/fpu/xcr.h */
 #undef HAVE_KERNEL_FPU_XCR_HEADER
+
+/* kernel fpu and XSAVE internal */
+#undef HAVE_KERNEL_FPU_XSAVE_INTERNAL
 
 /* uncached_acl_sentinel() exists */
 #undef HAVE_KERNEL_GET_ACL_HANDLE_CACHE
@@ -752,6 +767,15 @@
 /* xattr_handler->set() takes user_namespace */
 #undef HAVE_XATTR_SET_USERNS
 
+/* Define if host toolchain supports XSAVE */
+#undef HAVE_XSAVE
+
+/* Define if host toolchain supports XSAVEOPT */
+#undef HAVE_XSAVEOPT
+
+/* Define if host toolchain supports XSAVES */
+#undef HAVE_XSAVES
+
 /* Define if you have [z] */
 #undef HAVE_ZLIB
 
@@ -760,6 +784,18 @@
 
 /* kernel exports FPU functions */
 #undef KERNEL_EXPORTS_X86_FPU
+
+/* whether the chosen libfetch is to be loaded at run-time */
+#undef LIBFETCH_DYNAMIC
+
+/* libfetch is fetch(3) */
+#undef LIBFETCH_IS_FETCH
+
+/* libfetch is libcurl */
+#undef LIBFETCH_IS_LIBCURL
+
+/* soname of chosen libfetch */
+#undef LIBFETCH_SONAME
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
@@ -794,6 +830,9 @@
 /* struct shrink_control has nid */
 #undef SHRINK_CONTROL_HAS_NID
 
+/* using complete_and_exit() instead */
+#undef SPL_KTHREAD_COMPLETE_AND_EXIT
+
 /* Defined for legacy compatibility. */
 #undef SPL_META_ALIAS
 
@@ -802,6 +841,9 @@
 
 /* Defined for legacy compatibility. */
 #undef SPL_META_VERSION
+
+/* pde_data() is PDE_DATA() */
+#undef SPL_PDE_DATA
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

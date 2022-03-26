@@ -1,7 +1,7 @@
-Index: zfs/scripts/dkms.mkconf
+Index: zfs-linux/scripts/dkms.mkconf
 ===================================================================
---- zfs.orig/scripts/dkms.mkconf
-+++ zfs/scripts/dkms.mkconf
+--- zfs-linux.orig/scripts/dkms.mkconf
++++ zfs-linux/scripts/dkms.mkconf
 @@ -2,7 +2,7 @@
  
  PROG=$0

@@ -5,18 +5,11 @@ Description: Enable zed emails
 Author: Richard Laager <rlaager@wiktel.com>
 Forwarded: not-needed
 
---- a/cmd/zed/zed.d/zed.rc
-+++ b/cmd/zed/zed.d/zed.rc
-@@ -15,7 +15,7 @@
- # Email will only be sent if ZED_EMAIL_ADDR is defined.
- # Disabled by default; uncomment to enable.
- #
--#ZED_EMAIL_ADDR="root"
-+ZED_EMAIL_ADDR="root"
- 
- ##
- # Name or path of executable responsible for sending notifications via email;
-@@ -41,7 +41,7 @@
+Index: zfs-linux/cmd/zed/zed.d/zed.rc
+===================================================================
+--- zfs-linux.orig/cmd/zed/zed.d/zed.rc
++++ zfs-linux/cmd/zed/zed.d/zed.rc
+@@ -41,7 +41,7 @@ ZED_EMAIL_ADDR="root"
  ##
  # Minimum number of seconds between notifications for a similar event.
  #

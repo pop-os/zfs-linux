@@ -5,9 +5,9 @@ Date:   Fri Jan 15 14:26:42 2021 +0800
     Move arcstat(1) to arcstat(8) to avoid conflict with binary package nordugrid-arc-client.
     We regenerate Makefile.in, so we don't have to modify them explicitly here.
 
-Index: zfs/man/man1/arcstat.1
+Index: zfs-linux/man/man1/arcstat.1
 ===================================================================
---- zfs.orig/man/man1/arcstat.1
+--- zfs-linux.orig/man/man1/arcstat.1
 +++ /dev/null
 @@ -1,184 +0,0 @@
 -.\"
@@ -194,10 +194,10 @@ Index: zfs/man/man1/arcstat.1
 -.Ar count
 -reports.
 -.El
-Index: zfs/man/man8/arcstat.8
+Index: zfs-linux/man/man8/arcstat.8
 ===================================================================
 --- /dev/null
-+++ zfs/man/man8/arcstat.8
++++ zfs-linux/man/man8/arcstat.8
 @@ -0,0 +1,184 @@
 +.\"
 +.\" This file and its contents are supplied under the terms of the
@@ -383,10 +383,10 @@ Index: zfs/man/man8/arcstat.8
 +.Ar count
 +reports.
 +.El
-Index: zfs/man/Makefile.am
+Index: zfs-linux/man/Makefile.am
 ===================================================================
---- zfs.orig/man/Makefile.am
-+++ zfs/man/Makefile.am
+--- zfs-linux.orig/man/Makefile.am
++++ zfs-linux/man/Makefile.am
 @@ -8,7 +8,6 @@ dist_man_MANS = \
  	man1/ztest.1 \
  	man1/raidz_test.1 \
@@ -403,11 +403,11 @@ Index: zfs/man/Makefile.am
  	man8/fsck.zfs.8 \
  	man8/mount.zfs.8 \
  	man8/vdev_id.8 \
-Index: zfs/man/Makefile.in
+Index: zfs-linux/man/Makefile.in
 ===================================================================
---- zfs.orig/man/Makefile.in
-+++ zfs/man/Makefile.in
-@@ -635,7 +635,6 @@ dist_man_MANS = \
+--- zfs-linux.orig/man/Makefile.in
++++ zfs-linux/man/Makefile.in
+@@ -648,7 +648,6 @@ dist_man_MANS = \
  	man1/ztest.1 \
  	man1/raidz_test.1 \
  	man1/zvol_wait.1 \
@@ -415,7 +415,7 @@ Index: zfs/man/Makefile.in
  	\
  	man5/vdev_id.conf.5 \
  	\
-@@ -648,6 +647,7 @@ dist_man_MANS = \
+@@ -661,6 +660,7 @@ dist_man_MANS = \
  	man7/zpoolconcepts.7 \
  	man7/zpoolprops.7 \
  	\

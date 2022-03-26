@@ -11,10 +11,10 @@ Origin: ubuntu
 Forwarded: no 
 Last-Update: 2021-04-28
 
-Index: zfs-linux-2.0.3/module/os/linux/zfs/zfs_uio.c
+Index: zfs-linux/module/os/linux/zfs/zfs_uio.c
 ===================================================================
---- zfs-linux-2.0.3.orig/module/os/linux/zfs/zfs_uio.c
-+++ zfs-linux-2.0.3/module/os/linux/zfs/zfs_uio.c
+--- zfs-linux.orig/module/os/linux/zfs/zfs_uio.c
++++ zfs-linux/module/os/linux/zfs/zfs_uio.c
 @@ -47,6 +47,7 @@
  #include <sys/strings.h>
  #include <linux/kmap_compat.h>
@@ -23,7 +23,7 @@ Index: zfs-linux-2.0.3/module/os/linux/zfs/zfs_uio.c
  
  /*
   * Move "n" bytes at byte address "p"; "rw" indicates the direction
-@@ -79,11 +80,16 @@ uiomove_iov(void *p, size_t n, enum uio_
+@@ -79,11 +80,16 @@ zfs_uiomove_iov(void *p, size_t n, zfs_u
  					    (iov->iov_base + skip), cnt)) {
  						return (EFAULT);
  					}
@@ -40,7 +40,7 @@ Index: zfs-linux-2.0.3/module/os/linux/zfs/zfs_uio.c
  				} else {
  					b_left =
  					    copy_from_user(p,
-@@ -248,7 +254,7 @@ uio_prefaultpages(ssize_t n, struct uio
+@@ -248,7 +254,7 @@ zfs_uio_prefaultpages(ssize_t n, zfs_uio
  			/* touch each page in this segment. */
  			p = iov->iov_base + skip;
  			while (cnt) {
@@ -49,7 +49,7 @@ Index: zfs-linux-2.0.3/module/os/linux/zfs/zfs_uio.c
  					return (EFAULT);
  				ulong_t incr = MIN(cnt, PAGESIZE);
  				p += incr;
-@@ -256,7 +262,7 @@ uio_prefaultpages(ssize_t n, struct uio
+@@ -256,7 +262,7 @@ zfs_uio_prefaultpages(ssize_t n, zfs_uio
  			}
  			/* touch the last byte in case it straddles a page. */
  			p--;

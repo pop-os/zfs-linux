@@ -940,6 +940,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  dsl_pool_create@Base 0.8.2
  dsl_pool_create_obsolete_bpobj@Base 0.8.2
  dsl_pool_create_origin@Base 0.8.2
+ dsl_pool_deferred_space@Base 2.1.4
  dsl_pool_destroy_obsolete_bpobj@Base 0.8.2
  dsl_pool_dirty_space@Base 0.8.2
  dsl_pool_hold@Base 0.8.2
@@ -2131,6 +2132,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  vdev_draid_generate_perms@Base 2.1
  vdev_draid_lookup_map@Base 2.1
  vdev_draid_map_alloc_empty@Base 2.1
+ vdev_draid_map_verify_empty@Base 2.1.4
  vdev_draid_missing@Base 2.1
  vdev_draid_ops@Base 2.1
  vdev_draid_rand@Base 2.1
@@ -2243,6 +2245,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  (arch=amd64)vdev_raidz_avx512f_impl@Base 0.8.2
  (arch=arm64)vdev_raidz_aarch64_neon_impl@Base 0.8.2
  (arch=arm64)vdev_raidz_aarch64_neonx2_impl@Base 0.8.2
+ vdev_raidz_checksum_error@Base 2.1.4
  vdev_raidz_child_done@Base 2.1
  vdev_raidz_generate_parity@Base 0.8.2
  vdev_raidz_generate_parity_row@Base 2.1
@@ -3332,6 +3335,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  zthr_destroy@Base 0.8.2
  zthr_has_waiters@Base 2.0
  zthr_iscancelled@Base 0.8.2
+ zthr_iscurthread@Base 2.1.4
  zthr_resume@Base 0.8.2
  zthr_wait_cycle_done@Base 2.0
  zthr_wakeup@Base 0.8.2
