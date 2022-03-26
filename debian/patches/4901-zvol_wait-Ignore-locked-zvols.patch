@@ -9,10 +9,10 @@ Signed-off-by: Richard Laager <rlaager@wiktel.com>
  cmd/zvol_wait/zvol_wait | 9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
 
-Index: zfs/cmd/zvol_wait/zvol_wait
+Index: zfs-linux/cmd/zvol_wait/zvol_wait
 ===================================================================
---- zfs.orig/cmd/zvol_wait/zvol_wait
-+++ zfs/cmd/zvol_wait/zvol_wait
+--- zfs-linux.orig/cmd/zvol_wait/zvol_wait
++++ zfs-linux/cmd/zvol_wait/zvol_wait
 @@ -36,15 +36,17 @@ filter_out_locked_zvols() {
  list_zvols() {
  	read -r default_volmode < /sys/module/zfs/parameters/zvol_volmode
