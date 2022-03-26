@@ -111,6 +111,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/intlmacosx.m4 \
 	$(top_srcdir)/config/kernel-access-ok-type.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
+	$(top_srcdir)/config/kernel-add-disk.m4 \
 	$(top_srcdir)/config/kernel-aio-fsync.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
 	$(top_srcdir)/config/kernel-bdi.m4 \
@@ -159,6 +160,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-kmem-cache.m4 \
 	$(top_srcdir)/config/kernel-kmem.m4 \
 	$(top_srcdir)/config/kernel-kstrtoul.m4 \
+	$(top_srcdir)/config/kernel-kthread.m4 \
 	$(top_srcdir)/config/kernel-ktime.m4 \
 	$(top_srcdir)/config/kernel-kuid-helpers.m4 \
 	$(top_srcdir)/config/kernel-kuidgid.m4 \
@@ -228,6 +230,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/user-libblkid.m4 \
 	$(top_srcdir)/config/user-libcrypto.m4 \
 	$(top_srcdir)/config/user-libexec.m4 \
+	$(top_srcdir)/config/user-libfetch.m4 \
 	$(top_srcdir)/config/user-libtirpc.m4 \
 	$(top_srcdir)/config/user-libudev.m4 \
 	$(top_srcdir)/config/user-libuuid.m4 \
@@ -375,8 +378,11 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 INTLLIBS = @INTLLIBS@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
+KERNEL_CC = @KERNEL_CC@
 KERNEL_DEBUG_CFLAGS = @KERNEL_DEBUG_CFLAGS@
 KERNEL_DEBUG_CPPFLAGS = @KERNEL_DEBUG_CPPFLAGS@
+KERNEL_LD = @KERNEL_LD@
+KERNEL_LLVM = @KERNEL_LLVM@
 KERNEL_MAKE = @KERNEL_MAKE@
 LCOV = @LCOV@
 LD = @LD@
@@ -392,6 +398,9 @@ LIBCLOCK_GETTIME = @LIBCLOCK_GETTIME@
 LIBCRYPTO_CFLAGS = @LIBCRYPTO_CFLAGS@
 LIBCRYPTO_LIBS = @LIBCRYPTO_LIBS@
 LIBCRYPTO_PC = @LIBCRYPTO_PC@
+LIBFETCH_DYNAMIC = @LIBFETCH_DYNAMIC@
+LIBFETCH_LIBS = @LIBFETCH_LIBS@
+LIBFETCH_SONAME = @LIBFETCH_SONAME@
 LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
 LIBOBJS = @LIBOBJS@
@@ -617,7 +626,6 @@ KERNEL_H = \
 	inttypes.h \
 	isa_defs.h \
 	kmem_cache.h \
-	kidmap.h \
 	kmem.h \
 	kstat.h \
 	list_impl.h \
