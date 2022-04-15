@@ -1,3 +1,9 @@
+zfs-linux (2.1.4-1pop1) jammy; urgency=medium
+
+  * Backport to Pop
+
+ -- Michael Aaron Murphy <mmstick@pm.me>  Fri, 15 Apr 2022 23:44:32 +0200
+
 zfs-linux (2.1.4-1) unstable; urgency=medium
 
   * New upstream version 2.1.4 (Closes: #1007186)
