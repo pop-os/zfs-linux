@@ -18,6 +18,5 @@ ubuntu/4000-zsys-support.patch
 ubuntu/4100-disable-bpool-upgrade.patch
 ubuntu/zfs-mount-container-start.patch
 ubuntu/4510-silently-ignore-modprobe-failure.patch
-ubuntu/4701-enable-ARC-FILL-LOCKED-flag.patch
 ubuntu/4751-suppress-types.patch
 skip-on-PREEMPT_RT.patch
