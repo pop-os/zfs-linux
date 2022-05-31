@@ -22,3 +22,4 @@ move-arcstat-1-to-8.patch
 #ubuntu/4510-silently-ignore-modprobe-failure.patch
 #ubuntu/4701-enable-ARC-FILL-LOCKED-flag.patch
 #ubuntu/4751-suppress-types.patch
+no-REMAKE_INITRD.patch
