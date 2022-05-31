@@ -30,6 +30,7 @@ Homepage: https://zfsonlinux.org/
 Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
 Rules-Requires-Root: no
+Testsuite: autopkgtest-pkg-dkms
 XS-Autobuild: yes
 
 Package: libnvpair3linux
