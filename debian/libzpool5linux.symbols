@@ -10,7 +10,6 @@ libzpool.so.5 libzpool5linux #MINVER#
  EdonRHash@Base 0.8.2
  EdonRInit@Base 0.8.2
  EdonRUpdate@Base 0.8.2
- HIST_isError@Base 2.0
  SHA1Final@Base 0.8.2
  SHA1Init@Base 0.8.2
  SHA1Update@Base 0.8.2
@@ -1880,6 +1879,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  spa_mmp_history_set_skip@Base 0.8.2
  spa_mode@Base 0.8.2
  spa_mode_global@Base 0.8.2
+ spa_mode_readable_spacemaps@Base 2.1.5
  spa_multihost@Base 0.8.2
  spa_name@Base 0.8.2
  spa_namespace_lock@Base 0.8.2
@@ -2459,6 +2459,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  zfs_HIST_countFast_wksp@Base 2.0
  zfs_HIST_count_simple@Base 2.0
  zfs_HIST_count_wksp@Base 2.0
+ zfs_HIST_isError@Base 2.1.5
  zfs_HUF_buildCTable@Base 2.0
  zfs_HUF_buildCTable_wksp@Base 2.0
  zfs_HUF_compress1X@Base 2.0

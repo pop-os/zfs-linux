@@ -1,3 +1,25 @@
+zfs-linux (2.1.5-1) unstable; urgency=medium
+
+  [ Andreas Beckmann ]
+  * Switch to dh-sequence-dkms.
+  * Do not use deprecated dkms feature REMAKE_INITRD.
+  * Switch to autopkgtest-pkg-dkms.
+  * Do not attempt to build the modules on PREEMPT_RT kernels. (cf. #981212)
+
+  [ Mo Zhou ]
+  * New upstream version 2.1.5 (June 2022) (Closes: #1012600)
+  * Remove merged patches:
+    - 4900-ppc-get-user-workaround.patch
+    - 4901-zvol_wait-Ignore-locked-zvols.patch
+    - no-REMAKE_INITRD.patch
+    And Rebase all remaining patches.
+
+  [ Alejandro R. Sedeño ]
+  * zfs-dracut: install new man page
+  * refresh symbols
+
+ -- Mo Zhou <lumin@debian.org>  Wed, 22 Jun 2022 20:48:20 -0700
+
 zfs-linux (2.1.4-1) unstable; urgency=medium
 
   * New upstream version 2.1.4 (Closes: #1007186)
