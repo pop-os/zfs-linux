@@ -1,4 +1,4 @@
-zfs-linux (2.1.4-2) UNRELEASED; urgency=medium
+zfs-linux (2.1.5-1) UNRELEASED; urgency=medium
 
   [ Andreas Beckmann ]
   * Switch to dh-sequence-dkms.
@@ -8,8 +8,13 @@ zfs-linux (2.1.4-2) UNRELEASED; urgency=medium
 
   [ Mo Zhou ]
   * New upstream version 2.1.5 (June 2022)
+  * Remove merged patches:
+    - 4900-ppc-get-user-workaround.patch
+    - 4901-zvol_wait-Ignore-locked-zvols.patch
+    - no-REMAKE_INITRD.patch
+    And Rebase all remaining patches.
 
- -- Mo Zhou <lumin@debian.org>  Wed, 22 Jun 2022 17:21:46 -0700
+ -- Mo Zhou <lumin@debian.org>  Wed, 22 Jun 2022 19:56:00 -0700
 
 zfs-linux (2.1.4-1) unstable; urgency=medium
 
