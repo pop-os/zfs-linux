@@ -14,7 +14,11 @@ zfs-linux (2.1.5-1) UNRELEASED; urgency=medium
     - no-REMAKE_INITRD.patch
     And Rebase all remaining patches.
 
- -- Mo Zhou <lumin@debian.org>  Wed, 22 Jun 2022 19:56:00 -0700
+  [ Alejandro R. Sedeño ]
+  * zfs-dracut: install new man page
+  * refresh symbols
+
+ -- Mo Zhou <lumin@debian.org>  Wed, 22 Jun 2022 20:05:27 -0700
 
 zfs-linux (2.1.4-1) unstable; urgency=medium
 
