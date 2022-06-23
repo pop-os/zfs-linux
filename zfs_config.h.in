@@ -79,11 +79,23 @@
 /* bdev_check_media_change() exists */
 #undef HAVE_BDEV_CHECK_MEDIA_CHANGE
 
+/* bdev_*_io_acct() available */
+#undef HAVE_BDEV_IO_ACCT
+
+/* bdev_max_discard_sectors() is available */
+#undef HAVE_BDEV_MAX_DISCARD_SECTORS
+
+/* bdev_max_secure_erase_sectors() is available */
+#undef HAVE_BDEV_MAX_SECURE_ERASE_SECTORS
+
 /* block_device_operations->submit_bio() returns void */
 #undef HAVE_BDEV_SUBMIT_BIO_RETURNS_VOID
 
 /* bdev_whole() is available */
 #undef HAVE_BDEV_WHOLE
+
+/* bio_alloc() takes 4 arguments */
+#undef HAVE_BIO_ALLOC_4ARG
 
 /* bio->bi_bdev->bd_disk exists */
 #undef HAVE_BIO_BDEV_DISK
@@ -118,6 +130,12 @@
 /* blkdev_get_by_path() handles ERESTARTSYS */
 #undef HAVE_BLKDEV_GET_ERESTARTSYS
 
+/* blkdev_issue_discard() is available */
+#undef HAVE_BLKDEV_ISSUE_DISCARD
+
+/* blkdev_issue_secure_erase() is available */
+#undef HAVE_BLKDEV_ISSUE_SECURE_ERASE
+
 /* blkdev_reread_part() exists */
 #undef HAVE_BLKDEV_REREAD_PART
 
@@ -138,6 +156,9 @@
 
 /* blk queue backing_dev_info is dynamic */
 #undef HAVE_BLK_QUEUE_BDI_DYNAMIC
+
+/* blk_queue_discard() is available */
+#undef HAVE_BLK_QUEUE_DISCARD
 
 /* blk_queue_flag_clear() exists */
 #undef HAVE_BLK_QUEUE_FLAG_CLEAR
@@ -389,6 +410,9 @@
 /* kernel fpu internal */
 #undef HAVE_KERNEL_FPU_INTERNAL
 
+/* kernel has asm/fpu/internal.h */
+#undef HAVE_KERNEL_FPU_INTERNAL_HEADER
+
 /* kernel has asm/fpu/xcr.h */
 #undef HAVE_KERNEL_FPU_XCR_HEADER
 
@@ -469,9 +493,6 @@
 
 /* Noting that make_request_fn() returns void */
 #undef HAVE_MAKE_REQUEST_FN_RET_VOID
-
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
 
 /* iops->mkdir() takes umode_t */
 #undef HAVE_MKDIR_UMODE_T
@@ -605,7 +626,7 @@
 /* new shrinker callback wants 2 args */
 #undef HAVE_SINGLE_SHRINKER_CALLBACK
 
-/* ->count_objects exists */
+/* cs->count_objects exists */
 #undef HAVE_SPLIT_SHRINKER_CALLBACK
 
 /* Define if host toolchain supports SSE */
@@ -635,6 +656,9 @@
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
@@ -658,6 +682,9 @@
 
 /* super_block->s_user_ns exists */
 #undef HAVE_SUPER_USER_NS
+
+/* struct kobj_type has default_groups */
+#undef HAVE_SYSFS_DEFAULT_GROUPS
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
@@ -704,6 +731,9 @@
 /* aops->direct_IO() uses iov_iter with rw and offset */
 #undef HAVE_VFS_DIRECT_IO_ITER_RW_OFFSET
 
+/* filemap_dirty_folio exists */
+#undef HAVE_VFS_FILEMAP_DIRTY_FOLIO
+
 /* All required iov_iter interfaces are available */
 #undef HAVE_VFS_IOV_ITER
 
@@ -715,6 +745,12 @@
 
 /* fops->readdir() is available */
 #undef HAVE_VFS_READDIR
+
+/* address_space_operations->readpages exists */
+#undef HAVE_VFS_READPAGES
+
+/* read_folio exists */
+#undef HAVE_VFS_READ_FOLIO
 
 /* fops->read/write_iter() are available */
 #undef HAVE_VFS_RW_ITERATE
@@ -775,6 +811,9 @@
 
 /* Define if host toolchain supports XSAVES */
 #undef HAVE_XSAVES
+
+/* ZERO_PAGE() is GPL-only */
+#undef HAVE_ZERO_PAGE_GPL_ONLY
 
 /* Define if you have [z] */
 #undef HAVE_ZLIB
@@ -845,7 +884,9 @@
 /* pde_data() is PDE_DATA() */
 #undef SPL_PDE_DATA
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* True if ZFS is to be compiled for a FreeBSD system */
@@ -880,6 +921,12 @@
 
 /* enum zone_stat_item contains NR_INACTIVE_FILE */
 #undef ZFS_ENUM_ZONE_STAT_ITEM_NR_INACTIVE_FILE
+
+/* GENHD_FL_EXT_DEVT flag is not available */
+#undef ZFS_GENHD_FL_EXT_DEVT
+
+/* GENHD_FL_NO_PART_SCAN flag is available */
+#undef ZFS_GENHD_FL_NO_PART
 
 /* global_node_page_state() exists */
 #undef ZFS_GLOBAL_NODE_PAGE_STATE
