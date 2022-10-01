@@ -1,0 +1,2 @@
+sbin/zfs      bin/zfs
+sbin/zpool    bin/zpool
