@@ -1,4 +1,4 @@
-zfs-linux (2.1.6-1) UNRELEASED; urgency=medium
+zfs-linux (2.1.6-1) unstable; urgency=medium
 
   [ Aron Xu ]
   * trim: determine if a device uses nvme transport with lsblk (Closes: #990745)
@@ -16,8 +16,9 @@ zfs-linux (2.1.6-1) UNRELEASED; urgency=medium
   * Refresh existing patches.
   * Refresh symbols control file.
   * Update lintian overrides.
+  * Deal with the annoying lintian mismatch due to square brackets.
 
-  [ Dimitri John Ledkov ]
+  [ Dimitri John Ledkov (ubuntu diff) ]
     * Fix cross-compile of the dkms module.
     * Adapt symbols file.
     * Bump zzstd.ko module version number. All modules are going to be
@@ -40,7 +41,7 @@ zfs-linux (2.1.6-1) UNRELEASED; urgency=medium
       - debian/patches:
         + Apply Ubuntu patchset to integrate with zsys
 
- -- Mo Zhou <lumin@debian.org>  Mon, 03 Oct 2022 20:54:24 -0400
+ -- Mo Zhou <lumin@debian.org>  Tue, 04 Oct 2022 14:42:07 -0400
 
 zfs-linux (2.1.5-1) unstable; urgency=medium
 
