@@ -76,6 +76,9 @@
 /* Define if host toolchain supports AVX512VL */
 #undef HAVE_AVX512VL
 
+/* bdevname() is available */
+#undef HAVE_BDEVNAME
+
 /* bdev_check_media_change() exists */
 #undef HAVE_BDEV_CHECK_MEDIA_CHANGE
 
@@ -153,6 +156,9 @@
 
 /* blk_alloc_queue_rh() expects request function */
 #undef HAVE_BLK_ALLOC_QUEUE_REQUEST_FN_RH
+
+/* blk_cleanup_disk() exists */
+#undef HAVE_BLK_CLEANUP_DISK
 
 /* blk queue backing_dev_info is dynamic */
 #undef HAVE_BLK_QUEUE_BDI_DYNAMIC
@@ -334,6 +340,9 @@
 
 /* Define if compiler supports -Wimplicit-fallthrough */
 #undef HAVE_IMPLICIT_FALLTHROUGH
+
+/* Define if compiler supports -Winfinite-recursion */
+#undef HAVE_INFINITE_RECURSION
 
 /* yes */
 #undef HAVE_INODE_LOCK_SHARED
@@ -557,6 +566,9 @@
 /* qat is enabled and existed */
 #undef HAVE_QAT
 
+/* register_shrinker is vararg */
+#undef HAVE_REGISTER_SHRINKER_VARARG
+
 /* iops->rename() wants flags */
 #undef HAVE_RENAME_WANTS_FLAGS
 
@@ -775,6 +787,9 @@
 
 /* xattr_handler->get() wants both dentry and inode */
 #undef HAVE_XATTR_GET_DENTRY_INODE
+
+/* xattr_handler->get() wants dentry and inode and flags */
+#undef HAVE_XATTR_GET_DENTRY_INODE_FLAGS
 
 /* xattr_handler->get() wants xattr_handler */
 #undef HAVE_XATTR_GET_HANDLER

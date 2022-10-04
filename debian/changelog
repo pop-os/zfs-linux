@@ -1,3 +1,48 @@
+zfs-linux (2.1.6-1) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * trim: determine if a device uses nvme transport with lsblk (Closes: #990745)
+
+  [ Mo Zhou ]
+  * New upstream version 2.1.6 (Oct 2022)
+  * Install init script "zfs-load-keys". (Closes: #1017911)
+  * Symlink zfs,zpool to /bin/ for non-root usage. (Closes: #979437)
+  * Symlink zpool_influxdb to /bin. (Closes: #1001446)
+  * Merge changes from ubuntu diff from 2.1.5-1ubuntu1 to 2.1.5-1ubuntu5.
+    Changes during merge:
+      - OpenZFS upstream patches are dropped.
+      - d/control and d/tests/control are renamed with .ubuntu suffix.
+      - ABI check is not enforced.
+  * Refresh existing patches.
+  * Refresh symbols control file.
+  * Update lintian overrides.
+  * Deal with the annoying lintian mismatch due to square brackets.
+
+  [ Dimitri John Ledkov (ubuntu diff) ]
+    * Fix cross-compile of the dkms module.
+    * Adapt symbols file.
+    * Bump zzstd.ko module version number. All modules are going to be
+      merged into one upstream soon. At the moment all other modules
+      increase with every build, but zzstd one. Append zfs package version
+      to zzstd module version number, to make dkms module versions higher
+      than kernel prebuilt ones.
+    * Merge from Debian Unstable, remaining changes:
+      - debian/control:
+        + drop dependencies on "zfs-modules | zfs-dkms" such that all
+      packages can be installed in containers, on hosts that have zfs
+      module loaded.
+        + change initramfs/dracut packages to only Ubuntu-64bit
+      architectures, zfs is not well supported on 32bit arches
+      - debian/rules:
+        + enforce abi check on Ubuntu amd64
+      - debian/tests/control:
+        + reduce testing to smoketest only
+        + Ubuntu Kernel regression testing covers zfs testsuite
+      - debian/patches:
+        + Apply Ubuntu patchset to integrate with zsys
+
+ -- Mo Zhou <lumin@debian.org>  Tue, 04 Oct 2022 14:42:07 -0400
+
 zfs-linux (2.1.5-1) unstable; urgency=medium
 
   [ Andreas Beckmann ]
