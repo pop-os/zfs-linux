@@ -13,3 +13,4 @@ spelling-error-in-manpage
 package-supports-alternative-init-but-no-init.d-script lib/systemd/system/zfs-volume-wait.service
 extra-license-file usr/share/doc/zfsutils-linux/LICENSE.gz
 package-supports-alternative-init-but-no-init.d-script lib/systemd/system/zfs-load-module.service
+omitted-systemd-service-for-init.d-script zfs-load-key
