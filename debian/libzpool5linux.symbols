@@ -376,6 +376,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  dbuf_hold_impl@Base 0.8.2
  dbuf_hold_level@Base 0.8.2
  dbuf_init@Base 0.8.2
+ dbuf_is_l2cacheable@Base 2.1.6
  dbuf_is_metadata@Base 0.8.2
  dbuf_ksp@Base 0.8.2
  dbuf_loan_arcbuf@Base 0.8.2
@@ -943,6 +944,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  dsl_pool_init@Base 0.8.2
  dsl_pool_mos_diduse_space@Base 0.8.2
  dsl_pool_need_dirty_delay@Base 0.8.2
+ dsl_pool_need_wrlog_delay@Base 2.1.6
  dsl_pool_open@Base 0.8.2
  dsl_pool_open_special_dir@Base 0.8.2
  dsl_pool_rele@Base 0.8.2
@@ -956,6 +958,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  dsl_pool_upgrade_dir_clones@Base 0.8.2
  dsl_pool_user_hold@Base 0.8.2
  dsl_pool_user_release@Base 0.8.2
+ dsl_pool_wrlog_count@Base 2.1.6
  dsl_pool_zrele_taskq@Base 2.0
  dsl_process_sub_livelist@Base 2.0
  dsl_prop_fini@Base 0.8.2
@@ -1201,6 +1204,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  kstat_set_raw_ops@Base 0.8.2
  l2arc_add_vdev@Base 0.8.2
  l2arc_dev_hdr_update@Base 2.0
+ l2arc_exclude_special@Base 2.1.6
  l2arc_feed_again@Base 0.8.2
  l2arc_feed_min_ms@Base 0.8.2
  l2arc_feed_secs@Base 0.8.2
@@ -2079,6 +2083,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  vdev_autotrim_restart@Base 0.8.2
  vdev_autotrim_stop_all@Base 0.8.2
  vdev_autotrim_stop_wait@Base 0.8.2
+ vdev_best_ashift@Base 2.1.6
  vdev_cache_fini@Base 0.8.2
  vdev_cache_init@Base 0.8.2
  vdev_cache_purge@Base 0.8.2
@@ -3108,6 +3113,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  zfs_vdev_trim_max_active@Base 0.8.2
  zfs_vdev_trim_min_active@Base 0.8.2
  zfs_vdev_write_gap_limit@Base 0.8.2
+ zfs_wrlog_data_max@Base 2.1.6
  zfs_zil_clean_taskq_maxalloc@Base 0.8.2
  zfs_zil_clean_taskq_minalloc@Base 0.8.2
  zfs_zil_clean_taskq_nthr_pct@Base 0.8.2
