@@ -1,3 +1,16 @@
+zfs-linux (2.1.6-1) UNRELEASED; urgency=medium
+
+  [ Aron Xu ]
+  * trim: determine if a device uses nvme transport with lsblk (Closes: #990745)
+
+  [ Mo Zhou ]
+  * New upstream version 2.1.6 (Oct 2022)
+  * Install init script "zfs-load-keys". (Closes: #1017911)
+  * Symlink zfs,zpool to /bin/ for non-root usage. (Closes: #979437)
+  * Symlink zpool_influxdb to /bin. (Closes: #1001446)
+
+ -- Mo Zhou <lumin@debian.org>  Mon, 03 Oct 2022 20:25:40 -0400
+
 zfs-linux (2.1.5-1) unstable; urgency=medium
 
   [ Andreas Beckmann ]
