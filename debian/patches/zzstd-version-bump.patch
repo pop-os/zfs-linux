@@ -5,8 +5,10 @@ Description: Bump zzstd.ko module version number.
   make dkms module versions higher than kernel prebuilt ones.
 Author: Dimitri John Ledkov <dimitri.ledkov@canonical.com>
 
---- zfs-linux-2.1.5.orig/module/zstd/zfs_zstd.c
-+++ zfs-linux-2.1.5/module/zstd/zfs_zstd.c
+Index: zfs-linux/module/zstd/zfs_zstd.c
+===================================================================
+--- zfs-linux.orig/module/zstd/zfs_zstd.c
++++ zfs-linux/module/zstd/zfs_zstd.c
 @@ -785,7 +785,7 @@ module_exit(zstd_fini);
  
  ZFS_MODULE_DESCRIPTION("ZSTD Compression for ZFS");

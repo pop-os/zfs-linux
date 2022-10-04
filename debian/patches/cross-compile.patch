@@ -2,8 +2,10 @@ Description: Fix cross-compile of the dkms module.
 Author: Dimitri John Ledkov <dimitri.ledkov@canonical.com>
 
 
---- zfs-linux-2.1.5.orig/scripts/dkms.mkconf
-+++ zfs-linux-2.1.5/scripts/dkms.mkconf
+Index: zfs-linux/scripts/dkms.mkconf
+===================================================================
+--- zfs-linux.orig/scripts/dkms.mkconf
++++ zfs-linux/scripts/dkms.mkconf
 @@ -50,6 +50,12 @@ PRE_BUILD="configure
      }
    )
