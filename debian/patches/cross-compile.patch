@@ -1,0 +1,19 @@
+Description: Fix cross-compile of the dkms module.
+Author: Dimitri John Ledkov <dimitri.ledkov@canonical.com>
+
+
+--- zfs-linux-2.1.5.orig/scripts/dkms.mkconf
++++ zfs-linux-2.1.5/scripts/dkms.mkconf
+@@ -50,6 +50,12 @@ PRE_BUILD="configure
+     }
+   )
+   \$(
++    [[ -n \"\${CROSS_COMPILE}\" ]] && \\
++    {
++      echo --host=\"\${CROSS_COMPILE%-}\"
++    }
++  )
++  \$(
+     [[ -r \${PACKAGE_CONFIG} ]] \\
+     && source \${PACKAGE_CONFIG} \\
+     && shopt -q -s extglob \\
