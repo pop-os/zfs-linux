@@ -1,11 +1,11 @@
-zfs-linux (2.1.6-2) UNRELEASED; urgency=medium
+zfs-linux (2.1.6-2) unstable; urgency=medium
 
   * Fix the accidentally broken systemd boot sequence.
     (Fixes: https://github.com/openzfs/zfs/issues/14010)
   * Install zfs-load-key.service (/dev/null).
     The init script with the same name has to be skipped for systemd.
 
- -- Mo Zhou <lumin@debian.org>  Tue, 11 Oct 2022 18:15:13 -0400
+ -- Mo Zhou <lumin@debian.org>  Tue, 11 Oct 2022 18:34:41 -0400
 
 zfs-linux (2.1.6-1) unstable; urgency=medium
 
