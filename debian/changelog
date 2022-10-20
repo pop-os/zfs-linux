@@ -1,3 +1,9 @@
+zfs-linux (2.1.6-2pop0) jammy; urgency=medium
+
+  * Pop!_OS backport
+
+ -- Jeremy Soller <jeremy@system76.com>  Thu, 20 Oct 2022 16:28:54 -0600
+
 zfs-linux (2.1.6-2) unstable; urgency=medium
 
   * Fix the accidentally broken systemd boot sequence.
