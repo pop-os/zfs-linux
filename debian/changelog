@@ -1,3 +1,10 @@
+zfs-linux (2.1.6-3) UNRELEASED; urgency=medium
+
+  [ наб ]
+  * Clean up and fix the automatic trim script.
+
+ -- Mo Zhou <lumin@debian.org>  Mon, 24 Oct 2022 10:50:03 -0400
+
 zfs-linux (2.1.6-2) unstable; urgency=medium
 
   * Fix the accidentally broken systemd boot sequence.
