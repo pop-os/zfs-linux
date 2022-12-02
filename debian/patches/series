@@ -15,7 +15,6 @@ move-arcstat-1-to-8.patch
 skip-on-PREEMPT_RT.patch
 zzstd-version-bump.patch
 cross-compile.patch
-pr-14020.patch
 #ubuntu/0001-Revert-etc-systemd-zfs-mount-generator-serialise-han.patch
 #ubuntu/0002-Revert-etc-systemd-zfs-mount-generator-output-tweaks.patch
 #ubuntu/0003-Revert-etc-systemd-zfs-mount-generator-rewrite-in-C.patch
