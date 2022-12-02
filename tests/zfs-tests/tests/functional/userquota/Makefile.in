@@ -127,6 +127,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-copy-from-user-inatomic.m4 \
 	$(top_srcdir)/config/kernel-current-time.m4 \
 	$(top_srcdir)/config/kernel-declare-event-class.m4 \
+	$(top_srcdir)/config/kernel-dentry-alias.m4 \
 	$(top_srcdir)/config/kernel-dentry-operations.m4 \
 	$(top_srcdir)/config/kernel-dirty-inode.m4 \
 	$(top_srcdir)/config/kernel-discard-granularity.m4 \
@@ -172,7 +173,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
 	$(top_srcdir)/config/kernel-mkdir.m4 \
 	$(top_srcdir)/config/kernel-mknod.m4 \
-	$(top_srcdir)/config/kernel-mod-param.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pagemap-folio_wait_bit.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
@@ -649,9 +649,11 @@ dist_pkgdata_SCRIPTS = \
 	userspace_002_pos.ksh \
 	userspace_003_pos.ksh \
 	userspace_encrypted.ksh \
-	userspace_send_encrypted.ksh
+	userspace_send_encrypted.ksh \
+	userspace_encrypted_13709.ksh
 
 dist_pkgdata_DATA = \
+	13709_reproducer.bz2 \
 	userquota.cfg \
 	userquota_common.kshlib
 
