@@ -236,6 +236,9 @@
 /* DECLARE_EVENT_CLASS() is available */
 #undef HAVE_DECLARE_EVENT_CLASS
 
+/* dentry aliases are in d_u member */
+#undef HAVE_DENTRY_D_U_ALIASES
+
 /* dequeue_signal() takes 4 arguments */
 #undef HAVE_DEQUEUE_SIGNAL_4ARG
 
@@ -856,9 +859,6 @@
 
 /* make_request_fn() return type */
 #undef MAKE_REQUEST_FN_RET
-
-/* hardened module_param_call */
-#undef MODULE_PARAM_CALL_CONST
 
 /* Name of package */
 #undef PACKAGE

@@ -1,3 +1,10 @@
+zfs-linux (2.1.7-1) unstable; urgency=medium
+
+  * New upstream version 2.1.7
+  * Remove merged patches and refresh the remaining ones.
+
+ -- Mo Zhou <lumin@debian.org>  Fri, 02 Dec 2022 18:42:14 -0500
+
 zfs-linux (2.1.6-3) unstable; urgency=medium
 
   [ наб ]

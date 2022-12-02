@@ -127,6 +127,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-copy-from-user-inatomic.m4 \
 	$(top_srcdir)/config/kernel-current-time.m4 \
 	$(top_srcdir)/config/kernel-declare-event-class.m4 \
+	$(top_srcdir)/config/kernel-dentry-alias.m4 \
 	$(top_srcdir)/config/kernel-dentry-operations.m4 \
 	$(top_srcdir)/config/kernel-dirty-inode.m4 \
 	$(top_srcdir)/config/kernel-discard-granularity.m4 \
@@ -172,7 +173,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
 	$(top_srcdir)/config/kernel-mkdir.m4 \
 	$(top_srcdir)/config/kernel-mknod.m4 \
-	$(top_srcdir)/config/kernel-mod-param.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pagemap-folio_wait_bit.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
@@ -926,6 +926,7 @@ $(SUBSTFILES):%:%.in Makefile
 install-data-hook:
 	$(MKDIR_P) "$(DESTDIR)$(systemdunitdir)"
 	ln -sf /dev/null "$(DESTDIR)$(systemdunitdir)/zfs-import.service"
+	ln -sf /dev/null "$(DESTDIR)$(systemdunitdir)/zfs-load-key.service"
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
