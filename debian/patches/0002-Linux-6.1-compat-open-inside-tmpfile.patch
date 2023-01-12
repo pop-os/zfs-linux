@@ -1,0 +1,140 @@
+From 138d2b29dd01e9eb9ddc70b0ee5a7f3645830219 Mon Sep 17 00:00:00 2001
+From: Antonio Russo <aerusso@aerusso.net>
+Date: Sat, 31 Dec 2022 07:51:32 -0700
+Subject: [PATCH 1/5] Linux 6.1 compat: open inside tmpfile()
+
+commit d27c81847b43584483b5509ff352e7e727b0ce87 upstream
+
+Linux 863f144 modified the .tmpfile interface to pass a struct file,
+rather than a struct dentry, and expect the tmpfile implementation to
+open inside of tmpfile().
+
+This patch implements a configuration test that checks for this new API
+and appropriately sets a HAVE_TMPFILE_DENTRY flag that tracks this old
+API.  Contingent on this flag, the appropriate API is implemented.
+
+Reviewed-by: Richard Yao <richard.yao@alumni.stonybrook.edu>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Antonio Russo <aerusso@aerusso.net>
+Closes #14301
+Closes #14343
+---
+ config/kernel-tmpfile.m4        | 32 +++++++++++++++++++++++++++-----
+ module/os/linux/zfs/zpl_inode.c | 15 +++++++++++++++
+ 2 files changed, 42 insertions(+), 5 deletions(-)
+
+diff --git a/config/kernel-tmpfile.m4 b/config/kernel-tmpfile.m4
+index 45c2e6cee..acb7ea1e8 100644
+--- a/config/kernel-tmpfile.m4
++++ b/config/kernel-tmpfile.m4
+@@ -3,11 +3,25 @@ dnl # 3.11 API change
+ dnl # Add support for i_op->tmpfile
+ dnl #
+ AC_DEFUN([ZFS_AC_KERNEL_SRC_TMPFILE], [
++	dnl #
++	dnl # 6.1 API change
++	dnl # use struct file instead of struct dentry
++	dnl #
++	ZFS_LINUX_TEST_SRC([inode_operations_tmpfile], [
++		#include <linux/fs.h>
++		int tmpfile(struct user_namespace *userns,
++		    struct inode *inode, struct file *file,
++		    umode_t mode) { return 0; }
++		static struct inode_operations
++		    iops __attribute__ ((unused)) = {
++			.tmpfile = tmpfile,
++		};
++	],[])
+ 	dnl #
+ 	dnl # 5.11 API change
+ 	dnl # add support for userns parameter to tmpfile
+ 	dnl #
+-	ZFS_LINUX_TEST_SRC([inode_operations_tmpfile_userns], [
++	ZFS_LINUX_TEST_SRC([inode_operations_tmpfile_dentry_userns], [
+ 		#include <linux/fs.h>
+ 		int tmpfile(struct user_namespace *userns,
+ 		    struct inode *inode, struct dentry *dentry,
+@@ -17,7 +31,7 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_TMPFILE], [
+ 			.tmpfile = tmpfile,
+ 		};
+ 	],[])
+-	ZFS_LINUX_TEST_SRC([inode_operations_tmpfile], [
++	ZFS_LINUX_TEST_SRC([inode_operations_tmpfile_dentry], [
+ 			#include <linux/fs.h>
+ 			int tmpfile(struct inode *inode, struct dentry *dentry,
+ 			    umode_t mode) { return 0; }
+@@ -30,16 +44,24 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_TMPFILE], [
+ 
+ AC_DEFUN([ZFS_AC_KERNEL_TMPFILE], [
+ 	AC_MSG_CHECKING([whether i_op->tmpfile() exists])
+-	ZFS_LINUX_TEST_RESULT([inode_operations_tmpfile_userns], [
++	ZFS_LINUX_TEST_RESULT([inode_operations_tmpfile], [
+ 		AC_MSG_RESULT(yes)
+ 		AC_DEFINE(HAVE_TMPFILE, 1, [i_op->tmpfile() exists])
+ 		AC_DEFINE(HAVE_TMPFILE_USERNS, 1, [i_op->tmpfile() has userns])
+ 	],[
+-		ZFS_LINUX_TEST_RESULT([inode_operations_tmpfile], [
++		ZFS_LINUX_TEST_RESULT([inode_operations_tmpfile_dentry_userns], [
+ 			AC_MSG_RESULT(yes)
+ 			AC_DEFINE(HAVE_TMPFILE, 1, [i_op->tmpfile() exists])
++			AC_DEFINE(HAVE_TMPFILE_USERNS, 1, [i_op->tmpfile() has userns])
++			AC_DEFINE(HAVE_TMPFILE_DENTRY, 1, [i_op->tmpfile() uses old dentry signature])
+ 		],[
+-			AC_MSG_RESULT(no)
++			ZFS_LINUX_TEST_RESULT([inode_operations_tmpfile_dentry], [
++				AC_MSG_RESULT(yes)
++				AC_DEFINE(HAVE_TMPFILE, 1, [i_op->tmpfile() exists])
++				AC_DEFINE(HAVE_TMPFILE_DENTRY, 1, [i_op->tmpfile() uses old dentry signature])
++			],[
++				AC_MSG_RESULT(no)
++			])
+ 		])
+ 	])
+ ])
+diff --git a/module/os/linux/zfs/zpl_inode.c b/module/os/linux/zfs/zpl_inode.c
+index a0615af8d..fece7886e 100644
+--- a/module/os/linux/zfs/zpl_inode.c
++++ b/module/os/linux/zfs/zpl_inode.c
+@@ -224,12 +224,17 @@ zpl_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
+ 
+ #ifdef HAVE_TMPFILE
+ static int
++#ifndef HAVE_TMPFILE_DENTRY
++zpl_tmpfile(struct user_namespace *userns, struct inode *dir,
++    struct file *file, umode_t mode)
++#else
+ #ifdef HAVE_TMPFILE_USERNS
+ zpl_tmpfile(struct user_namespace *userns, struct inode *dir,
+     struct dentry *dentry, umode_t mode)
+ #else
+ zpl_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
+ #endif
++#endif
+ {
+ 	cred_t *cr = CRED();
+ 	struct inode *ip;
+@@ -252,11 +257,21 @@ zpl_tmpfile(struct inode *dir, struct dentry *dentry, umode_t mode)
+ 	if (error == 0) {
+ 		/* d_tmpfile will do drop_nlink, so we should set it first */
+ 		set_nlink(ip, 1);
++#ifndef HAVE_TMPFILE_DENTRY
++		d_tmpfile(file, ip);
++
++		error = zpl_xattr_security_init(ip, dir,
++		    &file->f_path.dentry->d_name);
++#else
+ 		d_tmpfile(dentry, ip);
+ 
+ 		error = zpl_xattr_security_init(ip, dir, &dentry->d_name);
++#endif
+ 		if (error == 0)
+ 			error = zpl_init_acl(ip, dir);
++#ifndef HAVE_TMPFILE_DENTRY
++		error = finish_open_simple(file, error);
++#endif
+ 		/*
+ 		 * don't need to handle error here, file is already in
+ 		 * unlinked set.
+-- 
+2.30.2
+
