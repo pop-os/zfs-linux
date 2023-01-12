@@ -1,3 +1,18 @@
+zfs-linux (2.1.7-2) unstable; urgency=medium
+
+  [ Mo Zhou ]
+  * Add script for testing bullseye->bookworm upgrade. (irrelevant to packaging) (See: #1024326)
+
+  [ Paulo Henrique de Lima Santana ]
+  * Add Brazilian Portuguese debconf templates translation (Closes: #1026402)
+
+  [ Aron Xu ]
+  * Add upstream patch to avoid packaging.version.LegacyVersion (Closes: #1028174)
+  * libzfslinux-dev: Depends on libblkid-dev (Closes: #1023070)
+  * Add upstream patch for linux 6.1 and 6.2 compatibility (Closes: #1028242)
+
+ -- Aron Xu <aron@debian.org>  Fri, 13 Jan 2023 01:47:49 +0800
+
 zfs-linux (2.1.7-1) unstable; urgency=medium
 
   * New upstream version 2.1.7
