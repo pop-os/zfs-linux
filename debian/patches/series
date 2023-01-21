@@ -15,10 +15,6 @@ move-arcstat-1-to-8.patch
 skip-on-PREEMPT_RT.patch
 zzstd-version-bump.patch
 cross-compile.patch
-0001-removal-of-LegacyVersion-broke-ax_python_dev.m4.patch
-0002-Linux-6.1-compat-open-inside-tmpfile.patch
-0003-linux-6.2-compat-get_acl-got-moved-to-get_inode_acl-.patch
-0004-linux-6.2-compat-bio-bi_rw-was-renamed-bio-bi_opf.patch
 #ubuntu/0001-Revert-etc-systemd-zfs-mount-generator-serialise-han.patch
 #ubuntu/0002-Revert-etc-systemd-zfs-mount-generator-output-tweaks.patch
 #ubuntu/0003-Revert-etc-systemd-zfs-mount-generator-rewrite-in-C.patch
