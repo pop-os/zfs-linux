@@ -1,3 +1,15 @@
+zfs-linux (2.1.8-1) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * New upstream version 2.1.8
+  * d/patches: drop patches merged upstream, refresh remaining ones
+  * Update std-ver to 4.6.2, no change required
+
+  [ Douglas A. Tutty ]
+  * README.Debian: document libpam-zfs usage for homes not in rpool (Closes: #1024128)
+
+ -- Aron Xu <aron@debian.org>  Sun, 22 Jan 2023 02:08:54 +0800
+
 zfs-linux (2.1.7-2) unstable; urgency=medium
 
   [ Mo Zhou ]
