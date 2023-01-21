@@ -326,6 +326,9 @@
 /* iops->get_acl() takes rcu */
 #undef HAVE_GET_ACL_RCU
 
+/* has iops->get_inode_acl() */
+#undef HAVE_GET_INODE_ACL
+
 /* iops->get_link() cookie */
 #undef HAVE_GET_LINK_COOKIE
 
@@ -709,6 +712,9 @@
 
 /* i_op->tmpfile() exists */
 #undef HAVE_TMPFILE
+
+/* i_op->tmpfile() uses old dentry signature */
+#undef HAVE_TMPFILE_DENTRY
 
 /* i_op->tmpfile() has userns */
 #undef HAVE_TMPFILE_USERNS
