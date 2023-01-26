@@ -626,6 +626,9 @@
 /* iops->set_acl() takes 4 args */
 #undef HAVE_SET_ACL_USERNS
 
+/* iops->set_acl() takes 4 args, arg2 is struct dentry * */
+#undef HAVE_SET_ACL_USERNS_DENTRY_ARG2
+
 /* set_cached_acl() is usable */
 #undef HAVE_SET_CACHED_ACL_USABLE
 
