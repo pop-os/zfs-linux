@@ -1,3 +1,9 @@
+zfs-linux (2.1.9-1) unstable; urgency=medium
+
+  * New upstream version 2.1.9
+
+ -- Aron Xu <aron@debian.org>  Thu, 26 Jan 2023 14:36:48 +0800
+
 zfs-linux (2.1.8-1) unstable; urgency=medium
 
   [ Aron Xu ]
