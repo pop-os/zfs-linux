@@ -1,3 +1,9 @@
+zfs-linux (2.1.9-1pop1) jammy; urgency=medium
+
+  * Pop!_OS Release
+
+ -- Brock Szuszczewicz <brock@szu.email>  Thu, 02 Feb 2023 13:17:19 -0700
+
 zfs-linux (2.1.9-1) unstable; urgency=medium
 
   * New upstream version 2.1.9
