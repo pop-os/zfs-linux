@@ -241,7 +241,7 @@ Depends: libnvpair3linux (= ${binary:Version}),
          python3,
          ${misc:Depends},
          ${shlibs:Depends}
-Recommends: lsb-base, zfs-modules | zfs-dkms, zfs-zed
+Recommends: zfs-modules | zfs-dkms, zfs-zed
 Breaks: openrc,
         spl (<< 0.7.9-2),
         spl-dkms (<< 0.8.0~rc1),
