@@ -29,3 +29,4 @@ cross-compile.patch
 0004-rootdelay-on-zfs-should-be-adaptive.patch
 0005-initramfs-Make-mountpoint-none-work.patch
 0006-zdb-zero-pad-checksum-output.patch
+0007-zdb-zero-pad-checksum-output-follow-up.patch
