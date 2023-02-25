@@ -253,6 +253,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  bpobj_iterate@Base 0.8.2
  bpobj_iterate_nofree@Base 0.8.2
  bpobj_open@Base 0.8.2
+ bpobj_prefetch_subobj@Base 2.1.9
  bpobj_space@Base 0.8.2
  bpobj_space_range@Base 0.8.2
  bptree_add@Base 0.8.2
