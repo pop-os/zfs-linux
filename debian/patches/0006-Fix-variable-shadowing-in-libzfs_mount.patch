@@ -1,0 +1,38 @@
+From 6017fd9377b217481097dda1206132ec81fcc8ef Mon Sep 17 00:00:00 2001
+From: Reno Reckling <e-github@wthack.de>
+Date: Fri, 3 Feb 2023 00:22:12 +0100
+Subject: [PATCH] Fix variable shadowing in libzfs_mount
+
+We accidentally reused variable name "i" for inner and outer loops.
+
+Reviewed-by: Rich Ercolani <Rincebrain@gmail.com>
+Reviewed-by: Ryan Moeller <ryan@iXsystems.com>
+Reviewed-by: Richard Yao <richard.yao@alumni.stonybrook.edu>
+Signed-off-by: Reno Reckling <e-github@wthack.de>
+Closes #14452
+Closes #14445
+---
+ lib/libzfs/libzfs_mount.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/lib/libzfs/libzfs_mount.c b/lib/libzfs/libzfs_mount.c
+index 57737bc6c..8612e082b 100644
+--- a/lib/libzfs/libzfs_mount.c
++++ b/lib/libzfs/libzfs_mount.c
+@@ -1422,10 +1422,10 @@ zpool_disable_datasets(zpool_handle_t *zhp, boolean_t force)
+ 	 * Walk through and first unshare everything.
+ 	 */
+ 	for (i = 0; i < used; i++) {
+-		for (enum sa_protocol i = 0; i < SA_PROTOCOL_COUNT; ++i) {
+-			if (sa_is_shared(sets[i].mountpoint, i) &&
++		for (enum sa_protocol p = 0; p < SA_PROTOCOL_COUNT; ++p) {
++			if (sa_is_shared(sets[i].mountpoint, p) &&
+ 			    unshare_one(hdl, sets[i].mountpoint,
+-			    sets[i].mountpoint, i) != 0)
++			    sets[i].mountpoint, p) != 0)
+ 				goto out;
+ 		}
+ 	}
+-- 
+2.30.2
+
