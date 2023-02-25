@@ -15,11 +15,11 @@ Closes #14455
  contrib/initramfs/scripts/zfs | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/contrib/initramfs/scripts/zfs b/contrib/initramfs/scripts/zfs
-index e25ce6895..19b5e4a57 100644
---- a/contrib/initramfs/scripts/zfs
-+++ b/contrib/initramfs/scripts/zfs
-@@ -341,9 +341,11 @@ mount_fs()
+Index: zfs/contrib/initramfs/scripts/zfs
+===================================================================
+--- zfs.orig/contrib/initramfs/scripts/zfs
++++ zfs/contrib/initramfs/scripts/zfs
+@@ -357,9 +357,11 @@ mount_fs()
  				# isn't the root fs.
  				return 0
  			fi
@@ -32,6 +32,3 @@ index e25ce6895..19b5e4a57 100644
  		else
  			mountpoint="$mountpoint1"
  		fi
--- 
-2.30.2
-

@@ -27,7 +27,5 @@ cross-compile.patch
 0002-Increase-default-zfs_scan_vdev_limit-to-16MB.patch
 0003-Increase-default-zfs_rebuild_vdev_limit-to-64MB.patch
 0004-rootdelay-on-zfs-should-be-adaptive.patch
-0005-Resolve-WS-2021-0184-vulnerability-in-zstd.patch
-0006-Fix-variable-shadowing-in-libzfs_mount.patch
-0007-initramfs-Make-mountpoint-none-work.patch
-0008-zdb-zero-pad-checksum-output.patch
+0005-initramfs-Make-mountpoint-none-work.patch
+0006-zdb-zero-pad-checksum-output.patch
