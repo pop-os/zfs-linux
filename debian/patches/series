@@ -23,3 +23,10 @@ cross-compile.patch
 #ubuntu/zfs-mount-container-start.patch
 #ubuntu/4510-silently-ignore-modprobe-failure.patch
 #ubuntu/4751-suppress-types.patch
+0001-Prefetch-on-deadlists-merge.patch
+0002-Increase-default-zfs_scan_vdev_limit-to-16MB.patch
+0003-Increase-default-zfs_rebuild_vdev_limit-to-64MB.patch
+0004-rootdelay-on-zfs-should-be-adaptive.patch
+0005-initramfs-Make-mountpoint-none-work.patch
+0006-zdb-zero-pad-checksum-output.patch
+0007-zdb-zero-pad-checksum-output-follow-up.patch

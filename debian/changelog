@@ -1,3 +1,15 @@
+zfs-linux (2.1.9-2) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * d/control: remove obsolete Recommends lsb-base
+  * cherry-pick upstream post 2.1.9 patches
+
+  [ Mo Zhou ]
+  * Cherry-pick more patches.
+  * Add a new symbol for libzpool5linux.
+
+ -- Aron Xu <aron@debian.org>  Sun, 26 Feb 2023 12:32:52 +0800
+
 zfs-linux (2.1.9-1) unstable; urgency=medium
 
   * New upstream version 2.1.9
