@@ -1,0 +1,37 @@
+From 345f8beb583534ba1f9afcc027437a2e9ba3c875 Mon Sep 17 00:00:00 2001
+From: naivekun <naivekun@outlook.com>
+Date: Fri, 17 Mar 2023 02:54:10 +0800
+Subject: [PATCH 2/2] QAT: Fix uninitialized seed in QAT compression
+
+CpaDcRqResults have to be initialized with checksum=1 for adler32.
+Otherwise when error CPA_DC_OVERFLOW occurred, the next compress
+operation will continue on previously part-compressed data, and write
+invalid checksum data. When zfs decompress the compressed data, a
+invalid checksum will occurred and lead to #14463
+
+Reviewed-by: Tino Reichardt <milky-zfs@mcmilk.de>
+Reviewed-by: Weigang Li <weigang.li@intel.com>
+Reviewed-by: Chengfei Zhu <chengfeix.zhu@intel.com>
+Signed-off-by: naivekun <naivekun0817@gmail.com>
+Closes #14632
+Closes #14463
+---
+ module/os/linux/zfs/qat_compress.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/module/os/linux/zfs/qat_compress.c b/module/os/linux/zfs/qat_compress.c
+index 1d099c95b..64e19e037 100644
+--- a/module/os/linux/zfs/qat_compress.c
++++ b/module/os/linux/zfs/qat_compress.c
+@@ -247,7 +247,7 @@ qat_compress_impl(qat_compress_dir_t dir, char *src, int src_len,
+ 	Cpa8U *buffer_meta_src = NULL;
+ 	Cpa8U *buffer_meta_dst = NULL;
+ 	Cpa32U buffer_meta_size = 0;
+-	CpaDcRqResults dc_results;
++	CpaDcRqResults dc_results = {.checksum = 1};
+ 	CpaStatus status = CPA_STATUS_FAIL;
+ 	Cpa32U hdr_sz = 0;
+ 	Cpa32U compressed_sz;
+-- 
+2.30.2
+
