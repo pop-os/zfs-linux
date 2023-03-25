@@ -1,0 +1,35 @@
+From a5c469c5f380b09705ad0bee15e2ca7a5f78213c Mon Sep 17 00:00:00 2001
+From: ofthesun9 <olivier@ofthesun.net>
+Date: Wed, 15 Mar 2023 00:40:55 +0100
+Subject: [PATCH 1/2] Fix for mountpoint=legacy
+
+We need to clear mountpoint only after checking it.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Richard Yao <richard.yao@alumni.stonybrook.edu>
+Signed-off-by: ofthesun9 <olivier@ofthesun.net>
+Closes #14599
+Closes #14604
+---
+ contrib/initramfs/scripts/zfs | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+Index: zfs/contrib/initramfs/scripts/zfs
+===================================================================
+--- zfs.orig/contrib/initramfs/scripts/zfs
++++ zfs/contrib/initramfs/scripts/zfs
+@@ -357,11 +357,12 @@ mount_fs()
+ 				# isn't the root fs.
+ 				return 0
+ 			fi
+-			# Last hail-mary: Hope 'rootmnt' is set!
+-			mountpoint=""
++			# Don't use mount.zfs -o zfsutils for legacy mountpoint
+ 			if [ "$mountpoint" = "legacy" ]; then
+ 				ZFS_CMD="mount.zfs"
+ 			fi
++			# Last hail-mary: Hope 'rootmnt' is set!
++			mountpoint=""
+ 		else
+ 			mountpoint="$mountpoint1"
+ 		fi
