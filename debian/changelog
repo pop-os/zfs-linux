@@ -1,3 +1,16 @@
+zfs-linux (2.1.9-4) UNRELEASED; urgency=medium
+
+  [ Mo Zhou ]
+  * Tentative fix for armel CI due to missing kernel headers.
+
+  [ наб ]
+  * /lib/zfs-linux/trim: don't exit 1 if last pool isn't nvme-only (Closes: #1030316)
+
+  [ Aron Xu ]
+  * cherry pick patches from upstream 2.1.10 stable branch
+
+ -- Aron Xu <aron@debian.org>  Mon, 17 Apr 2023 15:15:29 +0800
+
 zfs-linux (2.1.9-3) unstable; urgency=medium
 
   * targeted cherry-pick to fix quality issues

@@ -35,3 +35,8 @@ cross-compile.patch
 0010-zdb-zero-pad-checksum-output-follow-up.patch
 0011-Fix-for-mountpoint-legacy.patch
 0012-QAT-Fix-uninitialized-seed-in-QAT-compression.patch
+0013-Optimize-microzaps.patch
+0014-Remove-atomics-from-zh_refcount.patch
+0015-Remove-few-pointer-dereferences-in-dbuf_read.patch
+0016-Introduce-minimal-ZIL-block-commit-delay.patch
+0017-Optimize-the-is_l2cacheable-functions.patch
