@@ -1,0 +1,143 @@
+From fd0893cf1ff3c66b4793100412f4822591acf940 Mon Sep 17 00:00:00 2001
+From: Alexander Motin <mav@FreeBSD.org>
+Date: Tue, 24 Jan 2023 12:20:32 -0500
+Subject: [PATCH] Introduce minimal ZIL block commit delay
+
+Despite all optimizations, tests on actual hardware show that FreeBSD
+kernel can't sleep for less then ~2us.  Similar tests on Linux show
+~50us delay at least from nanosleep() (haven't tested inside kernel).
+It means that on very fast log device ZIL may not be able to satisfy
+zfs_commit_timeout_pct block commit timeout, increasing log latency
+more than desired.
+
+Handle that by introduction of zil_min_commit_timeout parameter,
+specifying minimal timeout value where additional delays to aggregate
+writes may be skipped.  Also skip delays if the LWB is more than 7/8
+full, that often happens if I/O sizes are constant and match one of
+LWB sizes.  Both things are applied only if there were no already
+outstanding log blocks, that may indicate single-threaded workload,
+that by definition can not benefit from the commit delays.
+
+While there, add short time moving average to zl_last_lwb_latency to
+make it more stable.
+
+Tests of single-threaded 4KB writes to NVDIMM SLOG on FreeBSD show IOPS
+increase by 9% instead of expected 5%.  For zfs_commit_timeout_pct of
+1 there IOPS increase by 5.5% instead of expected 1%.
+
+Reviewed-by: Allan Jude <allan@klarasystems.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Prakash Surya <prakash.surya@delphix.com>
+Signed-off-by:	Alexander Motin <mav@FreeBSD.org>
+Sponsored by:	iXsystems, Inc.
+Closes #14418
+---
+ man/man4/zfs.4   |  7 +++++++
+ module/zfs/zil.c | 36 ++++++++++++++++++++++++++++++++++--
+ 2 files changed, 41 insertions(+), 2 deletions(-)
+
+diff --git a/man/man4/zfs.4 b/man/man4/zfs.4
+index ed8914276..dbddf1bf5 100644
+--- a/man/man4/zfs.4
++++ b/man/man4/zfs.4
+@@ -2126,6 +2126,13 @@ On very fragmented pools, lowering this
+ .Pq typically to Sy 36kB
+ can improve performance.
+ .
++.It Sy zil_min_commit_timeout Ns = Ns Sy 5000 Pq u64
++This sets the minimum delay in nanoseconds ZIL care to delay block commit,
++waiting for more records.
++If ZIL writes are too fast, kernel may not be able sleep for so short interval,
++increasing log latency above allowed by
++.Sy zfs_commit_timeout_pct .
++.
+ .It Sy zil_nocacheflush Ns = Ns Sy 0 Ns | Ns 1 Pq int
+ Disable the cache flush commands that are normally sent to disk by
+ the ZIL after an LWB write has completed.
+diff --git a/module/zfs/zil.c b/module/zfs/zil.c
+index 11e05e477..aaf509a2f 100644
+--- a/module/zfs/zil.c
++++ b/module/zfs/zil.c
+@@ -91,6 +91,14 @@
+  */
+ int zfs_commit_timeout_pct = 5;
+ 
++/*
++ * Minimal time we care to delay commit waiting for more ZIL records.
++ * At least FreeBSD kernel can't sleep for less than 2us at its best.
++ * So requests to sleep for less then 5us is a waste of CPU time with
++ * a risk of significant log latency increase due to oversleep.
++ */
++static unsigned long zil_min_commit_timeout = 5000;
++
+ /*
+  * See zil.h for more information about these fields.
+  */
+@@ -1155,7 +1163,8 @@ zil_lwb_flush_vdevs_done(zio_t *zio)
+ 	lwb->lwb_tx = NULL;
+ 
+ 	ASSERT3U(lwb->lwb_issued_timestamp, >, 0);
+-	zilog->zl_last_lwb_latency = gethrtime() - lwb->lwb_issued_timestamp;
++	zilog->zl_last_lwb_latency = (zilog->zl_last_lwb_latency * 3 +
++	    gethrtime() - lwb->lwb_issued_timestamp) / 4;
+ 
+ 	lwb->lwb_root_zio = NULL;
+ 
+@@ -2283,8 +2292,9 @@ zil_process_commit_list(zilog_t *zilog)
+ 	spa_t *spa = zilog->zl_spa;
+ 	list_t nolwb_itxs;
+ 	list_t nolwb_waiters;
+-	lwb_t *lwb;
++	lwb_t *lwb, *plwb;
+ 	itx_t *itx;
++	boolean_t first = B_TRUE;
+ 
+ 	ASSERT(MUTEX_HELD(&zilog->zl_issuer_lock));
+ 
+@@ -2306,6 +2316,9 @@ zil_process_commit_list(zilog_t *zilog)
+ 		ASSERT3S(lwb->lwb_state, !=, LWB_STATE_ISSUED);
+ 		ASSERT3S(lwb->lwb_state, !=, LWB_STATE_WRITE_DONE);
+ 		ASSERT3S(lwb->lwb_state, !=, LWB_STATE_FLUSH_DONE);
++		first = (lwb->lwb_state != LWB_STATE_OPENED) &&
++		    ((plwb = list_prev(&zilog->zl_lwb_list, lwb)) == NULL ||
++		    plwb->lwb_state == LWB_STATE_FLUSH_DONE);
+ 	}
+ 
+ 	while ((itx = list_head(&zilog->zl_itx_commit_list)) != NULL) {
+@@ -2476,7 +2489,23 @@ zil_process_commit_list(zilog_t *zilog)
+ 		 * try and pack as many itxs into as few lwbs as
+ 		 * possible, without significantly impacting the latency
+ 		 * of each individual itx.
++		 *
++		 * If we had no already running or open LWBs, it can be
++		 * the workload is single-threaded.  And if the ZIL write
++		 * latency is very small or if the LWB is almost full, it
++		 * may be cheaper to bypass the delay.
+ 		 */
++		if (lwb->lwb_state == LWB_STATE_OPENED && first) {
++			hrtime_t sleep = zilog->zl_last_lwb_latency *
++			    zfs_commit_timeout_pct / 100;
++			if (sleep < zil_min_commit_timeout ||
++			    lwb->lwb_sz - lwb->lwb_nused < lwb->lwb_sz / 8) {
++				lwb = zil_lwb_write_issue(zilog, lwb);
++				zilog->zl_cur_used = 0;
++				if (lwb == NULL)
++					zil_commit_writer_stall(zilog);
++			}
++		}
+ 	}
+ }
+ 
+@@ -3726,6 +3755,9 @@ EXPORT_SYMBOL(zil_set_logbias);
+ ZFS_MODULE_PARAM(zfs, zfs_, commit_timeout_pct, INT, ZMOD_RW,
+ 	"ZIL block open timeout percentage");
+ 
++ZFS_MODULE_PARAM(zfs_zil, zil_, min_commit_timeout, ULONG, ZMOD_RW,
++	"Minimum delay we care for ZIL block commit");
++
+ ZFS_MODULE_PARAM(zfs_zil, zil_, replay_disable, INT, ZMOD_RW,
+ 	"Disable intent logging replay");
+ 
+-- 
+2.39.2
+

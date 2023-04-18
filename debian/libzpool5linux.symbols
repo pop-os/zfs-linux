@@ -2374,7 +2374,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  zap_lookup_uint64@Base 0.8.2
  zap_match@Base 0.8.2
  zap_maxcd@Base 0.8.2
- zap_name_alloc@Base 0.8.2
+ zap_name_alloc_str@Base 2.1.9
  zap_name_free@Base 0.8.2
  zap_prefetch@Base 0.8.2
  zap_prefetch_uint64@Base 0.8.2
@@ -2787,6 +2787,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  zfs_btree_add_idx@Base 2.0
  zfs_btree_clear@Base 2.0
  zfs_btree_create@Base 2.0
+ zfs_btree_create_custom@Base 2.1.9
  zfs_btree_destroy@Base 2.0
  zfs_btree_destroy_nodes@Base 2.0
  zfs_btree_find@Base 2.0

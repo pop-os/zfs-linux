@@ -1,0 +1,103 @@
+From 2098a00318027b0bd1096818fbcc9d72ca3bd716 Mon Sep 17 00:00:00 2001
+From: Alexander Motin <mav@FreeBSD.org>
+Date: Mon, 28 Nov 2022 14:36:53 -0500
+Subject: [PATCH] Remove atomics from zh_refcount
+
+It is protected by z_hold_locks, so we do not need more serialization,
+simple integer math should be fine.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Ryan Moeller <ryan@iXsystems.com>
+Reviewed-by: Richard Yao <richard.yao@alumni.stonybrook.edu>
+Signed-off-by:  Alexander Motin <mav@FreeBSD.org>
+Closes #14196
+---
+ include/sys/zfs_znode.h         |  4 ++--
+ module/os/linux/zfs/zfs_znode.c | 14 ++++++--------
+ 2 files changed, 8 insertions(+), 10 deletions(-)
+
+diff --git a/include/sys/zfs_znode.h b/include/sys/zfs_znode.h
+index ca32cb49c..0df8a0e4b 100644
+--- a/include/sys/zfs_znode.h
++++ b/include/sys/zfs_znode.h
+@@ -217,9 +217,9 @@ typedef struct znode {
+ 
+ typedef struct znode_hold {
+ 	uint64_t	zh_obj;		/* object id */
+-	kmutex_t	zh_lock;	/* lock serializing object access */
+ 	avl_node_t	zh_node;	/* avl tree linkage */
+-	zfs_refcount_t	zh_refcount;	/* active consumer reference count */
++	kmutex_t	zh_lock;	/* lock serializing object access */
++	int		zh_refcount;	/* active consumer reference count */
+ } znode_hold_t;
+ 
+ static inline uint64_t
+diff --git a/module/os/linux/zfs/zfs_znode.c b/module/os/linux/zfs/zfs_znode.c
+index ba2375387..f3475b4d9 100644
+--- a/module/os/linux/zfs/zfs_znode.c
++++ b/module/os/linux/zfs/zfs_znode.c
+@@ -162,8 +162,7 @@ zfs_znode_hold_cache_constructor(void *buf, void *arg, int kmflags)
+ 	znode_hold_t *zh = buf;
+ 
+ 	mutex_init(&zh->zh_lock, NULL, MUTEX_DEFAULT, NULL);
+-	zfs_refcount_create(&zh->zh_refcount);
+-	zh->zh_obj = ZFS_NO_OBJECT;
++	zh->zh_refcount = 0;
+ 
+ 	return (0);
+ }
+@@ -174,7 +173,6 @@ zfs_znode_hold_cache_destructor(void *buf, void *arg)
+ 	znode_hold_t *zh = buf;
+ 
+ 	mutex_destroy(&zh->zh_lock);
+-	zfs_refcount_destroy(&zh->zh_refcount);
+ }
+ 
+ void
+@@ -273,26 +271,26 @@ zfs_znode_hold_enter(zfsvfs_t *zfsvfs, uint64_t obj)
+ 	boolean_t found = B_FALSE;
+ 
+ 	zh_new = kmem_cache_alloc(znode_hold_cache, KM_SLEEP);
+-	zh_new->zh_obj = obj;
+ 	search.zh_obj = obj;
+ 
+ 	mutex_enter(&zfsvfs->z_hold_locks[i]);
+ 	zh = avl_find(&zfsvfs->z_hold_trees[i], &search, NULL);
+ 	if (likely(zh == NULL)) {
+ 		zh = zh_new;
++		zh->zh_obj = obj;
+ 		avl_add(&zfsvfs->z_hold_trees[i], zh);
+ 	} else {
+ 		ASSERT3U(zh->zh_obj, ==, obj);
+ 		found = B_TRUE;
+ 	}
+-	zfs_refcount_add(&zh->zh_refcount, NULL);
++	zh->zh_refcount++;
++	ASSERT3S(zh->zh_refcount, >, 0);
+ 	mutex_exit(&zfsvfs->z_hold_locks[i]);
+ 
+ 	if (found == B_TRUE)
+ 		kmem_cache_free(znode_hold_cache, zh_new);
+ 
+ 	ASSERT(MUTEX_NOT_HELD(&zh->zh_lock));
+-	ASSERT3S(zfs_refcount_count(&zh->zh_refcount), >, 0);
+ 	mutex_enter(&zh->zh_lock);
+ 
+ 	return (zh);
+@@ -305,11 +303,11 @@ zfs_znode_hold_exit(zfsvfs_t *zfsvfs, znode_hold_t *zh)
+ 	boolean_t remove = B_FALSE;
+ 
+ 	ASSERT(zfs_znode_held(zfsvfs, zh->zh_obj));
+-	ASSERT3S(zfs_refcount_count(&zh->zh_refcount), >, 0);
+ 	mutex_exit(&zh->zh_lock);
+ 
+ 	mutex_enter(&zfsvfs->z_hold_locks[i]);
+-	if (zfs_refcount_remove(&zh->zh_refcount, NULL) == 0) {
++	ASSERT3S(zh->zh_refcount, >, 0);
++	if (--zh->zh_refcount == 0) {
+ 		avl_remove(&zfsvfs->z_hold_trees[i], zh);
+ 		remove = B_TRUE;
+ 	}
+-- 
+2.39.2
+

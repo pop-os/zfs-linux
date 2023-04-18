@@ -60,7 +60,7 @@ do
 	case "${ret}" in
 		disable);;
 		enable)	trim_if_not_already_trimming "${pool}" ;;
-		-|auto)	pool_is_nvme_only "${pool}" && trim_if_not_already_trimming "${pool}" ;;
+		-|auto)	if pool_is_nvme_only "${pool}"; then trim_if_not_already_trimming "${pool}"; fi ;;
 		*)	cat > /dev/stderr <<EOF
 $0: [WARNING] illegal value "${ret}" for property "${PROPERTY_NAME}" of ZFS dataset "${pool}".
 $0: Acceptable choices for this property are: auto, enable, disable. The default is auto.
