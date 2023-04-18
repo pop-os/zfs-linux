@@ -1,4 +1,4 @@
-zfs-linux (2.1.9-4) UNRELEASED; urgency=medium
+zfs-linux (2.1.9-4) unstable; urgency=medium
 
   [ Mo Zhou ]
   * Tentative fix for armel CI due to missing kernel headers.
@@ -8,8 +8,9 @@ zfs-linux (2.1.9-4) UNRELEASED; urgency=medium
 
   [ Aron Xu ]
   * cherry pick patches from upstream 2.1.10 stable branch
+  * libzpool5linux: update symbols
 
- -- Aron Xu <aron@debian.org>  Mon, 17 Apr 2023 15:15:29 +0800
+ -- Aron Xu <aron@debian.org>  Wed, 19 Apr 2023 00:18:07 +0800
 
 zfs-linux (2.1.9-3) unstable; urgency=medium
 
