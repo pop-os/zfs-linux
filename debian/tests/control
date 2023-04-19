@@ -16,4 +16,5 @@ Depends: fakeroot,
          linux-headers-rpi [armel],
          linux-headers-powerpc64le [ppc64el],
          linux-headers-s390x [s390x],
+         linux-headers-riscv64 [riscv64],
          @builddeps@
