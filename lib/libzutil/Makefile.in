@@ -113,6 +113,7 @@ target_triplet = @target@
 @BUILD_FREEBSD_TRUE@	-Wl,-x -Wl,--fatal-warnings \
 @BUILD_FREEBSD_TRUE@	-Wl,--warn-shared-textrel -lm
 @BUILD_LINUX_TRUE@am__append_7 = \
+@BUILD_LINUX_TRUE@	os/linux/zutil_setproctitle.c \
 @BUILD_LINUX_TRUE@	os/linux/zutil_device_path_os.c \
 @BUILD_LINUX_TRUE@	os/linux/zutil_import_os.c \
 @BUILD_LINUX_TRUE@	os/linux/zutil_compat.c
@@ -308,11 +309,13 @@ libzutil_la_DEPENDENCIES = $(abs_top_builddir)/lib/libavl/libavl.la \
 	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2)
 am__libzutil_la_SOURCES_DIST = zutil_device_path.c zutil_import.c \
 	zutil_import.h zutil_nicenum.c zutil_pool.c \
-	os/linux/zutil_device_path_os.c os/linux/zutil_import_os.c \
-	os/linux/zutil_compat.c os/freebsd/zutil_device_path_os.c \
-	os/freebsd/zutil_import_os.c os/freebsd/zutil_compat.c
+	os/linux/zutil_setproctitle.c os/linux/zutil_device_path_os.c \
+	os/linux/zutil_import_os.c os/linux/zutil_compat.c \
+	os/freebsd/zutil_device_path_os.c os/freebsd/zutil_import_os.c \
+	os/freebsd/zutil_compat.c
 am__dirstamp = $(am__leading_dot)dirstamp
-@BUILD_LINUX_TRUE@am__objects_1 = os/linux/zutil_device_path_os.lo \
+@BUILD_LINUX_TRUE@am__objects_1 = os/linux/zutil_setproctitle.lo \
+@BUILD_LINUX_TRUE@	os/linux/zutil_device_path_os.lo \
 @BUILD_LINUX_TRUE@	os/linux/zutil_import_os.lo \
 @BUILD_LINUX_TRUE@	os/linux/zutil_compat.lo
 @BUILD_FREEBSD_TRUE@am__objects_2 =  \
@@ -351,7 +354,8 @@ am__depfiles_remade = ./$(DEPDIR)/zfs_ioctl_compat.Plo \
 	os/freebsd/$(DEPDIR)/zutil_import_os.Plo \
 	os/linux/$(DEPDIR)/zutil_compat.Plo \
 	os/linux/$(DEPDIR)/zutil_device_path_os.Plo \
-	os/linux/$(DEPDIR)/zutil_import_os.Plo
+	os/linux/$(DEPDIR)/zutil_import_os.Plo \
+	os/linux/$(DEPDIR)/zutil_setproctitle.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -444,7 +448,6 @@ DEBUG_KMEM_ZFS = @DEBUG_KMEM_ZFS@
 DEBUG_LDFLAGS = @DEBUG_LDFLAGS@
 DEBUG_ZFS = @DEBUG_ZFS@
 DEFAULT_INIT_NFS_SERVER = @DEFAULT_INIT_NFS_SERVER@
-DEFAULT_INIT_SCRIPT = @DEFAULT_INIT_SCRIPT@
 DEFAULT_INIT_SHELL = @DEFAULT_INIT_SHELL@
 DEFAULT_PACKAGE = @DEFAULT_PACKAGE@
 DEFINE_PAM = @DEFINE_PAM@
@@ -799,6 +802,8 @@ os/linux/$(am__dirstamp):
 os/linux/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) os/linux/$(DEPDIR)
 	@: > os/linux/$(DEPDIR)/$(am__dirstamp)
+os/linux/zutil_setproctitle.lo: os/linux/$(am__dirstamp) \
+	os/linux/$(DEPDIR)/$(am__dirstamp)
 os/linux/zutil_device_path_os.lo: os/linux/$(am__dirstamp) \
 	os/linux/$(DEPDIR)/$(am__dirstamp)
 os/linux/zutil_import_os.lo: os/linux/$(am__dirstamp) \
@@ -842,6 +847,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@os/linux/$(DEPDIR)/zutil_compat.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@os/linux/$(DEPDIR)/zutil_device_path_os.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@os/linux/$(DEPDIR)/zutil_import_os.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@os/linux/$(DEPDIR)/zutil_setproctitle.Plo@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -1020,6 +1026,7 @@ distclean: distclean-am
 	-rm -f os/linux/$(DEPDIR)/zutil_compat.Plo
 	-rm -f os/linux/$(DEPDIR)/zutil_device_path_os.Plo
 	-rm -f os/linux/$(DEPDIR)/zutil_import_os.Plo
+	-rm -f os/linux/$(DEPDIR)/zutil_setproctitle.Plo
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1076,6 +1083,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f os/linux/$(DEPDIR)/zutil_compat.Plo
 	-rm -f os/linux/$(DEPDIR)/zutil_device_path_os.Plo
 	-rm -f os/linux/$(DEPDIR)/zutil_import_os.Plo
+	-rm -f os/linux/$(DEPDIR)/zutil_setproctitle.Plo
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
