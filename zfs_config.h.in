@@ -83,7 +83,13 @@
 #undef HAVE_BDEV_CHECK_MEDIA_CHANGE
 
 /* bdev_*_io_acct() available */
-#undef HAVE_BDEV_IO_ACCT
+#undef HAVE_BDEV_IO_ACCT_63
+
+/* bdev_*_io_acct() available */
+#undef HAVE_BDEV_IO_ACCT_OLD
+
+/* bdev_kobj() exists */
+#undef HAVE_BDEV_KOBJ
 
 /* bdev_max_discard_sectors() is available */
 #undef HAVE_BDEV_MAX_DISCARD_SECTORS
@@ -526,6 +532,9 @@
 
 /* folio_wait_bit() exists */
 #undef HAVE_PAGEMAP_FOLIO_WAIT_BIT
+
+/* part_to_dev() exists */
+#undef HAVE_PART_TO_DEV
 
 /* iops->getattr() takes a path */
 #undef HAVE_PATH_IOPS_GETATTR
