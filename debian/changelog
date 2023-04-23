@@ -1,13 +1,13 @@
-zfs-linux (2.1.10-1) UNRELEASED; urgency=medium
+zfs-linux (2.1.11-1) UNRELEASED; urgency=medium
 
   [ Mo Zhou ]
   * Fix riscv64 CI failure as well.
 
   [ Aron Xu ]
-  * New upstream version 2.1.10
+  * New upstream version 2.1.11
   * Drop patches that are alreay in upstream stable release
 
- -- Aron Xu <aron@debian.org>  Wed, 19 Apr 2023 13:36:17 +0800
+ -- Aron Xu <aron@debian.org>  Sun, 23 Apr 2023 17:29:38 +0800
 
 zfs-linux (2.1.9-4) unstable; urgency=medium
 
