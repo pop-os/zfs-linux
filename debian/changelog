@@ -1,3 +1,9 @@
+zfs-linux (2.1.11-1pop1) jammy; urgency=medium
+
+  * Pop!_OS Release
+
+ -- Brock Szuszczewicz <brock@szu.email>  Tue, 25 Apr 2023 10:00:03 -0600
+
 zfs-linux (2.1.11-1) unstable; urgency=medium
 
   [ Mo Zhou ]
