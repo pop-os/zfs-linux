@@ -1,3 +1,12 @@
+zfs-linux (2.1.12-1) UNRELEASED; urgency=medium
+
+  * New symbols for libzfs4linux and libzpool5linux.
+  * New upstream version 2.1.12
+  * Remove already merged patches.
+  * Rebase existing patches.
+
+ -- Mo Zhou <lumin@debian.org>  Sat, 10 Jun 2023 17:37:50 -0400
+
 zfs-linux (2.1.11-1) unstable; urgency=medium
 
   [ Mo Zhou ]
