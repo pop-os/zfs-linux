@@ -125,6 +125,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-config-defined.m4 \
 	$(top_srcdir)/config/kernel-copy-from-user-inatomic.m4 \
+	$(top_srcdir)/config/kernel-cpu_has_feature.m4 \
 	$(top_srcdir)/config/kernel-current-time.m4 \
 	$(top_srcdir)/config/kernel-declare-event-class.m4 \
 	$(top_srcdir)/config/kernel-dentry-alias.m4 \
@@ -136,6 +137,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-fallocate.m4 \
 	$(top_srcdir)/config/kernel-file-dentry.m4 \
 	$(top_srcdir)/config/kernel-file-inode.m4 \
+	$(top_srcdir)/config/kernel-filemap.m4 \
+	$(top_srcdir)/config/kernel-flush_dcache_page.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
 	$(top_srcdir)/config/kernel-follow-down-one.m4 \
 	$(top_srcdir)/config/kernel-fpu.m4 \
@@ -157,6 +160,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-inode-lookup.m4 \
 	$(top_srcdir)/config/kernel-inode-set-flags.m4 \
 	$(top_srcdir)/config/kernel-inode-set-iversion.m4 \
+	$(top_srcdir)/config/kernel-inode-setattr.m4 \
 	$(top_srcdir)/config/kernel-inode-times.m4 \
 	$(top_srcdir)/config/kernel-insert-inode-locked.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
@@ -180,6 +184,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-proc-operations.m4 \
 	$(top_srcdir)/config/kernel-put-link.m4 \
 	$(top_srcdir)/config/kernel-readpages.m4 \
+	$(top_srcdir)/config/kernel-reclaim_state.m4 \
 	$(top_srcdir)/config/kernel-rename.m4 \
 	$(top_srcdir)/config/kernel-revalidate-disk-size.m4 \
 	$(top_srcdir)/config/kernel-rw.m4 \
@@ -215,6 +220,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-vfs-rw-iterate.m4 \
 	$(top_srcdir)/config/kernel-vfs-set_page_dirty.m4 \
 	$(top_srcdir)/config/kernel-wait.m4 \
+	$(top_srcdir)/config/kernel-writepage_t.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
 	$(top_srcdir)/config/kernel-zero_page.m4 \
 	$(top_srcdir)/config/kernel-zlib.m4 \
@@ -407,6 +413,7 @@ KERNEL_DEBUG_CPPFLAGS = @KERNEL_DEBUG_CPPFLAGS@
 KERNEL_LD = @KERNEL_LD@
 KERNEL_LLVM = @KERNEL_LLVM@
 KERNEL_MAKE = @KERNEL_MAKE@
+KERNEL_NO_IPA_SRA = @KERNEL_NO_IPA_SRA@
 LCOV = @LCOV@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
@@ -628,10 +635,12 @@ zfsexecdir = @zfsexecdir@
 dist_pkgdata_SCRIPTS = \
 	setup.ksh \
 	cleanup.ksh \
+	mmap_mixed.ksh \
 	mmap_read_001_pos.ksh \
 	mmap_write_001_pos.ksh \
 	mmap_libaio_001_pos.ksh \
-	mmap_seek_001_pos.ksh
+	mmap_seek_001_pos.ksh \
+	mmap_sync_001_pos.ksh
 
 dist_pkgdata_DATA = \
 	mmap.cfg
