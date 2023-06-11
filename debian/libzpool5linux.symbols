@@ -626,6 +626,8 @@ libzpool.so.5 libzpool5linux #MINVER#
  dmu_tx_do_callbacks@Base 0.8.2
  dmu_tx_fini@Base 0.8.2
  dmu_tx_get_txg@Base 0.8.2
+ dmu_tx_hold_append@Base 2.1.12
+ dmu_tx_hold_append_by_dnode@Base 2.1.12
  dmu_tx_hold_bonus@Base 0.8.2
  dmu_tx_hold_bonus_by_dnode@Base 0.8.2
  dmu_tx_hold_free@Base 0.8.2
@@ -1715,6 +1717,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  spa_condense_indirect_start_sync@Base 0.8.2
  spa_condense_init@Base 0.8.2
  spa_config_enter@Base 0.8.2
+ spa_config_enter_mmp@Base 2.1.12
  spa_config_exit@Base 0.8.2
  spa_config_generate@Base 0.8.2
  spa_config_held@Base 0.8.2
@@ -2306,6 +2309,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  vdev_trim_stop_all@Base 0.8.2
  vdev_trim_stop_wait@Base 0.8.2
  vdev_uberblock_load@Base 0.8.2
+ vdev_uninitialize@Base 2.1.12
  vdev_validate@Base 0.8.2
  vdev_validate_aux@Base 0.8.2
  vdev_validate_skip@Base 0.8.2
