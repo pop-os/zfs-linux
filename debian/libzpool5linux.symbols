@@ -626,6 +626,8 @@ libzpool.so.5 libzpool5linux #MINVER#
  dmu_tx_do_callbacks@Base 0.8.2
  dmu_tx_fini@Base 0.8.2
  dmu_tx_get_txg@Base 0.8.2
+ dmu_tx_hold_append@Base 2.1.12
+ dmu_tx_hold_append_by_dnode@Base 2.1.12
  dmu_tx_hold_bonus@Base 0.8.2
  dmu_tx_hold_bonus_by_dnode@Base 0.8.2
  dmu_tx_hold_free@Base 0.8.2
@@ -685,6 +687,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  dnode_special_close@Base 0.8.2
  dnode_special_open@Base 0.8.2
  dnode_stats@Base 0.8.2
+ dnode_sums@Base 2.1.11
  dnode_sync@Base 0.8.2
  dnode_try_claim@Base 0.8.2
  dnode_verify@Base 2.0
@@ -1714,6 +1717,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  spa_condense_indirect_start_sync@Base 0.8.2
  spa_condense_init@Base 0.8.2
  spa_config_enter@Base 0.8.2
+ spa_config_enter_mmp@Base 2.1.12
  spa_config_exit@Base 0.8.2
  spa_config_generate@Base 0.8.2
  spa_config_held@Base 0.8.2
@@ -2095,6 +2099,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  vdev_checkpoint_sm_object@Base 0.8.2
  vdev_children_are_offline@Base 0.8.2
  vdev_clear@Base 0.8.2
+ vdev_clear_kobj_evt@Base 2.1.11
  vdev_clear_resilver_deferred@Base 0.8.3
  vdev_clear_stats@Base 0.8.2
  vdev_close@Base 0.8.2
@@ -2227,6 +2232,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  vdev_open@Base 0.8.2
  vdev_open_children@Base 0.8.2
  vdev_open_children_subset@Base 2.1
+ vdev_post_kobj_evt@Base 2.1.11
  vdev_probe@Base 0.8.2
  vdev_propagate_state@Base 0.8.2
  vdev_psize_to_asize@Base 0.8.2
@@ -2277,6 +2283,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  vdev_removal_max_span@Base 0.8.2
  vdev_remove_child@Base 0.8.2
  vdev_remove_parent@Base 0.8.2
+ vdev_remove_wanted@Base 2.1.11
  vdev_reopen@Base 0.8.2
  vdev_replace_in_progress@Base 2.0
  vdev_replacing_ops@Base 0.8.2
@@ -2302,6 +2309,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  vdev_trim_stop_all@Base 0.8.2
  vdev_trim_stop_wait@Base 0.8.2
  vdev_uberblock_load@Base 0.8.2
+ vdev_uninitialize@Base 2.1.12
  vdev_validate@Base 0.8.2
  vdev_validate_aux@Base 0.8.2
  vdev_validate_skip@Base 0.8.2

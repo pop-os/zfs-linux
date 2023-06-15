@@ -13,10 +13,10 @@ Closes #14464
  cmd/zdb/zdb.c | 7 +++++--
  1 file changed, 5 insertions(+), 2 deletions(-)
 
-Index: zfs/cmd/zdb/zdb.c
+Index: zfs-linux/cmd/zdb/zdb.c
 ===================================================================
---- zfs.orig/cmd/zdb/zdb.c
-+++ zfs/cmd/zdb/zdb.c
+--- zfs-linux.orig/cmd/zdb/zdb.c
++++ zfs-linux/cmd/zdb/zdb.c
 @@ -2305,7 +2305,8 @@ snprintf_blkptr_compact(char *blkbuf, si
  			(void) snprintf(blkbuf + strlen(blkbuf),
  			    buflen - strlen(blkbuf), " %s", "FREE");
@@ -27,7 +27,7 @@ Index: zfs/cmd/zdb/zdb.c
  		    (u_longlong_t)bp->blk_cksum.zc_word[0],
  		    (u_longlong_t)bp->blk_cksum.zc_word[1],
  		    (u_longlong_t)bp->blk_cksum.zc_word[2],
-@@ -8213,7 +8214,9 @@ zdb_read_block(char *thing, spa_t *spa)
+@@ -8222,7 +8223,9 @@ zdb_read_block(char *thing, spa_t *spa)
  				    DVA_GET_OFFSET(&bp->blk_dva[0]);
  				ck_zio->io_bp = bp;
  				zio_checksum_compute(ck_zio, ck, pabd, lsize);

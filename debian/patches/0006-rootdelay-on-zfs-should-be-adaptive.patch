@@ -23,10 +23,10 @@ Closes #14430
  contrib/initramfs/scripts/zfs | 54 +++++++++++++++++++++++------------
  1 file changed, 35 insertions(+), 19 deletions(-)
 
-Index: zfs/contrib/initramfs/scripts/zfs
+Index: zfs-linux/contrib/initramfs/scripts/zfs
 ===================================================================
---- zfs.orig/contrib/initramfs/scripts/zfs
-+++ zfs/contrib/initramfs/scripts/zfs
+--- zfs-linux.orig/contrib/initramfs/scripts/zfs
++++ zfs-linux/contrib/initramfs/scripts/zfs
 @@ -270,30 +270,46 @@ import_pool()
  # with more logging etc.
  load_module_initrd()

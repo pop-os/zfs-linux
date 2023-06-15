@@ -16,11 +16,11 @@ Closes #14497
  include/sys/spa.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/include/sys/spa.h b/include/sys/spa.h
-index 500eb3491..c9d03bf64 100644
---- a/include/sys/spa.h
-+++ b/include/sys/spa.h
-@@ -678,7 +678,7 @@ typedef struct blkptr {
+Index: zfs-linux/include/sys/spa.h
+===================================================================
+--- zfs-linux.orig/include/sys/spa.h
++++ zfs-linux/include/sys/spa.h
+@@ -678,7 +678,7 @@ _NOTE(CONSTCOND) } while (0)
  		len += func(buf + len, size - len,			\
  		    "[L%llu %s] %s %s %s %s %s %s %s%c"			\
  		    "size=%llxL/%llxP birth=%lluL/%lluP fill=%llu%c"	\
@@ -29,6 +29,3 @@ index 500eb3491..c9d03bf64 100644
  		    (u_longlong_t)BP_GET_LEVEL(bp),			\
  		    type,						\
  		    checksum,						\
--- 
-2.39.2
-
