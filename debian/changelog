@@ -1,3 +1,9 @@
+zfs-linux (2.1.12-2) unstable; urgency=medium
+
+  * Add patch to check FPU availability on arm64 (Closes: #1039487)
+
+ -- Aron Xu <aron@debian.org>  Mon, 21 Aug 2023 11:36:30 +0800
+
 zfs-linux (2.1.12-1) unstable; urgency=medium
 
   * New upstream version 2.1.12
