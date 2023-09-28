@@ -1,9 +1,9 @@
-zfs-linux (2.1.13-1) UNRELEASED; urgency=medium
+zfs-linux (2.1.13-1) unstable; urgency=medium
 
   * New upstream version 2.1.13 (Closes: #1043124)
   * Quilt refresh patchset.
 
- -- Mo Zhou <lumin@debian.org>  Wed, 27 Sep 2023 21:13:46 -0400
+ -- Mo Zhou <lumin@debian.org>  Wed, 27 Sep 2023 21:29:38 -0400
 
 zfs-linux (2.1.12-2) unstable; urgency=medium
 
