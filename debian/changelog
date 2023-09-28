@@ -1,3 +1,9 @@
+zfs-linux (2.1.13-1pop0) jammy; urgency=medium
+
+  * Backport to Pop
+
+ -- Jeremy Soller <jeremy@system76.com>  Thu, 28 Sep 2023 09:49:45 -0600
+
 zfs-linux (2.1.13-1) unstable; urgency=medium
 
   * New upstream version 2.1.13 (Closes: #1043124)
