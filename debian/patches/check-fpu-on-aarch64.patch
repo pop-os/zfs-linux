@@ -7,10 +7,10 @@ Subject: [PATCH] Check fpu availability on aarch64
  include/os/linux/kernel/linux/simd_aarch64.h | 7 +++++++
  1 file changed, 7 insertions(+)
 
-Index: zfs-linux-2.1.12/include/os/linux/kernel/linux/simd_aarch64.h
+Index: zfs-linux/include/os/linux/kernel/linux/simd_aarch64.h
 ===================================================================
---- zfs-linux-2.1.12.orig/include/os/linux/kernel/linux/simd_aarch64.h
-+++ zfs-linux-2.1.12/include/os/linux/kernel/linux/simd_aarch64.h
+--- zfs-linux.orig/include/os/linux/kernel/linux/simd_aarch64.h
++++ zfs-linux/include/os/linux/kernel/linux/simd_aarch64.h
 @@ -43,9 +43,16 @@
  #include <sys/types.h>
  #include <asm/neon.h>

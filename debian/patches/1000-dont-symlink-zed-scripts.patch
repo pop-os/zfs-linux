@@ -4,7 +4,7 @@ Index: zfs-linux/cmd/zed/zed.d/Makefile.am
 ===================================================================
 --- zfs-linux.orig/cmd/zed/zed.d/Makefile.am
 +++ zfs-linux/cmd/zed/zed.d/Makefile.am
-@@ -49,7 +49,7 @@ install-data-hook:
+@@ -51,7 +51,7 @@ install-data-hook:
  	for f in $(zedconfdefaults); do \
  	  test -f "$(DESTDIR)$(zedconfdir)/$${f}" -o \
  	       -L "$(DESTDIR)$(zedconfdir)/$${f}" || \
