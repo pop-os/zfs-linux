@@ -159,6 +159,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-fallocate.m4 \
 	$(top_srcdir)/config/kernel-file-dentry.m4 \
 	$(top_srcdir)/config/kernel-file-inode.m4 \
+	$(top_srcdir)/config/kernel-filemap-splice-read.m4 \
 	$(top_srcdir)/config/kernel-filemap.m4 \
 	$(top_srcdir)/config/kernel-flush_dcache_page.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
@@ -207,6 +208,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-put-link.m4 \
 	$(top_srcdir)/config/kernel-readpages.m4 \
 	$(top_srcdir)/config/kernel-reclaim_state.m4 \
+	$(top_srcdir)/config/kernel-register_sysctl_table.m4 \
 	$(top_srcdir)/config/kernel-rename.m4 \
 	$(top_srcdir)/config/kernel-revalidate-disk-size.m4 \
 	$(top_srcdir)/config/kernel-rw.m4 \
