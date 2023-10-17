@@ -7,8 +7,8 @@ NAME := $(shell awk '$$1 == "Name:" { print $$2; }' META)
 LINUX_MIN  := $(shell awk '/Linux-Minimum:/{print $$2}' META)
 LINUX_NEXT := $(shell awk -F'[ .]' '/Linux-Maximum:/{print $$2 "." $$3+1}' META)
 
-DKMSFILES := module include config zfs.release.in autogen.sh META AUTHORS \
-		COPYRIGHT LICENSE README.md
+DKMSFILES := module include config zfs.release.in autogen.sh copy-builtin META AUTHORS \
+		COPYRIGHT LICENSE README.md CODE_OF_CONDUCT.md NEWS NOTICE RELEASES.md
 
 DKMSFILESEXCLUDE := include/os/freebsd module/os/freebsd module/Makefile.bsd
 
@@ -134,8 +134,19 @@ override_dh_auto_install:
 	@# Do not regenerate zfs_gitrev.h during dkms build
 	sed '1,/CONFIG_KERNEL/s/SUBDIRS.*=.*//g;s/SUBDIRS.*=.*/SUBDIRS = module include/g;/make_gitrev.sh/d' \
 		'$(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am' > '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am'
+	sed -i '/^include.*freebsd.*Makefile\.am/d' \
+		'$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/include/Makefile.am'
 	@# Sanity test
 	grep -q 'SUBDIRS = module include' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am'
+	sed -i '/rpm.Makefile/d' $(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am
+	sed -i '/cmd.Makefile/d' $(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am
+	sed -i '/contrib.Makefile/d' $(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am
+	sed -i '/etc.Makefile/d' $(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am
+	sed -i '/lib.Makefile/d' $(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am
+	sed -i '/man.Makefile/d' $(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am
+	sed -i '/scripts.Makefile/d' $(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am
+	sed -i '/tests.Makefile/d' $(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am
+	sed -i '/udev.Makefile/d' $(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/Makefile.am
 	@# Run autogen on the stripped source tree
 	cd '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)'; ./autogen.sh
 	rm -fr '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/autom4te.cache'
@@ -190,7 +201,7 @@ ifeq ($(BUILD_UDEB), true)
 endif
 
 override_dh_install:
-	find debian/tmp/lib -name *.la -delete
+	find debian/tmp/lib -name '*.la' -delete
 	dh_install
 
 override_dh_missing:
