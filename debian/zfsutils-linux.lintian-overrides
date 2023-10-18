@@ -1,6 +1,7 @@
 appstream-metadata-missing-modalias-provide
 binary-without-manpage [usr/sbin/arc_summary]
 binary-without-manpage [usr/sbin/dbufstat]
+binary-without-manpage [sbin/zilstat]
 breaks-without-version openrc
 command-in-sbin-has-manpage-in-incorrect-section
 extra-license-file [usr/share/doc/zfsutils-linux/LICENSE.gz]
@@ -14,4 +15,3 @@ package-supports-alternative-init-but-no-init.d-script [lib/systemd/system/zfs-v
 spare-manual-page
 spelling-error-in-manpage
 systemd-service-file-refers-to-unusual-wantedby-target
-mismatched-override
