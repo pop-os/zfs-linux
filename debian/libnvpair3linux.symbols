@@ -1,6 +1,5 @@
 libnvpair.so.3 libnvpair3linux #MINVER#
 * Build-Depends-Package: libzfslinux-dev
- aok@Base 2.0
  dump_nvlist@Base 0.8.2
  fnvlist_add_boolean@Base 0.8.2
  fnvlist_add_boolean_array@Base 0.8.2
@@ -76,15 +75,12 @@ libnvpair.so.3 libnvpair3linux #MINVER#
  fnvpair_value_uint64@Base 0.8.2
  fnvpair_value_uint8@Base 0.8.2
  libspl_assertf@Base 2.0
+ libspl_set_assert_ok@Base 2.2
  nv_alloc_fini@Base 0.8.2
  nv_alloc_init@Base 0.8.2
  nv_alloc_nosleep@Base 0.8.2
- nv_alloc_nosleep_def@Base 0.8.2
  nv_alloc_reset@Base 0.8.2
- nv_alloc_sleep@Base 0.8.2
- nv_alloc_sleep_def@Base 0.8.2
  nv_fixed_ops@Base 0.8.2
- nv_fixed_ops_def@Base 0.8.2
  nvlist_add_boolean@Base 0.8.2
  nvlist_add_boolean_array@Base 0.8.2
  nvlist_add_boolean_value@Base 0.8.2
@@ -118,7 +114,6 @@ libnvpair.so.3 libnvpair3linux #MINVER#
  nvlist_empty@Base 0.8.2
  nvlist_exists@Base 0.8.2
  nvlist_free@Base 0.8.2
- nvlist_hashtable_init_size@Base 0.8.2
  nvlist_lookup_boolean@Base 0.8.2
  nvlist_lookup_boolean_array@Base 0.8.2
  nvlist_lookup_boolean_value@Base 0.8.2
@@ -202,7 +197,6 @@ libnvpair.so.3 libnvpair3linux #MINVER#
  nvlist_xdup@Base 0.8.2
  nvlist_xpack@Base 0.8.2
  nvlist_xunpack@Base 0.8.2
- nvpair_max_recursion@Base 0.8.2
  nvpair_name@Base 0.8.2
  nvpair_type@Base 0.8.2
  nvpair_type_is_array@Base 0.8.2
