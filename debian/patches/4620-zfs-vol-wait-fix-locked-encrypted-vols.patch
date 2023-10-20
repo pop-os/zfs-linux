@@ -9,10 +9,10 @@ Forwarded: no
 Reviewed-By: Colin Ian King <colin.king@canonical.com>
 Last-Update: 2020-07-22
 
-Index: zfs-linux/cmd/zvol_wait/zvol_wait
+Index: zfs-linux/cmd/zvol_wait
 ===================================================================
---- zfs-linux.orig/cmd/zvol_wait/zvol_wait
-+++ zfs-linux/cmd/zvol_wait/zvol_wait
+--- zfs-linux.orig/cmd/zvol_wait
++++ zfs-linux/cmd/zvol_wait
 @@ -25,6 +25,14 @@ filter_out_deleted_zvols() {
  	IFS="$OIFS"
  }

@@ -5,12 +5,12 @@ Index: zfs-linux/config/Rules.am
 ===================================================================
 --- zfs-linux.orig/config/Rules.am
 +++ zfs-linux/config/Rules.am
-@@ -21,7 +21,7 @@ DEFAULT_INCLUDES += \
- 	-I$(top_srcdir)/lib/libspl/include/os/freebsd
- endif
+@@ -12,7 +12,7 @@ AM_CPPFLAGS = \
+ 	-I$(top_srcdir)/lib/libspl/include \
+ 	-I$(top_srcdir)/lib/libspl/include/os/@ac_system_l@
  
 -AM_LIBTOOLFLAGS = --silent
 +AM_LIBTOOLFLAGS =
  
- AM_CFLAGS  = -std=gnu99 -Wall -Wstrict-prototypes -Wmissing-prototypes
+ AM_CFLAGS  = -std=gnu99 -Wall -Wextra -Wstrict-prototypes -Wmissing-prototypes -Wwrite-strings -Wno-sign-compare -Wno-missing-field-initializers
  AM_CFLAGS += -fno-strict-aliasing
