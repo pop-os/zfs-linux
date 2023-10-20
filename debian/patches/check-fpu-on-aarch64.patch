@@ -11,9 +11,9 @@ Index: zfs-linux/include/os/linux/kernel/linux/simd_aarch64.h
 ===================================================================
 --- zfs-linux.orig/include/os/linux/kernel/linux/simd_aarch64.h
 +++ zfs-linux/include/os/linux/kernel/linux/simd_aarch64.h
-@@ -43,9 +43,16 @@
- #include <sys/types.h>
- #include <asm/neon.h>
+@@ -71,9 +71,16 @@
+ #define	ID_AA64PFR0_EL1		sys_reg(3, 0, 0, 1, 0)
+ #define	ID_AA64ISAR0_EL1	sys_reg(3, 0, 0, 6, 0)
  
 +#if defined(HAVE_KERNEL_FPU)
  #define	kfpu_allowed()		1
@@ -25,6 +25,6 @@ Index: zfs-linux/include/os/linux/kernel/linux/simd_aarch64.h
 +#define	kfpu_end()		do {} while (0)
 +#endif
 +
- #define	kfpu_init()		0
- #define	kfpu_fini()		((void) 0)
+ #define	kfpu_init()		(0)
+ #define	kfpu_fini()		do {} while (0)
  
