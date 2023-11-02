@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -27,6 +27,7 @@
 #include <sys/zio_checksum.h>
 #include <sys/zfs_context.h>
 #include <sys/arc.h>
+#include <sys/arc_os.h>
 #include <sys/zfs_refcount.h>
 #include <sys/vdev.h>
 #include <sys/vdev_trim.h>
@@ -72,33 +73,12 @@ SYSINIT(arc_free_target_init, SI_SUB_KTHREAD_PAGE, SI_ORDER_ANY,
  * We don't have a tunable for arc_free_target due to the dependency on
  * pagedaemon initialisation.
  */
-static int
-sysctl_vfs_zfs_arc_free_target(SYSCTL_HANDLER_ARGS)
-{
-	uint_t val;
-	int err;
-
-	val = zfs_arc_free_target;
-	err = sysctl_handle_int(oidp, &val, 0, req);
-	if (err != 0 || req->newptr == NULL)
-		return (err);
-
-	if (val < minfree)
-		return (EINVAL);
-	if (val > vm_cnt.v_page_count)
-		return (EINVAL);
-
-	zfs_arc_free_target = val;
-
-	return (0);
-}
-SYSCTL_DECL(_vfs_zfs);
-/* BEGIN CSTYLED */
-SYSCTL_PROC(_vfs_zfs, OID_AUTO, arc_free_target,
-    CTLTYPE_UINT | CTLFLAG_MPSAFE | CTLFLAG_RW, 0, sizeof (uint_t),
-    sysctl_vfs_zfs_arc_free_target, "IU",
-    "Desired number of free pages below which ARC triggers reclaim");
-/* END CSTYLED */
+ZFS_MODULE_PARAM_CALL(zfs_arc, zfs_arc_, free_target,
+    param_set_arc_free_target, 0, CTLFLAG_RW,
+	"Desired number of free pages below which ARC triggers reclaim");
+ZFS_MODULE_PARAM_CALL(zfs_arc, zfs_arc_, no_grow_shift,
+    param_set_arc_no_grow_shift, 0, ZMOD_RW,
+	"log2(fraction of ARC which must be free to allow growing)");
 
 int64_t
 arc_available_memory(void)
@@ -158,7 +138,7 @@ arc_default_max(uint64_t min, uint64_t allmem)
 static void
 arc_prune_task(void *arg)
 {
-	int64_t nr_scan = (intptr_t)arg;
+	uint64_t nr_scan = (uintptr_t)arg;
 
 #ifndef __ILP32__
 	if (nr_scan > INT_MAX)
@@ -177,7 +157,7 @@ arc_prune_task(void *arg)
 /*
  * Notify registered consumers they must drop holds on a portion of the ARC
  * buffered they reference.  This provides a mechanism to ensure the ARC can
- * honor the arc_meta_limit and reclaim otherwise pinned ARC buffers.  This
+ * honor the metadata limit and reclaim otherwise pinned ARC buffers.  This
  * is analogous to dnlc_reduce_cache() but more generic.
  *
  * This operation is performed asynchronously so it may be safely called
@@ -186,12 +166,12 @@ arc_prune_task(void *arg)
  * for releasing it once the registered arc_prune_func_t has completed.
  */
 void
-arc_prune_async(int64_t adjust)
+arc_prune_async(uint64_t adjust)
 {
 
 #ifndef __LP64__
-	if (adjust > INTPTR_MAX)
-		adjust = INTPTR_MAX;
+	if (adjust > UINTPTR_MAX)
+		adjust = UINTPTR_MAX;
 #endif
 	taskq_dispatch(arc_prune_taskq, arc_prune_task,
 	    (void *)(intptr_t)adjust, TQ_SLEEP);

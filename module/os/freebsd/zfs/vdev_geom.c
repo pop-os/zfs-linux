@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -63,9 +63,9 @@ struct consumer_vdev_elem {
 };
 
 SLIST_HEAD(consumer_priv_t, consumer_vdev_elem);
-/* BEGIN CSTYLED */
-_Static_assert(sizeof (((struct g_consumer *)NULL)->private)
-	== sizeof (struct consumer_priv_t*),
+_Static_assert(
+    sizeof (((struct g_consumer *)NULL)->private) ==
+    sizeof (struct consumer_priv_t *),
 	"consumer_priv_t* can't be stored in g_consumer.private");
 
 DECLARE_GEOM_CLASS(zfs_vdev_class, zfs_vdev);
@@ -74,12 +74,11 @@ SYSCTL_DECL(_vfs_zfs_vdev);
 /* Don't send BIO_FLUSH. */
 static int vdev_geom_bio_flush_disable;
 SYSCTL_INT(_vfs_zfs_vdev, OID_AUTO, bio_flush_disable, CTLFLAG_RWTUN,
-    &vdev_geom_bio_flush_disable, 0, "Disable BIO_FLUSH");
+	&vdev_geom_bio_flush_disable, 0, "Disable BIO_FLUSH");
 /* Don't send BIO_DELETE. */
 static int vdev_geom_bio_delete_disable;
 SYSCTL_INT(_vfs_zfs_vdev, OID_AUTO, bio_delete_disable, CTLFLAG_RWTUN,
-    &vdev_geom_bio_delete_disable, 0, "Disable BIO_DELETE");
-/* END CSTYLED */
+	&vdev_geom_bio_delete_disable, 0, "Disable BIO_DELETE");
 
 /* Declare local functions */
 static void vdev_geom_detach(struct g_consumer *cp, boolean_t open_for_read);
@@ -544,7 +543,7 @@ process_vdev_config(nvlist_t ***configs, uint64_t *count, nvlist_t *cfg,
 	uint64_t pool_guid;
 	uint64_t vdev_guid;
 	uint64_t id, txg, known_txg;
-	char *pname;
+	const char *pname;
 
 	if (nvlist_lookup_string(cfg, ZPOOL_CONFIG_POOL_NAME, &pname) != 0 ||
 	    strcmp(pname, name) != 0)

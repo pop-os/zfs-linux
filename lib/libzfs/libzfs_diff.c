@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -41,7 +41,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stropts.h>
 #include <pthread.h>
 #include <sys/zfs_ioctl.h>
 #include <libzfs.h>
@@ -418,7 +417,7 @@ write_free_diffs(FILE *fp, differ_info_t *di, dmu_diff_record_t *dr)
 			if (zc.zc_obj > dr->ddr_last) {
 				break;
 			}
-			err = describe_free(fp, di, zc.zc_obj, fobjname,
+			(void) describe_free(fp, di, zc.zc_obj, fobjname,
 			    MAXPATHLEN);
 		} else if (errno == ESRCH) {
 			break;
@@ -613,8 +612,7 @@ get_snapshot_names(differ_info_t *di, const char *fromsnap,
 		zfs_handle_t *zhp;
 
 		di->ds = zfs_alloc(di->zhp->zfs_hdl, tdslen + 1);
-		(void) strncpy(di->ds, tosnap, tdslen);
-		di->ds[tdslen] = '\0';
+		(void) strlcpy(di->ds, tosnap, tdslen + 1);
 
 		zhp = zfs_open(hdl, di->ds, ZFS_TYPE_FILESYSTEM);
 		while (zhp != NULL) {
@@ -642,17 +640,15 @@ get_snapshot_names(differ_info_t *di, const char *fromsnap,
 
 		di->isclone = B_TRUE;
 		di->fromsnap = zfs_strdup(hdl, fromsnap);
-		if (tsnlen) {
+		if (tsnlen)
 			di->tosnap = zfs_strdup(hdl, tosnap);
-		} else {
+		else
 			return (make_temp_snapshot(di));
-		}
 	} else {
 		int dslen = fdslen ? fdslen : tdslen;
 
 		di->ds = zfs_alloc(hdl, dslen + 1);
-		(void) strncpy(di->ds, fdslen ? fromsnap : tosnap, dslen);
-		di->ds[dslen] = '\0';
+		(void) strlcpy(di->ds, fdslen ? fromsnap : tosnap, dslen + 1);
 
 		di->fromsnap = zfs_asprintf(hdl, "%s%s", di->ds, atptrf);
 		if (tsnlen) {
@@ -751,7 +747,7 @@ zfs_show_diffs(zfs_handle_t *zhp, int outfd, const char *fromsnap,
     const char *tosnap, int flags)
 {
 	zfs_cmd_t zc = {"\0"};
-	char errbuf[1024];
+	char errbuf[ERRBUFLEN];
 	differ_info_t di = { 0 };
 	pthread_t tid;
 	int pipefd[2];

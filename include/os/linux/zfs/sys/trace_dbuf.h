@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -60,8 +60,12 @@
 
 #define	DBUF_TP_FAST_ASSIGN						\
 	if (db != NULL) {						\
-		__assign_str(os_spa,					\
-		spa_name(DB_DNODE(db)->dn_objset->os_spa));		\
+		if (POINTER_IS_VALID(DB_DNODE(db)->dn_objset)) {	\
+			__assign_str(os_spa,				\
+			spa_name(DB_DNODE(db)->dn_objset->os_spa));	\
+		} else {						\
+			__assign_str(os_spa, "NULL");			\
+		}							\
 									\
 		__entry->ds_object = db->db_objset->os_dsl_dataset ?	\
 		db->db_objset->os_dsl_dataset->ds_object : 0;		\
@@ -117,20 +121,16 @@ DECLARE_EVENT_CLASS(zfs_dbuf_state_class,
 );
 /* END CSTYLED */
 
-/* BEGIN CSTYLED */
 #define	DEFINE_DBUF_EVENT(name) \
 DEFINE_EVENT(zfs_dbuf_class, name, \
-	TP_PROTO(dmu_buf_impl_t *db, zio_t *zio), \
-	TP_ARGS(db, zio))
-/* END CSTYLED */
+    TP_PROTO(dmu_buf_impl_t *db, zio_t *zio), \
+    TP_ARGS(db, zio))
 DEFINE_DBUF_EVENT(zfs_blocked__read);
 
-/* BEGIN CSTYLED */
 #define	DEFINE_DBUF_STATE_EVENT(name) \
 DEFINE_EVENT(zfs_dbuf_state_class, name, \
-	TP_PROTO(dmu_buf_impl_t *db, const char *why), \
-	TP_ARGS(db, why))
-/* END CSTYLED */
+    TP_PROTO(dmu_buf_impl_t *db, const char *why), \
+    TP_ARGS(db, why))
 DEFINE_DBUF_STATE_EVENT(zfs_dbuf__state_change);
 
 /* BEGIN CSTYLED */
@@ -143,12 +143,10 @@ DECLARE_EVENT_CLASS(zfs_dbuf_evict_one_class,
 );
 /* END CSTYLED */
 
-/* BEGIN CSTYLED */
 #define	DEFINE_DBUF_EVICT_ONE_EVENT(name) \
 DEFINE_EVENT(zfs_dbuf_evict_one_class, name, \
-	TP_PROTO(dmu_buf_impl_t *db, multilist_sublist_t *mls), \
-	TP_ARGS(db, mls))
-/* END CSTYLED */
+    TP_PROTO(dmu_buf_impl_t *db, multilist_sublist_t *mls), \
+    TP_ARGS(db, mls))
 DEFINE_DBUF_EVICT_ONE_EVENT(zfs_dbuf__evict__one);
 
 #endif /* _TRACE_DBUF_H */

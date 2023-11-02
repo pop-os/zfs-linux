@@ -113,8 +113,8 @@ spl_mutex_lockdep_on_maybe(kmutex_t *mp)			\
 	VERIFY3P(mutex_owner(mp), ==, NULL);			\
 }
 
-/* BEGIN CSTYLED */
 #define	mutex_tryenter(mp)					\
+/* CSTYLED */								\
 ({								\
 	int _rc_;						\
 								\
@@ -125,7 +125,6 @@ spl_mutex_lockdep_on_maybe(kmutex_t *mp)			\
 								\
 	_rc_;							\
 })
-/* END CSTYLED */
 
 #define	NESTED_SINGLE 1
 
@@ -172,6 +171,7 @@ spl_mutex_lockdep_on_maybe(kmutex_t *mp)			\
  */
 #define	mutex_exit(mp)						\
 {								\
+	ASSERT3P(mutex_owner(mp), ==, current);			\
 	spl_mutex_clear_owner(mp);				\
 	spin_lock(&(mp)->m_lock);				\
 	spl_mutex_lockdep_off_maybe(mp);			\

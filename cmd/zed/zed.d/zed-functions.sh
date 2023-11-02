@@ -1,5 +1,5 @@
 #!/bin/sh
-# shellcheck disable=SC2039
+# shellcheck disable=SC2154,SC3043
 # zed-functions.sh
 #
 # ZED helper functions for use in ZEDLETs
@@ -76,8 +76,7 @@ zed_log_msg()
 #
 zed_log_err()
 {
-    logger -p "${ZED_SYSLOG_PRIORITY}" -t "${ZED_SYSLOG_TAG}" -- "error:" \
-        "${0##*/}:""${ZEVENT_EID:+" eid=${ZEVENT_EID}:"}" "$@"
+    zed_log_msg "error: ${0##*/}:""${ZEVENT_EID:+" eid=${ZEVENT_EID}:"}" "$@"
 }
 
 

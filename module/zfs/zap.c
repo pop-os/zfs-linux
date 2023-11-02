@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -76,7 +76,7 @@
  *    the zfs-specific implementation of the directory's st_size (which is
  *    the number of entries).
  */
-int zap_iterate_prefetch = B_TRUE;
+static int zap_iterate_prefetch = B_TRUE;
 
 int fzap_default_block_shift = 14; /* 16k blocksize */
 
@@ -112,7 +112,7 @@ fzap_upgrade(zap_t *zap, dmu_tx_t *tx, zap_flags_t flags)
 	 * explicitly zero it since it might be coming from an
 	 * initialized microzap
 	 */
-	bzero(zap->zap_dbuf->db_data, zap->zap_dbuf->db_size);
+	memset(zap->zap_dbuf->db_data, 0, zap->zap_dbuf->db_size);
 	zp->zap_block_type = ZBT_HEADER;
 	zp->zap_magic = ZAP_MAGIC;
 
@@ -626,7 +626,7 @@ zap_deref_leaf(zap_t *zap, uint64_t h, dmu_tx_t *tx, krw_t lt, zap_leaf_t **lp)
 
 static int
 zap_expand_leaf(zap_name_t *zn, zap_leaf_t *l,
-    void *tag, dmu_tx_t *tx, zap_leaf_t **lp)
+    const void *tag, dmu_tx_t *tx, zap_leaf_t **lp)
 {
 	zap_t *zap = zn->zn_zap;
 	uint64_t hash = zn->zn_hash;
@@ -715,7 +715,7 @@ zap_expand_leaf(zap_name_t *zn, zap_leaf_t *l,
 
 static void
 zap_put_leaf_maybe_grow_ptrtbl(zap_name_t *zn, zap_leaf_t *l,
-    void *tag, dmu_tx_t *tx)
+    const void *tag, dmu_tx_t *tx)
 {
 	zap_t *zap = zn->zn_zap;
 	int shift = zap_f_phys(zap)->zap_ptrtbl.zt_shift;
@@ -824,7 +824,7 @@ fzap_lookup(zap_name_t *zn,
 int
 fzap_add_cd(zap_name_t *zn,
     uint64_t integer_size, uint64_t num_integers,
-    const void *val, uint32_t cd, void *tag, dmu_tx_t *tx)
+    const void *val, uint32_t cd, const void *tag, dmu_tx_t *tx)
 {
 	zap_leaf_t *l;
 	int err;
@@ -876,7 +876,7 @@ out:
 int
 fzap_add(zap_name_t *zn,
     uint64_t integer_size, uint64_t num_integers,
-    const void *val, void *tag, dmu_tx_t *tx)
+    const void *val, const void *tag, dmu_tx_t *tx)
 {
 	int err = fzap_check(zn, integer_size, num_integers);
 	if (err != 0)
@@ -889,7 +889,7 @@ fzap_add(zap_name_t *zn,
 int
 fzap_update(zap_name_t *zn,
     int integer_size, uint64_t num_integers, const void *val,
-    void *tag, dmu_tx_t *tx)
+    const void *tag, dmu_tx_t *tx)
 {
 	zap_leaf_t *l;
 	int err;
@@ -946,9 +946,9 @@ fzap_length(zap_name_t *zn,
 	if (err != 0)
 		goto out;
 
-	if (integer_size != 0)
+	if (integer_size != NULL)
 		*integer_size = zeh.zeh_integer_size;
-	if (num_integers != 0)
+	if (num_integers != NULL)
 		*num_integers = zeh.zeh_num_integers;
 out:
 	zap_put_leaf(l);
@@ -1378,7 +1378,6 @@ fzap_get_stats(zap_t *zap, zap_stats_t *zs)
 	}
 }
 
-/* BEGIN CSTYLED */
+/* CSTYLED */
 ZFS_MODULE_PARAM(zfs, , zap_iterate_prefetch, INT, ZMOD_RW,
 	"When iterating ZAP object, prefetch it");
-/* END CSTYLED */

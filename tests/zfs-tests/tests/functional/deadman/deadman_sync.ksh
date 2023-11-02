@@ -7,7 +7,7 @@
 # You may not use this file except in compliance with the License.
 #
 # You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
-# or http://www.opensolaris.org/os/licensing.
+# or https://opensource.org/licenses/CDDL-1.0.
 # See the License for the specific language governing permissions
 # and limitations under the License.
 #
@@ -70,7 +70,7 @@ log_must file_write -b 1048576 -c 8 -o create -d 0 -f $mntpnt/file
 sleep 10
 
 log_must zinject -c all
-log_must zpool sync
+sync_all_pools
 
 # Log txg sync times for reference and the zpool event summary.
 if is_freebsd; then

@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -67,8 +67,10 @@ static uint64_t spa_config_generation = 1;
  * This can be overridden in userland to preserve an alternate namespace for
  * userland pools when doing testing.
  */
-char *spa_config_path = ZPOOL_CACHE;
-int zfs_autoimport_disable = 1;
+char *spa_config_path = (char *)ZPOOL_CACHE;
+#ifdef _KERNEL
+static int zfs_autoimport_disable = B_TRUE;
+#endif
 
 /*
  * Called when the module is first loaded, this routine loads the configuration
@@ -243,7 +245,7 @@ spa_write_cachefile(spa_t *target, boolean_t removing, boolean_t postsysevent,
 {
 	spa_config_dirent_t *dp, *tdp;
 	nvlist_t *nvl;
-	char *pool_name;
+	const char *pool_name;
 	boolean_t ccw_failure;
 	int error = 0;
 
@@ -416,7 +418,7 @@ spa_config_generate(spa_t *spa, vdev_t *vd, uint64_t txg, int getstats)
 	unsigned long hostid = 0;
 	boolean_t locked = B_FALSE;
 	uint64_t split_guid;
-	char *pool_name;
+	const char *pool_name;
 
 	if (vd == NULL) {
 		vd = rvd;
@@ -625,7 +627,6 @@ EXPORT_SYMBOL(spa_config_set);
 EXPORT_SYMBOL(spa_config_generate);
 EXPORT_SYMBOL(spa_config_update);
 
-/* BEGIN CSTYLED */
 #ifdef __linux__
 /* string sysctls require a char array on FreeBSD */
 ZFS_MODULE_PARAM(zfs_spa, spa_, config_path, STRING, ZMOD_RD,
@@ -634,4 +635,3 @@ ZFS_MODULE_PARAM(zfs_spa, spa_, config_path, STRING, ZMOD_RD,
 
 ZFS_MODULE_PARAM(zfs, zfs_, autoimport_disable, INT, ZMOD_RW,
 	"Disable pool import at module load");
-/* END CSTYLED */

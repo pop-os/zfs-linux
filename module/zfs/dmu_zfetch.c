@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -44,22 +44,27 @@
  * so it can't hurt performance.
  */
 
-int zfs_prefetch_disable = B_FALSE;
+static int zfs_prefetch_disable = B_FALSE;
 
 /* max # of streams per zfetch */
-unsigned int	zfetch_max_streams = 8;
+static unsigned int	zfetch_max_streams = 8;
 /* min time before stream reclaim */
 static unsigned int	zfetch_min_sec_reap = 1;
 /* max time before stream delete */
 static unsigned int	zfetch_max_sec_reap = 2;
+#ifdef _ILP32
+/* min bytes to prefetch per stream (default 2MB) */
+static unsigned int	zfetch_min_distance = 2 * 1024 * 1024;
+/* max bytes to prefetch per stream (default 8MB) */
+unsigned int	zfetch_max_distance = 8 * 1024 * 1024;
+#else
 /* min bytes to prefetch per stream (default 4MB) */
 static unsigned int	zfetch_min_distance = 4 * 1024 * 1024;
 /* max bytes to prefetch per stream (default 64MB) */
 unsigned int	zfetch_max_distance = 64 * 1024 * 1024;
+#endif
 /* max bytes to prefetch indirects for per stream (default 64MB) */
 unsigned int	zfetch_max_idistance = 64 * 1024 * 1024;
-/* max number of bytes in an array_read in which we allow prefetching (1MB) */
-unsigned long	zfetch_array_rd_sz = 1024 * 1024;
 
 typedef struct zfetch_stats {
 	kstat_named_t zfetchstat_hits;
@@ -91,7 +96,7 @@ struct {
 	wmsum_add(&zfetch_sums.stat, val)
 
 
-kstat_t		*zfetch_ksp;
+static kstat_t		*zfetch_ksp;
 
 static int
 zfetch_kstats_update(kstat_t *ksp, int rw)
@@ -520,7 +525,7 @@ dmu_zfetch_run(zstream_t *zs, boolean_t missed, boolean_t have_lock)
 	issued = pf_end - pf_start + ipf_end - ipf_start;
 	if (issued > 1) {
 		/* More references on top of taken in dmu_zfetch_prepare(). */
-		zfs_refcount_add_many(&zs->zs_refs, issued - 1, NULL);
+		zfs_refcount_add_few(&zs->zs_refs, issued - 1, NULL);
 	} else if (issued == 0) {
 		/* Some other thread has done our work, so drop the ref. */
 		if (zfs_refcount_remove(&zs->zs_refs, NULL) == 0)
@@ -535,13 +540,11 @@ dmu_zfetch_run(zstream_t *zs, boolean_t missed, boolean_t have_lock)
 	issued = 0;
 	for (int64_t blk = pf_start; blk < pf_end; blk++) {
 		issued += dbuf_prefetch_impl(zf->zf_dnode, 0, blk,
-		    ZIO_PRIORITY_ASYNC_READ, ARC_FLAG_PREDICTIVE_PREFETCH,
-		    dmu_zfetch_done, zs);
+		    ZIO_PRIORITY_ASYNC_READ, 0, dmu_zfetch_done, zs);
 	}
 	for (int64_t iblk = ipf_start; iblk < ipf_end; iblk++) {
 		issued += dbuf_prefetch_impl(zf->zf_dnode, 1, iblk,
-		    ZIO_PRIORITY_ASYNC_READ, ARC_FLAG_PREDICTIVE_PREFETCH,
-		    dmu_zfetch_done, zs);
+		    ZIO_PRIORITY_ASYNC_READ, 0, dmu_zfetch_done, zs);
 	}
 
 	if (!have_lock)
@@ -562,7 +565,6 @@ dmu_zfetch(zfetch_t *zf, uint64_t blkid, uint64_t nblks, boolean_t fetch_data,
 		dmu_zfetch_run(zs, missed, have_lock);
 }
 
-/* BEGIN CSTYLED */
 ZFS_MODULE_PARAM(zfs_prefetch, zfs_prefetch_, disable, INT, ZMOD_RW,
 	"Disable all ZFS prefetching");
 
@@ -583,7 +585,3 @@ ZFS_MODULE_PARAM(zfs_prefetch, zfetch_, max_distance, UINT, ZMOD_RW,
 
 ZFS_MODULE_PARAM(zfs_prefetch, zfetch_, max_idistance, UINT, ZMOD_RW,
 	"Max bytes to prefetch indirects for per stream");
-
-ZFS_MODULE_PARAM(zfs_prefetch, zfetch_, array_rd_sz, ULONG, ZMOD_RW,
-	"Number of bytes in a array_read");
-/* END CSTYLED */
