@@ -1,13 +1,5 @@
-include $(top_srcdir)/config/Substfiles.am
-include $(top_srcdir)/config/Shellcheck.am
+nodist_bashcompletion_DATA  = %D%/zfs
+SUBSTFILES                 += $(nodist_bashcompletion_DATA)
 
-bashcompletiondir = $(sysconfdir)/bash_completion.d
-
-noinst_DATA = zfs
-
-EXTRA_DIST += $(noinst_DATA)
-SUBSTFILES += $(noinst_DATA)
-
-SHELLCHECKSCRIPTS = $(noinst_DATA)
-SHELLCHECK_SHELL = bash
-SHELLCHECK_IGNORE = ,SC2207
+SHELLCHECKSCRIPTS   += $(nodist_bashcompletion_DATA)
+$(call SHELLCHECK_OPTS,$(nodist_bashcompletion_DATA)): SHELLCHECK_SHELL = bash

@@ -7,7 +7,7 @@
 # You may not use this file except in compliance with the License.
 #
 # You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
-# or http://www.opensolaris.org/os/licensing.
+# or https://opensource.org/licenses/CDDL-1.0.
 # See the License for the specific language governing permissions
 # and limitations under the License.
 #
@@ -56,7 +56,7 @@ log_assert "dbufs move from mru to mfu list"
 log_onexit cleanup
 
 log_must file_write -o create -f "$TESTDIR/file" -b 1048576 -c 1 -d R
-log_must zpool sync
+sync_all_pools
 
 objid=$(get_objnum "$TESTDIR/file")
 log_note "Object ID for $TESTDIR/file is $objid"

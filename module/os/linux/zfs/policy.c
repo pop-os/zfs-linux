@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -61,7 +61,7 @@ priv_policy_ns(const cred_t *cr, int capability, int err,
 static int
 priv_policy(const cred_t *cr, int capability, int err)
 {
-	return (priv_policy_ns(cr, capability, err, NULL));
+	return (priv_policy_ns(cr, capability, err, cr->user_ns));
 }
 
 static int
@@ -214,8 +214,10 @@ secpolicy_vnode_setid_retain(struct znode *zp __maybe_unused, const cred_t *cr,
  * Determine that subject can set the file setgid flag.
  */
 int
-secpolicy_vnode_setids_setgids(const cred_t *cr, gid_t gid)
+secpolicy_vnode_setids_setgids(const cred_t *cr, gid_t gid, zidmap_t *mnt_ns,
+    struct user_namespace *fs_ns)
 {
+	gid = zfs_gid_to_vfsgid(mnt_ns, fs_ns, gid);
 #if defined(CONFIG_USER_NS)
 	if (!kgid_has_mapping(cr->user_ns, SGID_TO_KGID(gid)))
 		return (EPERM);
@@ -284,8 +286,11 @@ secpolicy_setid_clear(vattr_t *vap, cred_t *cr)
  * Determine that subject can set the file setid flags.
  */
 static int
-secpolicy_vnode_setid_modify(const cred_t *cr, uid_t owner)
+secpolicy_vnode_setid_modify(const cred_t *cr, uid_t owner, zidmap_t *mnt_ns,
+    struct user_namespace *fs_ns)
 {
+	owner = zfs_uid_to_vfsuid(mnt_ns, fs_ns, owner);
+
 	if (crgetuid(cr) == owner)
 		return (0);
 
@@ -310,13 +315,14 @@ secpolicy_vnode_stky_modify(const cred_t *cr)
 
 int
 secpolicy_setid_setsticky_clear(struct inode *ip, vattr_t *vap,
-    const vattr_t *ovap, cred_t *cr)
+    const vattr_t *ovap, cred_t *cr, zidmap_t *mnt_ns,
+    struct user_namespace *fs_ns)
 {
 	int error;
 
 	if ((vap->va_mode & S_ISUID) != 0 &&
 	    (error = secpolicy_vnode_setid_modify(cr,
-	    ovap->va_uid)) != 0) {
+	    ovap->va_uid, mnt_ns, fs_ns)) != 0) {
 		return (error);
 	}
 
@@ -334,7 +340,8 @@ secpolicy_setid_setsticky_clear(struct inode *ip, vattr_t *vap,
 	 * group-id bit.
 	 */
 	if ((vap->va_mode & S_ISGID) != 0 &&
-	    secpolicy_vnode_setids_setgids(cr, ovap->va_gid) != 0) {
+	    secpolicy_vnode_setids_setgids(cr, ovap->va_gid,
+	    mnt_ns, fs_ns) != 0) {
 		vap->va_mode &= ~S_ISGID;
 	}
 

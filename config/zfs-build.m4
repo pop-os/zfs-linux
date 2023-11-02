@@ -211,14 +211,17 @@ AC_DEFUN([ZFS_AC_CONFIG_ALWAYS], [
 
 	ZFS_AC_CONFIG_ALWAYS_CC_NO_CLOBBERED
 	ZFS_AC_CONFIG_ALWAYS_CC_INFINITE_RECURSION
+	ZFS_AC_CONFIG_ALWAYS_KERNEL_CC_INFINITE_RECURSION
 	ZFS_AC_CONFIG_ALWAYS_CC_IMPLICIT_FALLTHROUGH
 	ZFS_AC_CONFIG_ALWAYS_CC_FRAME_LARGER_THAN
 	ZFS_AC_CONFIG_ALWAYS_CC_NO_FORMAT_TRUNCATION
 	ZFS_AC_CONFIG_ALWAYS_CC_NO_FORMAT_ZERO_LENGTH
+	ZFS_AC_CONFIG_ALWAYS_CC_FORMAT_OVERFLOW
 	ZFS_AC_CONFIG_ALWAYS_CC_NO_OMIT_FRAME_POINTER
 	ZFS_AC_CONFIG_ALWAYS_CC_NO_IPA_SRA
 	ZFS_AC_CONFIG_ALWAYS_KERNEL_CC_NO_IPA_SRA
 	ZFS_AC_CONFIG_ALWAYS_CC_ASAN
+	ZFS_AC_CONFIG_ALWAYS_CC_UBSAN
 	ZFS_AC_CONFIG_ALWAYS_TOOLCHAIN_SIMD
 	ZFS_AC_CONFIG_ALWAYS_SYSTEM
 	ZFS_AC_CONFIG_ALWAYS_ARCH
@@ -260,17 +263,26 @@ AC_DEFUN([ZFS_AC_CONFIG], [
 		AC_SUBST(TEST_JOBS)
 	])
 
+	ZFS_INIT_SYSV=
+	ZFS_INIT_SYSTEMD=
+	ZFS_WANT_MODULES_LOAD_D=
+
 	case "$ZFS_CONFIG" in
 		kernel) ZFS_AC_CONFIG_KERNEL ;;
 		user)	ZFS_AC_CONFIG_USER   ;;
 		all)    ZFS_AC_CONFIG_USER
 			ZFS_AC_CONFIG_KERNEL ;;
+		dist)                        ;;
 		srpm)                        ;;
 		*)
 		AC_MSG_RESULT([Error!])
 		AC_MSG_ERROR([Bad value "$ZFS_CONFIG" for --with-config,
 		              user kernel|user|all|srpm]) ;;
 	esac
+
+	AM_CONDITIONAL([INIT_SYSV],           [test "x$ZFS_INIT_SYSV" = "xyes"])
+	AM_CONDITIONAL([INIT_SYSTEMD],        [test "x$ZFS_INIT_SYSTEMD" = "xyes"])
+	AM_CONDITIONAL([WANT_MODULES_LOAD_D], [test "x$ZFS_WANT_MODULES_LOAD_D" = "xyes"])
 
 	AM_CONDITIONAL([CONFIG_USER],
 	    [test "$ZFS_CONFIG" = user -o "$ZFS_CONFIG" = all])
@@ -324,6 +336,7 @@ AC_DEFUN([ZFS_AC_RPM], [
 	RPM_DEFINE_COMMON=${RPM_DEFINE_COMMON}' --define "$(DEBUG_KMEM_ZFS) 1"'
 	RPM_DEFINE_COMMON=${RPM_DEFINE_COMMON}' --define "$(DEBUG_KMEM_TRACKING_ZFS) 1"'
 	RPM_DEFINE_COMMON=${RPM_DEFINE_COMMON}' --define "$(ASAN_ZFS) 1"'
+	RPM_DEFINE_COMMON=${RPM_DEFINE_COMMON}' --define "$(UBSAN_ZFS) 1"'
 
 	AS_IF([test "x$enable_debuginfo" = xyes], [
 		RPM_DEFINE_COMMON=${RPM_DEFINE_COMMON}' --define "__strip /bin/true"'
@@ -344,6 +357,9 @@ AC_DEFUN([ZFS_AC_RPM], [
 	])
 	AS_IF([test -n "$udevruledir" ], [
 		RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' --define "_udevruledir $(udevruledir)"'
+	])
+	AS_IF([test -n "$bashcompletiondir" ], [
+		RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' --define "_bashcompletiondir $(bashcompletiondir)"'
 	])
 	RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' $(DEFINE_SYSTEMD)'
 	RPM_DEFINE_UTIL=${RPM_DEFINE_UTIL}' $(DEFINE_PYZFS)'
@@ -451,6 +467,7 @@ AC_DEFUN([ZFS_AC_DPKG], [
 	AC_SUBST(HAVE_DPKGBUILD)
 	AC_SUBST(DPKGBUILD)
 	AC_SUBST(DPKGBUILD_VERSION)
+	AC_SUBST([CFGOPTS], ["$CFGOPTS"])
 ])
 
 dnl #
@@ -603,6 +620,18 @@ AC_DEFUN([ZFS_AC_DEFAULT_PACKAGE], [
 		AC_MSG_RESULT([no])
 	fi
 	AC_SUBST(RPM_DEFINE_INITRAMFS)
+
+	AC_MSG_CHECKING([default bash completion directory])
+	case "$VENDOR" in
+		ubuntu)     bashcompletiondir=/usr/share/bash-completion/completions   ;;
+		debian)     bashcompletiondir=/usr/share/bash-completion/completions   ;;
+		freebsd)    bashcompletiondir=$sysconfdir/bash_completion.d;;
+		gentoo)     bashcompletiondir=/usr/share/bash-completion/completions   ;;
+		*)          bashcompletiondir=/etc/bash_completion.d   ;;
+	esac
+	AC_MSG_RESULT([$bashcompletiondir])
+	AC_SUBST(bashcompletiondir)
+
 ])
 
 dnl #

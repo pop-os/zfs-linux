@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -362,11 +362,11 @@ arc_lowmem_fini(void)
 }
 
 int
-param_set_arc_long(const char *buf, zfs_kernel_param_t *kp)
+param_set_arc_u64(const char *buf, zfs_kernel_param_t *kp)
 {
 	int error;
 
-	error = param_set_long(buf, kp);
+	error = spl_param_set_u64(buf, kp);
 	if (error < 0)
 		return (SET_ERROR(error));
 
@@ -378,13 +378,13 @@ param_set_arc_long(const char *buf, zfs_kernel_param_t *kp)
 int
 param_set_arc_min(const char *buf, zfs_kernel_param_t *kp)
 {
-	return (param_set_arc_long(buf, kp));
+	return (param_set_arc_u64(buf, kp));
 }
 
 int
 param_set_arc_max(const char *buf, zfs_kernel_param_t *kp)
 {
-	return (param_set_arc_long(buf, kp));
+	return (param_set_arc_u64(buf, kp));
 }
 
 int
@@ -402,11 +402,11 @@ param_set_arc_int(const char *buf, zfs_kernel_param_t *kp)
 }
 
 #ifdef CONFIG_MEMORY_HOTPLUG
-/* ARGSUSED */
 static int
 arc_hotplug_callback(struct notifier_block *self, unsigned long action,
     void *arg)
 {
+	(void) self, (void) arg;
 	uint64_t allmem = arc_all_memory();
 	if (action != MEM_ONLINE)
 		return (NOTIFY_OK);
@@ -462,6 +462,7 @@ arc_available_memory(void)
 int
 arc_memory_throttle(spa_t *spa, uint64_t reserve, uint64_t txg)
 {
+	(void) spa, (void) reserve, (void) txg;
 	return (0);
 }
 
@@ -507,7 +508,7 @@ arc_prune_task(void *ptr)
 /*
  * Notify registered consumers they must drop holds on a portion of the ARC
  * buffered they reference.  This provides a mechanism to ensure the ARC can
- * honor the arc_meta_limit and reclaim otherwise pinned ARC buffers.  This
+ * honor the metadata limit and reclaim otherwise pinned ARC buffers.  This
  * is analogous to dnlc_reduce_cache() but more generic.
  *
  * This operation is performed asynchronously so it may be safely called
@@ -516,7 +517,7 @@ arc_prune_task(void *ptr)
  * for releasing it once the registered arc_prune_func_t has completed.
  */
 void
-arc_prune_async(int64_t adjust)
+arc_prune_async(uint64_t adjust)
 {
 	arc_prune_t *ap;
 
@@ -539,7 +540,5 @@ arc_prune_async(int64_t adjust)
 	mutex_exit(&arc_prune_mtx);
 }
 
-/* BEGIN CSTYLED */
 ZFS_MODULE_PARAM(zfs_arc, zfs_arc_, shrinker_limit, INT, ZMOD_RW,
 	"Limit on number of pages that ARC shrinker can reclaim at once");
-/* END CSTYLED */

@@ -7,7 +7,7 @@
 # You may not use this file except in compliance with the License.
 #
 # You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
-# or http://www.opensolaris.org/os/licensing.
+# or https://opensource.org/licenses/CDDL-1.0.
 # See the License for the specific language governing permissions
 # and limitations under the License.
 #
@@ -44,7 +44,7 @@ verify_runnable "global"
 
 function cleanup
 {
-	log_must set_tunable64 VDEV_FILE_PHYSICAL_ASHIFT $orig_ashift
+	log_must set_tunable32 VDEV_FILE_PHYSICAL_ASHIFT $orig_ashift
 	poolexists $TESTPOOL && destroy_pool $TESTPOOL
 	rm -f $disk1 $disk2
 }
@@ -66,12 +66,8 @@ for ashift in ${ashifts[@]}
 do
 	log_must zpool create $TESTPOOL $disk1
 	log_must zpool add -o ashift=$ashift $TESTPOOL $disk2
-	verify_ashift $disk2 $ashift
-	if [[ $? -ne 0 ]]
-	then
-		log_fail "Device was added without setting ashift value to "\
-		    "$ashift"
-	fi
+	log_must verify_ashift $disk2 $ashift
+
 	# clean things for the next run
 	log_must zpool destroy $TESTPOOL
 	log_must zpool labelclear $disk1
@@ -81,17 +77,13 @@ do
 	# Make sure we can also set the ashift using the tunable.
 	#
 	log_must zpool create $TESTPOOL $disk1
-	log_must set_tunable64 VDEV_FILE_PHYSICAL_ASHIFT $ashift
+	log_must set_tunable32 VDEV_FILE_PHYSICAL_ASHIFT $ashift
 	log_must zpool add $TESTPOOL $disk2
 	exp=$(( (ashift <= max_auto_ashift) ? ashift : logical_ashift ))
-	verify_ashift $disk2 $exp
-	if [[ $? -ne 0 ]]
-	then
-		log_fail "Device was added without setting ashift value to "\
-		    "$ashift"
-	fi
+	log_must verify_ashift $disk2 $exp
+
 	# clean things for the next run
-	log_must set_tunable64 VDEV_FILE_PHYSICAL_ASHIFT $orig_ashift
+	log_must set_tunable32 VDEV_FILE_PHYSICAL_ASHIFT $orig_ashift
 	log_must zpool destroy $TESTPOOL
 	log_must zpool labelclear $disk1
 	log_must zpool labelclear $disk2

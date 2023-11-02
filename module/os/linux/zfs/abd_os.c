@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -132,7 +132,7 @@ static abd_stats_t abd_stats = {
 	{ "scatter_sg_table_retry",		KSTAT_DATA_UINT64 },
 };
 
-struct {
+static struct {
 	wmsum_t abdstat_struct_size;
 	wmsum_t abdstat_linear_cnt;
 	wmsum_t abdstat_linear_data_size;
@@ -148,8 +148,6 @@ struct {
 
 #define	abd_for_each_sg(abd, sg, n, i)	\
 	for_each_sg(ABD_SCATTER(abd).abd_sgl, sg, n, i)
-
-unsigned zfs_abd_scatter_max_order = MAX_ORDER - 1;
 
 /*
  * zfs_abd_scatter_min_size is the minimum allocation size to use scatter
@@ -173,7 +171,7 @@ unsigned zfs_abd_scatter_max_order = MAX_ORDER - 1;
  * By default we use linear allocations for 512B and 1KB, and scatter
  * allocations for larger (1.5KB and up).
  */
-int zfs_abd_scatter_min_size = 512 * 3;
+static int zfs_abd_scatter_min_size = 512 * 3;
 
 /*
  * We use a scattered SPA_MAXBLOCKSIZE sized ABD whose pages are
@@ -208,6 +206,7 @@ abd_alloc_struct_impl(size_t size)
 	 * In Linux we do not use the size passed in during ABD
 	 * allocation, so we just ignore it.
 	 */
+	(void) size;
 	abd_t *abd = kmem_cache_alloc(abd_cache, KM_PUSHPAGE);
 	ASSERT3P(abd, !=, NULL);
 	ABDSTAT_INCR(abdstat_struct_size, sizeof (abd_t));
@@ -223,6 +222,8 @@ abd_free_struct_impl(abd_t *abd)
 }
 
 #ifdef _KERNEL
+static unsigned zfs_abd_scatter_max_order = MAX_ORDER - 1;
+
 /*
  * Mark zfs data pages so they can be excluded from kernel crash dumps
  */
@@ -271,18 +272,20 @@ abd_alloc_chunks(abd_t *abd, size_t size)
 	struct page *page, *tmp_page = NULL;
 	gfp_t gfp = __GFP_NOWARN | GFP_NOIO;
 	gfp_t gfp_comp = (gfp | __GFP_NORETRY | __GFP_COMP) & ~__GFP_RECLAIM;
-	int max_order = MIN(zfs_abd_scatter_max_order, MAX_ORDER - 1);
-	int nr_pages = abd_chunkcnt_for_bytes(size);
-	int chunks = 0, zones = 0;
+	unsigned int max_order = MIN(zfs_abd_scatter_max_order, MAX_ORDER - 1);
+	unsigned int nr_pages = abd_chunkcnt_for_bytes(size);
+	unsigned int chunks = 0, zones = 0;
 	size_t remaining_size;
 	int nid = NUMA_NO_NODE;
-	int alloc_pages = 0;
+	unsigned int alloc_pages = 0;
 
 	INIT_LIST_HEAD(&pages);
 
+	ASSERT3U(alloc_pages, <, nr_pages);
+
 	while (alloc_pages < nr_pages) {
-		unsigned chunk_pages;
-		int order;
+		unsigned int chunk_pages;
+		unsigned int order;
 
 		order = MIN(highbit64(nr_pages - alloc_pages) - 1, max_order);
 		chunk_pages = (1U << order);
@@ -596,10 +599,8 @@ abd_free_chunks(abd_t *abd)
 	struct scatterlist *sg;
 
 	abd_for_each_sg(abd, sg, n, i) {
-		for (int j = 0; j < sg->length; j += PAGESIZE) {
-			struct page *p = nth_page(sg_page(sg), j >> PAGE_SHIFT);
-			umem_free(p, PAGESIZE);
-		}
+		struct page *p = nth_page(sg_page(sg), 0);
+		umem_free_aligned(p, PAGESIZE);
 	}
 	abd_free_sg_table(abd);
 }
@@ -705,7 +706,7 @@ abd_free_zero_scatter(void)
 	__free_page(abd_zero_page);
 #endif /* HAVE_ZERO_PAGE_GPL_ONLY */
 #else
-	umem_free(abd_zero_page, PAGESIZE);
+	umem_free_aligned(abd_zero_page, PAGESIZE);
 #endif /* _KERNEL */
 }
 
@@ -846,6 +847,7 @@ abd_t *
 abd_get_offset_scatter(abd_t *abd, abd_t *sabd, size_t off,
     size_t size)
 {
+	(void) size;
 	int i = 0;
 	struct scatterlist *sg = NULL;
 

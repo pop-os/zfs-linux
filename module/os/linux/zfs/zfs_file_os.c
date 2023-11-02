@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -246,7 +246,7 @@ zfs_file_seek(zfs_file_t *fp, loff_t *offp, int whence)
 {
 	loff_t rc;
 
-	if (*offp < 0 || *offp > MAXOFFSET_T)
+	if (*offp < 0)
 		return (EINVAL);
 
 	rc = vfs_llseek(fp, *offp, whence);

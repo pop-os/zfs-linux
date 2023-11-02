@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -133,6 +133,11 @@ zfs_unavail_pool(zpool_handle_t *zhp, void *data)
 	if (zfs_toplevel_state(zhp) < VDEV_STATE_DEGRADED) {
 		unavailpool_t *uap;
 		uap = malloc(sizeof (unavailpool_t));
+		if (uap == NULL) {
+			perror("malloc");
+			exit(EXIT_FAILURE);
+		}
+
 		uap->uap_zhp = zhp;
 		list_insert_tail((list_t *)data, uap);
 	} else {
@@ -178,7 +183,7 @@ zfs_unavail_pool(zpool_handle_t *zhp, void *data)
 static void
 zfs_process_add(zpool_handle_t *zhp, nvlist_t *vdev, boolean_t labeled)
 {
-	char *path;
+	const char *path;
 	vdev_state_t newstate;
 	nvlist_t *nvroot, *newvd;
 	pendingdev_t *device;
@@ -186,7 +191,7 @@ zfs_process_add(zpool_handle_t *zhp, nvlist_t *vdev, boolean_t labeled)
 	uint64_t offline = 0ULL, faulted = 0ULL;
 	uint64_t guid = 0ULL;
 	uint64_t is_spare = 0;
-	char *physpath = NULL, *new_devid = NULL, *enc_sysfs_path = NULL;
+	const char *physpath = NULL, *new_devid = NULL, *enc_sysfs_path = NULL;
 	char rawpath[PATH_MAX], fullpath[PATH_MAX];
 	char devpath[PATH_MAX];
 	int ret;
@@ -367,9 +372,10 @@ zfs_process_add(zpool_handle_t *zhp, nvlist_t *vdev, boolean_t labeled)
 	/* Only autoreplace bad disks */
 	if ((vs->vs_state != VDEV_STATE_DEGRADED) &&
 	    (vs->vs_state != VDEV_STATE_FAULTED) &&
+	    (vs->vs_state != VDEV_STATE_REMOVED) &&
 	    (vs->vs_state != VDEV_STATE_CANT_OPEN)) {
 		zed_log_msg(LOG_INFO, "  not autoreplacing since disk isn't in "
-		    "a bad state (currently %d)", vs->vs_state);
+		    "a bad state (currently %llu)", vs->vs_state);
 		return;
 	}
 
@@ -416,6 +422,11 @@ zfs_process_add(zpool_handle_t *zhp, nvlist_t *vdev, boolean_t labeled)
 		 * completed.
 		 */
 		device = malloc(sizeof (pendingdev_t));
+		if (device == NULL) {
+			perror("malloc");
+			exit(EXIT_FAILURE);
+		}
+
 		(void) strlcpy(device->pd_physpath, physpath,
 		    sizeof (device->pd_physpath));
 		list_insert_tail(&g_device_list, device);
@@ -481,8 +492,8 @@ zfs_process_add(zpool_handle_t *zhp, nvlist_t *vdev, boolean_t labeled)
 	    ZPOOL_CONFIG_VDEV_ENC_SYSFS_PATH, enc_sysfs_path) != 0) ||
 	    nvlist_add_uint64(newvd, ZPOOL_CONFIG_WHOLE_DISK, wholedisk) != 0 ||
 	    nvlist_add_string(nvroot, ZPOOL_CONFIG_TYPE, VDEV_TYPE_ROOT) != 0 ||
-	    nvlist_add_nvlist_array(nvroot, ZPOOL_CONFIG_CHILDREN, &newvd,
-	    1) != 0) {
+	    nvlist_add_nvlist_array(nvroot, ZPOOL_CONFIG_CHILDREN,
+	    (const nvlist_t **)&newvd, 1) != 0) {
 		zed_log_msg(LOG_WARNING, "zfs_mod: unable to add nvlist pairs");
 		nvlist_free(newvd);
 		nvlist_free(nvroot);
@@ -539,7 +550,7 @@ static void
 zfs_iter_vdev(zpool_handle_t *zhp, nvlist_t *nvl, void *data)
 {
 	dev_data_t *dp = data;
-	char *path = NULL;
+	const char *path = NULL;
 	uint_t c, children;
 	nvlist_t **child;
 	uint64_t guid = 0;
@@ -837,9 +848,9 @@ guid_iter(uint64_t pool_guid, uint64_t vdev_guid, const char *devid,
  * phys_path: 'pci-0000:04:00.0-sas-0x4433221106000000-lun-0'
  */
 static int
-zfs_deliver_add(nvlist_t *nvl, boolean_t is_lofi)
+zfs_deliver_add(nvlist_t *nvl)
 {
-	char *devpath = NULL, *devid = NULL;
+	const char *devpath = NULL, *devid = NULL;
 	uint64_t pool_guid = 0, vdev_guid = 0;
 	boolean_t is_slice;
 
@@ -987,7 +998,8 @@ zfsdle_vdev_online(zpool_handle_t *zhp, void *data)
 	nvlist_t *tgt;
 	int error;
 
-	char *tmp_devname, devname[MAXPATHLEN] = "";
+	const char *tmp_devname;
+	char devname[MAXPATHLEN] = "";
 	uint64_t guid;
 
 	if (nvlist_lookup_uint64(udev_nvl, ZFS_EV_VDEV_GUID, &guid) == 0) {
@@ -1005,7 +1017,8 @@ zfsdle_vdev_online(zpool_handle_t *zhp, void *data)
 
 	if ((tgt = zpool_find_vdev_by_physpath(zhp, devname,
 	    &avail_spare, &l2cache, NULL)) != NULL) {
-		char *path, fullpath[MAXPATHLEN];
+		const char *path;
+		char fullpath[MAXPATHLEN];
 		uint64_t wholedisk = 0;
 
 		error = nvlist_lookup_string(tgt, ZPOOL_CONFIG_PATH, &path);
@@ -1018,10 +1031,11 @@ zfsdle_vdev_online(zpool_handle_t *zhp, void *data)
 		    &wholedisk);
 
 		if (wholedisk) {
+			char *tmp;
 			path = strrchr(path, '/');
 			if (path != NULL) {
-				path = zfs_strip_partition(path + 1);
-				if (path == NULL) {
+				tmp = zfs_strip_partition(path + 1);
+				if (tmp == NULL) {
 					zpool_close(zhp);
 					return (0);
 				}
@@ -1030,8 +1044,8 @@ zfsdle_vdev_online(zpool_handle_t *zhp, void *data)
 				return (0);
 			}
 
-			(void) strlcpy(fullpath, path, sizeof (fullpath));
-			free(path);
+			(void) strlcpy(fullpath, tmp, sizeof (fullpath));
+			free(tmp);
 
 			/*
 			 * We need to reopen the pool associated with this
@@ -1136,7 +1150,8 @@ zfsdle_vdev_online(zpool_handle_t *zhp, void *data)
 static int
 zfs_deliver_dle(nvlist_t *nvl)
 {
-	char *devname, name[MAXPATHLEN];
+	const char *devname;
+	char name[MAXPATHLEN];
 	uint64_t guid;
 
 	if (nvlist_lookup_uint64(nvl, ZFS_EV_VDEV_GUID, &guid) == 0) {
@@ -1173,18 +1188,15 @@ static int
 zfs_slm_deliver_event(const char *class, const char *subclass, nvlist_t *nvl)
 {
 	int ret;
-	boolean_t is_lofi = B_FALSE, is_check = B_FALSE, is_dle = B_FALSE;
+	boolean_t is_check = B_FALSE, is_dle = B_FALSE;
 
 	if (strcmp(class, EC_DEV_ADD) == 0) {
 		/*
 		 * We're mainly interested in disk additions, but we also listen
 		 * for new loop devices, to allow for simplified testing.
 		 */
-		if (strcmp(subclass, ESC_DISK) == 0)
-			is_lofi = B_FALSE;
-		else if (strcmp(subclass, ESC_LOFI) == 0)
-			is_lofi = B_TRUE;
-		else
+		if (strcmp(subclass, ESC_DISK) != 0 &&
+		    strcmp(subclass, ESC_LOFI) != 0)
 			return (0);
 
 		is_check = B_FALSE;
@@ -1208,15 +1220,16 @@ zfs_slm_deliver_event(const char *class, const char *subclass, nvlist_t *nvl)
 	else if (is_check)
 		ret = zfs_deliver_check(nvl);
 	else
-		ret = zfs_deliver_add(nvl, is_lofi);
+		ret = zfs_deliver_add(nvl);
 
 	return (ret);
 }
 
-/*ARGSUSED*/
 static void *
 zfs_enum_pools(void *arg)
 {
+	(void) arg;
+
 	(void) zpool_iter(g_zfshdl, zfs_unavail_pool, (void *)&g_pool_list);
 	/*
 	 * Linux - instead of using a thread pool, each list entry
@@ -1274,17 +1287,14 @@ zfs_slm_fini(void)
 		tpool_destroy(g_tpool);
 	}
 
-	while ((pool = (list_head(&g_pool_list))) != NULL) {
-		list_remove(&g_pool_list, pool);
+	while ((pool = list_remove_head(&g_pool_list)) != NULL) {
 		zpool_close(pool->uap_zhp);
 		free(pool);
 	}
 	list_destroy(&g_pool_list);
 
-	while ((device = (list_head(&g_device_list))) != NULL) {
-		list_remove(&g_device_list, device);
+	while ((device = list_remove_head(&g_device_list)) != NULL)
 		free(device);
-	}
 	list_destroy(&g_device_list);
 
 	libzfs_fini(g_zfshdl);
