@@ -1,3 +1,22 @@
+zfs-linux (2.2.0-1~exp1) UNRELEASED; urgency=medium
+
+  [ Mo Zhou ]
+  * New upstream version 2.2.0
+  * Partial revert the copyright update to fix wrong changes.
+
+  [ Thomas Lamprecht ]
+  * d/install: remove manpages for BSD-specific jail/unjail hooks
+  * zfsutils-linux: install new trim units, zilstat tool, and new man pages
+  * d/copyright: adapt to file moves and deletions
+
+  [ Stoiko Ivanov ]
+  * d/rules: update for automake changes
+  * d/rules: drop bash_completion mangling
+  * update symbols
+  * update lintian overrides
+
+ -- Mo Zhou <lumin@debian.org>  Wed, 01 Nov 2023 21:03:43 -0400
+
 zfs-linux (2.1.13-1) unstable; urgency=medium
 
   * New upstream version 2.1.13 (Closes: #1043124)
