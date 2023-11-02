@@ -43,6 +43,9 @@
 /* Define if host toolchain supports AES */
 #undef HAVE_AES
 
+/* Define if you have [rt] */
+#undef HAVE_AIO_H
+
 /* Define if host toolchain supports AVX */
 #undef HAVE_AVX
 
@@ -174,6 +177,9 @@
 
 /* blk_mode_t is defined */
 #undef HAVE_BLK_MODE_T
+
+/* block multiqueue is available */
+#undef HAVE_BLK_MQ
 
 /* blk queue backing_dev_info is dynamic */
 #undef HAVE_BLK_QUEUE_BDI_DYNAMIC
@@ -317,6 +323,9 @@
 /* file_dentry() is available */
 #undef HAVE_FILE_DENTRY
 
+/* fops->fadvise() exists */
+#undef HAVE_FILE_FADVISE
+
 /* file_inode() is available */
 #undef HAVE_FILE_INODE
 
@@ -329,11 +338,17 @@
 /* iops->follow_link() nameidata */
 #undef HAVE_FOLLOW_LINK_NAMEIDATA
 
+/* Define if compiler supports -Wformat-overflow */
+#undef HAVE_FORMAT_OVERFLOW
+
 /* fops->fsync() with range */
 #undef HAVE_FSYNC_RANGE
 
 /* fops->fsync() without dentry */
 #undef HAVE_FSYNC_WITHOUT_DENTRY
+
+/* yes */
+#undef HAVE_GENERIC_FADVISE
 
 /* generic_fillattr requires struct mnt_idmap* */
 #undef HAVE_GENERIC_FILLATTR_IDMAP
@@ -380,6 +395,9 @@
 /* has_capability() is available */
 #undef HAVE_HAS_CAPABILITY
 
+/* iattr->ia_vfsuid and iattr->ia_vfsgid exist */
+#undef HAVE_IATTR_VFSID
+
 /* Define if you have the iconv() function and it works. */
 #undef HAVE_ICONV
 
@@ -388,6 +406,9 @@
 
 /* iops->setattr() takes struct mnt_idmap* */
 #undef HAVE_IDMAP_IOPS_SETATTR
+
+/* APIs for idmapped mount are present */
+#undef HAVE_IDMAP_MNT_API
 
 /* Define if compiler supports -Wimplicit-fallthrough */
 #undef HAVE_IMPLICIT_FALLTHROUGH
@@ -443,6 +464,12 @@
 /* iops->mknod() takes struct user_namespace* */
 #undef HAVE_IOPS_MKNOD_USERNS
 
+/* iops->permission() takes struct mnt_idmap* */
+#undef HAVE_IOPS_PERMISSION_IDMAP
+
+/* iops->permission() takes struct user_namespace* */
+#undef HAVE_IOPS_PERMISSION_USERNS
+
 /* iops->rename() takes struct mnt_idmap* */
 #undef HAVE_IOPS_RENAME_IDMAP
 
@@ -497,14 +524,11 @@
 /* kernel has asm/fpu/internal.h */
 #undef HAVE_KERNEL_FPU_INTERNAL_HEADER
 
-/* kernel has asm/fpu/xcr.h */
-#undef HAVE_KERNEL_FPU_XCR_HEADER
-
-/* kernel fpu and XSAVE internal */
-#undef HAVE_KERNEL_FPU_XSAVE_INTERNAL
-
 /* uncached_acl_sentinel() exists */
 #undef HAVE_KERNEL_GET_ACL_HANDLE_CACHE
+
+/* Define if compiler supports -Winfinite-recursion */
+#undef HAVE_KERNEL_INFINITE_RECURSION
 
 /* kernel does stack verification */
 #undef HAVE_KERNEL_OBJTOOL
@@ -652,6 +676,12 @@
 
 /* register_sysctl_table exists */
 #undef HAVE_REGISTER_SYSCTL_TABLE
+
+/* iops->rename2() exists */
+#undef HAVE_RENAME2
+
+/* struct inode_operations_wrapper takes .rename2() */
+#undef HAVE_RENAME2_OPERATIONS_WRAPPER
 
 /* iops->rename() wants flags */
 #undef HAVE_RENAME_WANTS_FLAGS
@@ -830,8 +860,20 @@
 /* iops->setattr() takes struct user_namespace* */
 #undef HAVE_USERNS_IOPS_SETATTR
 
+/* user_namespace->ns.inum exists */
+#undef HAVE_USER_NS_COMMON_INUM
+
 /* iops->getattr() takes a vfsmount */
 #undef HAVE_VFSMOUNT_IOPS_GETATTR
+
+/* fops->clone_file_range() is available */
+#undef HAVE_VFS_CLONE_FILE_RANGE
+
+/* fops->copy_file_range() is available */
+#undef HAVE_VFS_COPY_FILE_RANGE
+
+/* fops->dedupe_file_range() is available */
+#undef HAVE_VFS_DEDUPE_FILE_RANGE
 
 /* aops->direct_IO() uses iovec */
 #undef HAVE_VFS_DIRECT_IO_IOVEC
@@ -847,6 +889,12 @@
 
 /* filemap_dirty_folio exists */
 #undef HAVE_VFS_FILEMAP_DIRTY_FOLIO
+
+/* file_operations_extend takes .copy_file_range() and .clone_file_range() */
+#undef HAVE_VFS_FILE_OPERATIONS_EXTEND
+
+/* generic_copy_file_range() is available */
+#undef HAVE_VFS_GENERIC_COPY_FILE_RANGE
 
 /* All required iov_iter interfaces are available */
 #undef HAVE_VFS_IOV_ITER
@@ -865,6 +913,9 @@
 
 /* read_folio exists */
 #undef HAVE_VFS_READ_FOLIO
+
+/* fops->remap_file_range() is available */
+#undef HAVE_VFS_REMAP_FILE_RANGE
 
 /* fops->read/write_iter() are available */
 #undef HAVE_VFS_RW_ITERATE

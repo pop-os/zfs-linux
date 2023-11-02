@@ -109,7 +109,7 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_BLK_QUEUE_DISCARD], [
 		int value __attribute__ ((unused));
 		memset(q, 0, sizeof(r));
 		value = blk_queue_discard(q);
-	])
+	],[-Wframe-larger-than=8192])
 ])
 
 AC_DEFUN([ZFS_AC_KERNEL_BLK_QUEUE_DISCARD], [
@@ -155,7 +155,7 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_BLK_QUEUE_SECURE_ERASE], [
 		int value __attribute__ ((unused));
 		memset(q, 0, sizeof(r));
 		value = blk_queue_secure_erase(q);
-	])
+	],[-Wframe-larger-than=8192])
 
 	ZFS_LINUX_TEST_SRC([blk_queue_secdiscard], [
 		#include <linux/blkdev.h>
@@ -359,6 +359,36 @@ AC_DEFUN([ZFS_AC_KERNEL_BLK_QUEUE_MAX_SEGMENTS], [
 	])
 ])
 
+dnl #
+dnl # See if kernel supports block multi-queue and blk_status_t.
+dnl # blk_status_t represents the new status codes introduced in the 4.13
+dnl # kernel patch:
+dnl #
+dnl #  block: introduce new block status code type
+dnl #
+dnl # We do not currently support the "old" block multi-queue interfaces from
+dnl # prior kernels.
+dnl #
+AC_DEFUN([ZFS_AC_KERNEL_SRC_BLK_MQ], [
+	ZFS_LINUX_TEST_SRC([blk_mq], [
+		#include <linux/blk-mq.h>
+	], [
+		struct blk_mq_tag_set tag_set __attribute__ ((unused)) = {0};
+		(void) blk_mq_alloc_tag_set(&tag_set);
+		return BLK_STS_OK;
+	], [])
+])
+
+AC_DEFUN([ZFS_AC_KERNEL_BLK_MQ], [
+	AC_MSG_CHECKING([whether block multiqueue with blk_status_t is available])
+	ZFS_LINUX_TEST_RESULT([blk_mq], [
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_BLK_MQ, 1, [block multiqueue is available])
+	], [
+		AC_MSG_RESULT(no)
+	])
+])
+
 AC_DEFUN([ZFS_AC_KERNEL_SRC_BLK_QUEUE], [
 	ZFS_AC_KERNEL_SRC_BLK_QUEUE_PLUG
 	ZFS_AC_KERNEL_SRC_BLK_QUEUE_BDI
@@ -370,6 +400,7 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_BLK_QUEUE], [
 	ZFS_AC_KERNEL_SRC_BLK_QUEUE_FLUSH
 	ZFS_AC_KERNEL_SRC_BLK_QUEUE_MAX_HW_SECTORS
 	ZFS_AC_KERNEL_SRC_BLK_QUEUE_MAX_SEGMENTS
+	ZFS_AC_KERNEL_SRC_BLK_MQ
 ])
 
 AC_DEFUN([ZFS_AC_KERNEL_BLK_QUEUE], [
@@ -383,4 +414,5 @@ AC_DEFUN([ZFS_AC_KERNEL_BLK_QUEUE], [
 	ZFS_AC_KERNEL_BLK_QUEUE_FLUSH
 	ZFS_AC_KERNEL_BLK_QUEUE_MAX_HW_SECTORS
 	ZFS_AC_KERNEL_BLK_QUEUE_MAX_SEGMENTS
+	ZFS_AC_KERNEL_BLK_MQ
 ])

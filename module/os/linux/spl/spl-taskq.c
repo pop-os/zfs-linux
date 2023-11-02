@@ -32,26 +32,38 @@
 #include <linux/cpuhotplug.h>
 #endif
 
-int spl_taskq_thread_bind = 0;
+static int spl_taskq_thread_bind = 0;
 module_param(spl_taskq_thread_bind, int, 0644);
 MODULE_PARM_DESC(spl_taskq_thread_bind, "Bind taskq thread to CPU by default");
 
+static uint_t spl_taskq_thread_timeout_ms = 10000;
+/* BEGIN CSTYLED */
+module_param(spl_taskq_thread_timeout_ms, uint, 0644);
+/* END CSTYLED */
+MODULE_PARM_DESC(spl_taskq_thread_timeout_ms,
+	"Time to require a dynamic thread be idle before it gets cleaned up");
 
-int spl_taskq_thread_dynamic = 1;
+static int spl_taskq_thread_dynamic = 1;
 module_param(spl_taskq_thread_dynamic, int, 0444);
 MODULE_PARM_DESC(spl_taskq_thread_dynamic, "Allow dynamic taskq threads");
 
-int spl_taskq_thread_priority = 1;
+static int spl_taskq_thread_priority = 1;
 module_param(spl_taskq_thread_priority, int, 0644);
 MODULE_PARM_DESC(spl_taskq_thread_priority,
 	"Allow non-default priority for taskq threads");
 
-int spl_taskq_thread_sequential = 4;
-module_param(spl_taskq_thread_sequential, int, 0644);
+static uint_t spl_taskq_thread_sequential = 4;
+/* BEGIN CSTYLED */
+module_param(spl_taskq_thread_sequential, uint, 0644);
+/* END CSTYLED */
 MODULE_PARM_DESC(spl_taskq_thread_sequential,
 	"Create new taskq threads after N sequential tasks");
 
-/* Global system-wide dynamic task queue available for all consumers */
+/*
+ * Global system-wide dynamic task queue available for all consumers. This
+ * taskq is not intended for long-running tasks; instead, a dedicated taskq
+ * should be created.
+ */
 taskq_t *system_taskq;
 EXPORT_SYMBOL(system_taskq);
 /* Global dynamic task queue for long delay */
@@ -842,12 +854,37 @@ taskq_thread_should_stop(taskq_t *tq, taskq_thread_t *tqt)
 	    tqt_thread_list) == tqt)
 		return (0);
 
-	return
+	int no_work =
 	    ((tq->tq_nspawn == 0) &&	/* No threads are being spawned */
 	    (tq->tq_nactive == 0) &&	/* No threads are handling tasks */
 	    (tq->tq_nthreads > 1) &&	/* More than 1 thread is running */
 	    (!taskq_next_ent(tq)) &&	/* There are no pending tasks */
 	    (spl_taskq_thread_dynamic)); /* Dynamic taskqs are allowed */
+
+	/*
+	 * If we would have said stop before, let's instead wait a bit, maybe
+	 * we'll see more work come our way soon...
+	 */
+	if (no_work) {
+		/* if it's 0, we want the old behavior. */
+		/* if the taskq is being torn down, we also want to go away. */
+		if (spl_taskq_thread_timeout_ms == 0 ||
+		    !(tq->tq_flags & TASKQ_ACTIVE))
+			return (1);
+		unsigned long lasttime = tq->lastshouldstop;
+		if (lasttime > 0) {
+			if (time_after(jiffies, lasttime +
+			    msecs_to_jiffies(spl_taskq_thread_timeout_ms)))
+				return (1);
+			else
+				return (0);
+		} else {
+			tq->lastshouldstop = jiffies;
+		}
+	} else {
+		tq->lastshouldstop = 0;
+	}
+	return (0);
 }
 
 static int
@@ -1042,7 +1079,6 @@ taskq_create(const char *name, int threads_arg, pri_t pri,
 
 	ASSERT(name != NULL);
 	ASSERT(minalloc >= 0);
-	ASSERT(maxalloc <= INT_MAX);
 	ASSERT(!(flags & (TASKQ_CPR_SAFE))); /* Unsupported */
 
 	/* Scale the number of threads using nthreads as a percentage */
@@ -1086,6 +1122,7 @@ taskq_create(const char *name, int threads_arg, pri_t pri,
 	tq->tq_flags = (flags | TASKQ_ACTIVE);
 	tq->tq_next_id = TASKQID_INITIAL;
 	tq->tq_lowest_id = TASKQID_INITIAL;
+	tq->lastshouldstop = 0;
 	INIT_LIST_HEAD(&tq->tq_free_list);
 	INIT_LIST_HEAD(&tq->tq_pend_list);
 	INIT_LIST_HEAD(&tq->tq_prio_list);
@@ -1375,7 +1412,7 @@ spl_taskq_init(void)
 	system_taskq = taskq_create("spl_system_taskq", MAX(boot_ncpus, 64),
 	    maxclsyspri, boot_ncpus, INT_MAX, TASKQ_PREPOPULATE|TASKQ_DYNAMIC);
 	if (system_taskq == NULL)
-		return (1);
+		return (-ENOMEM);
 
 	system_delay_taskq = taskq_create("spl_delay_taskq", MAX(boot_ncpus, 4),
 	    maxclsyspri, boot_ncpus, INT_MAX, TASKQ_PREPOPULATE|TASKQ_DYNAMIC);
@@ -1384,7 +1421,7 @@ spl_taskq_init(void)
 		cpuhp_remove_multi_state(spl_taskq_cpuhp_state);
 #endif
 		taskq_destroy(system_taskq);
-		return (1);
+		return (-ENOMEM);
 	}
 
 	dynamic_taskq = taskq_create("spl_dynamic_taskq", 1,
@@ -1395,7 +1432,7 @@ spl_taskq_init(void)
 #endif
 		taskq_destroy(system_taskq);
 		taskq_destroy(system_delay_taskq);
-		return (1);
+		return (-ENOMEM);
 	}
 
 	/*

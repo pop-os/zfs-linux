@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -70,10 +70,6 @@ typedef struct fmd_case {
 	void		*ci_bufptr;	/* case data serialization buffer */
 	size_t		ci_bufsiz;
 } fmd_case_t;
-
-
-#define	FMD_B_FALSE	0		/* false value for booleans as int */
-#define	FMD_B_TRUE	1		/* true value for booleans as int */
 
 
 #define	FMD_CASE_UNSOLVED	0	/* case is not yet solved (waiting) */
@@ -176,8 +172,7 @@ extern int fmd_case_uuclosed(fmd_hdl_t *, const char *);
 extern int fmd_case_uuisresolved(fmd_hdl_t *, const char *);
 extern void fmd_case_uuresolved(fmd_hdl_t *, const char *);
 
-extern int fmd_case_solved(fmd_hdl_t *, fmd_case_t *);
-extern int fmd_case_closed(fmd_hdl_t *, fmd_case_t *);
+extern boolean_t fmd_case_solved(fmd_hdl_t *, fmd_case_t *);
 
 extern void fmd_case_add_ereport(fmd_hdl_t *, fmd_case_t *, fmd_event_t *);
 extern void fmd_case_add_serd(fmd_hdl_t *, fmd_case_t *, const char *);

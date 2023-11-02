@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -27,6 +27,7 @@
 #ifdef CONFIG_COMPAT
 #include <linux/compat.h>
 #endif
+#include <linux/fs.h>
 #include <sys/file.h>
 #include <sys/dmu_objset.h>
 #include <sys/zfs_znode.h>
@@ -37,6 +38,9 @@
     defined(HAVE_VFS_FILEMAP_DIRTY_FOLIO)
 #include <linux/pagemap.h>
 #endif
+#ifdef HAVE_FILE_FADVISE
+#include <linux/fadvise.h>
+#endif
 #ifdef HAVE_VFS_FILEMAP_DIRTY_FOLIO
 #include <linux/writeback.h>
 #endif
@@ -45,7 +49,7 @@
  * When using fallocate(2) to preallocate space, inflate the requested
  * capacity check by 10% to account for the required metadata blocks.
  */
-unsigned int zfs_fallocate_reserve_percent = 110;
+static unsigned int zfs_fallocate_reserve_percent = 110;
 
 static int
 zpl_open(struct inode *ip, struct file *filp)
@@ -191,9 +195,12 @@ zpl_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
 	 * zfs_putpage() respectively.
 	 */
 	if (atomic_load_32(&zp->z_async_writes_cnt) > 0) {
-		ZPL_ENTER(zfsvfs);
+		if ((error = zpl_enter(zfsvfs, FTAG)) != 0) {
+			atomic_dec_32(&zp->z_sync_writes_cnt);
+			return (error);
+		}
 		zil_commit(zfsvfs->z_log, zp->z_id);
-		ZPL_EXIT(zfsvfs);
+		zpl_exit(zfsvfs, FTAG);
 	}
 
 	error = filemap_write_and_wait_range(inode->i_mapping, start, end);
@@ -755,10 +762,11 @@ zpl_writepages(struct address_space *mapping, struct writeback_control *wbc)
 	enum writeback_sync_modes sync_mode;
 	int result;
 
-	ZPL_ENTER(zfsvfs);
+	if ((result = zpl_enter(zfsvfs, FTAG)) != 0)
+		return (result);
 	if (zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
 		wbc->sync_mode = WB_SYNC_ALL;
-	ZPL_EXIT(zfsvfs);
+	zpl_exit(zfsvfs, FTAG);
 	sync_mode = wbc->sync_mode;
 
 	/*
@@ -772,11 +780,11 @@ zpl_writepages(struct address_space *mapping, struct writeback_control *wbc)
 	wbc->sync_mode = WB_SYNC_NONE;
 	result = zpl_write_cache_pages(mapping, wbc, &for_sync);
 	if (sync_mode != wbc->sync_mode) {
-		ZPL_ENTER(zfsvfs);
-		ZPL_VERIFY_ZP(zp);
+		if ((result = zpl_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
+			return (result);
 		if (zfsvfs->z_log != NULL)
 			zil_commit(zfsvfs->z_log, zp->z_id);
-		ZPL_EXIT(zfsvfs);
+		zpl_exit(zfsvfs, FTAG);
 
 		/*
 		 * We need to call write_cache_pages() again (we can't just
@@ -904,6 +912,69 @@ zpl_fallocate(struct file *filp, int mode, loff_t offset, loff_t len)
 	    mode, offset, len);
 }
 
+static int
+zpl_ioctl_getversion(struct file *filp, void __user *arg)
+{
+	uint32_t generation = file_inode(filp)->i_generation;
+
+	return (copy_to_user(arg, &generation, sizeof (generation)));
+}
+
+#ifdef HAVE_FILE_FADVISE
+static int
+zpl_fadvise(struct file *filp, loff_t offset, loff_t len, int advice)
+{
+	struct inode *ip = file_inode(filp);
+	znode_t *zp = ITOZ(ip);
+	zfsvfs_t *zfsvfs = ITOZSB(ip);
+	objset_t *os = zfsvfs->z_os;
+	int error = 0;
+
+	if (S_ISFIFO(ip->i_mode))
+		return (-ESPIPE);
+
+	if (offset < 0 || len < 0)
+		return (-EINVAL);
+
+	if ((error = zpl_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
+		return (error);
+
+	switch (advice) {
+	case POSIX_FADV_SEQUENTIAL:
+	case POSIX_FADV_WILLNEED:
+#ifdef HAVE_GENERIC_FADVISE
+		if (zn_has_cached_data(zp, offset, offset + len - 1))
+			error = generic_fadvise(filp, offset, len, advice);
+#endif
+		/*
+		 * Pass on the caller's size directly, but note that
+		 * dmu_prefetch_max will effectively cap it.  If there
+		 * really is a larger sequential access pattern, perhaps
+		 * dmu_zfetch will detect it.
+		 */
+		if (len == 0)
+			len = i_size_read(ip) - offset;
+
+		dmu_prefetch(os, zp->z_id, 0, offset, len,
+		    ZIO_PRIORITY_ASYNC_READ);
+		break;
+	case POSIX_FADV_NORMAL:
+	case POSIX_FADV_RANDOM:
+	case POSIX_FADV_DONTNEED:
+	case POSIX_FADV_NOREUSE:
+		/* ignored for now */
+		break;
+	default:
+		error = -EINVAL;
+		break;
+	}
+
+	zfs_exit(zfsvfs, FTAG);
+
+	return (error);
+}
+#endif /* HAVE_FILE_FADVISE */
+
 #define	ZFS_FL_USER_VISIBLE	(FS_FL_USER_VISIBLE | ZFS_PROJINHERIT_FL)
 #define	ZFS_FL_USER_MODIFIABLE	(FS_FL_USER_MODIFIABLE | ZFS_PROJINHERIT_FL)
 
@@ -979,21 +1050,24 @@ __zpl_ioctl_setflags(struct inode *ip, uint32_t ioctl_flags, xvattr_t *xva)
 	xva_init(xva);
 	xoap = xva_getxoptattr(xva);
 
-	XVA_SET_REQ(xva, XAT_IMMUTABLE);
-	if (ioctl_flags & FS_IMMUTABLE_FL)
-		xoap->xoa_immutable = B_TRUE;
+#define	FLAG_CHANGE(iflag, zflag, xflag, xfield)	do {	\
+	if (((ioctl_flags & (iflag)) && !(zfs_flags & (zflag))) ||	\
+	    ((zfs_flags & (zflag)) && !(ioctl_flags & (iflag)))) {	\
+		XVA_SET_REQ(xva, (xflag));	\
+		(xfield) = ((ioctl_flags & (iflag)) != 0);	\
+	}	\
+} while (0)
 
-	XVA_SET_REQ(xva, XAT_APPENDONLY);
-	if (ioctl_flags & FS_APPEND_FL)
-		xoap->xoa_appendonly = B_TRUE;
+	FLAG_CHANGE(FS_IMMUTABLE_FL, ZFS_IMMUTABLE, XAT_IMMUTABLE,
+	    xoap->xoa_immutable);
+	FLAG_CHANGE(FS_APPEND_FL, ZFS_APPENDONLY, XAT_APPENDONLY,
+	    xoap->xoa_appendonly);
+	FLAG_CHANGE(FS_NODUMP_FL, ZFS_NODUMP, XAT_NODUMP,
+	    xoap->xoa_nodump);
+	FLAG_CHANGE(ZFS_PROJINHERIT_FL, ZFS_PROJINHERIT, XAT_PROJINHERIT,
+	    xoap->xoa_projinherit);
 
-	XVA_SET_REQ(xva, XAT_NODUMP);
-	if (ioctl_flags & FS_NODUMP_FL)
-		xoap->xoa_nodump = B_TRUE;
-
-	XVA_SET_REQ(xva, XAT_PROJINHERIT);
-	if (ioctl_flags & ZFS_PROJINHERIT_FL)
-		xoap->xoa_projinherit = B_TRUE;
+#undef	FLAG_CHANGE
 
 	return (0);
 }
@@ -1017,7 +1091,7 @@ zpl_ioctl_setflags(struct file *filp, void __user *arg)
 
 	crhold(cr);
 	cookie = spl_fstrans_mark();
-	err = -zfs_setattr(ITOZ(ip), (vattr_t *)&xva, 0, cr);
+	err = -zfs_setattr(ITOZ(ip), (vattr_t *)&xva, 0, cr, zfs_init_idmap);
 	spl_fstrans_unmark(cookie);
 	crfree(cr);
 
@@ -1065,7 +1139,95 @@ zpl_ioctl_setxattr(struct file *filp, void __user *arg)
 
 	crhold(cr);
 	cookie = spl_fstrans_mark();
-	err = -zfs_setattr(ITOZ(ip), (vattr_t *)&xva, 0, cr);
+	err = -zfs_setattr(ITOZ(ip), (vattr_t *)&xva, 0, cr, zfs_init_idmap);
+	spl_fstrans_unmark(cookie);
+	crfree(cr);
+
+	return (err);
+}
+
+/*
+ * Expose Additional File Level Attributes of ZFS.
+ */
+static int
+zpl_ioctl_getdosflags(struct file *filp, void __user *arg)
+{
+	struct inode *ip = file_inode(filp);
+	uint64_t dosflags = ITOZ(ip)->z_pflags;
+	dosflags &= ZFS_DOS_FL_USER_VISIBLE;
+	int err = copy_to_user(arg, &dosflags, sizeof (dosflags));
+
+	return (err);
+}
+
+static int
+__zpl_ioctl_setdosflags(struct inode *ip, uint64_t ioctl_flags, xvattr_t *xva)
+{
+	uint64_t zfs_flags = ITOZ(ip)->z_pflags;
+	xoptattr_t *xoap;
+
+	if (ioctl_flags & (~ZFS_DOS_FL_USER_VISIBLE))
+		return (-EOPNOTSUPP);
+
+	if ((fchange(ioctl_flags, zfs_flags, ZFS_IMMUTABLE, ZFS_IMMUTABLE) ||
+	    fchange(ioctl_flags, zfs_flags, ZFS_APPENDONLY, ZFS_APPENDONLY)) &&
+	    !capable(CAP_LINUX_IMMUTABLE))
+		return (-EPERM);
+
+	if (!zpl_inode_owner_or_capable(zfs_init_idmap, ip))
+		return (-EACCES);
+
+	xva_init(xva);
+	xoap = xva_getxoptattr(xva);
+
+#define	FLAG_CHANGE(iflag, xflag, xfield)	do {	\
+	if (((ioctl_flags & (iflag)) && !(zfs_flags & (iflag))) ||	\
+	    ((zfs_flags & (iflag)) && !(ioctl_flags & (iflag)))) {	\
+		XVA_SET_REQ(xva, (xflag));	\
+		(xfield) = ((ioctl_flags & (iflag)) != 0);	\
+	}	\
+} while (0)
+
+	FLAG_CHANGE(ZFS_IMMUTABLE, XAT_IMMUTABLE, xoap->xoa_immutable);
+	FLAG_CHANGE(ZFS_APPENDONLY, XAT_APPENDONLY, xoap->xoa_appendonly);
+	FLAG_CHANGE(ZFS_NODUMP, XAT_NODUMP, xoap->xoa_nodump);
+	FLAG_CHANGE(ZFS_READONLY, XAT_READONLY, xoap->xoa_readonly);
+	FLAG_CHANGE(ZFS_HIDDEN, XAT_HIDDEN, xoap->xoa_hidden);
+	FLAG_CHANGE(ZFS_SYSTEM, XAT_SYSTEM, xoap->xoa_system);
+	FLAG_CHANGE(ZFS_ARCHIVE, XAT_ARCHIVE, xoap->xoa_archive);
+	FLAG_CHANGE(ZFS_NOUNLINK, XAT_NOUNLINK, xoap->xoa_nounlink);
+	FLAG_CHANGE(ZFS_REPARSE, XAT_REPARSE, xoap->xoa_reparse);
+	FLAG_CHANGE(ZFS_OFFLINE, XAT_OFFLINE, xoap->xoa_offline);
+	FLAG_CHANGE(ZFS_SPARSE, XAT_SPARSE, xoap->xoa_sparse);
+
+#undef	FLAG_CHANGE
+
+	return (0);
+}
+
+/*
+ * Set Additional File Level Attributes of ZFS.
+ */
+static int
+zpl_ioctl_setdosflags(struct file *filp, void __user *arg)
+{
+	struct inode *ip = file_inode(filp);
+	uint64_t dosflags;
+	cred_t *cr = CRED();
+	xvattr_t xva;
+	int err;
+	fstrans_cookie_t cookie;
+
+	if (copy_from_user(&dosflags, arg, sizeof (dosflags)))
+		return (-EFAULT);
+
+	err = __zpl_ioctl_setdosflags(ip, dosflags, &xva);
+	if (err)
+		return (err);
+
+	crhold(cr);
+	cookie = spl_fstrans_mark();
+	err = -zfs_setattr(ITOZ(ip), (vattr_t *)&xva, 0, cr, zfs_init_idmap);
 	spl_fstrans_unmark(cookie);
 	crfree(cr);
 
@@ -1076,6 +1238,8 @@ static long
 zpl_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	switch (cmd) {
+	case FS_IOC_GETVERSION:
+		return (zpl_ioctl_getversion(filp, (void *)arg));
 	case FS_IOC_GETFLAGS:
 		return (zpl_ioctl_getflags(filp, (void *)arg));
 	case FS_IOC_SETFLAGS:
@@ -1084,6 +1248,16 @@ zpl_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		return (zpl_ioctl_getxattr(filp, (void *)arg));
 	case ZFS_IOC_FSSETXATTR:
 		return (zpl_ioctl_setxattr(filp, (void *)arg));
+	case ZFS_IOC_GETDOSFLAGS:
+		return (zpl_ioctl_getdosflags(filp, (void *)arg));
+	case ZFS_IOC_SETDOSFLAGS:
+		return (zpl_ioctl_setdosflags(filp, (void *)arg));
+	case ZFS_IOC_COMPAT_FICLONE:
+		return (zpl_ioctl_ficlone(filp, (void *)arg));
+	case ZFS_IOC_COMPAT_FICLONERANGE:
+		return (zpl_ioctl_ficlonerange(filp, (void *)arg));
+	case ZFS_IOC_COMPAT_FIDEDUPERANGE:
+		return (zpl_ioctl_fideduperange(filp, (void *)arg));
 	default:
 		return (-ENOTTY);
 	}
@@ -1094,6 +1268,9 @@ static long
 zpl_compat_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	switch (cmd) {
+	case FS_IOC32_GETVERSION:
+		cmd = FS_IOC_GETVERSION;
+		break;
 	case FS_IOC32_GETFLAGS:
 		cmd = FS_IOC_GETFLAGS;
 		break;
@@ -1106,7 +1283,6 @@ zpl_compat_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	return (zpl_ioctl(filp, cmd, (unsigned long)compat_ptr(arg)));
 }
 #endif /* CONFIG_COMPAT */
-
 
 const struct address_space_operations zpl_address_space_operations = {
 #ifdef HAVE_VFS_READPAGES
@@ -1130,7 +1306,12 @@ const struct address_space_operations zpl_address_space_operations = {
 #endif
 };
 
+#ifdef HAVE_VFS_FILE_OPERATIONS_EXTEND
+const struct file_operations_extend zpl_file_operations = {
+	.kabi_fops = {
+#else
 const struct file_operations zpl_file_operations = {
+#endif
 	.open		= zpl_open,
 	.release	= zpl_release,
 	.llseek		= zpl_llseek,
@@ -1161,9 +1342,29 @@ const struct file_operations zpl_file_operations = {
 	.aio_fsync	= zpl_aio_fsync,
 #endif
 	.fallocate	= zpl_fallocate,
+#ifdef HAVE_VFS_COPY_FILE_RANGE
+	.copy_file_range	= zpl_copy_file_range,
+#endif
+#ifdef HAVE_VFS_CLONE_FILE_RANGE
+	.clone_file_range	= zpl_clone_file_range,
+#endif
+#ifdef HAVE_VFS_REMAP_FILE_RANGE
+	.remap_file_range	= zpl_remap_file_range,
+#endif
+#ifdef HAVE_VFS_DEDUPE_FILE_RANGE
+	.dedupe_file_range	= zpl_dedupe_file_range,
+#endif
+#ifdef HAVE_FILE_FADVISE
+	.fadvise	= zpl_fadvise,
+#endif
 	.unlocked_ioctl	= zpl_ioctl,
 #ifdef CONFIG_COMPAT
 	.compat_ioctl	= zpl_compat_ioctl,
+#endif
+#ifdef HAVE_VFS_FILE_OPERATIONS_EXTEND
+	}, /* kabi_fops */
+	.copy_file_range	= zpl_copy_file_range,
+	.clone_file_range	= zpl_clone_file_range,
 #endif
 };
 
@@ -1184,8 +1385,7 @@ const struct file_operations zpl_dir_file_operations = {
 #endif
 };
 
-/* BEGIN CSTYLED */
+/* CSTYLED */
 module_param(zfs_fallocate_reserve_percent, uint, 0644);
 MODULE_PARM_DESC(zfs_fallocate_reserve_percent,
-    "Percentage of length to use for the available capacity check");
-/* END CSTYLED */
+	"Percentage of length to use for the available capacity check");

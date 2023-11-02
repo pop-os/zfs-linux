@@ -7,7 +7,7 @@
  * with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -97,7 +97,5 @@
 #if defined(_KERNEL) && !defined(_KMEMUSER) && !defined(offsetof)
 #define	offsetof(s, m)	((size_t)(&(((s *)0)->m)))
 #endif
-
-#define	_NOTE(x)
 
 #endif /* _LIBSPL_SYS_SYSMACROS_H */

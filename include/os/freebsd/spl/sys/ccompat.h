@@ -1,5 +1,5 @@
 /*
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-License-Identifier: BSD-2-Clause
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -82,18 +82,17 @@ typedef struct {
 	volatile int counter;
 } atomic_t;
 
-	/* BEGIN CSTYLED */
 #define	hlist_for_each(p, head)                                      \
 	for (p = (head)->first; p; p = (p)->next)
 
 #define	hlist_entry(ptr, type, field)   container_of(ptr, type, field)
 
 #define	container_of(ptr, type, member)                         \
+/* CSTYLED */                                                   \
 ({                                                              \
-        const __typeof(((type *)0)->member) *__p = (ptr);       \
-        (type *)((uintptr_t)__p - offsetof(type, member));      \
+	const __typeof(((type *)0)->member) *__p = (ptr);       \
+	(type *)((uintptr_t)__p - offsetof(type, member));      \
 })
-	/* END CSTYLED */
 
 static inline void
 hlist_add_head(struct hlist_node *n, struct hlist_head *h)

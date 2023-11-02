@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -39,16 +39,24 @@
 
 /* zpl_inode.c */
 extern void zpl_vap_init(vattr_t *vap, struct inode *dir,
-    umode_t mode, cred_t *cr);
+    umode_t mode, cred_t *cr, zidmap_t *mnt_ns);
 
 extern const struct inode_operations zpl_inode_operations;
+#ifdef HAVE_RENAME2_OPERATIONS_WRAPPER
+extern const struct inode_operations_wrapper zpl_dir_inode_operations;
+#else
 extern const struct inode_operations zpl_dir_inode_operations;
+#endif
 extern const struct inode_operations zpl_symlink_inode_operations;
 extern const struct inode_operations zpl_special_inode_operations;
 
 /* zpl_file.c */
 extern const struct address_space_operations zpl_address_space_operations;
+#ifdef HAVE_VFS_FILE_OPERATIONS_EXTEND
+extern const struct file_operations_extend zpl_file_operations;
+#else
 extern const struct file_operations zpl_file_operations;
+#endif
 extern const struct file_operations zpl_dir_file_operations;
 
 /* zpl_super.c */
@@ -106,7 +114,6 @@ extern const struct inode_operations zpl_ops_root;
 
 extern const struct file_operations zpl_fops_snapdir;
 extern const struct inode_operations zpl_ops_snapdir;
-extern const struct dentry_operations zpl_dops_snapdirs;
 
 extern const struct file_operations zpl_fops_shares;
 extern const struct inode_operations zpl_ops_shares;
@@ -176,6 +183,55 @@ zpl_dir_emit_dots(struct file *file, zpl_dir_context_t *ctx)
 	return (true);
 }
 #endif /* HAVE_VFS_ITERATE */
+
+
+/* zpl_file_range.c */
+
+/* handlers for file_operations of the same name */
+extern ssize_t zpl_copy_file_range(struct file *src_file, loff_t src_off,
+    struct file *dst_file, loff_t dst_off, size_t len, unsigned int flags);
+extern loff_t zpl_remap_file_range(struct file *src_file, loff_t src_off,
+    struct file *dst_file, loff_t dst_off, loff_t len, unsigned int flags);
+extern int zpl_clone_file_range(struct file *src_file, loff_t src_off,
+    struct file *dst_file, loff_t dst_off, uint64_t len);
+extern int zpl_dedupe_file_range(struct file *src_file, loff_t src_off,
+    struct file *dst_file, loff_t dst_off, uint64_t len);
+
+/* compat for FICLONE/FICLONERANGE/FIDEDUPERANGE ioctls */
+typedef struct {
+	int64_t		fcr_src_fd;
+	uint64_t	fcr_src_offset;
+	uint64_t	fcr_src_length;
+	uint64_t	fcr_dest_offset;
+} zfs_ioc_compat_file_clone_range_t;
+
+typedef struct {
+	int64_t		fdri_dest_fd;
+	uint64_t	fdri_dest_offset;
+	uint64_t	fdri_bytes_deduped;
+	int32_t		fdri_status;
+	uint32_t	fdri_reserved;
+} zfs_ioc_compat_dedupe_range_info_t;
+
+typedef struct {
+	uint64_t	fdr_src_offset;
+	uint64_t	fdr_src_length;
+	uint16_t	fdr_dest_count;
+	uint16_t	fdr_reserved1;
+	uint32_t	fdr_reserved2;
+	zfs_ioc_compat_dedupe_range_info_t	fdr_info[];
+} zfs_ioc_compat_dedupe_range_t;
+
+#define	ZFS_IOC_COMPAT_FICLONE		_IOW(0x94, 9, int)
+#define	ZFS_IOC_COMPAT_FICLONERANGE \
+    _IOW(0x94, 13, zfs_ioc_compat_file_clone_range_t)
+#define	ZFS_IOC_COMPAT_FIDEDUPERANGE \
+    _IOWR(0x94, 54, zfs_ioc_compat_dedupe_range_t)
+
+extern long zpl_ioctl_ficlone(struct file *filp, void *arg);
+extern long zpl_ioctl_ficlonerange(struct file *filp, void *arg);
+extern long zpl_ioctl_fideduperange(struct file *filp, void *arg);
+
 
 #if defined(HAVE_INODE_TIMESTAMP_TRUNCATE)
 #define	zpl_inode_timestamp_truncate(ts, ip)	timestamp_truncate(ts, ip)

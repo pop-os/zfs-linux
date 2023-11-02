@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -65,12 +65,10 @@ DECLARE_EVENT_CLASS(zfs_dprintf_class,
 );
 /* END CSTYLED */
 
-/* BEGIN CSTYLED */
 #define	DEFINE_DPRINTF_EVENT(name) \
 DEFINE_EVENT(zfs_dprintf_class, name, \
-	TP_PROTO(const char *msg), \
-	TP_ARGS(msg))
-/* END CSTYLED */
+    TP_PROTO(const char *msg), \
+    TP_ARGS(msg))
 DEFINE_DPRINTF_EVENT(zfs_zfs__dprintf);
 
 #endif /* _TRACE_DBGMSG_H */
