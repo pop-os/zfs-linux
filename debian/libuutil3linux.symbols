@@ -1,7 +1,6 @@
 libuutil.so.3 libuutil3linux #MINVER#
 * Build-Depends-Package: libzfslinux-dev
  _sol_getmntent@Base 0.8.2
- aok@Base 0.8.3
  atomic_add_16@Base 0.8.2
  atomic_add_16_nv@Base 0.8.2
  atomic_add_32@Base 0.8.2
@@ -140,13 +139,13 @@ libuutil.so.3 libuutil3linux #MINVER#
  avl_update_gt@Base 2.0
  avl_update_lt@Base 2.0
  avl_walk@Base 0.8.2
- buf@Base 0.8.2
  get_system_hostid@Base 0.8.2
  getexecname@Base 0.8.2
  getextmntent@Base 0.8.2
  getmntany@Base 0.8.2
  getzoneid@Base 0.8.2
  libspl_assertf@Base 2.0
+ libspl_set_assert_ok@Base 2.2.0
  list_create@Base 0.8.2
  list_destroy@Base 0.8.2
  list_head@Base 0.8.2
@@ -169,13 +168,12 @@ libuutil.so.3 libuutil3linux #MINVER#
  membar_enter@Base 0.8.2
  membar_exit@Base 0.8.2
  membar_producer@Base 0.8.2
+ membar_sync@Base 2.2.0
  mkdirp@Base 0.8.2
- pagesize@Base 0.8.2
  print_timestamp@Base 0.8.2
  spl_pagesize@Base 0.8.2
  strlcat@Base 0.8.2
  strlcpy@Base 0.8.2
- uu_alt_exit@Base 0.8.2
  uu_avl_create@Base 0.8.2
  uu_avl_destroy@Base 0.8.2
  uu_avl_find@Base 0.8.2
@@ -200,21 +198,8 @@ libuutil.so.3 libuutil3linux #MINVER#
  uu_avl_walk_next@Base 0.8.2
  uu_avl_walk_start@Base 0.8.2
  uu_check_name@Base 0.8.2
- uu_die@Base 0.8.2
- uu_dprintf@Base 0.8.2
- uu_dprintf_create@Base 0.8.2
- uu_dprintf_destroy@Base 0.8.2
- uu_dprintf_getname@Base 0.8.2
- uu_dump@Base 0.8.2
  uu_error@Base 0.8.2
- uu_exit_fatal@Base 0.8.2
- uu_exit_fatal_value@Base 0.8.2
- uu_exit_ok@Base 0.8.2
- uu_exit_ok_value@Base 0.8.2
- uu_exit_usage@Base 0.8.2
- uu_exit_usage_value@Base 0.8.2
  uu_free@Base 0.8.2
- uu_getpname@Base 0.8.2
  uu_list_create@Base 0.8.2
  uu_list_destroy@Base 0.8.2
  uu_list_find@Base 0.8.2
@@ -242,19 +227,12 @@ libuutil.so.3 libuutil3linux #MINVER#
  uu_list_walk_start@Base 0.8.2
  uu_memdup@Base 0.8.2
  uu_msprintf@Base 0.8.2
- uu_open_tmp@Base 0.8.2
  uu_panic@Base 0.8.2
  uu_set_error@Base 0.8.2
- uu_setpname@Base 0.8.2
  uu_strbw@Base 0.8.2
  uu_strcaseeq@Base 0.8.2
  uu_strdup@Base 0.8.2
  uu_streq@Base 0.8.2
  uu_strerror@Base 0.8.2
  uu_strndup@Base 0.8.2
- uu_vdie@Base 0.8.2
- uu_vwarn@Base 0.8.2
- uu_vxdie@Base 0.8.2
- uu_warn@Base 0.8.2
- uu_xdie@Base 0.8.2
  uu_zalloc@Base 0.8.2

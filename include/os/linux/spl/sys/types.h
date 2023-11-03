@@ -62,8 +62,10 @@ struct mnt_idmap {
 	refcount_t count;
 };
 typedef struct mnt_idmap	zidmap_t;
+#define	idmap_owner(p)	(((struct mnt_idmap *)p)->owner)
 #else
 typedef struct user_namespace	zidmap_t;
+#define	idmap_owner(p)	((struct user_namespace *)p)
 #endif
 
 extern zidmap_t *zfs_init_idmap;

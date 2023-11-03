@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -86,10 +86,15 @@ extern int zfs_abd_scatter_enabled;
  * Allocations and deallocations
  */
 
+__attribute__((malloc))
 abd_t *abd_alloc(size_t, boolean_t);
+__attribute__((malloc))
 abd_t *abd_alloc_linear(size_t, boolean_t);
+__attribute__((malloc))
 abd_t *abd_alloc_gang(void);
+__attribute__((malloc))
 abd_t *abd_alloc_for_io(size_t, boolean_t);
+__attribute__((malloc))
 abd_t *abd_alloc_sametype(abd_t *, size_t);
 boolean_t abd_size_alloc_linear(size_t);
 void abd_gang_add(abd_t *, abd_t *, boolean_t);

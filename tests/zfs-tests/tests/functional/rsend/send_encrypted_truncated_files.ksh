@@ -54,11 +54,11 @@ function recursive_cksum
 {
 	case "$(uname)" in
 	FreeBSD)
-		find $1 -type f -exec sha256 -q {} \; | \
+		find $1 -type f -exec sha256 -q {} + | \
 		    sort | sha256digest
 		;;
 	*)
-		find $1 -type f -exec sha256sum {} \; | \
+		find $1 -type f -exec sha256sum {} + | \
 		    sort -k 2 | awk '{ print $1 }' | sha256digest
 		;;
 	esac
@@ -100,7 +100,7 @@ log_must truncate -s 131072 /$TESTPOOL/$TESTFS2/truncated
 log_must truncate -s 393216 /$TESTPOOL/$TESTFS2/truncated2
 log_must rm -f /$TESTPOOL/$TESTFS2/truncated3
 log_must rm -f /$TESTPOOL/$TESTFS2/truncated4
-log_must zpool sync $TESTPOOL
+sync_pool $TESTPOOL
 log_must zfs umount $TESTPOOL/$TESTFS2
 log_must zfs mount $TESTPOOL/$TESTFS2
 log_must dd if=/dev/urandom of=/$TESTPOOL/$TESTFS2/truncated3 \

@@ -10,10 +10,11 @@ Index: zfs-linux/lib/libzfs/os/linux/libzfs_util_os.c
 ===================================================================
 --- zfs-linux.orig/lib/libzfs/os/linux/libzfs_util_os.c
 +++ zfs-linux/lib/libzfs/os/linux/libzfs_util_os.c
-@@ -107,6 +107,15 @@ libzfs_load_module_impl(const char *modu
- 	int load = 0, fd;
- 	hrtime_t start;
+@@ -109,6 +109,16 @@ libzfs_load_module(void)
  
+ 	const char *timeout_str = getenv("ZFS_MODULE_TIMEOUT");
+ 	int seconds = 10;
++
 +	/*
 +	 * If inside a container, set the timeout to zero (LP: #1760173),
 +	 * however, this can be over-ridden by ZFS_MODULE_TIMEOUT just
@@ -21,8 +22,8 @@ Index: zfs-linux/lib/libzfs/os/linux/libzfs_util_os.c
 +	 * reason just for backward compatibilty
 +	 */
 +	if (access("/run/systemd/container", R_OK) == 0)
-+		timeout = 0;
++		seconds = 0;
 +
- 	/* Optionally request module loading */
- 	if (!libzfs_module_loaded(module)) {
- 		load_str = getenv("ZFS_MODULE_LOADING");
+ 	if (timeout_str)
+ 		seconds = MIN(strtol(timeout_str, NULL, 0), 600);
+ 	struct itimerspec timeout = {.it_value.tv_sec = MAX(seconds, 0)};

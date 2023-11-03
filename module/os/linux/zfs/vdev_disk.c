@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -71,8 +71,14 @@ typedef struct dio_request {
 	atomic_t		dr_ref;		/* References */
 	int			dr_error;	/* Bio error */
 	int			dr_bio_count;	/* Count of bio's */
-	struct bio		*dr_bio[0];	/* Attached bio's */
+	struct bio		*dr_bio[];	/* Attached bio's */
 } dio_request_t;
+
+/*
+ * BIO request failfast mask.
+ */
+
+static unsigned int zfs_vdev_failfast_mask = 1;
 
 #ifdef HAVE_BLK_MODE_T
 static blk_mode_t
@@ -187,7 +193,7 @@ vdev_disk_error(zio_t *zio)
 	 * which is safe from any context.
 	 */
 	printk(KERN_WARNING "zio pool=%s vdev=%s error=%d type=%d "
-	    "offset=%llu size=%llu flags=%x\n", spa_name(zio->io_spa),
+	    "offset=%llu size=%llu flags=%llu\n", spa_name(zio->io_spa),
 	    zio->io_vd->vdev_path, zio->io_error, zio->io_type,
 	    (u_longlong_t)zio->io_offset, (u_longlong_t)zio->io_size,
 	    zio->io_flags);
@@ -468,7 +474,7 @@ vdev_disk_dio_get(dio_request_t *dr)
 	atomic_inc(&dr->dr_ref);
 }
 
-static int
+static void
 vdev_disk_dio_put(dio_request_t *dr)
 {
 	int rc = atomic_dec_return(&dr->dr_ref);
@@ -492,14 +498,11 @@ vdev_disk_dio_put(dio_request_t *dr)
 			zio_delay_interrupt(zio);
 		}
 	}
-
-	return (rc);
 }
 
 BIO_END_IO_PROTO(vdev_disk_physio_completion, bio, error)
 {
 	dio_request_t *dr = bio->bi_private;
-	int rc;
 
 	if (dr->dr_error == 0) {
 #ifdef HAVE_1ARG_BIO_END_IO_T
@@ -513,7 +516,7 @@ BIO_END_IO_PROTO(vdev_disk_physio_completion, bio, error)
 	}
 
 	/* Drop reference acquired by __vdev_disk_physio */
-	rc = vdev_disk_dio_put(dr);
+	vdev_disk_dio_put(dr);
 }
 
 static inline void
@@ -699,15 +702,20 @@ __vdev_disk_physio(struct block_device *bdev, zio_t *zio,
 	if (io_offset + io_size > bdev->bd_inode->i_size) {
 		vdev_dbgmsg(zio->io_vd,
 		    "Illegal access %llu size %llu, device size %llu",
-		    io_offset, io_size, i_size_read(bdev->bd_inode));
+		    (u_longlong_t)io_offset,
+		    (u_longlong_t)io_size,
+		    (u_longlong_t)i_size_read(bdev->bd_inode));
 		return (SET_ERROR(EIO));
 	}
 
 retry:
 	dr = vdev_disk_dio_alloc(bio_count);
 
-	if (zio && !(zio->io_flags & (ZIO_FLAG_IO_RETRY | ZIO_FLAG_TRYHARD)))
-		bio_set_flags_failfast(bdev, &flags);
+	if (!(zio->io_flags & (ZIO_FLAG_IO_RETRY | ZIO_FLAG_TRYHARD)) &&
+	    zio->io_vd->vdev_failfast == B_TRUE) {
+		bio_set_flags_failfast(bdev, &flags, zfs_vdev_failfast_mask & 1,
+		    zfs_vdev_failfast_mask & 2, zfs_vdev_failfast_mask & 4);
+	}
 
 	dr->dr_zio = zio;
 
@@ -780,7 +788,7 @@ retry:
 	if (dr->dr_bio_count > 1)
 		blk_finish_plug(&plug);
 
-	(void) vdev_disk_dio_put(dr);
+	vdev_disk_dio_put(dr);
 
 	return (error);
 }
@@ -1045,7 +1053,7 @@ param_set_vdev_scheduler(const char *val, zfs_kernel_param_t *kp)
 	return (error);
 }
 
-char *zfs_vdev_scheduler = "unused";
+static const char *zfs_vdev_scheduler = "unused";
 module_param_call(zfs_vdev_scheduler, param_set_vdev_scheduler,
     param_get_charp, &zfs_vdev_scheduler, 0644);
 MODULE_PARM_DESC(zfs_vdev_scheduler, "I/O scheduler");
@@ -1053,17 +1061,17 @@ MODULE_PARM_DESC(zfs_vdev_scheduler, "I/O scheduler");
 int
 param_set_min_auto_ashift(const char *buf, zfs_kernel_param_t *kp)
 {
-	uint64_t val;
+	uint_t val;
 	int error;
 
-	error = kstrtoull(buf, 0, &val);
+	error = kstrtouint(buf, 0, &val);
 	if (error < 0)
 		return (SET_ERROR(error));
 
 	if (val < ASHIFT_MIN || val > zfs_vdev_max_auto_ashift)
 		return (SET_ERROR(-EINVAL));
 
-	error = param_set_ulong(buf, kp);
+	error = param_set_uint(buf, kp);
 	if (error < 0)
 		return (SET_ERROR(error));
 
@@ -1073,17 +1081,17 @@ param_set_min_auto_ashift(const char *buf, zfs_kernel_param_t *kp)
 int
 param_set_max_auto_ashift(const char *buf, zfs_kernel_param_t *kp)
 {
-	uint64_t val;
+	uint_t val;
 	int error;
 
-	error = kstrtoull(buf, 0, &val);
+	error = kstrtouint(buf, 0, &val);
 	if (error < 0)
 		return (SET_ERROR(error));
 
 	if (val > ASHIFT_MAX || val < zfs_vdev_min_auto_ashift)
 		return (SET_ERROR(-EINVAL));
 
-	error = param_set_ulong(buf, kp);
+	error = param_set_uint(buf, kp);
 	if (error < 0)
 		return (SET_ERROR(error));
 
@@ -1092,3 +1100,6 @@ param_set_max_auto_ashift(const char *buf, zfs_kernel_param_t *kp)
 
 ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, open_timeout_ms, UINT, ZMOD_RW,
 	"Timeout before determining that a device is missing");
+
+ZFS_MODULE_PARAM(zfs_vdev, zfs_vdev_, failfast_mask, UINT, ZMOD_RW,
+	"Defines failfast mask: 1 - device, 2 - transport, 4 - driver");

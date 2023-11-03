@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -86,7 +86,6 @@
 boolean_t error_seen;
 boolean_t is_force;
 
-/*PRINTFLIKE1*/
 void
 vdev_error(const char *fmt, ...)
 {
@@ -113,7 +112,7 @@ vdev_error(const char *fmt, ...)
  * not in use by another pool, and not in use by swap.
  */
 int
-check_file(const char *file, boolean_t force, boolean_t isspare)
+check_file_generic(const char *file, boolean_t force, boolean_t isspare)
 {
 	char  *name;
 	int fd;
@@ -275,7 +274,7 @@ make_leaf_vdev(nvlist_t *props, const char *arg, boolean_t is_primary)
 	char path[MAXPATHLEN];
 	struct stat64 statbuf;
 	nvlist_t *vdev = NULL;
-	char *type = NULL;
+	const char *type = NULL;
 	boolean_t wholedisk = B_FALSE;
 	uint64_t ashift = 0;
 	int err;
@@ -381,7 +380,7 @@ make_leaf_vdev(nvlist_t *props, const char *arg, boolean_t is_primary)
 	 * Override defaults if custom properties are provided.
 	 */
 	if (props != NULL) {
-		char *value = NULL;
+		const char *value = NULL;
 
 		if (nvlist_lookup_string(props,
 		    zpool_prop_to_name(ZPOOL_PROP_ASHIFT), &value) == 0) {
@@ -436,7 +435,7 @@ make_leaf_vdev(nvlist_t *props, const char *arg, boolean_t is_primary)
  *	one general purpose vdev.
  */
 typedef struct replication_level {
-	char *zprl_type;
+	const char *zprl_type;
 	uint64_t zprl_children;
 	uint64_t zprl_parity;
 } replication_level_t;
@@ -490,7 +489,7 @@ get_replication(nvlist_t *nvroot, boolean_t fatal)
 	nvlist_t **child;
 	uint_t c, children;
 	nvlist_t *nv;
-	char *type;
+	const char *type;
 	replication_level_t lastrep = {0};
 	replication_level_t rep;
 	replication_level_t *ret;
@@ -515,9 +514,14 @@ get_replication(nvlist_t *nvroot, boolean_t fatal)
 		if (is_log)
 			continue;
 
-		/* Ignore holes introduced by removing aux devices */
+		/*
+		 * Ignore holes introduced by removing aux devices, along
+		 * with indirect vdevs introduced by previously removed
+		 * vdevs.
+		 */
 		verify(nvlist_lookup_string(nv, ZPOOL_CONFIG_TYPE, &type) == 0);
-		if (strcmp(type, VDEV_TYPE_HOLE) == 0)
+		if (strcmp(type, VDEV_TYPE_HOLE) == 0 ||
+		    strcmp(type, VDEV_TYPE_INDIRECT) == 0)
 			continue;
 
 		if (nvlist_lookup_nvlist_array(nv, ZPOOL_CONFIG_CHILDREN,
@@ -563,10 +567,10 @@ get_replication(nvlist_t *nvroot, boolean_t fatal)
 			vdev_size = -1LL;
 			for (c = 0; c < children; c++) {
 				nvlist_t *cnv = child[c];
-				char *path;
+				const char *path;
 				struct stat64 statbuf;
 				int64_t size = -1LL;
-				char *childtype;
+				const char *childtype;
 				int fd, err;
 
 				rep.zprl_children++;
@@ -704,8 +708,11 @@ get_replication(nvlist_t *nvroot, boolean_t fatal)
 						    "are present\n"),
 						    raidz->zprl_type,
 						    mirror->zprl_type,
+						    (u_longlong_t)
 						    raidz->zprl_parity,
+						    (u_longlong_t)
 						    mirror->zprl_children - 1,
+						    (u_longlong_t)
 						    mirror->zprl_children);
 					else
 						return (NULL);
@@ -728,7 +735,9 @@ get_replication(nvlist_t *nvroot, boolean_t fatal)
 						    "%llu are present\n"),
 						    lastrep.zprl_type,
 						    rep.zprl_type,
+						    (u_longlong_t)
 						    lastrep.zprl_parity,
+						    (u_longlong_t)
 						    rep.zprl_parity);
 					else
 						return (NULL);
@@ -755,8 +764,9 @@ get_replication(nvlist_t *nvroot, boolean_t fatal)
 					    "mismatched replication level: "
 					    "both %llu and %llu device parity "
 					    "%s vdevs are present\n"),
+					    (u_longlong_t)
 					    lastrep.zprl_parity,
-					    rep.zprl_parity,
+					    (u_longlong_t)rep.zprl_parity,
 					    rep.zprl_type);
 				else
 					return (NULL);
@@ -769,7 +779,9 @@ get_replication(nvlist_t *nvroot, boolean_t fatal)
 					    "mismatched replication level: "
 					    "both %llu-way and %llu-way %s "
 					    "vdevs are present\n"),
+					    (u_longlong_t)
 					    lastrep.zprl_children,
+					    (u_longlong_t)
 					    rep.zprl_children,
 					    rep.zprl_type);
 				else
@@ -854,9 +866,9 @@ check_replication(nvlist_t *config, nvlist_t *newroot)
 				    "and %s vdevs, %llu vs. %llu (%llu-way)\n"),
 				    raidz->zprl_type,
 				    mirror->zprl_type,
-				    raidz->zprl_parity,
-				    mirror->zprl_children - 1,
-				    mirror->zprl_children);
+				    (u_longlong_t)raidz->zprl_parity,
+				    (u_longlong_t)mirror->zprl_children - 1,
+				    (u_longlong_t)mirror->zprl_children);
 				ret = -1;
 			}
 		} else if (strcmp(current->zprl_type, new->zprl_type) != 0) {
@@ -869,14 +881,17 @@ check_replication(nvlist_t *config, nvlist_t *newroot)
 			vdev_error(gettext(
 			    "mismatched replication level: pool uses %llu "
 			    "device parity and new vdev uses %llu\n"),
-			    current->zprl_parity, new->zprl_parity);
+			    (u_longlong_t)current->zprl_parity,
+			    (u_longlong_t)new->zprl_parity);
 			ret = -1;
 		} else if (current->zprl_children != new->zprl_children) {
 			vdev_error(gettext(
 			    "mismatched replication level: pool uses %llu-way "
 			    "%s and new vdev uses %llu-way %s\n"),
-			    current->zprl_children, current->zprl_type,
-			    new->zprl_children, new->zprl_type);
+			    (u_longlong_t)current->zprl_children,
+			    current->zprl_type,
+			    (u_longlong_t)new->zprl_children,
+			    new->zprl_type);
 			ret = -1;
 		}
 	}
@@ -889,7 +904,7 @@ check_replication(nvlist_t *config, nvlist_t *newroot)
 }
 
 static int
-zero_label(char *path)
+zero_label(const char *path)
 {
 	const int size = 4096;
 	char buf[size];
@@ -936,7 +951,7 @@ make_disks(zpool_handle_t *zhp, nvlist_t *nv)
 {
 	nvlist_t **child;
 	uint_t c, children;
-	char *type, *path;
+	const char *type, *path;
 	char devpath[MAXPATHLEN];
 	char udevpath[MAXPATHLEN];
 	uint64_t wholedisk;
@@ -1095,7 +1110,7 @@ is_device_in_use(nvlist_t *config, nvlist_t *nv, boolean_t force,
 {
 	nvlist_t **child;
 	uint_t c, children;
-	char *type, *path;
+	const char *type, *path;
 	int ret = 0;
 	char buf[MAXPATHLEN];
 	uint64_t wholedisk = B_FALSE;
@@ -1314,8 +1329,13 @@ draid_config_by_type(nvlist_t *nv, const char *type, uint64_t children)
 		return (EINVAL);
 
 	nparity = (uint64_t)get_parity(type);
-	if (nparity == 0)
+	if (nparity == 0 || nparity > VDEV_DRAID_MAXPARITY) {
+		fprintf(stderr,
+		    gettext("invalid dRAID parity level %llu; must be "
+		    "between 1 and %d\n"), (u_longlong_t)nparity,
+		    VDEV_DRAID_MAXPARITY);
 		return (EINVAL);
+	}
 
 	char *p = (char *)type;
 	while ((p = strchr(p, ':')) != NULL) {
@@ -1383,14 +1403,6 @@ draid_config_by_type(nvlist_t *nv, const char *type, uint64_t children)
 		    "disks per group %llu is too high,\nat most %llu disks "
 		    "are available for data\n"), (u_longlong_t)ndata,
 		    (u_longlong_t)(children - nspares - nparity));
-		return (EINVAL);
-	}
-
-	if (nparity == 0 || nparity > VDEV_DRAID_MAXPARITY) {
-		fprintf(stderr,
-		    gettext("invalid dRAID parity level %llu; must be "
-		    "between 1 and %d\n"), (u_longlong_t)nparity,
-		    VDEV_DRAID_MAXPARITY);
 		return (EINVAL);
 	}
 
@@ -1637,8 +1649,8 @@ construct_spec(nvlist_t *props, int argc, char **argv)
 					}
 				}
 				verify(nvlist_add_nvlist_array(nv,
-				    ZPOOL_CONFIG_CHILDREN, child,
-				    children) == 0);
+				    ZPOOL_CONFIG_CHILDREN,
+				    (const nvlist_t **)child, children) == 0);
 
 				for (c = 0; c < children; c++)
 					nvlist_free(child[c]);
@@ -1703,13 +1715,13 @@ construct_spec(nvlist_t *props, int argc, char **argv)
 	verify(nvlist_add_string(nvroot, ZPOOL_CONFIG_TYPE,
 	    VDEV_TYPE_ROOT) == 0);
 	verify(nvlist_add_nvlist_array(nvroot, ZPOOL_CONFIG_CHILDREN,
-	    top, toplevels) == 0);
+	    (const nvlist_t **)top, toplevels) == 0);
 	if (nspares != 0)
 		verify(nvlist_add_nvlist_array(nvroot, ZPOOL_CONFIG_SPARES,
-		    spares, nspares) == 0);
+		    (const nvlist_t **)spares, nspares) == 0);
 	if (nl2cache != 0)
 		verify(nvlist_add_nvlist_array(nvroot, ZPOOL_CONFIG_L2CACHE,
-		    l2cache, nl2cache) == 0);
+		    (const nvlist_t **)l2cache, nl2cache) == 0);
 
 spec_out:
 	for (t = 0; t < toplevels; t++)
@@ -1749,7 +1761,7 @@ split_mirror_vdev(zpool_handle_t *zhp, char *newname, nvlist_t *props,
 		verify(nvlist_lookup_nvlist_array(newroot,
 		    ZPOOL_CONFIG_CHILDREN, &child, &children) == 0);
 		for (c = 0; c < children; c++) {
-			char *path;
+			const char *path;
 			const char *type;
 			int min, max;
 

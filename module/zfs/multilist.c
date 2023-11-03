@@ -24,7 +24,7 @@
  * This overrides the number of sublists in each multilist_t, which defaults
  * to the number of CPUs in the system (see multilist_create()).
  */
-int zfs_multilist_num_sublists = 0;
+uint_t zfs_multilist_num_sublists = 0;
 
 /*
  * Given the object contained on the list, return a pointer to the
@@ -36,6 +36,8 @@ multilist_d2l(multilist_t *ml, void *obj)
 {
 	return ((multilist_node_t *)((char *)obj + ml->ml_offset));
 }
+#else
+#define	multilist_d2l(ml, obj) ((void) sizeof (ml), (void) sizeof (obj), NULL)
 #endif
 
 /*
@@ -67,7 +69,7 @@ multilist_d2l(multilist_t *ml, void *obj)
  */
 static void
 multilist_create_impl(multilist_t *ml, size_t size, size_t offset,
-    unsigned int num, multilist_sublist_index_func_t *index_func)
+    uint_t num, multilist_sublist_index_func_t *index_func)
 {
 	ASSERT3U(size, >, 0);
 	ASSERT3U(size, >=, offset + sizeof (multilist_node_t));
@@ -102,7 +104,7 @@ void
 multilist_create(multilist_t *ml, size_t size, size_t offset,
     multilist_sublist_index_func_t *index_func)
 {
-	int num_sublists;
+	uint_t num_sublists;
 
 	if (zfs_multilist_num_sublists > 0) {
 		num_sublists = zfs_multilist_num_sublists;
@@ -423,7 +425,5 @@ multilist_link_active(multilist_node_t *link)
 	return (list_link_active(link));
 }
 
-/* BEGIN CSTYLED */
-ZFS_MODULE_PARAM(zfs, zfs_, multilist_num_sublists, INT, ZMOD_RW,
+ZFS_MODULE_PARAM(zfs, zfs_, multilist_num_sublists, UINT, ZMOD_RW,
 	"Number of sublists used in each multilist");
-/* END CSTYLED */

@@ -1,18 +1,6 @@
 Description: explicitly load the ZFS module via systemd service
 Author: Ubuntu developers
 Forward: no need
-Index: zfs-linux/etc/systemd/system/Makefile.am
-===================================================================
---- zfs-linux.orig/etc/systemd/system/Makefile.am
-+++ zfs-linux/etc/systemd/system/Makefile.am
-@@ -4,6 +4,7 @@ systemdpreset_DATA = \
- 	50-zfs.preset
- 
- systemdunit_DATA = \
-+	zfs-load-module.service \
- 	zfs-zed.service \
- 	zfs-import-cache.service \
- 	zfs-import-scan.service \
 Index: zfs-linux/etc/systemd/system/zfs-import-cache.service.in
 ===================================================================
 --- zfs-linux.orig/etc/systemd/system/zfs-import-cache.service.in
@@ -63,20 +51,11 @@ Index: zfs-linux/etc/systemd/system/zfs-load-module.service.in
 +[Install]
 +WantedBy=zfs-mount.service
 +WantedBy=zfs.target
-Index: zfs-linux/etc/systemd/system/50-zfs.preset.in
-===================================================================
---- zfs-linux.orig/etc/systemd/system/50-zfs.preset.in
-+++ zfs-linux/etc/systemd/system/50-zfs.preset.in
-@@ -7,3 +7,4 @@ enable zfs-share.service
- enable zfs-zed.service
- enable zfs-volume-wait.service
- enable zfs.target
-+enable zfs-load-module.service
 Index: zfs-linux/contrib/dracut/90zfs/module-setup.sh.in
 ===================================================================
 --- zfs-linux.orig/contrib/dracut/90zfs/module-setup.sh.in
 +++ zfs-linux/contrib/dracut/90zfs/module-setup.sh.in
-@@ -89,7 +89,8 @@ install() {
+@@ -95,7 +95,8 @@ install() {
  
  		for _service in \
  			"zfs-import-scan.service" \
@@ -86,3 +65,24 @@ Index: zfs-linux/contrib/dracut/90zfs/module-setup.sh.in
  			inst_simple "${systemdsystemunitdir}/${_service}"
  			systemctl -q --root "${initdir}" add-wants zfs-import.target "${_service}"
  
+Index: zfs-linux/etc/Makefile.am
+===================================================================
+--- zfs-linux.orig/etc/Makefile.am
++++ zfs-linux/etc/Makefile.am
+@@ -52,6 +52,7 @@ dist_systemdpreset_DATA = \
+ 	%D%/systemd/system/50-zfs.preset
+ 
+ systemdunit_DATA = \
++	%D%/systemd/system/zfs-load-module.service \
+ 	%D%/systemd/system/zfs-import-cache.service \
+ 	%D%/systemd/system/zfs-import-scan.service \
+ 	%D%/systemd/system/zfs-import.target \
+Index: zfs-linux/etc/systemd/system/50-zfs.preset
+===================================================================
+--- zfs-linux.orig/etc/systemd/system/50-zfs.preset
++++ zfs-linux/etc/systemd/system/50-zfs.preset
+@@ -7,3 +7,4 @@ enable zfs-share.service
+ enable zfs-zed.service
+ enable zfs-volume-wait.service
+ enable zfs.target
++enable zfs-load-module.service

@@ -67,14 +67,14 @@ mntopt(char **p)
 }
 
 char *
-hasmntopt(struct mnttab *mnt, char *opt)
+hasmntopt(struct mnttab *mnt, const char *opt)
 {
 	char tmpopts[MNT_LINE_MAX];
 	char *f, *opts = tmpopts;
 
 	if (mnt->mnt_mntopts == NULL)
 		return (NULL);
-	(void) strcpy(opts, mnt->mnt_mntopts);
+	(void) strlcpy(opts, mnt->mnt_mntopts, MNT_LINE_MAX);
 	f = mntopt(&opts);
 	for (; *f; f = mntopt(&opts)) {
 		if (strncmp(opt, f, strlen(opt)) == 0)

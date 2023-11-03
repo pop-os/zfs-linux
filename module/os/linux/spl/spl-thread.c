@@ -62,15 +62,6 @@ thread_generic_wrapper(void *arg)
 	return (0);
 }
 
-void
-__thread_exit(void)
-{
-	tsd_exit();
-	SPL_KTHREAD_COMPLETE_AND_EXIT(NULL, 0);
-	/* Unreachable */
-}
-EXPORT_SYMBOL(__thread_exit);
-
 /*
  * thread_create() may block forever if it cannot create a thread or
  * allocate memory.  This is preferable to returning a NULL which Solaris
@@ -101,7 +92,7 @@ __thread_create(caddr_t stk, size_t  stksize, thread_func_t func,
 		return (NULL);
 	}
 
-	strncpy(tp->tp_name, name, tp->tp_name_size);
+	strlcpy(tp->tp_name, name, tp->tp_name_size);
 
 	/*
 	 * Strip trailing "_thread" from passed name which will be the func
@@ -187,12 +178,11 @@ issig(int why)
 	sigorsets(&set, &task->blocked, &set);
 
 	spin_lock_irq(&task->sighand->siglock);
-	int ret;
 #ifdef HAVE_DEQUEUE_SIGNAL_4ARG
 	enum pid_type __type;
-	if ((ret = dequeue_signal(task, &set, &__info, &__type)) != 0) {
+	if (dequeue_signal(task, &set, &__info, &__type) != 0) {
 #else
-	if ((ret = dequeue_signal(task, &set, &__info)) != 0) {
+	if (dequeue_signal(task, &set, &__info) != 0) {
 #endif
 #ifdef HAVE_SIGNAL_STOP
 		spin_unlock_irq(&task->sighand->siglock);

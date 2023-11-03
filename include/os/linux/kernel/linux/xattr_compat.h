@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -189,7 +189,7 @@ static int								\
 fn(const struct xattr_handler *handler, struct dentry *dentry,		\
     const char *name, const void *buffer, size_t size, int flags)	\
 {									\
-	return (__ ## fn(kcred->user_ns, dentry->d_inode, name,		\
+	return (__ ## fn(kcred->user_ns, dentry->d_inode, name,	\
 	    buffer, size, flags));					\
 }
 /*
@@ -203,8 +203,8 @@ static int								\
 fn(struct dentry *dentry, const char *name, const void *buffer,		\
     size_t size, int flags, int unused_handler_flags)			\
 {									\
-	return (__ ## fn(kcred->user_ns, dentry->d_inode, name, buffer, \
-	    size, flags));						\
+	return (__ ## fn(kcred->user_ns, dentry->d_inode, name,	\
+	    buffer, size, flags));					\
 }
 #else
 #error "Unsupported kernel"

@@ -37,25 +37,26 @@ Copyright: 2011, 2013, Nexenta Systems, Inc.
            2007, 2009, Sun Microsystems, Inc.
 License: CDDL-1.0
 
-Files: cmd/arc_summary/*
+Files: cmd/arc_summary
 Copyright:
   2010, 2011, Jason J. Hellenthal <jhell@DataIX.net>
   2010, Martin Matuska <mm@FreeBSD.org>
   2008, Ben Rockwood <benr@cuddletech.com>
+  2017, Scot W. Stevenson <scot.stevenson@gmail.com>
 License: BSD-2-clause
 
-Files: cmd/arcstat/*
+Files: cmd/arcstat.in
 Source: http://github.com/mharsch/arcstat
 Copyright:
   2007, Oracle and/or its affiliates.
   2010-2015, Mike Harsch
 License: CDDL-1.0
 
-Files: cmd/dbufstat/*
+Files: cmd/dbufstat.in
 Copyright: 2013, Lawrence Livermore National Security, LLC
 License: CDDL-1.0
 
-Files: cmd/mount_zfs/*
+Files: cmd/mount_zfs.c
 Copyright: 2011, Lawrence Livermore National Security, LLC
            2005, 2010, Oracle and/or its affiliates.
 License: CDDL-1.0
@@ -64,7 +65,7 @@ Files: cmd/raidz_test/*
 Copyright: 2016 Gvozden Nešković.
 License: CDDL-1.0
 
-Files: cmd/vdev_id/*
+Files: udev/vdev_id
 Copyright: 2011, 2013, Nexenta Systems, Inc.
            2007, 2009, Sun Microsystems, Inc.
 License: CDDL-1.0
@@ -106,7 +107,7 @@ Copyright:
   2018 Datto Inc.
 License: CDDL-1.0
 
-Files: cmd/zhack/*
+Files: cmd/zhack.c
 Copyright: 2013, Steven Hartland.
            2011, 2012, 2014, Delphix.
 License: CDDL-1.0
@@ -139,7 +140,7 @@ Copyright:
   2010, Sun Microsystems, Inc.
 License: CDDL-1.0
 
-Files: cmd/ztest/*
+Files: cmd/ztest.c
 Copyright:
   2005, 2010, Oracle and/or its affiliates.
   2011, 2018 by Delphix.
@@ -150,7 +151,7 @@ Copyright:
   2017, Intel Corporation.
 License: CDDL-1.0
 
-Files: cmd/zvol_id/*
+Files: udev/zvol_id.c
 Copyright: 2011, Fajar A. Nugraha.
 License: CDDL-1.0
 
@@ -577,7 +578,6 @@ Files: module/zfs/dmu_zfetch.c
   module/zfs/rrwlock.c
   module/zfs/space_map.c
   module/zfs/space_reftree.c
-  module/zfs/vdev_cache.c
   module/zfs/vdev_mirror.c
   module/zfs/vdev_missing.c
   module/zfs/vdev_queue.c
@@ -645,12 +645,14 @@ Copyright: 2013, Steven Hartland.
 License: CDDL-1.0
 
 Files: module/zfs/gzip.c
-  module/zfs/sha256.c
-  module/zfs/spa_boot.c
   module/zfs/unique.c
   module/zfs/zfs_byteswap.c
   module/zfs/zle.c
 Copyright: 2005-2010, Sun Microsystems, Inc.
+License: CDDL-1.0
+
+Files: module/icp/algs/sha2/*
+Copyright: 2022, Tino Reichardt <milky-zfs@mcmilk.de>
 License: CDDL-1.0
 
 Files: module/zfs/lz4.c

@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -680,15 +680,15 @@ abd_return_buf(abd_t *abd, void *buf, size_t n)
 {
 	abd_verify(abd);
 	ASSERT3U(abd->abd_size, >=, n);
+#ifdef ZFS_DEBUG
+	(void) zfs_refcount_remove_many(&abd->abd_children, n, buf);
+#endif
 	if (abd_is_linear(abd)) {
 		ASSERT3P(buf, ==, abd_to_buf(abd));
 	} else {
 		ASSERT0(abd_cmp_buf(abd, buf, n));
 		zio_buf_free(buf, n);
 	}
-#ifdef ZFS_DEBUG
-	(void) zfs_refcount_remove_many(&abd->abd_children, n, buf);
-#endif
 }
 
 void
@@ -1079,10 +1079,10 @@ abd_raidz_gen_iterate(abd_t **cabds, abd_t *dabd,
 		switch (parity) {
 			case 3:
 				len = MIN(caiters[2].iter_mapsize, len);
-				fallthrough;
+				zfs_fallthrough;
 			case 2:
 				len = MIN(caiters[1].iter_mapsize, len);
-				fallthrough;
+				zfs_fallthrough;
 			case 1:
 				len = MIN(caiters[0].iter_mapsize, len);
 		}
@@ -1192,11 +1192,11 @@ abd_raidz_rec_iterate(abd_t **cabds, abd_t **tabds,
 			case 3:
 				len = MIN(xiters[2].iter_mapsize, len);
 				len = MIN(citers[2].iter_mapsize, len);
-				fallthrough;
+				zfs_fallthrough;
 			case 2:
 				len = MIN(xiters[1].iter_mapsize, len);
 				len = MIN(citers[1].iter_mapsize, len);
-				fallthrough;
+				zfs_fallthrough;
 			case 1:
 				len = MIN(xiters[0].iter_mapsize, len);
 				len = MIN(citers[0].iter_mapsize, len);

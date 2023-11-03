@@ -6,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
+ * or https://opensource.org/licenses/CDDL-1.0.
  * See the License for the specific language governing permissions
  * and limitations under the License.
  *
@@ -70,8 +70,8 @@ enum raidz_rec_op {
 	RAIDZ_REC_NUM = 7
 };
 
-extern const char *raidz_gen_name[RAIDZ_GEN_NUM];
-extern const char *raidz_rec_name[RAIDZ_REC_NUM];
+extern const char *const raidz_gen_name[RAIDZ_GEN_NUM];
+extern const char *const raidz_rec_name[RAIDZ_REC_NUM];
 
 /*
  * Methods used to define raidz implementation
@@ -321,7 +321,7 @@ vdev_raidz_exp2(const uint8_t a, const unsigned exp)
  * Galois Field operations.
  *
  * gf_exp2	- computes 2 raised to the given power
- * gf_exp2	- computes 4 raised to the given power
+ * gf_exp4	- computes 4 raised to the given power
  * gf_mul	- multiplication
  * gf_div	- division
  * gf_inv	- multiplicative inverse
