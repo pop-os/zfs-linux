@@ -1,10 +1,11 @@
-zfs-linux (2.2.0-1~exp1) UNRELEASED; urgency=medium
+zfs-linux (2.2.0-1~exp1) experimental; urgency=medium
 
   [ Mo Zhou ]
   * New upstream version 2.2.0
   * Partial revert the copyright update to fix wrong changes.
   * Refresh symbols control file.
   * Fix modules package installation control file.
+  * Upload to experimental.
 
   [ Thomas Lamprecht ]
   * d/install: remove manpages for BSD-specific jail/unjail hooks
@@ -18,7 +19,7 @@ zfs-linux (2.2.0-1~exp1) UNRELEASED; urgency=medium
   * update lintian overrides
   * Quilt refresh patchset
 
- -- Mo Zhou <lumin@debian.org>  Thu, 02 Nov 2023 16:13:01 -0400
+ -- Mo Zhou <lumin@debian.org>  Thu, 02 Nov 2023 20:27:52 -0400
 
 zfs-linux (2.1.14-2) UNRELEASED; urgency=medium
 
