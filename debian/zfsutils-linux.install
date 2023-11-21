@@ -34,6 +34,7 @@ sbin/zstreamdump
 usr/bin/zvol_wait /sbin/
 usr/bin/zilstat /sbin/
 usr/lib/modules-load.d/ lib/
+usr/lib/zfs-linux/zfs_prepare_disk
 usr/lib/zfs-linux/zpool.d/
 usr/lib/zfs-linux/zpool_influxdb
 usr/sbin/arc_summary
@@ -132,3 +133,4 @@ usr/share/man/man4/spl.4
 usr/share/man/man4/zfs.4
 usr/share/man/man7/zpool-features.7
 usr/share/man/man8/zpool_influxdb.8
+usr/share/man/man8/zfs_prepare_disk.8
