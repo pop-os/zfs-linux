@@ -77,6 +77,7 @@ libuutil.so.3 libuutil3linux #MINVER#
  atomic_inc_ulong_nv@Base 0.8.2
  atomic_inc_ushort@Base 0.8.2
  atomic_inc_ushort_nv@Base 0.8.2
+ (arch=i386)atomic_load_64@Base 0.8.2
  atomic_or_16@Base 0.8.2
  atomic_or_16_nv@Base 0.8.2
  atomic_or_32@Base 0.8.2
@@ -94,6 +95,7 @@ libuutil.so.3 libuutil3linux #MINVER#
  atomic_or_ushort@Base 0.8.2
  atomic_or_ushort_nv@Base 0.8.2
  atomic_set_long_excl@Base 0.8.2
+ (arch=i386)atomic_store_64@Base 0.8.2
  atomic_sub_16@Base 0.8.2
  atomic_sub_16_nv@Base 0.8.2
  atomic_sub_32@Base 0.8.2

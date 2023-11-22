@@ -200,7 +200,6 @@ libzpool.so.5 libzpool5linux #MINVER#
  arc_lotsfree_percent@Base 0.8.2
  arc_memory_throttle@Base 2.0
  arc_no_grow_shift@Base 0.8.2
- arc_prune_async@Base 2.0
  arc_prune_list@Base 2.0
  arc_prune_mtx@Base 2.0
  arc_prune_taskq@Base 2.0
@@ -305,6 +304,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  atomic_inc_ulong_nv@Base 2.2.0
  atomic_inc_ushort@Base 2.2.0
  atomic_inc_ushort_nv@Base 2.2.0
+ (arch=i386)atomic_load_64@Base 2.2.0
  atomic_or_16@Base 2.2.0
  atomic_or_16_nv@Base 2.2.0
  atomic_or_32@Base 2.2.0
@@ -322,6 +322,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  atomic_or_ushort@Base 2.2.0
  atomic_or_ushort_nv@Base 2.2.0
  atomic_set_long_excl@Base 2.2.0
+ (arch=i386)atomic_store_64@Base 2.2.0
  atomic_sub_16@Base 2.2.0
  atomic_sub_16_nv@Base 2.2.0
  atomic_sub_32@Base 2.2.0
@@ -368,12 +369,12 @@ libzpool.so.5 libzpool5linux #MINVER#
  avl_update_gt@Base 2.2.0
  avl_update_lt@Base 2.2.0
  avl_walk@Base 2.2.0
- blake3_avx2_impl@Base 2.2.0
- blake3_avx512_impl@Base 2.2.0
+ (arch=amd64)blake3_avx2_impl@Base 2.2.0
+ (arch=amd64)blake3_avx512_impl@Base 2.2.0
  blake3_generic_impl@Base 2.2.0
  blake3_get_ops@Base 2.2.0
- blake3_sse2_impl@Base 2.2.0
- blake3_sse41_impl@Base 2.2.0
+ (arch=amd64)blake3_sse2_impl@Base 2.2.0
+ (arch=amd64)blake3_sse41_impl@Base 2.2.0
  bookmark_namecheck@Base 2.1
  bp_get_dsize@Base 0.8.2
  bp_get_dsize_sync@Base 0.8.2
@@ -1260,7 +1261,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  getextmntent@Base 2.2.0
  getmntany@Base 2.2.0
  getzoneid@Base 2.2.0
- (optional)gf_clmul_mod_lt@Base 0.8.2
+ (optional|arch=!i386)gf_clmul_mod_lt@Base 0.8.2
  gmac_alloc_ctx@Base 0.8.2
  gmac_init_ctx@Base 0.8.2
  gzip_compress@Base 0.8.2
@@ -1608,6 +1609,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  multilist_sublist_unlock@Base 0.8.2
  mutex_destroy@Base 0.8.2
  mutex_enter@Base 0.8.2
+ mutex_enter_check_return@Base 2.2.1
  mutex_exit@Base 0.8.2
  mutex_init@Base 0.8.2
  mutex_tryenter@Base 0.8.2
@@ -1734,20 +1736,20 @@ libzpool.so.5 libzpool5linux #MINVER#
  secpolicy_zfs_proc@Base 2.0
  seq_printf@Base 0.8.2
  set_global_var@Base 0.8.2
- sha256_avx2_impl@Base 2.2.0
- sha256_avx_impl@Base 2.2.0
+ (arch=amd64)sha256_avx2_impl@Base 2.2.0
+ (arch=amd64)sha256_avx_impl@Base 2.2.0
  sha256_generic_impl@Base 2.2.0
  sha256_get_ops@Base 2.2.0
- sha256_shani_impl@Base 2.2.0
- sha256_ssse3_impl@Base 2.2.0
- sha256_x64_impl@Base 2.2.0
+ (arch=amd64)sha256_shani_impl@Base 2.2.0
+ (arch=amd64)sha256_ssse3_impl@Base 2.2.0
+ (arch=amd64)sha256_x64_impl@Base 2.2.0
  sha2_mod_fini@Base 0.8.2
  sha2_mod_init@Base 0.8.2
- sha512_avx2_impl@Base 2.2.0
- sha512_avx_impl@Base 2.2.0
+ (arch=amd64)sha512_avx2_impl@Base 2.2.0
+ (arch=amd64)sha512_avx_impl@Base 2.2.0
  sha512_generic_impl@Base 2.2.0
  sha512_get_ops@Base 2.2.0
- sha512_x64_impl@Base 2.2.0
+ (arch=amd64)sha512_x64_impl@Base 2.2.0
  show_pool_stats@Base 0.8.2
  skein_mod_fini@Base 0.8.2
  skein_mod_init@Base 0.8.2
@@ -2850,16 +2852,16 @@ libzpool.so.5 libzpool5linux #MINVER#
  zfs_arc_shrinker_limit@Base 2.0
  zfs_attr_table@Base 0.8.2
  zfs_basename@Base 2.2.0
- zfs_blake3_compress_in_place_avx512@Base 2.2.0
- zfs_blake3_compress_in_place_sse2@Base 2.2.0
- zfs_blake3_compress_in_place_sse41@Base 2.2.0
- zfs_blake3_compress_xof_avx512@Base 2.2.0
- zfs_blake3_compress_xof_sse2@Base 2.2.0
- zfs_blake3_compress_xof_sse41@Base 2.2.0
- zfs_blake3_hash_many_avx2@Base 2.2.0
- zfs_blake3_hash_many_avx512@Base 2.2.0
- zfs_blake3_hash_many_sse2@Base 2.2.0
- zfs_blake3_hash_many_sse41@Base 2.2.0
+ (arch=amd64)zfs_blake3_compress_in_place_avx512@Base 2.2.0
+ (arch=amd64)zfs_blake3_compress_in_place_sse2@Base 2.2.0
+ (arch=amd64)zfs_blake3_compress_in_place_sse41@Base 2.2.0
+ (arch=amd64)zfs_blake3_compress_xof_avx512@Base 2.2.0
+ (arch=amd64)zfs_blake3_compress_xof_sse2@Base 2.2.0
+ (arch=amd64)zfs_blake3_compress_xof_sse41@Base 2.2.0
+ (arch=amd64)zfs_blake3_hash_many_avx2@Base 2.2.0
+ (arch=amd64)zfs_blake3_hash_many_avx512@Base 2.2.0
+ (arch=amd64)zfs_blake3_hash_many_sse2@Base 2.2.0
+ (arch=amd64)zfs_blake3_hash_many_sse41@Base 2.2.0
  zfs_blake3_ops@Base 2.2.0
  zfs_blkptr_verify@Base 2.0
  zfs_brt_prefetch@Base 2.2.0
@@ -3060,15 +3062,15 @@ libzpool.so.5 libzpool5linux #MINVER#
  zfs_setproctitle@Base 2.2.0
  zfs_setproctitle_init@Base 2.2.0
  zfs_sha256_ops@Base 2.2.0
- zfs_sha256_transform_avx2@Base 2.2.0
- zfs_sha256_transform_avx@Base 2.2.0
- zfs_sha256_transform_shani@Base 2.2.0
- zfs_sha256_transform_ssse3@Base 2.2.0
- zfs_sha256_transform_x64@Base 2.2.0
+ (arch=amd64)zfs_sha256_transform_avx2@Base 2.2.0
+ (arch=amd64)zfs_sha256_transform_avx@Base 2.2.0
+ (arch=amd64)zfs_sha256_transform_shani@Base 2.2.0
+ (arch=amd64)zfs_sha256_transform_ssse3@Base 2.2.0
+ (arch=amd64)zfs_sha256_transform_x64@Base 2.2.0
  zfs_sha512_ops@Base 2.2.0
- zfs_sha512_transform_avx2@Base 2.2.0
- zfs_sha512_transform_avx@Base 2.2.0
- zfs_sha512_transform_x64@Base 2.2.0
+ (arch=amd64)zfs_sha512_transform_avx2@Base 2.2.0
+ (arch=amd64)zfs_sha512_transform_avx@Base 2.2.0
+ (arch=amd64)zfs_sha512_transform_x64@Base 2.2.0
  zfs_snapshot_history_enabled@Base 2.2.0
  zfs_spa_version_map@Base 0.8.2
  zfs_special_devs@Base 0.8.3
