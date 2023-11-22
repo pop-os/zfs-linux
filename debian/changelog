@@ -1,9 +1,10 @@
-zfs-linux (2.2.1-1~exp1) UNRELEASED; urgency=medium
+zfs-linux (2.2.1-1~exp1) experimental; urgency=medium
 
   * New upstream version 2.2.1
   * Include files for zfs_prepare_disk in zfsutils-linux.install
   * Update symbols for dynamic libraries
   * symbols: include some SIMD impl of zfletcher on i386
+  * symbols: use arch-bits when possible
 
  -- Shengqi Chen <harry-chen@outlook.com>  Wed, 22 Nov 2023 15:31:24 +0800
 
