@@ -162,7 +162,7 @@ libzfs.so.4 libzfs4linux #MINVER#
  fletcher_2_native@Base 0.8.2
  (arch=arm64)fletcher_4_aarch64_neon_ops@Base 0.8.2
  fletcher_4_abd_ops@Base 0.8.2
- (arch=amd64)fletcher_4_avx2_ops@Base 0.8.2
+ (arch=amd64 i386)fletcher_4_avx2_ops@Base 0.8.2
  (arch=amd64)fletcher_4_avx512bw_ops@Base 2.0
  (arch=amd64)fletcher_4_avx512f_ops@Base 0.8.2
  fletcher_4_byteswap@Base 0.8.2
@@ -173,8 +173,8 @@ libzfs.so.4 libzfs4linux #MINVER#
  fletcher_4_init@Base 0.8.2
  fletcher_4_native@Base 0.8.2
  fletcher_4_native_varsize@Base 0.8.2
- (arch=amd64)fletcher_4_sse2_ops@Base 0.8.2
- (arch=amd64)fletcher_4_ssse3_ops@Base 0.8.2
+ (arch=amd64 i386)fletcher_4_sse2_ops@Base 0.8.2
+ (arch=amd64 i386)fletcher_4_ssse3_ops@Base 0.8.2
  fletcher_4_superscalar4_ops@Base 0.8.2
  fletcher_4_superscalar_ops@Base 0.8.2
  fletcher_init@Base 0.8.2
