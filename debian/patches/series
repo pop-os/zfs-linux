@@ -23,3 +23,4 @@ cross-compile.patch
 #ubuntu/4751-suppress-types.patch
 check-fpu-on-aarch64.patch
 fix-cve-2013-20001-nfs-share-ipv6-address-format.patch
+fix-icp-sha2-on-armel.patch
