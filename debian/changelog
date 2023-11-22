@@ -1,3 +1,10 @@
+zfs-linux (2.2.1-1~exp1) UNRELEASED; urgency=medium
+
+  * New upstream version 2.2.1
+  * Include files for zfs_prepare_disk in zfsutils-linux.install
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Wed, 22 Nov 2023 13:04:43 +0800
+
 zfs-linux (2.2.0-1~exp1) experimental; urgency=medium
 
   [ Mo Zhou ]
