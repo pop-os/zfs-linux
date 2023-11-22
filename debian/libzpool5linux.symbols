@@ -304,7 +304,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  atomic_inc_ulong_nv@Base 2.2.0
  atomic_inc_ushort@Base 2.2.0
  atomic_inc_ushort_nv@Base 2.2.0
- (arch=i386)atomic_load_64@Base 2.2.0
+ (arch-bits=32)atomic_load_64@Base 2.2.0
  atomic_or_16@Base 2.2.0
  atomic_or_16_nv@Base 2.2.0
  atomic_or_32@Base 2.2.0
@@ -322,7 +322,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  atomic_or_ushort@Base 2.2.0
  atomic_or_ushort_nv@Base 2.2.0
  atomic_set_long_excl@Base 2.2.0
- (arch=i386)atomic_store_64@Base 2.2.0
+ (arch-bits=32)atomic_store_64@Base 2.2.0
  atomic_sub_16@Base 2.2.0
  atomic_sub_16_nv@Base 2.2.0
  atomic_sub_32@Base 2.2.0
@@ -1261,7 +1261,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  getextmntent@Base 2.2.0
  getmntany@Base 2.2.0
  getzoneid@Base 2.2.0
- (optional|arch=!i386)gf_clmul_mod_lt@Base 0.8.2
+ (optional)gf_clmul_mod_lt@Base 0.8.2
  gmac_alloc_ctx@Base 0.8.2
  gmac_init_ctx@Base 0.8.2
  gzip_compress@Base 0.8.2
