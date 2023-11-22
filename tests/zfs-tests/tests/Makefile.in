@@ -151,6 +151,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-follow-down-one.m4 \
 	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-fst-mount.m4 \
+	$(top_srcdir)/config/kernel-fsync-bdev.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
 	$(top_srcdir)/config/kernel-generic_fadvise.m4 \
 	$(top_srcdir)/config/kernel-generic_fillattr.m4 \
@@ -1328,6 +1329,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/fault/auto_online_001_pos.ksh \
 	functional/fault/auto_online_002_pos.ksh \
 	functional/fault/auto_replace_001_pos.ksh \
+	functional/fault/auto_replace_002_pos.ksh \
 	functional/fault/auto_spare_001_pos.ksh \
 	functional/fault/auto_spare_002_pos.ksh \
 	functional/fault/auto_spare_ashift.ksh \
@@ -3681,6 +3683,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/fault/auto_online_001_pos.ksh \
 	functional/fault/auto_online_002_pos.ksh \
 	functional/fault/auto_replace_001_pos.ksh \
+	functional/fault/auto_replace_002_pos.ksh \
 	functional/fault/auto_spare_001_pos.ksh \
 	functional/fault/auto_spare_002_pos.ksh \
 	functional/fault/auto_spare_ashift.ksh \
