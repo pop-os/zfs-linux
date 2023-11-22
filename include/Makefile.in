@@ -145,6 +145,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-follow-down-one.m4 \
 	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-fst-mount.m4 \
+	$(top_srcdir)/config/kernel-fsync-bdev.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
 	$(top_srcdir)/config/kernel-generic_fadvise.m4 \
 	$(top_srcdir)/config/kernel-generic_fillattr.m4 \
