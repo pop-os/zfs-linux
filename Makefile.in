@@ -550,6 +550,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-follow-down-one.m4 \
 	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-fst-mount.m4 \
+	$(top_srcdir)/config/kernel-fsync-bdev.m4 \
 	$(top_srcdir)/config/kernel-fsync.m4 \
 	$(top_srcdir)/config/kernel-generic_fadvise.m4 \
 	$(top_srcdir)/config/kernel-generic_fillattr.m4 \
@@ -684,6 +685,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
 	$(am__dist_scripts_SCRIPTS_DIST) \
 	$(am__dist_scripts_zfs_tests_callbacks_SCRIPTS_DIST) \
 	$(am__dist_udev_SCRIPTS_DIST) $(am__dist_zedexec_SCRIPTS_DIST) \
+	$(am__dist_zfsexec_SCRIPTS_DIST) \
 	$(am__dist_zpoolexec_SCRIPTS_DIST) \
 	$(am__dist_i_t_conf_d_DATA_DIST) \
 	$(am__dist_i_t_confhooks_d_DATA_DIST) \
@@ -703,8 +705,8 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = zfs_config.h
-CONFIG_CLEAN_FILES = contrib/debian/rules lib/libzfs/libzfs.pc \
-	lib/libzfs_core/libzfs_core.pc \
+CONFIG_CLEAN_FILES = contrib/debian/rules contrib/debian/changelog \
+	lib/libzfs/libzfs.pc lib/libzfs_core/libzfs_core.pc \
 	lib/libzfsbootenv/libzfsbootenv.pc module/Kbuild \
 	module/Makefile rpm/generic/zfs-dkms.spec \
 	rpm/generic/zfs-kmod.spec rpm/generic/zfs.spec \
@@ -725,10 +727,10 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" \
 	"$(DESTDIR)$(scriptsdir)" \
 	"$(DESTDIR)$(scripts_zfs_tests_callbacksdir)" \
 	"$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zedexecdir)" \
-	"$(DESTDIR)$(zpoolexecdir)" "$(DESTDIR)$(i_t_hooksdir)" \
-	"$(DESTDIR)$(initdir)" "$(DESTDIR)$(zedexecdir)" \
-	"$(DESTDIR)$(pkgdracut_02dir)" "$(DESTDIR)$(pkgdracut_90dir)" \
-	"$(DESTDIR)$(sbindir)" \
+	"$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(zpoolexecdir)" \
+	"$(DESTDIR)$(i_t_hooksdir)" "$(DESTDIR)$(initdir)" \
+	"$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(pkgdracut_02dir)" \
+	"$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sbindir)" \
 	"$(DESTDIR)$(scripts_test_runner_bindir)" \
 	"$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man4dir)" \
 	"$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" \
@@ -1875,6 +1877,7 @@ am__dist_zedexec_SCRIPTS_DIST = cmd/zed/zed.d/all-debug.sh \
 	cmd/zed/zed.d/trim_finish-notify.sh \
 	cmd/zed/zed.d/vdev_attach-led.sh \
 	cmd/zed/zed.d/vdev_clear-led.sh
+am__dist_zfsexec_SCRIPTS_DIST = scripts/zfs_prepare_disk
 am__dist_zpoolexec_SCRIPTS_DIST = cmd/zpool/zpool.d/ata_err \
 	cmd/zpool/zpool.d/cmd_to cmd/zpool/zpool.d/defect \
 	cmd/zpool/zpool.d/dm-deps cmd/zpool/zpool.d/enc \
@@ -1903,10 +1906,10 @@ SCRIPTS = $(bin_SCRIPTS) $(dist_bin_SCRIPTS) $(dist_i_t_SCRIPTS) \
 	$(dist_scripts_SCRIPTS) \
 	$(dist_scripts_zfs_tests_callbacks_SCRIPTS) \
 	$(dist_udev_SCRIPTS) $(dist_zedexec_SCRIPTS) \
-	$(dist_zpoolexec_SCRIPTS) $(i_t_hooks_SCRIPTS) $(init_SCRIPTS) \
-	$(nodist_zedexec_SCRIPTS) $(pkgdracut_02_SCRIPTS) \
-	$(pkgdracut_90_SCRIPTS) $(sbin_SCRIPTS) \
-	$(scripts_test_runner_bin_SCRIPTS)
+	$(dist_zfsexec_SCRIPTS) $(dist_zpoolexec_SCRIPTS) \
+	$(i_t_hooks_SCRIPTS) $(init_SCRIPTS) $(nodist_zedexec_SCRIPTS) \
+	$(pkgdracut_02_SCRIPTS) $(pkgdracut_90_SCRIPTS) \
+	$(sbin_SCRIPTS) $(scripts_test_runner_bin_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -2654,27 +2657,27 @@ am__dist_noinst_DATA_DIST =  \
 	man/man8/zfs-unload-key.8 man/man8/zfs-unmount.8 \
 	man/man8/zfs-upgrade.8 man/man8/zfs-userspace.8 \
 	man/man8/zfs-wait.8 man/man8/zfs_ids_to_path.8 \
-	man/man8/zgenhostid.8 man/man8/zinject.8 man/man8/zpool.8 \
-	man/man8/zpool-add.8 man/man8/zpool-attach.8 \
-	man/man8/zpool-checkpoint.8 man/man8/zpool-clear.8 \
-	man/man8/zpool-create.8 man/man8/zpool-destroy.8 \
-	man/man8/zpool-detach.8 man/man8/zpool-events.8 \
-	man/man8/zpool-export.8 man/man8/zpool-get.8 \
-	man/man8/zpool-history.8 man/man8/zpool-import.8 \
-	man/man8/zpool-initialize.8 man/man8/zpool-iostat.8 \
-	man/man8/zpool-labelclear.8 man/man8/zpool-list.8 \
-	man/man8/zpool-offline.8 man/man8/zpool-online.8 \
-	man/man8/zpool-reguid.8 man/man8/zpool-remove.8 \
-	man/man8/zpool-reopen.8 man/man8/zpool-replace.8 \
-	man/man8/zpool-resilver.8 man/man8/zpool-scrub.8 \
-	man/man8/zpool-set.8 man/man8/zpool-split.8 \
-	man/man8/zpool-status.8 man/man8/zpool-sync.8 \
-	man/man8/zpool-trim.8 man/man8/zpool-upgrade.8 \
-	man/man8/zpool-wait.8 man/man8/zstream.8 \
-	man/man8/zstreamdump.8 man/man8/zpool_influxdb.8 \
-	man/man8/zfs-jail.8 man/man8/zfs-unjail.8 \
-	man/man8/zfs-unzone.8 man/man8/zfs-zone.8 \
-	tests/zfs-tests/cmd/file/file_common.h \
+	man/man8/zfs_prepare_disk.8 man/man8/zgenhostid.8 \
+	man/man8/zinject.8 man/man8/zpool.8 man/man8/zpool-add.8 \
+	man/man8/zpool-attach.8 man/man8/zpool-checkpoint.8 \
+	man/man8/zpool-clear.8 man/man8/zpool-create.8 \
+	man/man8/zpool-destroy.8 man/man8/zpool-detach.8 \
+	man/man8/zpool-events.8 man/man8/zpool-export.8 \
+	man/man8/zpool-get.8 man/man8/zpool-history.8 \
+	man/man8/zpool-import.8 man/man8/zpool-initialize.8 \
+	man/man8/zpool-iostat.8 man/man8/zpool-labelclear.8 \
+	man/man8/zpool-list.8 man/man8/zpool-offline.8 \
+	man/man8/zpool-online.8 man/man8/zpool-reguid.8 \
+	man/man8/zpool-remove.8 man/man8/zpool-reopen.8 \
+	man/man8/zpool-replace.8 man/man8/zpool-resilver.8 \
+	man/man8/zpool-scrub.8 man/man8/zpool-set.8 \
+	man/man8/zpool-split.8 man/man8/zpool-status.8 \
+	man/man8/zpool-sync.8 man/man8/zpool-trim.8 \
+	man/man8/zpool-upgrade.8 man/man8/zpool-wait.8 \
+	man/man8/zstream.8 man/man8/zstreamdump.8 \
+	man/man8/zpool_influxdb.8 man/man8/zfs-jail.8 \
+	man/man8/zfs-unjail.8 man/man8/zfs-unzone.8 \
+	man/man8/zfs-zone.8 tests/zfs-tests/cmd/file/file_common.h \
 	tests/zfs-tests/cmd/linux_dos_attributes/dos_attributes.h \
 	tests/README.md autogen.sh copy-builtin AUTHORS \
 	CODE_OF_CONDUCT.md COPYRIGHT LICENSE META NEWS NOTICE \
@@ -2890,6 +2893,7 @@ am__DIST_COMMON = $(dist_man_MANS) $(srcdir)/Makefile.in \
 	$(top_srcdir)/config/config.sub $(top_srcdir)/config/depcomp \
 	$(top_srcdir)/config/install-sh $(top_srcdir)/config/ltmain.sh \
 	$(top_srcdir)/config/missing \
+	$(top_srcdir)/contrib/debian/changelog.in \
 	$(top_srcdir)/contrib/debian/rules.in \
 	$(top_srcdir)/lib/libzfs/libzfs.pc.in \
 	$(top_srcdir)/lib/libzfs_core/libzfs_core.pc.in \
@@ -3323,6 +3327,7 @@ AM_CPPFLAGS = -include $(top_builddir)/zfs_config.h \
 	-I$(top_srcdir)/lib/libspl/include/os/@ac_system_l@ \
 	-D_GNU_SOURCE -D_REENTRANT -D_FILE_OFFSET_BITS=64 \
 	-D_LARGEFILE64_SOURCE -DLIBEXECDIR=\"$(libexecdir)\" \
+	-DZFSEXECDIR=\"$(zfsexecdir)\" \
 	-DRUNSTATEDIR=\"$(runstatedir)\" -DSBINDIR=\"$(sbindir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" -DPKGDATADIR=\"$(pkgdatadir)\" \
 	$(DEBUG_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS) \
@@ -3438,6 +3443,9 @@ scripts_scripts = \
 	scripts/zloop.sh
 
 @CONFIG_USER_TRUE@dist_scripts_SCRIPTS = $(scripts_scripts)
+@CONFIG_USER_TRUE@dist_zfsexec_SCRIPTS = \
+@CONFIG_USER_TRUE@	scripts/zfs_prepare_disk
+
 ACLOCAL_AMFLAGS = -I config
 SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@bin_SCRIPTS = $(am__append_25)
@@ -4427,6 +4435,7 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@	man/man8/zfs-upgrade.8 \
 @CONFIG_USER_TRUE@	man/man8/zfs-userspace.8 man/man8/zfs-wait.8 \
 @CONFIG_USER_TRUE@	man/man8/zfs_ids_to_path.8 \
+@CONFIG_USER_TRUE@	man/man8/zfs_prepare_disk.8 \
 @CONFIG_USER_TRUE@	man/man8/zgenhostid.8 man/man8/zinject.8 \
 @CONFIG_USER_TRUE@	man/man8/zpool.8 man/man8/zpool-add.8 \
 @CONFIG_USER_TRUE@	man/man8/zpool-attach.8 \
@@ -4642,6 +4651,8 @@ $(srcdir)/zfs_config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 distclean-hdr:
 	-rm -f zfs_config.h stamp-h1
 contrib/debian/rules: $(top_builddir)/config.status $(top_srcdir)/contrib/debian/rules.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+contrib/debian/changelog: $(top_builddir)/config.status $(top_srcdir)/contrib/debian/changelog.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 lib/libzfs/libzfs.pc: $(top_builddir)/config.status $(top_srcdir)/lib/libzfs/libzfs.pc.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
@@ -7471,6 +7482,41 @@ uninstall-dist_zedexecSCRIPTS:
 	files=`for p in $$list; do echo "$$p"; done | \
 	       sed -e 's,.*/,,;$(transform)'`; \
 	dir='$(DESTDIR)$(zedexecdir)'; $(am__uninstall_files_from_dir)
+install-dist_zfsexecSCRIPTS: $(dist_zfsexec_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	@list='$(dist_zfsexec_SCRIPTS)'; test -n "$(zfsexecdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(zfsexecdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(zfsexecdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n' \
+	    -e 'h;s|.*|.|' \
+	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
+	      if (++n[d] == $(am__install_max)) { \
+		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
+	    else { print "f", d "/" $$4, $$1 } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	     test -z "$$files" || { \
+	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(zfsexecdir)$$dir'"; \
+	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(zfsexecdir)$$dir" || exit $$?; \
+	     } \
+	; done
+
+uninstall-dist_zfsexecSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_zfsexec_SCRIPTS)'; test -n "$(zfsexecdir)" || exit 0; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	       sed -e 's,.*/,,;$(transform)'`; \
+	dir='$(DESTDIR)$(zfsexecdir)'; $(am__uninstall_files_from_dir)
 install-dist_zpoolexecSCRIPTS: $(dist_zpoolexec_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	@list='$(dist_zpoolexec_SCRIPTS)'; test -n "$(zpoolexecdir)" || list=; \
@@ -12390,7 +12436,7 @@ install-pammoduleLTLIBRARIES: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_zfs_tests_bindir)" "$(DESTDIR)$(scripts_zfs_tests_functional_hkdfdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_libzfsdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_tmpfiledir)" "$(DESTDIR)$(systemdgeneratordir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pammoduledir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(i_tdir)" "$(DESTDIR)$(i_t_scriptsdir)" "$(DESTDIR)$(i_t_scripts_localtopdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(scripts_zfs_tests_callbacksdir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(zpoolexecdir)" "$(DESTDIR)$(i_t_hooksdir)" "$(DESTDIR)$(initdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(pkgdracut_02dir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_test_runner_bindir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man4dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(i_t_conf_ddir)" "$(DESTDIR)$(i_t_confhooks_ddir)" "$(DESTDIR)$(modulesloaddir)" "$(DESTDIR)$(pamconfigsdir)" "$(DESTDIR)$(scripts_runfilesdir)" "$(DESTDIR)$(scripts_test_runner_includedir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdpresetdir)" "$(DESTDIR)$(zedconfdir)" "$(DESTDIR)$(zpoolcompatdir)" "$(DESTDIR)$(initconfdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sudoersddir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdunitdir)" "$(DESTDIR)$(udevruledir)" "$(DESTDIR)$(extradir)" "$(DESTDIR)$(libspldir)" "$(DESTDIR)$(libspl_ia32dir)" "$(DESTDIR)$(libspl_rpcdir)" "$(DESTDIR)$(libspl_sysdir)" "$(DESTDIR)$(libspl_sys_dktpdir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_zfs_tests_bindir)" "$(DESTDIR)$(scripts_zfs_tests_functional_hkdfdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_libzfsdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_tmpfiledir)" "$(DESTDIR)$(systemdgeneratordir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pammoduledir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(i_tdir)" "$(DESTDIR)$(i_t_scriptsdir)" "$(DESTDIR)$(i_t_scripts_localtopdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(scripts_zfs_tests_callbacksdir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(zpoolexecdir)" "$(DESTDIR)$(i_t_hooksdir)" "$(DESTDIR)$(initdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(pkgdracut_02dir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_test_runner_bindir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man4dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(i_t_conf_ddir)" "$(DESTDIR)$(i_t_confhooks_ddir)" "$(DESTDIR)$(modulesloaddir)" "$(DESTDIR)$(pamconfigsdir)" "$(DESTDIR)$(scripts_runfilesdir)" "$(DESTDIR)$(scripts_test_runner_includedir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdpresetdir)" "$(DESTDIR)$(zedconfdir)" "$(DESTDIR)$(zpoolcompatdir)" "$(DESTDIR)$(initconfdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sudoersddir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdunitdir)" "$(DESTDIR)$(udevruledir)" "$(DESTDIR)$(extradir)" "$(DESTDIR)$(libspldir)" "$(DESTDIR)$(libspl_ia32dir)" "$(DESTDIR)$(libspl_rpcdir)" "$(DESTDIR)$(libspl_sysdir)" "$(DESTDIR)$(libspl_sys_dktpdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -13091,10 +13137,10 @@ install-dvi-am:
 
 install-exec-am: install-binPROGRAMS install-binSCRIPTS \
 	install-dist_binSCRIPTS install-dist_zedexecSCRIPTS \
-	install-dist_zpoolexecSCRIPTS install-exec-local \
-	install-libLTLIBRARIES install-nodist_zedexecSCRIPTS \
-	install-sbinPROGRAMS install-sbinSCRIPTS \
-	install-zfsexecPROGRAMS
+	install-dist_zfsexecSCRIPTS install-dist_zpoolexecSCRIPTS \
+	install-exec-local install-libLTLIBRARIES \
+	install-nodist_zedexecSCRIPTS install-sbinPROGRAMS \
+	install-sbinSCRIPTS install-zfsexecPROGRAMS
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 install-html: install-html-recursive
@@ -13599,13 +13645,14 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	uninstall-dist_sysconf_zfsDATA \
 	uninstall-dist_systemdpresetDATA uninstall-dist_udevSCRIPTS \
 	uninstall-dist_zedconfDATA uninstall-dist_zedexecSCRIPTS \
-	uninstall-dist_zpoolcompatDATA uninstall-dist_zpoolexecSCRIPTS \
-	uninstall-extraHEADERS uninstall-i_t_hooksSCRIPTS \
-	uninstall-initSCRIPTS uninstall-initconfDATA \
-	uninstall-libLTLIBRARIES uninstall-libsplHEADERS \
-	uninstall-libspl_ia32HEADERS uninstall-libspl_rpcHEADERS \
-	uninstall-libspl_sysHEADERS uninstall-libspl_sys_dktpHEADERS \
-	uninstall-man uninstall-mounthelperPROGRAMS \
+	uninstall-dist_zfsexecSCRIPTS uninstall-dist_zpoolcompatDATA \
+	uninstall-dist_zpoolexecSCRIPTS uninstall-extraHEADERS \
+	uninstall-i_t_hooksSCRIPTS uninstall-initSCRIPTS \
+	uninstall-initconfDATA uninstall-libLTLIBRARIES \
+	uninstall-libsplHEADERS uninstall-libspl_ia32HEADERS \
+	uninstall-libspl_rpcHEADERS uninstall-libspl_sysHEADERS \
+	uninstall-libspl_sys_dktpHEADERS uninstall-man \
+	uninstall-mounthelperPROGRAMS \
 	uninstall-nodist_bashcompletionDATA \
 	uninstall-nodist_scripts_zfs_tests_includeDATA \
 	uninstall-nodist_zedexecSCRIPTS uninstall-pammoduleLTLIBRARIES \
@@ -13659,18 +13706,18 @@ uninstall-man: uninstall-man1 uninstall-man4 uninstall-man5 \
 	install-dist_scripts_zfs_tests_includeDATA \
 	install-dist_sysconf_zfsDATA install-dist_systemdpresetDATA \
 	install-dist_udevSCRIPTS install-dist_zedconfDATA \
-	install-dist_zedexecSCRIPTS install-dist_zpoolcompatDATA \
-	install-dist_zpoolexecSCRIPTS install-dvi install-dvi-am \
-	install-exec install-exec-am install-exec-hook \
-	install-exec-local install-extraHEADERS install-html \
-	install-html-am install-i_t_hooksSCRIPTS install-info \
-	install-info-am install-initSCRIPTS install-initconfDATA \
-	install-libLTLIBRARIES install-libsplHEADERS \
-	install-libspl_ia32HEADERS install-libspl_rpcHEADERS \
-	install-libspl_sysHEADERS install-libspl_sys_dktpHEADERS \
-	install-man install-man1 install-man4 install-man5 \
-	install-man7 install-man8 install-mounthelperPROGRAMS \
-	install-nodist_bashcompletionDATA \
+	install-dist_zedexecSCRIPTS install-dist_zfsexecSCRIPTS \
+	install-dist_zpoolcompatDATA install-dist_zpoolexecSCRIPTS \
+	install-dvi install-dvi-am install-exec install-exec-am \
+	install-exec-hook install-exec-local install-extraHEADERS \
+	install-html install-html-am install-i_t_hooksSCRIPTS \
+	install-info install-info-am install-initSCRIPTS \
+	install-initconfDATA install-libLTLIBRARIES \
+	install-libsplHEADERS install-libspl_ia32HEADERS \
+	install-libspl_rpcHEADERS install-libspl_sysHEADERS \
+	install-libspl_sys_dktpHEADERS install-man install-man1 \
+	install-man4 install-man5 install-man7 install-man8 \
+	install-mounthelperPROGRAMS install-nodist_bashcompletionDATA \
 	install-nodist_scripts_zfs_tests_includeDATA \
 	install-nodist_zedexecSCRIPTS install-pammoduleLTLIBRARIES \
 	install-pdf install-pdf-am install-pkgconfigDATA \
@@ -13705,14 +13752,15 @@ uninstall-man: uninstall-man1 uninstall-man4 uninstall-man5 \
 	uninstall-dist_sysconf_zfsDATA \
 	uninstall-dist_systemdpresetDATA uninstall-dist_udevSCRIPTS \
 	uninstall-dist_zedconfDATA uninstall-dist_zedexecSCRIPTS \
-	uninstall-dist_zpoolcompatDATA uninstall-dist_zpoolexecSCRIPTS \
-	uninstall-extraHEADERS uninstall-i_t_hooksSCRIPTS \
-	uninstall-initSCRIPTS uninstall-initconfDATA \
-	uninstall-libLTLIBRARIES uninstall-libsplHEADERS \
-	uninstall-libspl_ia32HEADERS uninstall-libspl_rpcHEADERS \
-	uninstall-libspl_sysHEADERS uninstall-libspl_sys_dktpHEADERS \
-	uninstall-man uninstall-man1 uninstall-man4 uninstall-man5 \
-	uninstall-man7 uninstall-man8 uninstall-mounthelperPROGRAMS \
+	uninstall-dist_zfsexecSCRIPTS uninstall-dist_zpoolcompatDATA \
+	uninstall-dist_zpoolexecSCRIPTS uninstall-extraHEADERS \
+	uninstall-i_t_hooksSCRIPTS uninstall-initSCRIPTS \
+	uninstall-initconfDATA uninstall-libLTLIBRARIES \
+	uninstall-libsplHEADERS uninstall-libspl_ia32HEADERS \
+	uninstall-libspl_rpcHEADERS uninstall-libspl_sysHEADERS \
+	uninstall-libspl_sys_dktpHEADERS uninstall-man uninstall-man1 \
+	uninstall-man4 uninstall-man5 uninstall-man7 uninstall-man8 \
+	uninstall-mounthelperPROGRAMS \
 	uninstall-nodist_bashcompletionDATA \
 	uninstall-nodist_scripts_zfs_tests_includeDATA \
 	uninstall-nodist_zedexecSCRIPTS uninstall-pammoduleLTLIBRARIES \
