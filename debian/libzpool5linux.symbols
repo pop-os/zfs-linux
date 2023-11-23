@@ -1740,6 +1740,8 @@ libzpool.so.5 libzpool5linux #MINVER#
  (arch=amd64)sha256_avx_impl@Base 2.2.0
  sha256_generic_impl@Base 2.2.0
  sha256_get_ops@Base 2.2.0
+ (arch=ppc64el)sha256_power8_impl@Base 2.2.1
+ (arch=ppc64el)sha256_ppc_impl@Base 2.2.1
  (arch=amd64)sha256_shani_impl@Base 2.2.0
  (arch=amd64)sha256_ssse3_impl@Base 2.2.0
  (arch=amd64)sha256_x64_impl@Base 2.2.0
@@ -1749,6 +1751,8 @@ libzpool.so.5 libzpool5linux #MINVER#
  (arch=amd64)sha512_avx_impl@Base 2.2.0
  sha512_generic_impl@Base 2.2.0
  sha512_get_ops@Base 2.2.0
+ (arch=ppc64el)sha512_power8_impl@Base 2.2.1
+ (arch=ppc64el)sha512_ppc_impl@Base 2.2.1
  (arch=amd64)sha512_x64_impl@Base 2.2.0
  show_pool_stats@Base 0.8.2
  skein_mod_fini@Base 0.8.2
@@ -3062,12 +3066,16 @@ libzpool.so.5 libzpool5linux #MINVER#
  zfs_setproctitle@Base 2.2.0
  zfs_setproctitle_init@Base 2.2.0
  zfs_sha256_ops@Base 2.2.0
+ (arch=ppc64el)zfs_sha256_power8@Base 2.2.1
+ (arch=ppc64el)zfs_sha256_ppc@Base 2.2.1
  (arch=amd64)zfs_sha256_transform_avx2@Base 2.2.0
  (arch=amd64)zfs_sha256_transform_avx@Base 2.2.0
  (arch=amd64)zfs_sha256_transform_shani@Base 2.2.0
  (arch=amd64)zfs_sha256_transform_ssse3@Base 2.2.0
  (arch=amd64)zfs_sha256_transform_x64@Base 2.2.0
  zfs_sha512_ops@Base 2.2.0
+ (arch=ppc64el)zfs_sha512_power8@Base 2.2.1
+ (arch=ppc64el)zfs_sha512_ppc@Base 2.2.1
  (arch=amd64)zfs_sha512_transform_avx2@Base 2.2.0
  (arch=amd64)zfs_sha512_transform_avx@Base 2.2.0
  (arch=amd64)zfs_sha512_transform_x64@Base 2.2.0
