@@ -1,4 +1,3 @@
-#unapplied/init-debian-openrc-workaround.patch # OpenRC users can apply this locally
 1000-dont-symlink-zed-scripts.patch
 1001-Prevent-manual-builds-in-the-DKMS-source.patch
 1002-Check-for-META-and-DCH-consistency-in-autoconf.patch
@@ -14,15 +13,8 @@ move-arcstat-1-to-8.patch
 skip-on-PREEMPT_RT.patch
 zzstd-version-bump.patch
 cross-compile.patch
-#ubuntu/0001-Revert-etc-systemd-zfs-mount-generator-serialise-han.patch
-#ubuntu/0002-Revert-etc-systemd-zfs-mount-generator-output-tweaks.patch
-#ubuntu/0003-Revert-etc-systemd-zfs-mount-generator-rewrite-in-C.patch
-#ubuntu/4000-zsys-support.patch
-#ubuntu/4100-disable-bpool-upgrade.patch
-#ubuntu/zfs-mount-container-start.patch
-#ubuntu/4510-silently-ignore-modprobe-failure.patch
-#ubuntu/4751-suppress-types.patch
 0006-rootdelay-on-zfs-should-be-adaptive.patch
 0009-zdb-zero-pad-checksum-output.patch
 0010-zdb-zero-pad-checksum-output-follow-up.patch
 check-fpu-on-aarch64.patch
+default-zfs_dmu_offset_next_sync-to-0-to-mitigate-data-corruption.patch

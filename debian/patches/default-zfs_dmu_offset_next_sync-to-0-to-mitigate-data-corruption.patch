@@ -1,0 +1,42 @@
+Author: Shengqi Chen <harry-chen@outlook.com>
+Forwarded: no
+Last-Update: 2023-11-28
+Bug: https://github.com/openzfs/zfs/issues/15526
+Origin: https://github.com/emaste/freebsd/commit/b86d96fb34e8172fb823f93efe00fdcec66b9656
+Description: default zfs_dmu_offset_next_sync to 0 to mitigate data corruption bug.
+ Adapted from FreeBSD patch.
+Index: zfs-linux/man/man4/zfs.4
+===================================================================
+--- zfs-linux.orig/man/man4/zfs.4
++++ zfs-linux/man/man4/zfs.4
+@@ -15,7 +15,7 @@
+ .\" own identifying information:
+ .\" Portions Copyright [yyyy] [name of copyright owner]
+ .\"
+-.Dd January 10, 2023
++.Dd November 27, 2023
+ .Dt ZFS 4
+ .Os
+ .
+@@ -1646,7 +1646,7 @@ Allow no-operation writes.
+ The occurrence of nopwrites will further depend on other pool properties
+ .Pq i.a. the checksumming and compression algorithms .
+ .
+-.It Sy zfs_dmu_offset_next_sync Ns = Ns Sy 1 Ns | Ns 0 Pq int
++.It Sy zfs_dmu_offset_next_sync Ns = Ns Sy 0 Ns | Ns 1 Pq int
+ Enable forcing TXG sync to find holes.
+ When enabled forces ZFS to sync data when
+ .Sy SEEK_HOLE No or Sy SEEK_DATA
+Index: zfs-linux/module/zfs/dmu.c
+===================================================================
+--- zfs-linux.orig/module/zfs/dmu.c
++++ zfs-linux/module/zfs/dmu.c
+@@ -80,7 +80,7 @@ unsigned long zfs_per_txg_dirty_frees_percent = 30;
+  * Disabling this option will result in holes never being reported in dirty
+  * files which is always safe.
+  */
+-int zfs_dmu_offset_next_sync = 1;
++int zfs_dmu_offset_next_sync = 0;
+ 
+ /*
+  * Limit the amount we can prefetch with one call to this amount.  This
