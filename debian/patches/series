@@ -18,3 +18,4 @@ cross-compile.patch
 0010-zdb-zero-pad-checksum-output-follow-up.patch
 check-fpu-on-aarch64.patch
 default-zfs_dmu_offset_next_sync-to-0-to-mitigate-data-corruption.patch
+check-dnode-and-data-for-dirtiness.patch
