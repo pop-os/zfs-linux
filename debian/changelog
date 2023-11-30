@@ -1,4 +1,4 @@
-zfs-linux (2.1.13-2) UNRELEASED; urgency=medium
+zfs-linux (2.1.13-2) unstable; urgency=high
 
   * Add patch to mitigate data corruption bug
 
