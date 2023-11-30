@@ -1,3 +1,9 @@
+zfs-linux (2.1.13-3) UNRELEASED; urgency=high
+
+  * Cherry-pick another patch to fix data corruption bug
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Thu, 30 Nov 2023 15:53:45 +0800
+
 zfs-linux (2.1.13-2) unstable; urgency=high
 
   * Add patch to mitigate data corruption bug
