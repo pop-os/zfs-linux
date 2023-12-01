@@ -1,3 +1,10 @@
+zfs-linux (2.1.14-1) UNRELEASED; urgency=medium
+
+  * New upstream version 2.1.14
+  * Remove already merged emergency patches
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 01 Dec 2023 11:54:54 +0800
+
 zfs-linux (2.1.13-3) unstable; urgency=high
 
   * Cherry-pick another patch to fix data corruption bug
