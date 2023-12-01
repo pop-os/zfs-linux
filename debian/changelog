@@ -1,4 +1,4 @@
-zfs-linux (2.1.14-1) UNRELEASED; urgency=high
+zfs-linux (2.1.14-1) unstable; urgency=high
 
   * New upstream version 2.1.14 (Closes: #1056752, CVE-2023-49298)
   * Remove already merged emergency patches
