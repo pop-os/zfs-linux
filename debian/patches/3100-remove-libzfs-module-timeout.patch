@@ -1,11 +1,10 @@
-Reduce the timeout to zero seconds when running in a container (LP: #1760173)
-
-When inside a lxd container with zfs storage, zfs list or zpool status
-appears to hang, no output for 10 seconds. Check if we are inside a
-container and set the timeout to zero in this specific case.
-
----
-
+Description: Reduce the timeout to zero seconds when running in a container (LP: #1760173)
+ When inside a lxd container with zfs storage, zfs list or zpool status
+ appears to hang, no output for 10 seconds. Check if we are inside a
+ container and set the timeout to zero in this specific case.
+Origin: ubuntu
+Forwarded: not-needed
+Bug: https://bugs.launchpad.net/ubuntu/+source/zfs-linux/+bug/1760173
 Index: zfs-linux/lib/libzfs/os/linux/libzfs_util_os.c
 ===================================================================
 --- zfs-linux.orig/lib/libzfs/os/linux/libzfs_util_os.c

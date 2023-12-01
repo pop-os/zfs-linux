@@ -1,6 +1,6 @@
 Description: force libtool to produce verbose output
 Author: Mo Zhou
-Forwarded: no need
+Forwarded: not-needed
 Index: zfs-linux/config/Rules.am
 ===================================================================
 --- zfs-linux.orig/config/Rules.am

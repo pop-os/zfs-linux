@@ -4,7 +4,8 @@ Description: Bump zzstd.ko module version number.
   one. Append zfs package version to zzstd module version number, to
   make dkms module versions higher than kernel prebuilt ones.
 Author: Dimitri John Ledkov <dimitri.ledkov@canonical.com>
-
+Origin: ubuntu
+Forwarded: not-needed
 Index: zfs-linux/module/zstd/zfs_zstd.c
 ===================================================================
 --- zfs-linux.orig/module/zstd/zfs_zstd.c

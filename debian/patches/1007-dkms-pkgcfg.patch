@@ -1,3 +1,4 @@
+Forwarded: not-needed
 Index: zfs-linux/scripts/dkms.mkconf
 ===================================================================
 --- zfs-linux.orig/scripts/dkms.mkconf
