@@ -1,3 +1,13 @@
+zfs-linux (2.2.2-1~exp1) UNRELEASED; urgency=high
+
+  [ Mo Zhou ]
+  * Add several new symbols for ppc64el.
+
+  [ Shengqi Chen ]
+  * New upstream version 2.2.2
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 01 Dec 2023 12:26:32 +0800
+
 zfs-linux (2.2.1-1~exp2) experimental; urgency=medium
 
   * Add patch to fix compiling on armel
