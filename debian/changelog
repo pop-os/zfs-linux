@@ -1,4 +1,4 @@
-zfs-linux (2.2.2-1~exp1) UNRELEASED; urgency=high
+zfs-linux (2.2.2-1~exp1) experimental; urgency=high
 
   [ Mo Zhou ]
   * Add several new symbols for ppc64el.
