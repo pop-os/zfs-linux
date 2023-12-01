@@ -1,4 +1,4 @@
-zfs-linux (2.1.13-3) UNRELEASED; urgency=high
+zfs-linux (2.1.13-3) unstable; urgency=high
 
   * Cherry-pick another patch to fix data corruption bug
 
