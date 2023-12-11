@@ -1,9 +1,9 @@
 Description: relocate the executable path
 Forwarded: no need
-Index: zfs-linux/etc/systemd/system/zfs-volume-wait.service.in
+Index: zfs/etc/systemd/system/zfs-volume-wait.service.in
 ===================================================================
---- zfs-linux.orig/etc/systemd/system/zfs-volume-wait.service.in
-+++ zfs-linux/etc/systemd/system/zfs-volume-wait.service.in
+--- zfs.orig/etc/systemd/system/zfs-volume-wait.service.in
++++ zfs/etc/systemd/system/zfs-volume-wait.service.in
 @@ -9,7 +9,7 @@ ConditionPathIsDirectory=/sys/module/zfs
  Type=oneshot
  RemainAfterExit=yes

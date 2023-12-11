@@ -8,10 +8,10 @@ Description: Support zsys systems
 Author: Jean-Baptiste Lallement <jean.baptiste@ubuntu.com>
         Didier Roche <didrocks@ubuntu.com>
 Last-Update: 2019-06-06
-Index: zfs-linux-2.1.2/etc/systemd/system-generators/zfs-mount-generator.in
+Index: zfs/etc/systemd/system-generators/zfs-mount-generator.in
 ===================================================================
---- zfs-linux-2.1.2.orig/etc/systemd/system-generators/zfs-mount-generator.in
-+++ zfs-linux-2.1.2/etc/systemd/system-generators/zfs-mount-generator.in
+--- zfs.orig/etc/systemd/system-generators/zfs-mount-generator.in
++++ zfs/etc/systemd/system-generators/zfs-mount-generator.in
 @@ -30,6 +30,8 @@ FSLIST="@sysconfdir@/zfs/zfs-list.cache"
  [ -d "${FSLIST}" ] || exit 0
  [ "$(echo "${FSLIST}"/*)" = "${FSLIST}/*" ] && exit 0
@@ -200,10 +200,10 @@ Index: zfs-linux-2.1.2/etc/systemd/system-generators/zfs-mount-generator.in
  for cachefile in "${FSLIST}/"* ; do
    # Disable glob expansion to protect against special characters when parsing.
    set -f
-Index: zfs-linux-2.1.2/contrib/initramfs/scripts/zfs
+Index: zfs/contrib/initramfs/scripts/zfs
 ===================================================================
---- zfs-linux-2.1.2.orig/contrib/initramfs/scripts/zfs
-+++ zfs-linux-2.1.2/contrib/initramfs/scripts/zfs
+--- zfs.orig/contrib/initramfs/scripts/zfs
++++ zfs/contrib/initramfs/scripts/zfs
 @@ -66,6 +66,20 @@ get_fs_value()
  	"${ZFS}" get -H -ovalue "$value" "$fs" 2> /dev/null
  }
@@ -225,7 +225,7 @@ Index: zfs-linux-2.1.2/contrib/initramfs/scripts/zfs
  # Find the 'bootfs' property on pool $1.
  # If the property does not contain '/', then ignore this
  # pool by exporting it again.
-@@ -483,16 +497,17 @@ clone_snap()
+@@ -506,16 +520,17 @@ clone_snap()
  	snap="$1"
  	destfs="$2"
  	mountpoint="$3"
@@ -249,7 +249,7 @@ Index: zfs-linux-2.1.2/contrib/initramfs/scripts/zfs
  	ZFS_CMD="${ZFS_CMD} $snap $destfs"
  	ZFS_STDERR="$(${ZFS_CMD} 2>&1)"
  	ZFS_ERROR="$?"
-@@ -611,6 +626,15 @@ setup_snapshot_booting()
+@@ -634,6 +649,15 @@ setup_snapshot_booting()
  	snapname="${snap##*@}"
  	ZFS_BOOTFS="${rootfs}_${snapname}"
  
@@ -265,7 +265,7 @@ Index: zfs-linux-2.1.2/contrib/initramfs/scripts/zfs
  	if ! grep -qiE '(^|[^\\](\\\\)* )(rollback)=(on|yes|1)( |$)' /proc/cmdline
  	then
  		# If the destination dataset for the clone
-@@ -640,10 +664,18 @@ setup_snapshot_booting()
+@@ -665,10 +689,17 @@ setup_snapshot_booting()
  			#       rpool/ROOT/debian/boot@snap2	=> rpool/ROOT/debian_snap2/boot
  			#       rpool/ROOT/debian/usr@snap2	=> rpool/ROOT/debian_snap2/usr
  			#       rpool/ROOT/debian/var@snap2	=> rpool/ROOT/debian_snap2/var
@@ -273,9 +273,8 @@ Index: zfs-linux-2.1.2/contrib/initramfs/scripts/zfs
 +			# For zsys, we have stable root dataset names with uid, so:
 +			#       rpool/ROOT/debian_uid1@snap2		=> rpool/ROOT/debian_uid2
 +			#       rpool/ROOT/debian_uid1/boot@snap2	=> rpool/ROOT/debian_uid2/boot
-+
- 			subfs="${s##$rootfs}"
- 			subfs="${subfs%%@$snapname}"
+ 			subfs="${s##"$rootfs"}"
+ 			subfs="${subfs%%@"$snapname"}"
  
  			destfs="${rootfs}_${snapname}" # base fs.
 +			if [ "${use_zsys}" = "yes" ]; then
@@ -284,7 +283,7 @@ Index: zfs-linux-2.1.2/contrib/initramfs/scripts/zfs
  			[ -n "$subfs" ] && destfs="${destfs}$subfs" # + sub fs.
  
  			# Get the mountpoint of the filesystem, to be used
-@@ -660,9 +692,38 @@ setup_snapshot_booting()
+@@ -685,9 +716,38 @@ setup_snapshot_booting()
  				fi
  			fi
  
@@ -324,7 +323,7 @@ Index: zfs-linux-2.1.2/contrib/initramfs/scripts/zfs
  			    retval=$((retval + 1))
  		fi
  	done
-@@ -887,6 +948,38 @@ mountroot()
+@@ -912,6 +972,38 @@ mountroot()
  		shell
  	fi
  
@@ -361,9 +360,9 @@ Index: zfs-linux-2.1.2/contrib/initramfs/scripts/zfs
 +	fi
 +
  	# In case the pool was specified as guid, resolve guid to name
- 	pool="$("${ZPOOL}" get name,guid -o name,value -H | \
+ 	pool="$("${ZPOOL}" get -H -o name,value name,guid | \
  	    awk -v pool="${ZFS_RPOOL}" '$2 == pool { print $1 }')"
-@@ -906,6 +999,8 @@ mountroot()
+@@ -931,6 +1023,8 @@ mountroot()
  		# Booting from a snapshot?
  		# Will overwrite the ZFS_BOOTFS variable like so:
  		#   rpool/ROOT/debian@snap2 => rpool/ROOT/debian_snap2
@@ -372,7 +371,7 @@ Index: zfs-linux-2.1.2/contrib/initramfs/scripts/zfs
  		echo "${ZFS_BOOTFS}" | grep -q '@' && \
  		    setup_snapshot_booting "${ZFS_BOOTFS}"
  	fi
-@@ -943,13 +1038,23 @@ mountroot()
+@@ -968,13 +1062,23 @@ mountroot()
  	# Go through the complete list (recursively) of all filesystems below
  	# the real root dataset
  	filesystems="$("${ZFS}" list -oname -tfilesystem -H -r "${ZFS_BOOTFS}")"
@@ -396,7 +395,7 @@ Index: zfs-linux-2.1.2/contrib/initramfs/scripts/zfs
  		mount_fs "$fs"
  	done
  
-@@ -995,3 +1100,8 @@ mountroot()
+@@ -1020,3 +1124,8 @@ mountroot()
  		fi
  	fi
  }

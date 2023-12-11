@@ -1,0 +1,53 @@
+From 6421369c66912141fd769e26128aae7c0684df75 Mon Sep 17 00:00:00 2001
+From: Dimitri John Ledkov <dimitri.ledkov@canonical.com>
+Date: Wed, 24 May 2023 11:31:38 +0100
+Subject: [PATCH 2/2] Revert "Enable -Wwrite-strings" for the mount generator
+ only.
+
+This partially reverts commit a926aab902ac5c680f4766568d19674b80fb58bb.
+---
+ .../system-generators/zfs-mount-generator.c       | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
+
+diff --git a/etc/systemd/system-generators/zfs-mount-generator.c b/etc/systemd/system-generators/zfs-mount-generator.c
+index b07574e72a..f4c6c26a0b 100644
+--- a/etc/systemd/system-generators/zfs-mount-generator.c
++++ b/etc/systemd/system-generators/zfs-mount-generator.c
+@@ -681,28 +681,25 @@ line_worker(char *line, const char *cachefile)
+ 	}
+ 	*(tofree++) = linktgt;
+ 
+-	struct dep {
+-		const char *type;
+-		char *list;
+-	} deps[] = {
++	char *dependencies[][2] = {
+ 		{"wants", wantedby},
+ 		{"requires", requiredby},
+ 		{}
+ 	};
+-	for (struct dep *dep = deps; dep->type; ++dep) {
+-		if (!dep->list)
++	for (__typeof__(&*dependencies) dep = &*dependencies; **dep; ++dep) {
++		if (!(*dep)[1])
+ 			continue;
+ 
+-		for (char *reqby = strtok_r(dep->list, " ", &toktmp);
++		for (char *reqby = strtok_r((*dep)[1], " ", &toktmp);
+ 		    reqby;
+ 		    reqby = strtok_r(NULL, " ", &toktmp)) {
+ 			char *depdir;
+ 			if (asprintf(
+-			    &depdir, "%s.%s", reqby, dep->type) == -1) {
++			    &depdir, "%s.%s", reqby, (*dep)[0]) == -1) {
+ 				fprintf(stderr, PROGNAME "[%d]: %s: "
+ 				    "out of memory for dependent dir name "
+ 				    "\"%s.%s\"!\n",
+-				    getpid(), dataset, reqby, dep->type);
++				    getpid(), dataset, reqby, (*dep)[0]);
+ 				continue;
+ 			}
+ 
+-- 
+2.34.1
+

@@ -19,45 +19,9 @@ Signed-off-by: Dimitri John Ledkov <dimitri.ledkov@canonical.com>
  delete mode 100644 etc/systemd/system-generators/zfs-mount-generator.c
  create mode 100755 etc/systemd/system-generators/zfs-mount-generator.in
 
-diff --git a/Makefile.am b/Makefile.am
-index 34fe16ce41..d4e69a749c 100644
---- a/Makefile.am
-+++ b/Makefile.am
-@@ -8,7 +8,7 @@ SUBDIRS += rpm
- endif
- 
- if CONFIG_USER
--SUBDIRS += man scripts lib tests cmd etc contrib
-+SUBDIRS += etc man scripts lib tests cmd contrib
- if BUILD_LINUX
- SUBDIRS += udev
- endif
-diff --git a/etc/systemd/system-generators/Makefile.am b/etc/systemd/system-generators/Makefile.am
-index e5920bf392..fee88dad8c 100644
---- a/etc/systemd/system-generators/Makefile.am
-+++ b/etc/systemd/system-generators/Makefile.am
-@@ -1,14 +1,6 @@
--include $(top_srcdir)/config/Rules.am
-+include $(top_srcdir)/config/Substfiles.am
- 
--systemdgenerator_PROGRAMS = \
-+systemdgenerator_SCRIPTS = \
- 	zfs-mount-generator
- 
--zfs_mount_generator_SOURCES = \
--	zfs-mount-generator.c
--
--zfs_mount_generator_LDADD = \
--	$(abs_top_builddir)/lib/libzfs/libzfs.la
--
--zfs_mount_generator_LDFLAGS = -pthread
--
--include $(top_srcdir)/config/CppCheck.am
-+SUBSTFILES += $(systemdgenerator_SCRIPTS)
-diff --git a/etc/systemd/system-generators/zfs-mount-generator.c b/etc/systemd/system-generators/zfs-mount-generator.c
-deleted file mode 100644
-index 8deeed9df0..0000000000
---- a/etc/systemd/system-generators/zfs-mount-generator.c
+Index: zfs/etc/systemd/system-generators/zfs-mount-generator.c
+===================================================================
+--- zfs.orig/etc/systemd/system-generators/zfs-mount-generator.c
 +++ /dev/null
 @@ -1,1089 +0,0 @@
 -/*
@@ -1149,11 +1113,10 @@ index 8deeed9df0..0000000000
 -
 -	_exit(ret);
 -}
-diff --git a/etc/systemd/system-generators/zfs-mount-generator.in b/etc/systemd/system-generators/zfs-mount-generator.in
-new file mode 100755
-index 0000000000..c276fbbce5
+Index: zfs/etc/systemd/system-generators/zfs-mount-generator.in
+===================================================================
 --- /dev/null
-+++ b/etc/systemd/system-generators/zfs-mount-generator.in
++++ zfs/etc/systemd/system-generators/zfs-mount-generator.in
 @@ -0,0 +1,474 @@
 +#!/bin/sh
 +
@@ -1629,6 +1592,28 @@ index 0000000000..c276fbbce5
 +    done
 +  )
 +done
--- 
-2.32.0
-
+Index: zfs/etc/Makefile.am
+===================================================================
+--- zfs.orig/etc/Makefile.am
++++ zfs/etc/Makefile.am
+@@ -78,18 +78,10 @@ systemd-install-data-hook:
+ 	ln -sf /dev/null "$(DESTDIR)$(systemdunitdir)/zfs-load-key.service"
+ 
+ 
+-systemdgenerator_PROGRAMS = \
++systemdgenerator_SCRIPTS = \
+ 	%D%/systemd/system-generators/zfs-mount-generator
+ 
+-%C%_systemd_system_generators_zfs_mount_generator_SOURCES = \
+-	%D%/systemd/system-generators/zfs-mount-generator.c
+-
+-%C%_systemd_system_generators_zfs_mount_generator_LDADD = \
+-	libzfs.la
+-
+-%C%_systemd_system_generators_zfs_mount_generator_LDFLAGS = -pthread
+-
+-CPPCHECKTARGETS += $(systemdgenerator_PROGRAMS)
++SUBSTFILES += $(systemdgenerator_SCRIPTS)
+ endif
+ 
+ 

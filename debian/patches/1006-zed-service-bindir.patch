@@ -13,10 +13,10 @@ Index: zfs-linux/etc/systemd/system/zfs-zed.service.in
 ===================================================================
 --- zfs-linux.orig/etc/systemd/system/zfs-zed.service.in
 +++ zfs-linux/etc/systemd/system/zfs-zed.service.in
-@@ -5,7 +5,7 @@ ConditionPathIsDirectory=/sys/module/zfs
+@@ -4,7 +4,7 @@ Documentation=man:zed(8)
+ ConditionPathIsDirectory=/sys/module/zfs
  
  [Service]
- EnvironmentFile=-@initconfdir@/zfs
 -ExecStart=@sbindir@/zed -F
 +ExecStart=/usr/sbin/zed -F
  Restart=always
@@ -26,7 +26,7 @@ Index: zfs-linux/etc/zfs/zfs-functions.in
 ===================================================================
 --- zfs-linux.orig/etc/zfs/zfs-functions.in
 +++ zfs-linux/etc/zfs/zfs-functions.in
-@@ -88,7 +88,7 @@ fi
+@@ -87,7 +87,7 @@ fi
  
  # Paths to what we need
  ZFS="@sbindir@/zfs"

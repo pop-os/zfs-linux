@@ -1,10 +1,10 @@
 Description: force libtool to produce verbose output
 Author: Mo Zhou
 Forwarded: no need
-Index: zfs-linux/config/Rules.am
+Index: zfs/config/Rules.am
 ===================================================================
---- zfs-linux.orig/config/Rules.am
-+++ zfs-linux/config/Rules.am
+--- zfs.orig/config/Rules.am
++++ zfs/config/Rules.am
 @@ -12,7 +12,7 @@ AM_CPPFLAGS = \
  	-I$(top_srcdir)/lib/libspl/include \
  	-I$(top_srcdir)/lib/libspl/include/os/@ac_system_l@
