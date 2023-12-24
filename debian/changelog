@@ -1,4 +1,4 @@
-zfs-linux (2.2.2-1) UNRELEASED; urgency=medium
+zfs-linux (2.2.2-1) unstable; urgency=medium
 
   * libzpool5linux: add additional symbols for arch-specific implementations
   * Remove already applied patch for CVE-2013-20001
