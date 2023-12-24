@@ -1,5 +1,5 @@
 Description: relocate the executable path
-Forwarded: no need
+Forwarded: not-needed
 Index: zfs-linux/etc/systemd/system/zfs-volume-wait.service.in
 ===================================================================
 --- zfs-linux.orig/etc/systemd/system/zfs-volume-wait.service.in

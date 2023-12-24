@@ -5,6 +5,7 @@ Date:   Fri Jan 15 14:26:42 2021 +0800
     Move arcstat(1) to arcstat(8) to avoid conflict with binary package nordugrid-arc-client.
     We regenerate Makefile.in, so we don't have to modify them explicitly here.
 
+Forwarded: not needed
 Index: zfs-linux/man/man8/arcstat.8
 ===================================================================
 --- /dev/null
