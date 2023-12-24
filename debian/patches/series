@@ -23,3 +23,4 @@ cross-compile.patch
 #ubuntu/4751-suppress-types.patch
 check-fpu-on-aarch64.patch
 fix-icp-sha2-on-armel.patch
+workaround-for-gpl-symbols-on-riscv.patch
