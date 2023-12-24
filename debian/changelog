@@ -1,3 +1,10 @@
+zfs-linux (2.2.2-1) UNRELEASED; urgency=medium
+
+  * libzpool5linux: add additional symbols for arch-specific implementations
+  * Remove already applied patch for CVE-2013-20001
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Sun, 24 Dec 2023 13:39:42 +0800
+
 zfs-linux (2.2.2-1~exp1) experimental; urgency=high
 
   [ Mo Zhou ]
