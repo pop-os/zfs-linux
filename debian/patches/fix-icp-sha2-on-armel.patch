@@ -1,13 +1,16 @@
-Description: icp/asm-asm/sha2: Remove hardcoded __ARM_ARCH__.
- This patch avoids compilation error on early ARM architectures.
+Description: icp/asm-asm/sha2: Fix compilation and enable non-SIMD kernerls.
+ See upstream pull request for more information
 Author: Shengqi Chen <harry-chen@outlook.com>
 Bug: https://github.com/openzfs/zfs/pull/15557
-Last-Update: 2023-11-22
+Bug: https://github.com/openzfs/zfs/pull/15623
+Forwarded: yes
+Applied-Upstream: master
+Last-Update: 2023-12-24
 
 Index: zfs-linux/module/icp/asm-arm/sha2/sha256-armv7.S
-===================================================================
+=======================================================
 --- zfs-linux.orig/module/icp/asm-arm/sha2/sha256-armv7.S
-+++ zfs-linug/module/icp/asm-arm/sha2/sha256-armv7.S
++++ zfs-linux/module/icp/asm-arm/sha2/sha256-armv7.S
 @@ -21,8 +21,11 @@
  
  #if defined(__arm__)
@@ -21,21 +24,23 @@ Index: zfs-linux/module/icp/asm-arm/sha2/sha256-armv7.S
  
  #if defined(__thumb2__)
  .syntax unified
-@@ -1846,7 +1849,11 @@
- 	stmdb	sp!,{r4-r12,lr}
+@@ -1834,6 +1837,7 @@
+ #endif
+ .size	zfs_sha256_block_armv7,.-zfs_sha256_block_armv7
  
- 	sub	r11,sp,#16*4+16
-+#if __ARM_ARCH__>=7
- 	adr	r14,K256
-+#else
-+	ldr	r14,=K256
-+#endif
- 	bic	r11,r11,#15		@ align for 128-bit stores
- 	mov	r12,sp
- 	mov	sp,r11			@ alloca
-
++#if __ARM_ARCH__ >= 7
+ .arch	armv7-a
+ .fpu	neon
+ 
+@@ -2766,4 +2770,5 @@
+ 	bx	lr		@ bx lr
+ .size	zfs_sha256_block_armv8,.-zfs_sha256_block_armv8
+ 
+-#endif
++#endif // #if __ARM_ARCH__ >= 7
++#endif // #if defined(__arm__)
 Index: zfs-linux/module/icp/asm-arm/sha2/sha512-armv7.S
-===================================================================
+=======================================================
 --- zfs-linux.orig/module/icp/asm-arm/sha2/sha512-armv7.S
 +++ zfs-linux/module/icp/asm-arm/sha2/sha512-armv7.S
 @@ -21,8 +21,11 @@
@@ -51,3 +56,141 @@ Index: zfs-linux/module/icp/asm-arm/sha2/sha512-armv7.S
  
  #ifndef __KERNEL__
  # define VFP_ABI_PUSH	vstmdb	sp!,{d8-d15}
+@@ -490,6 +493,7 @@
+ #endif
+ .size	zfs_sha512_block_armv7,.-zfs_sha512_block_armv7
+ 
++#if __ARM_ARCH__ >= 7
+ .arch	armv7-a
+ .fpu	neon
+ 
+@@ -1819,4 +1823,5 @@
+ 	VFP_ABI_POP
+ 	bx	lr				@ .word	0xe12fff1e
+ .size	zfs_sha512_block_neon,.-zfs_sha512_block_neon
+-#endif
++#endif // #if __ARM_ARCH__ >= 7
++#endif // #if defined(__arm__)
+Index: zfs-linux/module/icp/algs/sha2/sha256_impl.c
+=======================================================
+--- zfs-linux.orig/module/icp/algs/sha2/sha256_impl.c
++++ zfs-linux/module/icp/algs/sha2/sha256_impl.c
+@@ -118,7 +118,15 @@
+ };
+ #endif
+ 
+-#elif defined(__aarch64__) || (defined(__arm__) && __ARM_ARCH > 6)
++#elif defined(__aarch64__) || defined(__arm__)
++extern void zfs_sha256_block_armv7(uint32_t s[8], const void *, size_t);
++const sha256_ops_t sha256_armv7_impl = {
++	.is_supported = sha2_is_supported,
++	.transform = zfs_sha256_block_armv7,
++	.name = "armv7"
++};
++
++#if __ARM_ARCH > 6
+ static boolean_t sha256_have_neon(void)
+ {
+ 	return (kfpu_allowed() && zfs_neon_available());
+@@ -129,13 +137,6 @@
+ 	return (kfpu_allowed() && zfs_sha256_available());
+ }
+ 
+-extern void zfs_sha256_block_armv7(uint32_t s[8], const void *, size_t);
+-const sha256_ops_t sha256_armv7_impl = {
+-	.is_supported = sha2_is_supported,
+-	.transform = zfs_sha256_block_armv7,
+-	.name = "armv7"
+-};
+-
+ TF(zfs_sha256_block_neon, tf_sha256_neon);
+ const sha256_ops_t sha256_neon_impl = {
+ 	.is_supported = sha256_have_neon,
+@@ -149,6 +150,7 @@
+ 	.transform = tf_sha256_armv8ce,
+ 	.name = "armv8-ce"
+ };
++#endif
+ 
+ #elif defined(__PPC64__)
+ static boolean_t sha256_have_isa207(void)
+@@ -192,11 +194,13 @@
+ #if defined(__x86_64) && defined(HAVE_SSE4_1)
+ 	&sha256_shani_impl,
+ #endif
+-#if defined(__aarch64__) || (defined(__arm__) && __ARM_ARCH > 6)
++#if defined(__aarch64__) || defined(__arm__)
+ 	&sha256_armv7_impl,
++#if __ARM_ARCH > 6
+ 	&sha256_neon_impl,
+ 	&sha256_armv8_impl,
+ #endif
++#endif
+ #if defined(__PPC64__)
+ 	&sha256_ppc_impl,
+ 	&sha256_power8_impl,
+Index: zfs-linux/module/icp/algs/sha2/sha512_impl.c
+=======================================================
+--- zfs-linux.orig/module/icp/algs/sha2/sha512_impl.c
++++ zfs-linux/module/icp/algs/sha2/sha512_impl.c
+@@ -88,7 +88,7 @@
+ };
+ #endif
+ 
+-#elif defined(__aarch64__)
++#elif defined(__aarch64__) || defined(__arm__)
+ extern void zfs_sha512_block_armv7(uint64_t s[8], const void *, size_t);
+ const sha512_ops_t sha512_armv7_impl = {
+ 	.is_supported = sha2_is_supported,
+@@ -96,6 +96,7 @@
+ 	.name = "armv7"
+ };
+ 
++#if defined(__aarch64__)
+ static boolean_t sha512_have_armv8ce(void)
+ {
+ 	return (kfpu_allowed() && zfs_sha512_available());
+@@ -107,15 +108,9 @@
+ 	.transform = tf_sha512_armv8ce,
+ 	.name = "armv8-ce"
+ };
++#endif
+ 
+-#elif defined(__arm__) && __ARM_ARCH > 6
+-extern void zfs_sha512_block_armv7(uint64_t s[8], const void *, size_t);
+-const sha512_ops_t sha512_armv7_impl = {
+-	.is_supported = sha2_is_supported,
+-	.transform = zfs_sha512_block_armv7,
+-	.name = "armv7"
+-};
+-
++#if defined(__arm__) && __ARM_ARCH > 6
+ static boolean_t sha512_have_neon(void)
+ {
+ 	return (kfpu_allowed() && zfs_neon_available());
+@@ -127,6 +122,7 @@
+ 	.transform = tf_sha512_neon,
+ 	.name = "neon"
+ };
++#endif
+ 
+ #elif defined(__PPC64__)
+ TF(zfs_sha512_ppc, tf_sha512_ppc);
+@@ -164,14 +160,15 @@
+ #if defined(__x86_64) && defined(HAVE_AVX2)
+ 	&sha512_avx2_impl,
+ #endif
+-#if defined(__aarch64__)
++#if defined(__aarch64__) || defined(__arm__)
+ 	&sha512_armv7_impl,
++#if defined(__aarch64__)
+ 	&sha512_armv8_impl,
+ #endif
+ #if defined(__arm__) && __ARM_ARCH > 6
+-	&sha512_armv7_impl,
+ 	&sha512_neon_impl,
+ #endif
++#endif
+ #if defined(__PPC64__)
+ 	&sha512_ppc_impl,
+ 	&sha512_power8_impl,
