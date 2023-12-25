@@ -1736,7 +1736,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  secpolicy_zfs_proc@Base 2.0
  seq_printf@Base 0.8.2
  set_global_var@Base 0.8.2
- (arch=armhf arm64)sha256_armv7_impl@Base 2.2.0
+ (arch=armel armhf arm64)sha256_armv7_impl@Base 2.2.0
  (arch=armhf arm64)sha256_armv8_impl@Base 2.2.0
  (arch=amd64)sha256_avx2_impl@Base 2.2.0
  (arch=amd64)sha256_avx_impl@Base 2.2.0
@@ -1750,7 +1750,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  (arch=amd64)sha256_x64_impl@Base 2.2.0
  sha2_mod_fini@Base 0.8.2
  sha2_mod_init@Base 0.8.2
- (arch=armhf arm64)sha512_armv7_impl@Base 2.2.0
+ (arch=armel armhf arm64)sha512_armv7_impl@Base 2.2.0
  (arch=arm64)sha512_armv8_impl@Base 2.2.0
  (arch=amd64)sha512_avx2_impl@Base 2.2.0
  (arch=amd64)sha512_avx_impl@Base 2.2.0
