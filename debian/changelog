@@ -1,4 +1,4 @@
-zfs-linux (2.2.2-2) UNRELEASED; urgency=medium
+zfs-linux (2.2.2-2) unstable; urgency=medium
 
   * Update symbols for armel architecture
   * Add patch to check neon symbols on arm platforms
