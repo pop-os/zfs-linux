@@ -1,3 +1,9 @@
+zfs-linux (2.2.2-3) unstable; urgency=medium
+
+  * Add check for CONFIG_KERNEL_MODE_NEON in neon patch on arm platforms
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Tue, 26 Dec 2023 22:50:23 +0800
+
 zfs-linux (2.2.2-2) unstable; urgency=medium
 
   * Update symbols for armel architecture
