@@ -1,4 +1,4 @@
-zfs-linux (2.2.2-3) UNRELEASED; urgency=medium
+zfs-linux (2.2.2-3) unstable; urgency=medium
 
   * Add check for CONFIG_KERNEL_MODE_NEON in neon patch on arm platforms
 
