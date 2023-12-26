@@ -1,8 +1,8 @@
 Description: Add check for neon symbol availability
 Author: Shengqi Chen <harry-chen@outlook.com>
-Bug: https://github.com/openzfs/zfs/pull/TBD
-Forwarded: no
-Last-Update: 2023-12-25
+Bug: https://github.com/openzfs/zfs/pull/15711
+Forwarded: yes
+Last-Update: 2023-12-26
 
 Index: zfs-linux/config/kernel-fpu.m4
 =======================================================
@@ -52,7 +52,7 @@ Index: include/os/linux/kernel/linux/simd_aarch64.h
  #define	ID_AA64PFR0_EL1		sys_reg(3, 0, 0, 1, 0)
  #define	ID_AA64ISAR0_EL1	sys_reg(3, 0, 0, 6, 0)
  
-+#if defined(HAVE_KERNEL_NEON)
++#if (defined(HAVE_KERNEL_NEON) && defined(CONFIG_KERNEL_MODE_NEON))
  #define	kfpu_allowed()		1
  #define	kfpu_begin()		kernel_neon_begin()
  #define	kfpu_end()		kernel_neon_end()
@@ -72,7 +72,7 @@ Index: include/os/linux/kernel/linux/simd_arm.h
  #include <asm/elf.h>
  #include <asm/hwcap.h>
  
-+#if defined(HAVE_KERNEL_NEON)
++#if (defined(HAVE_KERNEL_NEON) && defined(CONFIG_KERNEL_MODE_NEON))
  #define	kfpu_allowed()		1
  #define	kfpu_begin()		kernel_neon_begin()
  #define	kfpu_end()		kernel_neon_end()
