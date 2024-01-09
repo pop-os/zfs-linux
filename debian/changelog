@@ -1,4 +1,4 @@
-zfs-linux (2.2.2-4) UNRELEASED; urgency=medium
+zfs-linux (2.2.2-4) unstable; urgency=medium
 
   * Cherry-pick patch to fix typo in zed.rc
 
