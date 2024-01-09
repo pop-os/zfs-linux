@@ -1,6 +1,6 @@
 Description: explicitly load the ZFS module via systemd service
 Author: Ubuntu developers
-Forward: not needed
+Forwarded: not needed
 Index: zfs-linux/etc/systemd/system/zfs-import-cache.service.in
 ===================================================================
 --- zfs-linux.orig/etc/systemd/system/zfs-import-cache.service.in

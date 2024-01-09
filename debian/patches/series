@@ -24,3 +24,4 @@ cross-compile.patch
 check-neon-on-arm.patch
 fix-icp-sha2-on-armel.patch
 workaround-for-gpl-symbols-on-riscv.patch
+fix-typo-in-zed-rc.patch
