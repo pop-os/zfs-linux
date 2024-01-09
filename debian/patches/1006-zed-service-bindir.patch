@@ -8,7 +8,7 @@ Author: Fabian Grünbichler <f.gruenbichler@proxmox.com>
 Author: Chris Dos <chris@chrisdos.com>
 Bug-Debian: https://bugs.debian.org/849813
 Bug-Debian: https://bugs.debian.org/826994
-Forwarded: no
+Forwarded: not-needed
 Index: zfs-linux/etc/systemd/system/zfs-zed.service.in
 ===================================================================
 --- zfs-linux.orig/etc/systemd/system/zfs-zed.service.in
