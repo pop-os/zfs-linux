@@ -1,3 +1,9 @@
+zfs-linux (2.2.2-4) UNRELEASED; urgency=medium
+
+  * Cherry-pick patch to fix typo in zed.rc
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Tue, 09 Jan 2024 16:14:53 +0800
+
 zfs-linux (2.2.2-3) unstable; urgency=medium
 
   * Add check for CONFIG_KERNEL_MODE_NEON in neon patch on arm platforms
