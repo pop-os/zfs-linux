@@ -2,4 +2,4 @@
 
 set -e
 
-./debian/tests/kernel-smoke-test-pool "stripped"
+./debian/tests/kernel-smoke-test-pool "striped"
