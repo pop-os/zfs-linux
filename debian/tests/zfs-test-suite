@@ -19,7 +19,7 @@ sleep 1
 zpool export -a
 
 losetup -D
-systemctl stop zfs-zed.service nfs-blkmap.service nfs-server.service nfs-client.target nfs-idmapd.service nfs-mountd.service
+systemctl stop zfs-zed.service nfs-blkmap.service nfs-server.service nfs-client.target nfs-idmapd.service nfs-mountd.service || true
 rm -f /etc/hostid
 
 testdir="$(mktemp -d)"
