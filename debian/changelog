@@ -1,3 +1,10 @@
+zfs-linux (2.2.2-5) UNRELEASED; urgency=medium
+
+  * d/tests: add missing header dependency and fix zfs-test-suite (Closes: #983661)
+  * d/tests: refactor kernel-smoke-test, add tests for draid[1-3]
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 12 Jan 2024 14:07:04 +0800
+
 zfs-linux (2.2.2-4) unstable; urgency=medium
 
   * Cherry-pick patch to fix typo in zed.rc
