@@ -18,6 +18,13 @@
 #
 
 TEST_NAME="$1"
+TMP=/tmp
+VDEV0=${TMP}/pool0-$$.img
+VDEV1=${TMP}/pool1-$$.img
+VDEV2=${TMP}/pool2-$$.img
+VDEV3=${TMP}/pool3-$$.img
+VDEV_SZ=128
+POOL=pool-smoke-$$
 
 if [ -z "$TEST_NAME" ]; then
     echo "Usage: $0 [test_name]"
@@ -59,14 +66,6 @@ case "$TEST_NAME" in
 esac
 
 echo -n "kernel smoke test, create and destroy pool, $TEST_NAME: "
-
-TMP=/tmp
-VDEV0=${TMP}/pool0-$$.img
-VDEV1=${TMP}/pool1-$$.img
-VDEV2=${TMP}/pool2-$$.img
-VDEV3=${TMP}/pool3-$$.img
-VDEV_SZ=128
-POOL=pool-smoke-$$
 
 dd if=/dev/zero of=${VDEV0} bs=1M count=${VDEV_SZ} > /dev/null 2>&1
 dd if=/dev/zero of=${VDEV1} bs=1M count=${VDEV_SZ} > /dev/null 2>&1
