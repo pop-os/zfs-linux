@@ -19,7 +19,7 @@
 
 TEST_NAME="$1"
 
-if [ -n "$TEST_NAME" ]; then
+if [ -z "$TEST_NAME" ]; then
     echo "Usage: $0 [test_name]"
     exit 2
 fi
