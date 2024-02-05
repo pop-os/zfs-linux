@@ -46,7 +46,7 @@ Index: zfs-linux/etc/systemd/system/zfs-load-module.service.in
 +[Service]
 +Type=oneshot
 +RemainAfterExit=yes
-+ExecStart=/sbin/modprobe zfs
++ExecStart=/usr/sbin/modprobe zfs
 +
 +[Install]
 +WantedBy=zfs-mount.service

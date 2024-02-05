@@ -5,7 +5,7 @@
 
 PREREQ="udev"
 PREREQ_UDEV_RULES="60-zvol.rules 69-vdev.rules"
-COPY_EXEC_LIST="/lib/udev/zvol_id /lib/udev/vdev_id"
+COPY_EXEC_LIST="/usr/lib/udev/zvol_id /usr/lib/udev/vdev_id"
 
 # Generic result code.
 RC=0
@@ -33,18 +33,18 @@ fi
 
 . /usr/share/initramfs-tools/hook-functions
 
-mkdir -p "$DESTDIR/lib/udev/rules.d/"
+mkdir -p "$DESTDIR/usr/lib/udev/rules.d/"
 for ii in $PREREQ_UDEV_RULES
 do
 	if [ -e "/etc/udev/rules.d/$ii" ]
 	then
-		cp -p "/etc/udev/rules.d/$ii" "$DESTDIR/lib/udev/rules.d/"
-	elif [ -e "/lib/udev/rules.d/$ii" ]
+		cp -p "/etc/udev/rules.d/$ii" "$DESTDIR/usr/lib/udev/rules.d/"
+	elif [ -e "/usr/lib/udev/rules.d/$ii" ]
 	then
-		cp -p "/lib/udev/rules.d/$ii" "$DESTDIR/lib/udev/rules.d/"
+		cp -p "/usr/lib/udev/rules.d/$ii" "$DESTDIR/usr/lib/udev/rules.d/"
 	else
 		echo "Error: Missing udev rule: $ii"
-		echo "       This file must be in the /etc/udev/rules.d or /lib/udev/rules.d directory."
+		echo "       This file must be in the /etc/udev/rules.d or /usr/lib/udev/rules.d directory."
 		exit 1
 	fi
 done

@@ -9,7 +9,7 @@ Index: zfs-linux/etc/systemd/system/zfs-volume-wait.service.in
  RemainAfterExit=yes
  EnvironmentFile=-@initconfdir@/zfs
 -ExecStart=@bindir@/zvol_wait
-+ExecStart=/sbin/zvol_wait
++ExecStart=/usr/sbin/zvol_wait
  
  [Install]
  WantedBy=zfs-volumes.target
