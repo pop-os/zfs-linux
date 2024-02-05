@@ -1,12 +1,12 @@
 zfs-linux (2.2.2-5~exp1) UNRELEASED; urgency=medium
 
-  [ Shengqi Chen ]
   * d/tests: add missing header dependency and fix zfs-test-suite
     (Closes: #983661)
   * d/tests: refactor kernel-smoke-test, add tests for draid[1-3]
   * d/: install files into /usr (Closes: #1061359)
+  * d/: move some tools out of /usr/sbin and add links for compatibility
 
- -- Shengqi Chen <harry-chen@outlook.com>  Mon, 05 Feb 2024 22:12:23 +0800
+ -- Shengqi Chen <harry-chen@outlook.com>  Mon, 05 Feb 2024 22:44:24 +0800
 
 zfs-linux (2.2.2-4) unstable; urgency=medium
 
