@@ -91,12 +91,6 @@ override_dh_auto_install:
 	@# Install the utilities.
 	$(MAKE) install DESTDIR='$(CURDIR)/debian/tmp'
 
-	# Move from bin_dir to /usr/sbin
-	mkdir -p '$(CURDIR)/debian/tmp/usr/sbin/'
-	mv '$(CURDIR)/debian/tmp/usr/bin/arc_summary' '$(CURDIR)/debian/tmp/usr/sbin/arc_summary'
-	mv '$(CURDIR)/debian/tmp/usr/bin/arcstat' '$(CURDIR)/debian/tmp/usr/sbin/arcstat'
-	mv '$(CURDIR)/debian/tmp/usr/bin/dbufstat' '$(CURDIR)/debian/tmp/usr/sbin/dbufstat'
-
 	@# Install the DKMS source.
 	@# We only want the files needed to build the modules
 	install -D -t '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/scripts' \
