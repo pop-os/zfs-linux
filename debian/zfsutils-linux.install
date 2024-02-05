@@ -31,15 +31,15 @@ usr/sbin/zhack
 usr/sbin/zpool
 usr/sbin/zstream
 usr/sbin/zstreamdump
-usr/bin/zvol_wait /usr/sbin/
-usr/bin/zilstat /usr/sbin/
+usr/bin/zvol_wait
+usr/bin/zilstat
 usr/lib/modules-load.d/
 usr/lib/zfs-linux/zfs_prepare_disk
 usr/lib/zfs-linux/zpool.d/
 usr/lib/zfs-linux/zpool_influxdb
-usr/sbin/arc_summary
-usr/sbin/arcstat
-usr/sbin/dbufstat
+usr/bin/arc_summary
+usr/bin/arcstat usr/sbin
+usr/bin/dbufstat usr/sbin
 usr/share/zfs/compatibility.d/
 usr/share/bash-completion/completions
 usr/share/man/man8/arcstat.8
