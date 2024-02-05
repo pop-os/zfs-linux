@@ -29,7 +29,19 @@
 LSMOD=/sbin/lsmod
 RMMOD=/sbin/rmmod
 MODPROBE=/sbin/modprobe
-TESTS="kernel-smoke-test-pool-2x2-mirror kernel-smoke-test-pool-4x1-mirror kernel-smoke-test-pool-nested-raidz3 kernel-smoke-test-pool-raidz1 kernel-smoke-test-pool-raidz2 kernel-smoke-test-pool-raidz3 kernel-smoke-test-pool-striped kernel-smoke-test-zil kernel-smoke-test-filesystem kernel-smoke-test-snapshot kernel-smoke-test-clone kernel-smoke-test-send-receive kernel-smoke-test-scrub kernel-smoke-test-encryption"
+TESTS="
+kernel-smoke-test-pool-striped
+kernel-smoke-test-pool-mirror
+kernel-smoke-test-pool-raidz
+kernel-smoke-test-pool-nested-raidz3
+kernel-smoke-test-pool-draid
+kernel-smoke-test-zil
+kernel-smoke-test-filesystem
+kernel-smoke-test-snapshot
+kernel-smoke-test-clone
+kernel-smoke-test-send-receive
+kernel-smoke-test-scrub
+kernel-smoke-test-encryption"
 rc=0
 #
 #  We only test on 64 bit arches for the moment

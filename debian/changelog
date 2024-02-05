@@ -1,3 +1,38 @@
+zfs-linux (2.2.2-5) UNRELEASED; urgency=medium
+
+  * d/tests: add missing header dependency and fix zfs-test-suite (Closes: #983661)
+  * d/tests: refactor kernel-smoke-test, add tests for draid[1-3]
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 12 Jan 2024 14:07:04 +0800
+
+zfs-linux (2.2.2-4) unstable; urgency=medium
+
+  * Cherry-pick patch to fix typo in zed.rc
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Tue, 09 Jan 2024 16:14:53 +0800
+
+zfs-linux (2.2.2-3) unstable; urgency=medium
+
+  * Add check for CONFIG_KERNEL_MODE_NEON in neon patch on arm platforms
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Tue, 26 Dec 2023 22:50:23 +0800
+
+zfs-linux (2.2.2-2) unstable; urgency=medium
+
+  * Update symbols for armel architecture
+  * Add patch to check neon symbols on arm platforms
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Mon, 25 Dec 2023 17:32:27 +0800
+
+zfs-linux (2.2.2-1) unstable; urgency=medium
+
+  * libzpool5linux: add additional symbols for arch-specific implementations
+  * Remove already applied patch for CVE-2013-20001
+  * Backport patch to enable non-SIMD SHA-2 kernels on armel
+  * Backport patch to workaround GPL-only symbols on riscv
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Sun, 24 Dec 2023 14:19:46 +0800
+
 zfs-linux (2.2.2-1~exp1) experimental; urgency=high
 
   [ Mo Zhou ]
@@ -46,6 +81,32 @@ zfs-linux (2.2.0-1~exp1) experimental; urgency=medium
   * Quilt refresh patchset
 
  -- Mo Zhou <lumin@debian.org>  Thu, 02 Nov 2023 20:27:52 -0400
+
+zfs-linux (2.1.14-2) UNRELEASED; urgency=medium
+
+  * libshare/nfs: backport patch from upstream to fix ipv6 addr processing (Closes: CVE-2013-20001, #1059322)
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Mon, 04 Dec 2023 17:38:21 +0800
+
+zfs-linux (2.1.14-1) unstable; urgency=high
+
+  * New upstream version 2.1.14 (Closes: #1056752, CVE-2023-49298)
+  * Remove already merged emergency patches
+  * Refine header of patches, fix series file
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 01 Dec 2023 17:17:32 +0800
+
+zfs-linux (2.1.13-3) unstable; urgency=high
+
+  * Cherry-pick another patch to fix data corruption bug
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Thu, 30 Nov 2023 15:53:45 +0800
+
+zfs-linux (2.1.13-2) unstable; urgency=high
+
+  * Add patch to mitigate data corruption bug
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Tue, 28 Nov 2023 11:47:10 +0800
 
 zfs-linux (2.1.13-1) unstable; urgency=medium
 

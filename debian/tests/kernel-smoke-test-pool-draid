@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -e
+
+./debian/tests/kernel-smoke-test-pool "draid1"
+./debian/tests/kernel-smoke-test-pool "draid2"
+./debian/tests/kernel-smoke-test-pool "draid3"

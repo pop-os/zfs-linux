@@ -1736,7 +1736,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  secpolicy_zfs_proc@Base 2.0
  seq_printf@Base 0.8.2
  set_global_var@Base 0.8.2
- (arch=armhf arm64)sha256_armv7_impl@Base 2.2.0
+ (arch=armel armhf arm64)sha256_armv7_impl@Base 2.2.0
  (arch=armhf arm64)sha256_armv8_impl@Base 2.2.0
  (arch=amd64)sha256_avx2_impl@Base 2.2.0
  (arch=amd64)sha256_avx_impl@Base 2.2.0
@@ -1750,7 +1750,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  (arch=amd64)sha256_x64_impl@Base 2.2.0
  sha2_mod_fini@Base 0.8.2
  sha2_mod_init@Base 0.8.2
- (arch=armhf arm64)sha512_armv7_impl@Base 2.2.0
+ (arch=armel armhf arm64)sha512_armv7_impl@Base 2.2.0
  (arch=arm64)sha512_armv8_impl@Base 2.2.0
  (arch=amd64)sha512_avx2_impl@Base 2.2.0
  (arch=amd64)sha512_avx_impl@Base 2.2.0
@@ -3071,8 +3071,8 @@ libzpool.so.5 libzpool5linux #MINVER#
  zfs_secpolicy_snapshot_perms@Base 0.8.2
  zfs_setproctitle@Base 2.2.0
  (arch=armel armhf arm64)zfs_sha256_block_armv7@Base 2.2.0
- (arch=armel armhf arm64)zfs_sha256_block_armv8@Base 2.2.0
- (arch=armel armhf arm64)zfs_sha256_block_neon@Base 2.2.0
+ (arch=armhf arm64)zfs_sha256_block_armv8@Base 2.2.0
+ (arch=armhf arm64)zfs_sha256_block_neon@Base 2.2.0
  zfs_setproctitle_init@Base 2.2.0
  zfs_sha256_ops@Base 2.2.0
  (arch=ppc64el)zfs_sha256_power8@Base 2.2.1
@@ -3084,7 +3084,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  (arch=amd64)zfs_sha256_transform_x64@Base 2.2.0
  (arch=armel armhf arm64)zfs_sha512_block_armv7@Base 2.2.0
  (arch=arm64)zfs_sha512_block_armv8@Base 2.2.0
- (arch=armel armhf)zfs_sha512_block_neon@Base 2.2.0
+ (arch=armhf)zfs_sha512_block_neon@Base 2.2.0
  zfs_sha512_ops@Base 2.2.0
  (arch=ppc64el)zfs_sha512_power8@Base 2.2.1
  (arch=ppc64el)zfs_sha512_ppc@Base 2.2.1

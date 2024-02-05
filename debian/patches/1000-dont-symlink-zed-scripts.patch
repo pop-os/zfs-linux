@@ -1,5 +1,5 @@
 Description: track default symlinks, instead of symlinking
-Forwarded: no need
+Forwarded: not-needed
 Index: zfs-linux/cmd/zed/zed.d/Makefile.am
 ===================================================================
 --- zfs-linux.orig/cmd/zed/zed.d/Makefile.am

@@ -1,0 +1,81 @@
+Description: compact: workaround for GPL-only symbols on riscv from Linux 6.2
+Author: Shengqi Chen <harry-chen@outlook.com>
+Bug: https://github.com/openzfs/zfs/pull/15627
+Bug: https://github.com/openzfs/zfs/pull/14974
+Forwarded: yes
+Applied-Upstream: master
+Last-Update: 2023-12-24
+
+Index: zfs-linux/config/kernel-flush_dcache_page.m4
+=======================================================
+--- zfs-linux.orig/config/kernel-flush_dcache_page.m4
++++ zfs-linux/config/kernel-flush_dcache_page.m4
+@@ -1,7 +1,8 @@
+ dnl #
+ dnl # Starting from Linux 5.13, flush_dcache_page() becomes an inline
+-dnl # function and may indirectly referencing GPL-only cpu_feature_keys on
+-dnl # powerpc
++dnl # function and may indirectly referencing GPL-only symbols:
++dnl # on powerpc: cpu_feature_keys
++dnl # on riscv: PageHuge (added from 6.2)
+ dnl #
+ 
+ dnl #
+Index: zfs-linux/config/kernel.m4
+=======================================================
+--- zfs-linux.orig/config/kernel.m4
++++ zfs-linux/config/kernel.m4
+@@ -168,6 +168,9 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_SRC], [
+ 			ZFS_AC_KERNEL_SRC_CPU_HAS_FEATURE
+ 			ZFS_AC_KERNEL_SRC_FLUSH_DCACHE_PAGE
+ 			;;
++		riscv*)
++			ZFS_AC_KERNEL_SRC_FLUSH_DCACHE_PAGE
++			;;
+ 	esac
+ 
+ 	AC_MSG_CHECKING([for available kernel interfaces])
+@@ -310,6 +313,9 @@ AC_DEFUN([ZFS_AC_KERNEL_TEST_RESULT], [
+ 			ZFS_AC_KERNEL_CPU_HAS_FEATURE
+ 			ZFS_AC_KERNEL_FLUSH_DCACHE_PAGE
+ 			;;
++		riscv*)
++			ZFS_AC_KERNEL_FLUSH_DCACHE_PAGE
++			;;
+ 	esac
+ ])
+ 
+Index: zfs-linux/include/os/linux/kernel/linux/dcache_compat.h
+=======================================================
+--- zfs-linux.orig/include/os/linux/kernel/linux/dcache_compat.h
++++ zfs-linux/include/os/linux/kernel/linux/dcache_compat.h
+@@ -42,8 +42,8 @@
+ /*
+  * Starting from Linux 5.13, flush_dcache_page() becomes an inline function
+  * and under some configurations, may indirectly referencing GPL-only
+- * cpu_feature_keys on powerpc. Override this function when it is detected
+- * being GPL-only.
++ * symbols, e.g., cpu_feature_keys on powerpc and PageHuge on riscv.
++ * Override this function when it is detected being GPL-only.
+  */
+ #if defined __powerpc__ && defined HAVE_FLUSH_DCACHE_PAGE_GPL_ONLY
+ #include <linux/simd_powerpc.h>
+@@ -53,6 +53,17 @@
+ 			clear_bit(PG_dcache_clean, &(page)->flags);	\
+ 	} while (0)
+ #endif
++/*
++ * For riscv implementation, the use of PageHuge can be safely removed.
++ * Because it handles pages allocated by HugeTLB, while flush_dcache_page
++ * in zfs module is only called on kernel pages.
++ */
++#if defined __riscv && defined HAVE_FLUSH_DCACHE_PAGE_GPL_ONLY
++#define	flush_dcache_page(page)	do {					\
++		if (test_bit(PG_dcache_clean, &(page)->flags))		\
++			clear_bit(PG_dcache_clean, &(page)->flags);	\
++	} while (0)
++#endif
+ 
+ /*
+  * 2.6.30 API change,
+
