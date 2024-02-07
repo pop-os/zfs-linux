@@ -1,7 +1,12 @@
-zfs-linux (2.2.2-5) UNRELEASED; urgency=medium
+zfs-linux (2.2.2-5~exp1) experimental; urgency=medium
 
-  * d/tests: add missing header dependency and fix zfs-test-suite (Closes: #983661)
+  [ Shengqi Chen ]
+  * d/tests: add missing header dependency and fix zfs-test-suite
+    (Closes: #983661)
   * d/tests: refactor kernel-smoke-test, add tests for draid[1-3]
+
+  [ Aron Xu ]
+  * Remove unused lintian overrides
 
  -- Shengqi Chen <harry-chen@outlook.com>  Fri, 12 Jan 2024 14:07:04 +0800
 
