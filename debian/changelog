@@ -1,3 +1,12 @@
+zfs-linux (2.2.2-5~exp3) UNRELEASED; urgency=medium
+
+  * Remove more obsolete lintian overrides
+  * d/control: zfsutils-linux now conflicts with nordugrid-arc-client
+    (Closes: #1063392)
+  * d/NEWS: add notice on usr-merge and package conflict
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Wed, 07 Feb 2024 23:11:07 +0800
+
 zfs-linux (2.2.2-5~exp2) experimental; urgency=medium
 
   * d/tests: add missing header dependency and fix zfs-test-suite
