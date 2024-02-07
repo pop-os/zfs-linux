@@ -1,3 +1,2 @@
 package-name-doesnt-match-sonames
 extra-license-file [usr/share/doc/libzfs4linux/LICENSE.gz]
-exit-in-shared-library

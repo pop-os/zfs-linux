@@ -7,7 +7,6 @@ command-in-sbin-has-manpage-in-incorrect-section
 extra-license-file [usr/share/doc/zfsutils-linux/LICENSE.gz]
 init.d-script-does-not-source-init-functions
 manpage-has-errors-from-man
-omitted-systemd-service-for-init.d-script zfs-load-key [etc/init.d/zfs-load-key]
 package-supports-alternative-init-but-no-init.d-script [lib/systemd/system/zfs-import-cache.service]
 package-supports-alternative-init-but-no-init.d-script [lib/systemd/system/zfs-import-scan.service]
 package-supports-alternative-init-but-no-init.d-script [lib/systemd/system/zfs-load-module.service]
