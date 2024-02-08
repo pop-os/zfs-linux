@@ -65,7 +65,7 @@ please use zfs-initramfs with caution.
 
  TRIM jobs are scheduled on every first Sunday of month by default.
 
-4. Setting name of home datatset other than default rpool/home
+4. Setting name of home dataset other than default rpool/home
 -------------------------------------------------------------------------
 
  libpam-zfs assumes that the location of home directories follows the

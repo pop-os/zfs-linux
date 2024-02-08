@@ -1,12 +1,12 @@
 appstream-metadata-missing-modalias-provide
-binary-without-manpage [usr/sbin/arc_summary]
-binary-without-manpage [usr/sbin/dbufstat]
-binary-without-manpage [usr/sbin/zilstat]
+no-manual-page [usr/sbin/arc_summary]
+no-manual-page [usr/sbin/dbufstat]
+no-manual-page [usr/sbin/zilstat]
 breaks-without-version openrc
-command-in-sbin-has-manpage-in-incorrect-section
+manual-page-for-system-command
 extra-license-file [usr/share/doc/zfsutils-linux/LICENSE.gz]
 init.d-script-does-not-source-init-functions
-manpage-has-errors-from-man
+groff-message
 spare-manual-page
-spelling-error-in-manpage
+typo-in-manual-page
 systemd-service-file-refers-to-unusual-wantedby-target
