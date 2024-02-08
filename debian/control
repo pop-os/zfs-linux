@@ -7,7 +7,7 @@ Uploaders: Aron Xu <aron@debian.org>,
            Mo Zhou <lumin@debian.org>,
            Shengqi Chen <harry-chen@outlook.com>
 Build-Depends: abigail-tools (>= 1.8),
-               debhelper-compat (= 12),
+               debhelper-compat (= 13),
                dh-python,
                dh-sequence-dkms,
                libaio-dev,
