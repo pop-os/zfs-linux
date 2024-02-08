@@ -4,7 +4,8 @@ Priority: optional
 Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.debian.net>
 Uploaders: Aron Xu <aron@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>,
-           Mo Zhou <lumin@debian.org>
+           Mo Zhou <lumin@debian.org>,
+           Shengqi Chen <harry-chen@outlook.com>
 Build-Depends: abigail-tools (>= 1.8),
                debhelper-compat (= 12),
                dh-python,
