@@ -1,4 +1,4 @@
-zfs-linux (2.2.2-5~exp3) UNRELEASED; urgency=medium
+zfs-linux (2.2.2-5~exp3) experimental; urgency=medium
 
   * Remove more obsolete lintian overrides
   * d/control: zfsutils-linux now conflicts with nordugrid-arc-client
