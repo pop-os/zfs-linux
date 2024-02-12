@@ -1,3 +1,11 @@
+zfs-linux (2.2.2-5~exp4) UNRELEASED; urgency=medium
+
+  * d/: update rule names in lintian-overrides, fix typos, lift dh-compat to 13
+  * d/: move arcstat back to sbin, remove conflict with nordugrid-arc-client
+    (related to #1063457)
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Mon, 12 Feb 2024 23:58:49 +0800
+
 zfs-linux (2.2.2-5~exp3) experimental; urgency=medium
 
   * Remove more obsolete lintian overrides
