@@ -38,7 +38,7 @@ usr/lib/zfs-linux/zfs_prepare_disk
 usr/lib/zfs-linux/zpool.d/
 usr/lib/zfs-linux/zpool_influxdb
 usr/bin/arc_summary
-usr/bin/arcstat usr/sbin
+usr/bin/arcstat
 usr/bin/dbufstat usr/sbin
 usr/share/zfs/compatibility.d/
 usr/share/bash-completion/completions

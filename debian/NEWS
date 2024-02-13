@@ -1,15 +1,17 @@
-zfs-linux (2.2.2-5~exp4) experimental; urgency=medium
+zfs-linux (2.2.2-5~exp3) experimental; urgency=medium
 
   zfs-linux has now opted-in usr-merge. No behavioral changes should be noted.
   
   Some tools that do not require root privilege in zfsutils-linux have been
-  moved from sbin to bin: arc_summary, zvol_wait, zilstat.
-  All users should update the absolute paths used in their scripts.
+  moved from sbin to bin: arc_summary, arcstat, zvol_wait, zilstat.
+  Symbolic links are added in sbin to keep compatibility. We encourage all
+  users to update the paths in their own use cases, as the links might be
+  removed in future versions.
 
-  As a reminder, /usr/bin/arcstat is a different binary provided by another
-  package, nordugrid-arc-client. Thus zfs-linux still use /usr/sbin/arcstat.
+  zfsutils-linux now conflicts with nordugrid-arc-client, since they both
+  provide /usr/bin/arcstat.
 
- -- Shengqi Chen <harry-chen@outlook.com>  Wed, 12 Feb 2024 23:51:37 +0800
+ -- Shengqi Chen <harry-chen@outlook.com>  Wed, 07 Feb 2024 22:56:01 +0800
 
 zfs-linux (0.8.3-1) unstable; urgency=medium
 
