@@ -178,6 +178,7 @@ libzfs.so.4 libzfs4linux #MINVER#
  fletcher_4_superscalar4_ops@Base 0.8.2
  fletcher_4_superscalar_ops@Base 0.8.2
  fletcher_init@Base 0.8.2
+ fsleep@Base 2.2.3
  get_dataset_depth@Base 0.8.2
  get_system_hostid@Base 2.2
  getexecname@Base 2.2
@@ -262,6 +263,7 @@ libzfs.so.4 libzfs4linux #MINVER#
  tpool_suspended@Base 2.2
  tpool_wait@Base 2.2
  update_vdev_config_dev_strs@Base 2.2
+ update_vdev_config_dev_sysfs_path@Base 2.2.3
  use_color@Base 2.1.11
  vdev_expand_proplist@Base 2.2
  vdev_name_to_prop@Base 2.2
@@ -472,6 +474,7 @@ libzfs.so.4 libzfs4linux #MINVER#
  zpool_disable_datasets_os@Base 2.2
  zpool_disable_volume_os@Base 2.2
  zpool_discard_checkpoint@Base 0.8.2
+ zpool_disk_wait@Base 2.2.3
  zpool_dump_ddt@Base 2.2
  zpool_enable_datasets@Base 0.8.2
  zpool_events_clear@Base 0.8.2
@@ -503,6 +506,7 @@ libzfs.so.4 libzfs4linux #MINVER#
  zpool_get_userprop@Base 2.2
  zpool_get_vdev_prop@Base 2.2
  zpool_get_vdev_prop_value@Base 2.2
+ zpool_getenv_int@Base 2.2.3
  zpool_history_unpack@Base 2.2
  zpool_import@Base 0.8.2
  zpool_import_props@Base 0.8.2
@@ -573,6 +577,7 @@ libzfs.so.4 libzfs4linux #MINVER#
  zpool_vdev_remove_wanted@Base 2.1.11
  zpool_vdev_script_alloc_env@Base 2.2.1
  zpool_vdev_script_free_env@Base 2.2.1
+ zpool_vdev_set_removed_state@Base 2.2.3
  zpool_vdev_split@Base 0.8.2
  zpool_wait@Base 2.0
  zpool_wait_status@Base 2.0

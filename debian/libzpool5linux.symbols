@@ -655,6 +655,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  dmu_objset_create_crypt_check@Base 0.8.2
  dmu_objset_create_impl@Base 0.8.2
  dmu_objset_create_impl_dnstats@Base 0.8.2
+ dmu_objset_crypto_key_equal@Base 2.2.3
  dmu_objset_disown@Base 0.8.2
  dmu_objset_dnodesize@Base 0.8.2
  dmu_objset_ds@Base 0.8.2
@@ -1220,6 +1221,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  fm_nvlist_destroy@Base 0.8.2
  fm_payload_set@Base 0.8.2
  free_from_removing_vdev@Base 0.8.2
+ fsleep@Base 2.2.3
  fzap_add@Base 0.8.2
  fzap_add_cd@Base 0.8.2
  fzap_byteswap@Base 0.8.2
@@ -2167,6 +2169,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  unique_insert@Base 0.8.2
  unique_remove@Base 0.8.2
  update_vdev_config_dev_strs@Base 2.2.0
+ update_vdev_config_dev_sysfs_path@Base 2.2.3
  urandom_path@Base 0.8.2
  utsname@Base 0.8.2
  vcmn_err@Base 0.8.2
@@ -3267,10 +3270,12 @@ libzpool.so.5 libzpool5linux #MINVER#
  zle_decompress@Base 0.8.2
  zone_get_hostid@Base 0.8.2
  zpool_default_search_paths@Base 2.2.0
+ zpool_disk_wait@Base 2.2.3
  zpool_dump_ddt@Base 2.2.0
  zpool_feature_init@Base 0.8.2
  zpool_find_config@Base 2.2.0
  zpool_get_load_policy@Base 0.8.2
+ zpool_getenv_int@Base 2.2.3
  zpool_history_unpack@Base 2.2.0
  zpool_label_disk_wait@Base 2.2.0
  zpool_name_to_prop@Base 0.8.2
