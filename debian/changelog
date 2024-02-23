@@ -1,8 +1,16 @@
 zfs-linux (2.2.3-1~exp1) UNRELEASED; urgency=medium
 
   * New upstream version 2.2.3
+    - add compatibility with Linux 6.6 (closes: #1060899)
+    - fix private mmap permission of R/O files (closes: #1052472)
+    - and many more fixes (see upstream changelog)
+  * d/patches:
+    - remove some applied / outdated patches
+    - fix a typo in 2100-zfs-load-module.patch (related: #1041857)
+    - enable ubuntu/zfs-mount-container-start.patch
+  * d/: add new symbols for libzfs4 and libzpool5
 
- -- Shengqi Chen <harry-chen@outlook.com>  Fri, 23 Feb 2024 14:14:09 +0800
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 23 Feb 2024 15:59:29 +0800
 
 zfs-linux (2.2.2-5~exp4) UNRELEASED; urgency=medium
 
