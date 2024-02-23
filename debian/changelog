@@ -1,3 +1,9 @@
+zfs-linux (2.2.3-1~exp1) UNRELEASED; urgency=medium
+
+  * New upstream version 2.2.3
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 23 Feb 2024 14:14:09 +0800
+
 zfs-linux (2.2.2-5~exp4) UNRELEASED; urgency=medium
 
   [ Shengqi Chen ]
