@@ -25,7 +25,7 @@ Index: zfs-linux/etc/systemd/system/zfs-import-scan.service.in
  Requires=systemd-udev-settle.service
 +Requires=zfs-load-module.service
  After=systemd-udev-settle.service
-+Requires=zfs-load-module.service
++After=zfs-load-module.service
  After=cryptsetup.target
  After=multipathd.service
  Before=zfs-import.target
