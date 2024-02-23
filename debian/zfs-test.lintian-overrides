@@ -1,7 +1,7 @@
 arch-dependent-file-in-usr-share
-command-in-sbin-has-manpage-in-incorrect-section
+manual-page-for-system-command
 arch-dep-package-has-big-usr-share
-manpage-without-executable
+spare-manual-page
 national-encoding [usr/share/zfs/zfs-tests/tests/functional/channel_program/lua_core/tst.lib_table.lua]
 script-not-executable [usr/share/zfs/zfs-tests/tests/functional/l2arc/l2arc.cfg]
 script-not-executable [usr/share/zfs/zfs-tests/tests/functional/trim/trim.cfg]

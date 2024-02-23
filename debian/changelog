@@ -1,3 +1,38 @@
+zfs-linux (2.2.3-1) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * d/control: add Shengqi Chen to Uploaders
+
+  [ Shengqi Chen ]
+  * New upstream version 2.2.3
+    - add compatibility with Linux 6.6 (closes: #1060899)
+    - fix private mmap permission of R/O files (closes: #1052472)
+    - ...and many more fixes (see upstream changelog)
+  * Some packaging updates:
+    - symbols: add new symbols for 2.2.3 in libzfs4 and libzpool5
+    - lintian-overrides: remove obsolete rules, update rule names
+    - README.debian: fix a typo
+    - control: lift dh-compat to 13
+    - not-installed: remove actually installed files
+    - patches:
+      + remove some outdated / applied patches
+      + fix a typo in 2100-zfs-load-module.patch (related: #1041857)
+      + enable ubuntu/zfs-mount-container-start.patch
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 23 Feb 2024 21:28:24 +0800
+
+zfs-linux (2.2.2-5~exp1) experimental; urgency=medium
+
+  [ Shengqi Chen ]
+  * d/tests: add missing header dependency and fix zfs-test-suite
+    (Closes: #983661)
+  * d/tests: refactor kernel-smoke-test, add tests for draid[1-3]
+
+  [ Aron Xu ]
+  * Remove unused lintian overrides
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 12 Jan 2024 14:07:04 +0800
+
 zfs-linux (2.2.2-4) unstable; urgency=medium
 
   * Cherry-pick patch to fix typo in zed.rc

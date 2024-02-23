@@ -1,6 +1,6 @@
 #!/bin/sh 
 #
-# Copyright (C) 2016 Canonical
+# Copyright (C) 2016 Canonical, 2024 Shengqi Chen
 #   
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,7 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
-echo -n "kernel smoke test, create and destroy pool, raidz3: "
+
+TEST_NAME="$1"
 TMP=/tmp
 VDEV0=${TMP}/pool0-$$.img
 VDEV1=${TMP}/pool1-$$.img
@@ -25,12 +26,53 @@ VDEV3=${TMP}/pool3-$$.img
 VDEV_SZ=128
 POOL=pool-smoke-$$
 
+if [ -z "$TEST_NAME" ]; then
+    echo "Usage: $0 [test_name]"
+    exit 2
+fi
+
+case "$TEST_NAME" in
+    "striped")
+        CONFIG="${VDEV0} ${VDEV1} ${VDEV2} ${VDEV3}"
+        ;;
+    "2x2-mirror")
+        CONFIG="mirror ${VDEV0} ${VDEV1} mirror ${VDEV2} ${VDEV3}"
+        ;;
+    "4x1-mirror")
+        CONFIG="mirror ${VDEV0} ${VDEV1} ${VDEV2} ${VDEV3}"
+        ;;
+    "raidz1")
+        CONFIG="raidz1 ${VDEV0} ${VDEV1} ${VDEV2} ${VDEV3}"
+        ;;
+    "raidz2")
+        CONFIG="raidz2 ${VDEV0} ${VDEV1} ${VDEV2} ${VDEV3}"
+        ;;
+    "raidz3")
+        CONFIG="raidz3 ${VDEV0} ${VDEV1} ${VDEV2} ${VDEV3}"
+        ;;
+    "draid1")
+        CONFIG="draid1 ${VDEV0} ${VDEV1} ${VDEV2} ${VDEV3}"
+        ;;
+    "draid2")
+        CONFIG="draid2 ${VDEV0} ${VDEV1} ${VDEV2} ${VDEV3}"
+        ;;
+    "draid3")
+        CONFIG="draid3 ${VDEV0} ${VDEV1} ${VDEV2} ${VDEV3}"
+        ;;
+    *)
+        echo "Unknown test name specified: $TEST_NAME"
+        exit 2
+        ;;
+esac
+
+echo -n "kernel smoke test, create and destroy pool, $TEST_NAME: "
+
 dd if=/dev/zero of=${VDEV0} bs=1M count=${VDEV_SZ} > /dev/null 2>&1
 dd if=/dev/zero of=${VDEV1} bs=1M count=${VDEV_SZ} > /dev/null 2>&1
 dd if=/dev/zero of=${VDEV2} bs=1M count=${VDEV_SZ} > /dev/null 2>&1
 dd if=/dev/zero of=${VDEV3} bs=1M count=${VDEV_SZ} > /dev/null 2>&1
 
-zpool create ${POOL} raidz3 ${VDEV0} ${VDEV1} ${VDEV2} ${VDEV3}
+zpool create ${POOL} ${CONFIG}
 ret=$?
 if [ $ret -ne 0 ]; then
 	echo "FAILED: zpool create failed, exit code=$ret"

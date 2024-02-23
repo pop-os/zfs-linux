@@ -1,6 +1,6 @@
 ../tree/zfsutils-linux/* /
-etc/default/zfs
-etc/zfs/zfs-functions
+debian/tmp/etc/default/zfs
+debian/tmp/etc/zfs/zfs-functions
 etc/zfs/zpool.d/
 lib/systemd/system-generators/
 lib/systemd/system-preset/
