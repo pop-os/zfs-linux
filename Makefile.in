@@ -425,6 +425,9 @@ target_triplet = @target@
 @CONFIG_USER_TRUE@am__append_84 = tests/zfs-tests/tests
 @CONFIG_USER_TRUE@scripts_zfs_tests_bin_PROGRAMS =  \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/chg_usr_exec$(EXEEXT) \
+@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/clonefile$(EXEEXT) \
+@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/clone_mmap_cached$(EXEEXT) \
+@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/clone_mmap_write$(EXEEXT) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/cp_files$(EXEEXT) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/ctime$(EXEEXT) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/dir_rd_update$(EXEEXT) \
@@ -474,7 +477,6 @@ target_triplet = @target@
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/xattrtest \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/zed_fd_spill-zedlet \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/idmap_util \
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/clonefile \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/read_dos_attributes \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/write_dos_attributes \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/randfree_file \
@@ -482,6 +484,7 @@ target_triplet = @target@
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_88 = tests/zfs-tests/cmd/linux_dos_attributes/dos_attributes.h
 @CONFIG_USER_TRUE@scripts_zfs_tests_functional_libzfs_PROGRAMS = tests/zfs-tests/tests/functional/libzfs/many_fds$(EXEEXT)
 @CONFIG_USER_TRUE@scripts_zfs_tests_functional_hkdf_PROGRAMS = tests/zfs-tests/tests/functional/hkdf/hkdf_test$(EXEEXT)
+@CONFIG_USER_TRUE@scripts_zfs_tests_functional_cp_files_PROGRAMS = tests/zfs-tests/tests/functional/cp_files/seekflood$(EXEEXT)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@scripts_zfs_tests_functional_tmpfile_PROGRAMS = tests/zfs-tests/tests/functional/tmpfile/tmpfile_001_pos$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/tests/functional/tmpfile/tmpfile_002_pos$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/tests/functional/tmpfile/tmpfile_003_pos$(EXEEXT) \
@@ -613,6 +616,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-signal-stop.m4 \
 	$(top_srcdir)/config/kernel-special-state.m4 \
 	$(top_srcdir)/config/kernel-stdarg.m4 \
+	$(top_srcdir)/config/kernel-strlcpy.m4 \
 	$(top_srcdir)/config/kernel-super-userns.m4 \
 	$(top_srcdir)/config/kernel-symlink.m4 \
 	$(top_srcdir)/config/kernel-sysfs.m4 \
@@ -715,6 +719,7 @@ CONFIG_CLEAN_FILES = contrib/debian/rules contrib/debian/changelog \
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" \
 	"$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_zfs_tests_bindir)" \
+	"$(DESTDIR)$(scripts_zfs_tests_functional_cp_filesdir)" \
 	"$(DESTDIR)$(scripts_zfs_tests_functional_hkdfdir)" \
 	"$(DESTDIR)$(scripts_zfs_tests_functional_libzfsdir)" \
 	"$(DESTDIR)$(scripts_zfs_tests_functional_tmpfiledir)" \
@@ -762,13 +767,13 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/xattrtest$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/zed_fd_spill-zedlet$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/idmap_util$(EXEEXT) \
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/clonefile$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/read_dos_attributes$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/write_dos_attributes$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/randfree_file$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/file_fadvise$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(mounthelper_PROGRAMS) $(sbin_PROGRAMS) \
 	$(scripts_zfs_tests_bin_PROGRAMS) \
+	$(scripts_zfs_tests_functional_cp_files_PROGRAMS) \
 	$(scripts_zfs_tests_functional_hkdf_PROGRAMS) \
 	$(scripts_zfs_tests_functional_libzfs_PROGRAMS) \
 	$(scripts_zfs_tests_functional_tmpfile_PROGRAMS) \
@@ -1415,6 +1420,16 @@ tests_zfs_tests_cmd_chg_usr_exec_SOURCES =  \
 tests_zfs_tests_cmd_chg_usr_exec_OBJECTS =  \
 	tests/zfs-tests/cmd/chg_usr_exec.$(OBJEXT)
 tests_zfs_tests_cmd_chg_usr_exec_LDADD = $(LDADD)
+tests_zfs_tests_cmd_clone_mmap_cached_SOURCES =  \
+	tests/zfs-tests/cmd/clone_mmap_cached.c
+tests_zfs_tests_cmd_clone_mmap_cached_OBJECTS =  \
+	tests/zfs-tests/cmd/clone_mmap_cached.$(OBJEXT)
+tests_zfs_tests_cmd_clone_mmap_cached_LDADD = $(LDADD)
+tests_zfs_tests_cmd_clone_mmap_write_SOURCES =  \
+	tests/zfs-tests/cmd/clone_mmap_write.c
+tests_zfs_tests_cmd_clone_mmap_write_OBJECTS =  \
+	tests/zfs-tests/cmd/clone_mmap_write.$(OBJEXT)
+tests_zfs_tests_cmd_clone_mmap_write_LDADD = $(LDADD)
 tests_zfs_tests_cmd_clonefile_SOURCES =  \
 	tests/zfs-tests/cmd/clonefile.c
 tests_zfs_tests_cmd_clonefile_OBJECTS =  \
@@ -1678,6 +1693,11 @@ tests_zfs_tests_cmd_zfs_diff_socket_SOURCES =  \
 tests_zfs_tests_cmd_zfs_diff_socket_OBJECTS =  \
 	tests/zfs-tests/cmd/zfs_diff-socket.$(OBJEXT)
 tests_zfs_tests_cmd_zfs_diff_socket_LDADD = $(LDADD)
+tests_zfs_tests_tests_functional_cp_files_seekflood_SOURCES =  \
+	tests/zfs-tests/tests/functional/cp_files/seekflood.c
+tests_zfs_tests_tests_functional_cp_files_seekflood_OBJECTS =  \
+	tests/zfs-tests/tests/functional/cp_files/seekflood.$(OBJEXT)
+tests_zfs_tests_tests_functional_cp_files_seekflood_LDADD = $(LDADD)
 tests_zfs_tests_tests_functional_hkdf_hkdf_test_SOURCES =  \
 	tests/zfs-tests/tests/functional/hkdf/hkdf_test.c
 tests_zfs_tests_tests_functional_hkdf_hkdf_test_OBJECTS =  \
@@ -2309,6 +2329,8 @@ am__depfiles_remade = cmd/$(DEPDIR)/mount_zfs.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/badsend.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/btree_test-btree_test.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/chg_usr_exec.Po \
+	tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_cached.Po \
+	tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/cp_files.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/ctime.Po \
@@ -2358,6 +2380,7 @@ am__depfiles_remade = cmd/$(DEPDIR)/mount_zfs.Po \
 	tests/zfs-tests/cmd/file/$(DEPDIR)/randwritecomp.Po \
 	tests/zfs-tests/cmd/linux_dos_attributes/$(DEPDIR)/read_dos_attributes.Po \
 	tests/zfs-tests/cmd/linux_dos_attributes/$(DEPDIR)/write_dos_attributes.Po \
+	tests/zfs-tests/tests/functional/cp_files/$(DEPDIR)/seekflood.Po \
 	tests/zfs-tests/tests/functional/hkdf/$(DEPDIR)/hkdf_test.Po \
 	tests/zfs-tests/tests/functional/libzfs/$(DEPDIR)/many_fds.Po \
 	tests/zfs-tests/tests/functional/tmpfile/$(DEPDIR)/tmpfile_001_pos.Po \
@@ -2413,6 +2436,8 @@ SOURCES = $(contrib_pam_zfs_key_pam_zfs_key_la_SOURCES) \
 	$(tests_zfs_tests_cmd_blake3_test_SOURCES) \
 	tests/zfs-tests/cmd/btree_test.c \
 	tests/zfs-tests/cmd/chg_usr_exec.c \
+	tests/zfs-tests/cmd/clone_mmap_cached.c \
+	tests/zfs-tests/cmd/clone_mmap_write.c \
 	tests/zfs-tests/cmd/clonefile.c tests/zfs-tests/cmd/cp_files.c \
 	tests/zfs-tests/cmd/ctime.c \
 	tests/zfs-tests/cmd/devname2devid.c \
@@ -2458,6 +2483,7 @@ SOURCES = $(contrib_pam_zfs_key_pam_zfs_key_la_SOURCES) \
 	tests/zfs-tests/cmd/xattrtest.c \
 	tests/zfs-tests/cmd/zed_fd_spill-zedlet.c \
 	tests/zfs-tests/cmd/zfs_diff-socket.c \
+	tests/zfs-tests/tests/functional/cp_files/seekflood.c \
 	tests/zfs-tests/tests/functional/hkdf/hkdf_test.c \
 	tests/zfs-tests/tests/functional/libzfs/many_fds.c \
 	tests/zfs-tests/tests/functional/tmpfile/tmpfile_001_pos.c \
@@ -2487,6 +2513,8 @@ DIST_SOURCES = $(am__contrib_pam_zfs_key_pam_zfs_key_la_SOURCES_DIST) \
 	$(am__tests_zfs_tests_cmd_blake3_test_SOURCES_DIST) \
 	tests/zfs-tests/cmd/btree_test.c \
 	tests/zfs-tests/cmd/chg_usr_exec.c \
+	tests/zfs-tests/cmd/clone_mmap_cached.c \
+	tests/zfs-tests/cmd/clone_mmap_write.c \
 	tests/zfs-tests/cmd/clonefile.c tests/zfs-tests/cmd/cp_files.c \
 	tests/zfs-tests/cmd/ctime.c \
 	tests/zfs-tests/cmd/devname2devid.c \
@@ -2532,6 +2560,7 @@ DIST_SOURCES = $(am__contrib_pam_zfs_key_pam_zfs_key_la_SOURCES_DIST) \
 	tests/zfs-tests/cmd/xattrtest.c \
 	tests/zfs-tests/cmd/zed_fd_spill-zedlet.c \
 	tests/zfs-tests/cmd/zfs_diff-socket.c \
+	tests/zfs-tests/tests/functional/cp_files/seekflood.c \
 	tests/zfs-tests/tests/functional/hkdf/hkdf_test.c \
 	tests/zfs-tests/tests/functional/libzfs/many_fds.c \
 	tests/zfs-tests/tests/functional/tmpfile/tmpfile_001_pos.c \
@@ -2698,9 +2727,9 @@ am__dist_noinst_DATA_DIST =  \
 	module/zfs/THIRDPARTYLICENSE.cityhash \
 	module/zfs/THIRDPARTYLICENSE.cityhash.descrip
 am__dist_pamconfigs_DATA_DIST = contrib/pam_zfs_key/zfs_key
-am__dist_scripts_runfiles_DATA_DIST = tests/runfiles/common.run \
-	tests/runfiles/freebsd.run tests/runfiles/linux.run \
-	tests/runfiles/longevity.run \
+am__dist_scripts_runfiles_DATA_DIST = tests/runfiles/bclone.run \
+	tests/runfiles/common.run tests/runfiles/freebsd.run \
+	tests/runfiles/linux.run tests/runfiles/longevity.run \
 	tests/runfiles/perf-regression.run tests/runfiles/sanity.run \
 	tests/runfiles/sunos.run
 am__dist_scripts_test_runner_include_DATA_DIST =  \
@@ -3331,8 +3360,8 @@ AM_CPPFLAGS = -include $(top_builddir)/zfs_config.h \
 	-DRUNSTATEDIR=\"$(runstatedir)\" -DSBINDIR=\"$(sbindir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" -DPKGDATADIR=\"$(pkgdatadir)\" \
 	$(DEBUG_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS) \
-	-DTEXT_DOMAIN=\"zfs-@ac_system_l@-user\" \
-	$(AM_CPPFLAGS_NOCHECK) $(am__append_2) $(am__append_3)
+	-DTEXT_DOMAIN=\"zfs-@ac_system_l@-user\" $(am__append_2) \
+	$(am__append_3)
 AM_LIBTOOLFLAGS = --silent
 AM_CFLAGS = -std=gnu99 -Wall -Wextra -Wstrict-prototypes \
 	-Wmissing-prototypes -Wwrite-strings -Wno-sign-compare \
@@ -3341,36 +3370,6 @@ AM_CFLAGS = -std=gnu99 -Wall -Wextra -Wstrict-prototypes \
 	$(DEBUG_CFLAGS) $(ASAN_CFLAGS) $(UBSAN_CFLAGS) \
 	$(CODE_COVERAGE_CFLAGS) $(NO_FORMAT_ZERO_LENGTH) \
 	$(am__append_1)
-AM_CPPFLAGS_NOCHECK = -D"strtok(...)=strtok(__VA_ARGS__) \
-	__attribute__((deprecated(\"Use strtok_r(3) instead!\")))" \
-	-D"__xpg_basename(...)=__xpg_basename(__VA_ARGS__) \
-	__attribute__((deprecated(\"basename(3) is underspecified. Use \
-	zfs_basename() instead!\")))" \
-	-D"basename(...)=basename(__VA_ARGS__) \
-	__attribute__((deprecated(\"basename(3) is underspecified. Use \
-	zfs_basename() instead!\")))" \
-	-D"dirname(...)=dirname(__VA_ARGS__) \
-	__attribute__((deprecated(\"dirname(3) is underspecified. Use \
-	zfs_dirnamelen() instead!\")))" \
-	-D"bcopy(...)=__attribute__((deprecated(\"bcopy(3) is \
-	deprecated. Use memcpy(3)/memmove(3) instead!\"))) \
-	bcopy(__VA_ARGS__)" \
-	-D"bcmp(...)=__attribute__((deprecated(\"bcmp(3) is \
-	deprecated. Use memcmp(3) instead!\"))) bcmp(__VA_ARGS__)" \
-	-D"bzero(...)=__attribute__((deprecated(\"bzero(3) is \
-	deprecated. Use memset(3) instead!\"))) bzero(__VA_ARGS__)" \
-	-D"asctime(...)=__attribute__((deprecated(\"Use strftime(3) \
-	instead!\"))) asctime(__VA_ARGS__)" \
-	-D"asctime_r(...)=__attribute__((deprecated(\"Use strftime(3) \
-	instead!\"))) asctime_r(__VA_ARGS__)" \
-	-D"gmtime(...)=__attribute__((deprecated(\"gmtime(3) isn't \
-	thread-safe. Use gmtime_r(3) instead!\"))) \
-	gmtime(__VA_ARGS__)" \
-	-D"localtime(...)=__attribute__((deprecated(\"localtime(3) \
-	isn't thread-safe. Use localtime_r(3) instead!\"))) \
-	localtime(__VA_ARGS__)" \
-	-D"strncpy(...)=__attribute__((deprecated(\"strncpy(3) is \
-	deprecated. Use strlcpy(3) instead!\"))) strncpy(__VA_ARGS__)"
 AM_LDFLAGS = $(DEBUG_LDFLAGS) $(ASAN_LDFLAGS) $(UBSAN_LDFLAGS) \
 	$(am__append_4)
 
@@ -4544,6 +4543,7 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@tests_zfs_tests_tests_functional_hkdf_hkdf_test_LDADD = \
 @CONFIG_USER_TRUE@	libzpool.la
 
+@CONFIG_USER_TRUE@scripts_zfs_tests_functional_cp_filesdir = $(datadir)/$(PACKAGE)/zfs-tests/tests/functional/cp_files
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@scripts_zfs_tests_functional_tmpfiledir = $(datadir)/$(PACKAGE)/zfs-tests/tests/functional/tmpfile
 @CONFIG_USER_TRUE@scripts_zfs_tests_callbacksdir = $(datadir)/$(PACKAGE)/zfs-tests/callbacks
 @CONFIG_USER_TRUE@dist_scripts_zfs_tests_callbacks_SCRIPTS = \
@@ -4576,6 +4576,7 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 
 @CONFIG_USER_TRUE@scripts_runfilesdir = $(datadir)/$(PACKAGE)/runfiles
 @CONFIG_USER_TRUE@dist_scripts_runfiles_DATA = \
+@CONFIG_USER_TRUE@	tests/runfiles/bclone.run \
 @CONFIG_USER_TRUE@	tests/runfiles/common.run \
 @CONFIG_USER_TRUE@	tests/runfiles/freebsd.run \
 @CONFIG_USER_TRUE@	tests/runfiles/linux.run \
@@ -4868,6 +4869,55 @@ uninstall-scripts_zfs_tests_binPROGRAMS:
 
 clean-scripts_zfs_tests_binPROGRAMS:
 	@list='$(scripts_zfs_tests_bin_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
+install-scripts_zfs_tests_functional_cp_filesPROGRAMS: $(scripts_zfs_tests_functional_cp_files_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	@list='$(scripts_zfs_tests_functional_cp_files_PROGRAMS)'; test -n "$(scripts_zfs_tests_functional_cp_filesdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(scripts_zfs_tests_functional_cp_filesdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(scripts_zfs_tests_functional_cp_filesdir)" || exit 1; \
+	fi; \
+	for p in $$list; do echo "$$p $$p"; done | \
+	sed 's/$(EXEEXT)$$//' | \
+	while read p p1; do if test -f $$p \
+	 || test -f $$p1 \
+	  ; then echo "$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n;h' \
+	    -e 's|.*|.|' \
+	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
+	sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1 } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) files[d] = files[d] " " $$1; \
+	    else { print "f", $$3 "/" $$4, $$1; } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	    test -z "$$files" || { \
+	    echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(scripts_zfs_tests_functional_cp_filesdir)$$dir'"; \
+	    $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(scripts_zfs_tests_functional_cp_filesdir)$$dir" || exit $$?; \
+	    } \
+	; done
+
+uninstall-scripts_zfs_tests_functional_cp_filesPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(scripts_zfs_tests_functional_cp_files_PROGRAMS)'; test -n "$(scripts_zfs_tests_functional_cp_filesdir)" || list=; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
+	      -e 's/$$/$(EXEEXT)/' \
+	`; \
+	test -n "$$list" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(scripts_zfs_tests_functional_cp_filesdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(scripts_zfs_tests_functional_cp_filesdir)" && rm -f $$files
+
+clean-scripts_zfs_tests_functional_cp_filesPROGRAMS:
+	@list='$(scripts_zfs_tests_functional_cp_files_PROGRAMS)'; test -n "$$list" || exit 0; \
 	echo " rm -f" $$list; \
 	rm -f $$list || exit $$?; \
 	test -n "$(EXEEXT)" || exit 0; \
@@ -6554,6 +6604,20 @@ tests/zfs-tests/cmd/chg_usr_exec.$(OBJEXT):  \
 tests/zfs-tests/cmd/chg_usr_exec$(EXEEXT): $(tests_zfs_tests_cmd_chg_usr_exec_OBJECTS) $(tests_zfs_tests_cmd_chg_usr_exec_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_chg_usr_exec_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
 	@rm -f tests/zfs-tests/cmd/chg_usr_exec$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_chg_usr_exec_OBJECTS) $(tests_zfs_tests_cmd_chg_usr_exec_LDADD) $(LIBS)
+tests/zfs-tests/cmd/clone_mmap_cached.$(OBJEXT):  \
+	tests/zfs-tests/cmd/$(am__dirstamp) \
+	tests/zfs-tests/cmd/$(DEPDIR)/$(am__dirstamp)
+
+tests/zfs-tests/cmd/clone_mmap_cached$(EXEEXT): $(tests_zfs_tests_cmd_clone_mmap_cached_OBJECTS) $(tests_zfs_tests_cmd_clone_mmap_cached_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_clone_mmap_cached_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
+	@rm -f tests/zfs-tests/cmd/clone_mmap_cached$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_clone_mmap_cached_OBJECTS) $(tests_zfs_tests_cmd_clone_mmap_cached_LDADD) $(LIBS)
+tests/zfs-tests/cmd/clone_mmap_write.$(OBJEXT):  \
+	tests/zfs-tests/cmd/$(am__dirstamp) \
+	tests/zfs-tests/cmd/$(DEPDIR)/$(am__dirstamp)
+
+tests/zfs-tests/cmd/clone_mmap_write$(EXEEXT): $(tests_zfs_tests_cmd_clone_mmap_write_OBJECTS) $(tests_zfs_tests_cmd_clone_mmap_write_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_clone_mmap_write_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
+	@rm -f tests/zfs-tests/cmd/clone_mmap_write$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_clone_mmap_write_OBJECTS) $(tests_zfs_tests_cmd_clone_mmap_write_LDADD) $(LIBS)
 tests/zfs-tests/cmd/clonefile.$(OBJEXT):  \
 	tests/zfs-tests/cmd/$(am__dirstamp) \
 	tests/zfs-tests/cmd/$(DEPDIR)/$(am__dirstamp)
@@ -6902,6 +6966,19 @@ tests/zfs-tests/cmd/zfs_diff-socket.$(OBJEXT):  \
 tests/zfs-tests/cmd/zfs_diff-socket$(EXEEXT): $(tests_zfs_tests_cmd_zfs_diff_socket_OBJECTS) $(tests_zfs_tests_cmd_zfs_diff_socket_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_zfs_diff_socket_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
 	@rm -f tests/zfs-tests/cmd/zfs_diff-socket$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_zfs_diff_socket_OBJECTS) $(tests_zfs_tests_cmd_zfs_diff_socket_LDADD) $(LIBS)
+tests/zfs-tests/tests/functional/cp_files/$(am__dirstamp):
+	@$(MKDIR_P) tests/zfs-tests/tests/functional/cp_files
+	@: > tests/zfs-tests/tests/functional/cp_files/$(am__dirstamp)
+tests/zfs-tests/tests/functional/cp_files/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) tests/zfs-tests/tests/functional/cp_files/$(DEPDIR)
+	@: > tests/zfs-tests/tests/functional/cp_files/$(DEPDIR)/$(am__dirstamp)
+tests/zfs-tests/tests/functional/cp_files/seekflood.$(OBJEXT):  \
+	tests/zfs-tests/tests/functional/cp_files/$(am__dirstamp) \
+	tests/zfs-tests/tests/functional/cp_files/$(DEPDIR)/$(am__dirstamp)
+
+tests/zfs-tests/tests/functional/cp_files/seekflood$(EXEEXT): $(tests_zfs_tests_tests_functional_cp_files_seekflood_OBJECTS) $(tests_zfs_tests_tests_functional_cp_files_seekflood_DEPENDENCIES) $(EXTRA_tests_zfs_tests_tests_functional_cp_files_seekflood_DEPENDENCIES) tests/zfs-tests/tests/functional/cp_files/$(am__dirstamp)
+	@rm -f tests/zfs-tests/tests/functional/cp_files/seekflood$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_tests_functional_cp_files_seekflood_OBJECTS) $(tests_zfs_tests_tests_functional_cp_files_seekflood_LDADD) $(LIBS)
 tests/zfs-tests/tests/functional/hkdf/$(am__dirstamp):
 	@$(MKDIR_P) tests/zfs-tests/tests/functional/hkdf
 	@: > tests/zfs-tests/tests/functional/hkdf/$(am__dirstamp)
@@ -7925,6 +8002,7 @@ mostlyclean-compile:
 	-rm -f tests/zfs-tests/cmd/checksum/*.$(OBJEXT)
 	-rm -f tests/zfs-tests/cmd/file/*.$(OBJEXT)
 	-rm -f tests/zfs-tests/cmd/linux_dos_attributes/*.$(OBJEXT)
+	-rm -f tests/zfs-tests/tests/functional/cp_files/*.$(OBJEXT)
 	-rm -f tests/zfs-tests/tests/functional/hkdf/*.$(OBJEXT)
 	-rm -f tests/zfs-tests/tests/functional/libzfs/*.$(OBJEXT)
 	-rm -f tests/zfs-tests/tests/functional/tmpfile/*.$(OBJEXT)
@@ -8322,6 +8400,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/badsend.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/btree_test-btree_test.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/chg_usr_exec.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_cached.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/cp_files.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/ctime.Po@am__quote@ # am--include-marker
@@ -8371,6 +8451,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/file/$(DEPDIR)/randwritecomp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/linux_dos_attributes/$(DEPDIR)/read_dos_attributes.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/linux_dos_attributes/$(DEPDIR)/write_dos_attributes.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/tests/functional/cp_files/$(DEPDIR)/seekflood.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/tests/functional/hkdf/$(DEPDIR)/hkdf_test.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/tests/functional/libzfs/$(DEPDIR)/many_fds.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/tests/functional/tmpfile/$(DEPDIR)/tmpfile_001_pos.Po@am__quote@ # am--include-marker
@@ -11337,6 +11418,7 @@ clean-libtool:
 	-rm -rf module/zstd/lib/compress/.libs module/zstd/lib/compress/_libs
 	-rm -rf module/zstd/lib/decompress/.libs module/zstd/lib/decompress/_libs
 	-rm -rf tests/zfs-tests/cmd/.libs tests/zfs-tests/cmd/_libs
+	-rm -rf tests/zfs-tests/tests/functional/cp_files/.libs tests/zfs-tests/tests/functional/cp_files/_libs
 	-rm -rf tests/zfs-tests/tests/functional/hkdf/.libs tests/zfs-tests/tests/functional/hkdf/_libs
 	-rm -rf tests/zfs-tests/tests/functional/libzfs/.libs tests/zfs-tests/tests/functional/libzfs/_libs
 	-rm -rf tests/zfs-tests/tests/functional/tmpfile/.libs tests/zfs-tests/tests/functional/tmpfile/_libs
@@ -12420,6 +12502,8 @@ install-sbinPROGRAMS: install-libLTLIBRARIES
 
 install-scriptszfstestsbinPROGRAMS: install-libLTLIBRARIES
 
+install-scriptszfstestsfunctionalcpfilesPROGRAMS: install-libLTLIBRARIES
+
 install-scriptszfstestsfunctionalhkdfPROGRAMS: install-libLTLIBRARIES
 
 install-scriptszfstestsfunctionallibzfsPROGRAMS: install-libLTLIBRARIES
@@ -12436,7 +12520,7 @@ install-pammoduleLTLIBRARIES: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_zfs_tests_bindir)" "$(DESTDIR)$(scripts_zfs_tests_functional_hkdfdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_libzfsdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_tmpfiledir)" "$(DESTDIR)$(systemdgeneratordir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pammoduledir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(i_tdir)" "$(DESTDIR)$(i_t_scriptsdir)" "$(DESTDIR)$(i_t_scripts_localtopdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(scripts_zfs_tests_callbacksdir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(zpoolexecdir)" "$(DESTDIR)$(i_t_hooksdir)" "$(DESTDIR)$(initdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(pkgdracut_02dir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_test_runner_bindir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man4dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(i_t_conf_ddir)" "$(DESTDIR)$(i_t_confhooks_ddir)" "$(DESTDIR)$(modulesloaddir)" "$(DESTDIR)$(pamconfigsdir)" "$(DESTDIR)$(scripts_runfilesdir)" "$(DESTDIR)$(scripts_test_runner_includedir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdpresetdir)" "$(DESTDIR)$(zedconfdir)" "$(DESTDIR)$(zpoolcompatdir)" "$(DESTDIR)$(initconfdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sudoersddir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdunitdir)" "$(DESTDIR)$(udevruledir)" "$(DESTDIR)$(extradir)" "$(DESTDIR)$(libspldir)" "$(DESTDIR)$(libspl_ia32dir)" "$(DESTDIR)$(libspl_rpcdir)" "$(DESTDIR)$(libspl_sysdir)" "$(DESTDIR)$(libspl_sys_dktpdir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_zfs_tests_bindir)" "$(DESTDIR)$(scripts_zfs_tests_functional_cp_filesdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_hkdfdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_libzfsdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_tmpfiledir)" "$(DESTDIR)$(systemdgeneratordir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pammoduledir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(i_tdir)" "$(DESTDIR)$(i_t_scriptsdir)" "$(DESTDIR)$(i_t_scripts_localtopdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(scripts_zfs_tests_callbacksdir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(zpoolexecdir)" "$(DESTDIR)$(i_t_hooksdir)" "$(DESTDIR)$(initdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(pkgdracut_02dir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_test_runner_bindir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man4dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(i_t_conf_ddir)" "$(DESTDIR)$(i_t_confhooks_ddir)" "$(DESTDIR)$(modulesloaddir)" "$(DESTDIR)$(pamconfigsdir)" "$(DESTDIR)$(scripts_runfilesdir)" "$(DESTDIR)$(scripts_test_runner_includedir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdpresetdir)" "$(DESTDIR)$(zedconfdir)" "$(DESTDIR)$(zpoolcompatdir)" "$(DESTDIR)$(initconfdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sudoersddir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdunitdir)" "$(DESTDIR)$(udevruledir)" "$(DESTDIR)$(extradir)" "$(DESTDIR)$(libspldir)" "$(DESTDIR)$(libspl_ia32dir)" "$(DESTDIR)$(libspl_rpcdir)" "$(DESTDIR)$(libspl_sysdir)" "$(DESTDIR)$(libspl_sys_dktpdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -12608,6 +12692,8 @@ distclean-generic:
 	-rm -f tests/zfs-tests/cmd/file/$(am__dirstamp)
 	-rm -f tests/zfs-tests/cmd/linux_dos_attributes/$(DEPDIR)/$(am__dirstamp)
 	-rm -f tests/zfs-tests/cmd/linux_dos_attributes/$(am__dirstamp)
+	-rm -f tests/zfs-tests/tests/functional/cp_files/$(DEPDIR)/$(am__dirstamp)
+	-rm -f tests/zfs-tests/tests/functional/cp_files/$(am__dirstamp)
 	-rm -f tests/zfs-tests/tests/functional/hkdf/$(DEPDIR)/$(am__dirstamp)
 	-rm -f tests/zfs-tests/tests/functional/hkdf/$(am__dirstamp)
 	-rm -f tests/zfs-tests/tests/functional/libzfs/$(DEPDIR)/$(am__dirstamp)
@@ -12629,6 +12715,7 @@ clean-am: clean-binPROGRAMS clean-generic clean-libLTLIBRARIES \
 	clean-libtool clean-local clean-mounthelperPROGRAMS \
 	clean-noinstLTLIBRARIES clean-pammoduleLTLIBRARIES \
 	clean-sbinPROGRAMS clean-scripts_zfs_tests_binPROGRAMS \
+	clean-scripts_zfs_tests_functional_cp_filesPROGRAMS \
 	clean-scripts_zfs_tests_functional_hkdfPROGRAMS \
 	clean-scripts_zfs_tests_functional_libzfsPROGRAMS \
 	clean-scripts_zfs_tests_functional_tmpfilePROGRAMS \
@@ -13026,6 +13113,8 @@ distclean: distclean-recursive
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/badsend.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/btree_test-btree_test.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/chg_usr_exec.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_cached.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/cp_files.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/ctime.Po
@@ -13075,6 +13164,7 @@ distclean: distclean-recursive
 	-rm -f tests/zfs-tests/cmd/file/$(DEPDIR)/randwritecomp.Po
 	-rm -f tests/zfs-tests/cmd/linux_dos_attributes/$(DEPDIR)/read_dos_attributes.Po
 	-rm -f tests/zfs-tests/cmd/linux_dos_attributes/$(DEPDIR)/write_dos_attributes.Po
+	-rm -f tests/zfs-tests/tests/functional/cp_files/$(DEPDIR)/seekflood.Po
 	-rm -f tests/zfs-tests/tests/functional/hkdf/$(DEPDIR)/hkdf_test.Po
 	-rm -f tests/zfs-tests/tests/functional/libzfs/$(DEPDIR)/many_fds.Po
 	-rm -f tests/zfs-tests/tests/functional/tmpfile/$(DEPDIR)/tmpfile_001_pos.Po
@@ -13123,6 +13213,7 @@ install-data-am: install-dist_i_tSCRIPTS install-dist_i_t_conf_dDATA \
 	install-pkgdracut_90SCRIPTS \
 	install-scripts_test_runner_binSCRIPTS \
 	install-scripts_zfs_tests_binPROGRAMS \
+	install-scripts_zfs_tests_functional_cp_filesPROGRAMS \
 	install-scripts_zfs_tests_functional_hkdfPROGRAMS \
 	install-scripts_zfs_tests_functional_libzfsPROGRAMS \
 	install-scripts_zfs_tests_functional_tmpfilePROGRAMS \
@@ -13556,6 +13647,8 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/badsend.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/btree_test-btree_test.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/chg_usr_exec.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_cached.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/cp_files.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/ctime.Po
@@ -13605,6 +13698,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f tests/zfs-tests/cmd/file/$(DEPDIR)/randwritecomp.Po
 	-rm -f tests/zfs-tests/cmd/linux_dos_attributes/$(DEPDIR)/read_dos_attributes.Po
 	-rm -f tests/zfs-tests/cmd/linux_dos_attributes/$(DEPDIR)/write_dos_attributes.Po
+	-rm -f tests/zfs-tests/tests/functional/cp_files/$(DEPDIR)/seekflood.Po
 	-rm -f tests/zfs-tests/tests/functional/hkdf/$(DEPDIR)/hkdf_test.Po
 	-rm -f tests/zfs-tests/tests/functional/libzfs/$(DEPDIR)/many_fds.Po
 	-rm -f tests/zfs-tests/tests/functional/tmpfile/$(DEPDIR)/tmpfile_001_pos.Po
@@ -13661,6 +13755,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	uninstall-sbinPROGRAMS uninstall-sbinSCRIPTS \
 	uninstall-scripts_test_runner_binSCRIPTS \
 	uninstall-scripts_zfs_tests_binPROGRAMS \
+	uninstall-scripts_zfs_tests_functional_cp_filesPROGRAMS \
 	uninstall-scripts_zfs_tests_functional_hkdfPROGRAMS \
 	uninstall-scripts_zfs_tests_functional_libzfsPROGRAMS \
 	uninstall-scripts_zfs_tests_functional_tmpfilePROGRAMS \
@@ -13682,6 +13777,7 @@ uninstall-man: uninstall-man1 uninstall-man4 uninstall-man5 \
 	clean-mounthelperPROGRAMS clean-noinstLTLIBRARIES \
 	clean-pammoduleLTLIBRARIES clean-sbinPROGRAMS \
 	clean-scripts_zfs_tests_binPROGRAMS \
+	clean-scripts_zfs_tests_functional_cp_filesPROGRAMS \
 	clean-scripts_zfs_tests_functional_hkdfPROGRAMS \
 	clean-scripts_zfs_tests_functional_libzfsPROGRAMS \
 	clean-scripts_zfs_tests_functional_tmpfilePROGRAMS \
@@ -13726,6 +13822,7 @@ uninstall-man: uninstall-man1 uninstall-man4 uninstall-man5 \
 	install-sbinPROGRAMS install-sbinSCRIPTS \
 	install-scripts_test_runner_binSCRIPTS \
 	install-scripts_zfs_tests_binPROGRAMS \
+	install-scripts_zfs_tests_functional_cp_filesPROGRAMS \
 	install-scripts_zfs_tests_functional_hkdfPROGRAMS \
 	install-scripts_zfs_tests_functional_libzfsPROGRAMS \
 	install-scripts_zfs_tests_functional_tmpfilePROGRAMS \
@@ -13769,6 +13866,7 @@ uninstall-man: uninstall-man1 uninstall-man4 uninstall-man5 \
 	uninstall-sbinPROGRAMS uninstall-sbinSCRIPTS \
 	uninstall-scripts_test_runner_binSCRIPTS \
 	uninstall-scripts_zfs_tests_binPROGRAMS \
+	uninstall-scripts_zfs_tests_functional_cp_filesPROGRAMS \
 	uninstall-scripts_zfs_tests_functional_hkdfPROGRAMS \
 	uninstall-scripts_zfs_tests_functional_libzfsPROGRAMS \
 	uninstall-scripts_zfs_tests_functional_tmpfilePROGRAMS \
@@ -14153,6 +14251,11 @@ srpm-common:
 		rpm-local || exit 1; \
 	LANG=C $(RPMBUILD) \
 		--define "_tmppath $$rpmbuild/TMP" \
+		--define "_builddir $$rpmbuild/BUILD" \
+		--define "_rpmdir $$rpmbuild/RPMS" \
+		--define "_srcrpmdir $$rpmbuild/SRPMS" \
+		--define "_specdir $$rpmbuild/SPECS" \
+		--define "_sourcedir $$rpmbuild/SOURCES" \
 		--define "_topdir $$rpmbuild" \
 		$(def) -bs $$rpmbuild/SPECS/$$rpmspec || exit 1; \
 	cp $$rpmbuild/SRPMS/$$rpmpkg . || exit 1; \
@@ -14169,6 +14272,11 @@ rpm-common:
 		rpm-local || exit 1; \
 	LANG=C ${RPMBUILD} \
 		--define "_tmppath $$rpmbuild/TMP" \
+		--define "_builddir $$rpmbuild/BUILD" \
+		--define "_rpmdir $$rpmbuild/RPMS" \
+		--define "_srcrpmdir $$rpmbuild/SRPMS" \
+		--define "_specdir $$rpmbuild/SPECS" \
+		--define "_sourcedir $$rpmbuild/SOURCES" \
 		--define "_topdir $$rpmbuild" \
 		$(def) --rebuild $$rpmpkg || exit 1; \
 	cp $$rpmbuild/RPMS/*/* . || exit 1; \
