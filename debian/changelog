@@ -2,11 +2,12 @@ zfs-linux (2.2.2-5~exp4) UNRELEASED; urgency=medium
 
   [ Shengqi Chen ]
   * d/: update rule names in lintian-overrides, fix typos, lift dh-compat to 13
+  * d/not-installed: remove actually installed files
 
   [ Aron Xu ]
   * d/control.ubuntu: Conflicts with nordugrid-arc-client
 
- -- Shengqi Chen <harry-chen@outlook.com>  Thu, 15 Feb 2024 15:38:27 +0800
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 23 Feb 2024 14:08:02 +0800
 
 zfs-linux (2.2.2-5~exp3) experimental; urgency=medium
 
