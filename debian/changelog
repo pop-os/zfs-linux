@@ -1,4 +1,4 @@
-zfs-linux (2.2.3-1) UNRELEASED; urgency=medium
+zfs-linux (2.2.3-1) unstable; urgency=medium
 
   [ Aron Xu ]
   * d/control: add Shengqi Chen to Uploaders
