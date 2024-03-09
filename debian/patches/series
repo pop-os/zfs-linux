@@ -21,3 +21,4 @@ ubuntu/zfs-mount-container-start.patch
 #ubuntu/4510-silently-ignore-modprobe-failure.patch
 #ubuntu/4751-suppress-types.patch
 fix-icp-sha2-on-armel.patch
+fix-manpage-build-for-zfs_prepare_disk.patch
