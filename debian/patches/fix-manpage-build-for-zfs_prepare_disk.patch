@@ -1,5 +1,13 @@
---- a/man/Makefile.am
-+++ b/man/Makefile.am
+Description: Fix manpage build of zfs_prepare_disk.8
+Author: Shengqi Chen <harry-chen@outlook.com>
+Forwarded: yes
+Bug: https://github.com/openzfs/zfs/pull/15979
+Last-Update: 2024-03-09
+
+Index: zfs-linux/man/Makefile.am
+====================================================
+--- zfs-linux.orig/man/Makefile.am
++++ zfs-linux/man/Makefile.am
 @@ -62,7 +62,6 @@
  	%D%/man8/zfs-userspace.8 \
  	%D%/man8/zfs-wait.8 \
@@ -17,8 +25,10 @@
 +	%D%/man8/zfs_prepare_disk.8
  
  dist_noinst_DATA += $(dist_noinst_man_MANS) $(dist_man_MANS)
- 
---- a/man/man8/zfs_prepare_disk.8
+
+Index: zfs-linux/man/man8/zfs_prepare_disk.8
+==================================================== 
+--- zfs-linux.orig/man/man8/zfs_prepare_disk.8
 +++ /dev/null
 @@ -1,70 +0,0 @@
 -.\"
@@ -91,8 +101,10 @@
 -should return 0 on success, non-zero otherwise.
 -If non-zero is returned, the disk will not be included in the pool.
 -.
+Index: zfs-linux/man/man8/zfs_prepare_disk.8.in
+==================================================== 
 --- /dev/null
-+++ b/man/man8/zfs_prepare_disk.8.in
++++ zfs-linux/man/man8/zfs_prepare_disk.8.in
 @@ -0,0 +1,70 @@
 +.\"
 +.\" Developed at Lawrence Livermore National Laboratory (LLNL-CODE-403049).
