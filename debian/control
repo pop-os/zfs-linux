@@ -107,14 +107,22 @@ Depends: ${misc:Depends}, ${shlibs:Depends}
 # The libcurl4 is loaded through dlopen("libcurl.so.4").
 # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=988521
 Recommends: libcurl4
-Breaks: libzfs2, libzfs4, libzfs4linux
-Replaces: libzfs2, libzfs4, libzfs4linux
+Breaks: libzfs2, libzfs4, libzfs4linux (<< 2.3.0)
+Replaces: libzfs2, libzfs4, libzfs4linux (<< 2.3.0)
 Description: OpenZFS filesystem library for Linux - general support
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
  compression, encryption, snapshots, and more.
  .
  The OpenZFS library provides support for managing OpenZFS filesystems.
+
+Package: libzfs4linux
+Section: contrib/libs
+Architecture: linux-any
+Depends: libzfs6linux
+Description: Transitional package for libzfs6linux
+ This is a transitional package for libzfs6linux, and can be
+ safely removed after the installation is complete.
 
 Package: libzfsbootenv1linux
 Section: contrib/libs
@@ -135,14 +143,22 @@ Section: contrib/libs
 Architecture: linux-any
 Multi-Arch: same
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Breaks: libzpool2, libzpool5, libzpool5linux
-Replaces: libzpool2, libzpool5, libzpool5linux
+Breaks: libzpool2, libzpool5, libzpool5linux (<< 2.3.0)
+Replaces: libzpool2, libzpool5, libzpool5linux (<< 2.3.0)
 Description: OpenZFS pool library for Linux
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
  compression, encryption, snapshots, and more.
  .
  This zpool library provides support for managing zpools.
+
+Package: libzpool5linux
+Section: contrib/libs
+Architecture: linux-any
+Depends: libzpool6linux
+Description: Transitional package for libzpool6linux
+ This is a transitional package for libzpool6linux, and can be
+ safely removed after the installation is complete.
 
 Package: python3-pyzfs
 Section: contrib/python
