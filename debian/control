@@ -244,8 +244,7 @@ Depends: libnvpair3linux (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
 Recommends: zfs-modules | zfs-dkms, zfs-zed
-Breaks: openrc,
-        spl (<< 0.7.9-2),
+Breaks: spl (<< 0.7.9-2),
         spl-dkms (<< 0.8.0~rc1),
         zfs-dkms (<< ${source:Version}),
         zfs-dkms (>> ${source:Version}...)
