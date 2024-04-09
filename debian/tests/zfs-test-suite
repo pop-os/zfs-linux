@@ -2,6 +2,15 @@
 set -e
 testuser="testrunner"
 
+TEST_LIST="$1"
+if [ -z "$TEST_LIST" ]; then
+    TEST_LIST_PARAM=""
+    echo "No list given, will run all tests."
+else
+    TEST_LIST_PARAM="-T $TEST_LIST"
+    echo "Running tests: $TEST_LIST"
+fi
+
 grep -q "^KillUserProcesses=yes$" /etc/systemd/logind.conf || echo "KillUserProcesses=yes" >>/etc/systemd/logind.conf
 systemctl restart systemd-logind.service
 
@@ -26,4 +35,4 @@ testdir="$(mktemp -d)"
 chown ${testuser}:${testuser} $testdir
 chmod 0775 $testdir
 
-setpriv --reset-env --init-groups --reuid ${testuser} --regid ${testuser} /usr/share/zfs/zfs-tests.sh -v -d $testdir
+setpriv --reset-env --init-groups --reuid ${testuser} --regid ${testuser} /usr/share/zfs/zfs-tests.sh -vKR -s 3G $TEST_LIST_PARAM -d $testdir

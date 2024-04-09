@@ -1,0 +1,61 @@
+#!/bin/sh
+
+set -e
+
+# extracted from https://github.com/openzfs/zfs/blob/master/.github/workflows/scripts/setup-functional.sh (part2)
+tests=(
+  acl
+  alloc_class
+  append
+  arc
+  atime
+  bclone
+  block_cloning
+  bootfs
+  btree
+  cache
+  cachefile
+  casenorm
+  channel_program
+  chattr
+  checksum
+  clean_mirror
+  cli_user
+  compression
+  cp_files
+  crtime
+  ctime
+  deadman
+  delegate
+  devices
+  dos_attributes
+  events
+  exec
+  fadvise
+  fallocate
+  fault
+  features
+  grow
+  history
+  hkdf
+  idmap_mount
+  inheritance
+  inuse
+  io
+  l2arc
+  large_files
+  largest_pool
+  libzfs
+  limits
+  link_count
+  log_spacemap
+  migration
+  mmap
+  mmp
+  mount
+  mv_files
+)
+
+test_list="$(IFS=,; echo "${tests[*]}")"
+
+./debian/tests/zfs-test-suite "$test_list"

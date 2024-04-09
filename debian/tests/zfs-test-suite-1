@@ -1,0 +1,8 @@
+# extracted from https://github.com/openzfs/zfs/blob/master/.github/workflows/scripts/setup-functional.sh (part1)
+tests=(
+  cli_root
+)
+
+test_list="$(IFS=,; echo "${tests[*]}")"
+
+./debian/tests/zfs-test-suite "$test_list"
