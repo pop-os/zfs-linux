@@ -1,3 +1,7 @@
+#!/bin/bash
+
+set -e
+
 # extracted from https://github.com/openzfs/zfs/blob/master/.github/workflows/scripts/setup-functional.sh (part1)
 tests=(
   cli_root
