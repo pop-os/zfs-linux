@@ -35,4 +35,4 @@ testdir="$(mktemp -d)"
 chown ${testuser}:${testuser} $testdir
 chmod 0775 $testdir
 
-setpriv --reset-env --init-groups --reuid ${testuser} --regid ${testuser} /usr/share/zfs/zfs-tests.sh -vKR -s 3G $TEST_LIST_PARAM -d $testdir
+setpriv --reset-env --init-groups --reuid ${testuser} --regid ${testuser} /usr/share/zfs/zfs-tests.sh -vKR -s 1G $TEST_LIST_PARAM -d $testdir
