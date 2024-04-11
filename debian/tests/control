@@ -12,7 +12,8 @@ Depends: zfs-dkms [ amd64 arm64 ppc64el s390x ],
          linux-headers-rpi [armel],
          linux-headers-powerpc64le [ppc64el],
          linux-headers-s390x [s390x],
-         linux-headers-riscv64 [riscv64]
+         linux-headers-riscv64 [riscv64],
+         @recommends@
 
 Tests: binary-debs-modules, binary-debs-modules-udeb
 Restrictions: needs-root, allow-stderr

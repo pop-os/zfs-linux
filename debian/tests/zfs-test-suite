@@ -17,7 +17,7 @@ systemctl restart systemd-logind.service
 if testuid=$(id -u $testuser 2>/dev/null) ; then
     systemctl stop user-$testuid.slice
 else
-    useradd ${testuser}
+    useradd -m ${testuser}
 fi
 
 echo "${testuser} ALL=(root:root) NOPASSWD:ALL" >/etc/sudoers.d/zfs-${testuser}

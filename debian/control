@@ -301,7 +301,7 @@ Depends: acl,
          zfsutils-linux (>=${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
-Recommends: nfs-kernel-server
+Recommends: curl, nfs-kernel-server, rsync, tzdata-legacy
 Breaks: zfsutils-linux (<= 0.7.9-2)
 Replaces: zfsutils-linux (<= 0.7.9-2)
 Conflicts: zutils
