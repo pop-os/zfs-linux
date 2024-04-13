@@ -58,11 +58,14 @@ tests=(
 
 skip_list=(
   large_files
+  largest_pool
 )
 
 free_mem=$(awk '/MemFree/ { printf "%d\n", $2/1024 }' /proc/meminfo)
 
-if [[ $free_mem -lt 8192 ]]; then
+# We require at least 6GB memory (rough value) to run some large tests,
+# otherwise OOM killer might be triggered (especially on debci VMs).
+if [[ $free_mem -lt 6144 ]]; then
     echo "$0: Skipping the following tests due to insufficient free memory...: ${skip_list[*]}"
     for skip in "${skip_list[@]}"; do
         tests=("${tests[@]/$skip}")

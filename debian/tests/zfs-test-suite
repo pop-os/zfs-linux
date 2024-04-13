@@ -31,7 +31,9 @@ losetup -D
 systemctl stop zfs-zed.service nfs-blkmap.service nfs-server.service nfs-client.target nfs-idmapd.service nfs-mountd.service || true
 rm -f /etc/hostid
 
-testdir="$(mktemp -d)"
+# We delibrately use a persistent temporary directory here
+# to prevent the tests from using too much memory.
+testdir="$(mktemp -d --tmpdir=/var/tmp --suffix=-zfs-tests)"
 chown ${testuser}:${testuser} $testdir
 chmod 0775 $testdir
 
