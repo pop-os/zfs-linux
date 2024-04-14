@@ -1,4 +1,4 @@
-Tests: kernel-smoke-test, kernel-ztest, zfs-test-suite
+Tests: kernel-smoke-test, kernel-ztest, zfs-test-suite-1, zfs-test-suite-2, zfs-test-suite-3, zfs-test-suite-4
 Restrictions: needs-root, allow-stderr, isolation-machine
 Depends: zfs-dkms [ amd64 arm64 ppc64el s390x ],
          zfs-initramfs [ amd64 arm64 ppc64el s390x ],
@@ -12,7 +12,8 @@ Depends: zfs-dkms [ amd64 arm64 ppc64el s390x ],
          linux-headers-rpi [armel],
          linux-headers-powerpc64le [ppc64el],
          linux-headers-s390x [s390x],
-         linux-headers-riscv64 [riscv64]
+         linux-headers-riscv64 [riscv64],
+         @recommends@
 
 Tests: binary-debs-modules, binary-debs-modules-udeb
 Restrictions: needs-root, allow-stderr

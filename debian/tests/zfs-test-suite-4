@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+
+# extracted from https://github.com/openzfs/zfs/blob/master/.github/workflows/scripts/setup-functional.sh (part4)
+tests=(
+  raidz
+  redacted_send
+  redundancy
+  refquota
+  refreserv
+  removal
+  renameat2
+  rename_dirs
+  replacement
+  reservation
+  rootpool
+  rsend
+)
+
+test_list="$(IFS=,; echo "${tests[*]}")"
+
+./debian/tests/zfs-test-suite "$test_list"
