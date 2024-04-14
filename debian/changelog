@@ -3,13 +3,18 @@ zfs-linux (2.2.3-2) UNRELEASED; urgency=medium
   [ Shengqi Chen ]
   * d/control: add Build-Depends on libtirpc-dev (closes: #1067088)
   * Add patch to fix path in man/zfs_prepare_disk.8
-  * d/tests: split zfs-test-suite into four parts (see: #1068559)
+  * d/control: upgrade to std-ver 4.7.0 (no changes required)
+  * Some improvements to autopkgtest (see: #1068559):
+    - d/control: add more recommends for zfs-test to fix tests
+    - split zfs-test-suite into four smaller parts
+    - try to skip some tests that require large memory
+    - use presistent tmpdir for zfs-test-suite
 
   [ Benda Xu ]
   * OpenRC no longer breaks the ZFS initscripts on Debian.
   * Fix substitution behaviour in config/Substfiles.am
 
- -- Shengqi Chen <harry-chen@outlook.com>  Tue, 09 Apr 2024 13:48:53 +0800
+ -- Shengqi Chen <harry-chen@outlook.com>  Sun, 14 Apr 2024 10:59:52 +0800
 
 zfs-linux (2.2.3-1) unstable; urgency=medium
 
