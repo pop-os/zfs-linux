@@ -1,3 +1,11 @@
+zfs-linux (2.2.4-1) UNRELEASED; urgency=medium
+
+  * New upstream version 2.2.4
+  * d/patches: remove patches already applied by upstream
+  * libzpool: update symbol list
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 03 May 2024 15:02:16 +0800
+
 zfs-linux (2.2.3-2) unstable; urgency=medium
 
   [ Shengqi Chen ]
