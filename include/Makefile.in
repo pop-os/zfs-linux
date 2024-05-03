@@ -184,6 +184,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
 	$(top_srcdir)/config/kernel-mkdir.m4 \
 	$(top_srcdir)/config/kernel-mknod.m4 \
+	$(top_srcdir)/config/kernel-mm-page-size.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pagemap-folio_wait_bit.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
@@ -307,6 +308,7 @@ am__kernel_linux_HEADERS_DIST = os/linux/kernel/linux/blkdev_compat.h \
 	os/linux/kernel/linux/compiler_compat.h \
 	os/linux/kernel/linux/dcache_compat.h \
 	os/linux/kernel/linux/kmap_compat.h \
+	os/linux/kernel/linux/mm_compat.h \
 	os/linux/kernel/linux/mod_compat.h \
 	os/linux/kernel/linux/page_compat.h \
 	os/linux/kernel/linux/percpu_compat.h \
@@ -352,7 +354,8 @@ am__installdirs = "$(DESTDIR)$(kernel_linuxdir)" \
 	"$(DESTDIR)$(kerneldir)" "$(DESTDIR)$(libzfsdir)"
 am__kernel_spl_ia32_HEADERS_DIST =  \
 	os/linux/spl/sys/ia32/asm_linkage.h
-am__kernel_spl_rpc_HEADERS_DIST = os/linux/spl/rpc/xdr.h
+am__kernel_spl_rpc_HEADERS_DIST = os/linux/spl/rpc/types.h \
+	os/linux/spl/rpc/xdr.h
 am__kernel_spl_sys_HEADERS_DIST = os/linux/spl/sys/acl.h \
 	os/linux/spl/sys/atomic.h os/linux/spl/sys/byteorder.h \
 	os/linux/spl/sys/callb.h os/linux/spl/sys/callo.h \
@@ -494,25 +497,25 @@ am__nobase_libzfs_HEADERS_DIST = cityhash.h zfeature_common.h \
 	libzutil.h thread_pool.h
 am__noinst_HEADERS_DIST = os/freebsd/linux/compiler.h \
 	os/freebsd/linux/types.h os/freebsd/spl/acl/acl_common.h \
-	os/freebsd/spl/rpc/xdr.h os/freebsd/spl/sys/ia32/asm_linkage.h \
-	os/freebsd/spl/sys/acl.h os/freebsd/spl/sys/acl_impl.h \
-	os/freebsd/spl/sys/atomic.h os/freebsd/spl/sys/byteorder.h \
-	os/freebsd/spl/sys/callb.h os/freebsd/spl/sys/ccompat.h \
-	os/freebsd/spl/sys/ccompile.h os/freebsd/spl/sys/cmn_err.h \
-	os/freebsd/spl/sys/condvar.h os/freebsd/spl/sys/cred.h \
-	os/freebsd/spl/sys/ctype.h os/freebsd/spl/sys/debug.h \
-	os/freebsd/spl/sys/dirent.h os/freebsd/spl/sys/disp.h \
-	os/freebsd/spl/sys/dkio.h os/freebsd/spl/sys/fcntl.h \
-	os/freebsd/spl/sys/file.h os/freebsd/spl/sys/freebsd_rwlock.h \
-	os/freebsd/spl/sys/idmap.h os/freebsd/spl/sys/inttypes.h \
-	os/freebsd/spl/sys/isa_defs.h os/freebsd/spl/sys/kmem.h \
-	os/freebsd/spl/sys/kmem_cache.h os/freebsd/spl/sys/kstat.h \
-	os/freebsd/spl/sys/list.h os/freebsd/spl/sys/list_impl.h \
-	os/freebsd/spl/sys/lock.h os/freebsd/spl/sys/misc.h \
-	os/freebsd/spl/sys/mod_os.h os/freebsd/spl/sys/mode.h \
-	os/freebsd/spl/sys/mount.h os/freebsd/spl/sys/mutex.h \
-	os/freebsd/spl/sys/param.h os/freebsd/spl/sys/policy.h \
-	os/freebsd/spl/sys/proc.h os/freebsd/spl/sys/processor.h \
+	os/freebsd/spl/sys/ia32/asm_linkage.h os/freebsd/spl/sys/acl.h \
+	os/freebsd/spl/sys/acl_impl.h os/freebsd/spl/sys/atomic.h \
+	os/freebsd/spl/sys/byteorder.h os/freebsd/spl/sys/callb.h \
+	os/freebsd/spl/sys/ccompat.h os/freebsd/spl/sys/ccompile.h \
+	os/freebsd/spl/sys/cmn_err.h os/freebsd/spl/sys/condvar.h \
+	os/freebsd/spl/sys/cred.h os/freebsd/spl/sys/ctype.h \
+	os/freebsd/spl/sys/debug.h os/freebsd/spl/sys/dirent.h \
+	os/freebsd/spl/sys/disp.h os/freebsd/spl/sys/dkio.h \
+	os/freebsd/spl/sys/fcntl.h os/freebsd/spl/sys/file.h \
+	os/freebsd/spl/sys/freebsd_rwlock.h os/freebsd/spl/sys/idmap.h \
+	os/freebsd/spl/sys/inttypes.h os/freebsd/spl/sys/isa_defs.h \
+	os/freebsd/spl/sys/kmem.h os/freebsd/spl/sys/kmem_cache.h \
+	os/freebsd/spl/sys/kstat.h os/freebsd/spl/sys/list.h \
+	os/freebsd/spl/sys/list_impl.h os/freebsd/spl/sys/lock.h \
+	os/freebsd/spl/sys/misc.h os/freebsd/spl/sys/mod_os.h \
+	os/freebsd/spl/sys/mode.h os/freebsd/spl/sys/mount.h \
+	os/freebsd/spl/sys/mutex.h os/freebsd/spl/sys/param.h \
+	os/freebsd/spl/sys/policy.h os/freebsd/spl/sys/proc.h \
+	os/freebsd/spl/sys/processor.h \
 	os/freebsd/spl/sys/procfs_list.h os/freebsd/spl/sys/random.h \
 	os/freebsd/spl/sys/rwlock.h os/freebsd/spl/sys/sdt.h \
 	os/freebsd/spl/sys/sid.h os/freebsd/spl/sys/sig.h \
@@ -531,7 +534,9 @@ am__noinst_HEADERS_DIST = os/freebsd/linux/compiler.h \
 	os/freebsd/spl/sys/vm.h os/freebsd/spl/sys/vmsystm.h \
 	os/freebsd/spl/sys/vnode.h os/freebsd/spl/sys/vnode_impl.h \
 	os/freebsd/spl/sys/wmsum.h os/freebsd/spl/sys/zmod.h \
-	os/freebsd/spl/sys/zone.h os/freebsd/zfs/sys/freebsd_crypto.h \
+	os/freebsd/spl/sys/zone.h os/freebsd/zfs/sys/arc_os.h \
+	os/freebsd/zfs/sys/freebsd_crypto.h \
+	os/freebsd/zfs/sys/freebsd_event.h \
 	os/freebsd/zfs/sys/vdev_os.h \
 	os/freebsd/zfs/sys/zfs_bootenv_os.h \
 	os/freebsd/zfs/sys/zfs_context_os.h \
@@ -659,6 +664,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 INTLLIBS = @INTLLIBS@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
+IS_SYSV_RC = @IS_SYSV_RC@
 KERNEL_CC = @KERNEL_CC@
 KERNEL_DEBUG_CFLAGS = @KERNEL_DEBUG_CFLAGS@
 KERNEL_DEBUG_CPPFLAGS = @KERNEL_DEBUG_CPPFLAGS@
@@ -747,6 +753,7 @@ PYTHON_EXTRA_LDFLAGS = @PYTHON_EXTRA_LDFLAGS@
 PYTHON_EXTRA_LIBS = @PYTHON_EXTRA_LIBS@
 PYTHON_LIBS = @PYTHON_LIBS@
 PYTHON_PLATFORM = @PYTHON_PLATFORM@
+PYTHON_PLATFORM_SITE_PKG = @PYTHON_PLATFORM_SITE_PKG@
 PYTHON_PREFIX = @PYTHON_PREFIX@
 PYTHON_SHEBANG = @PYTHON_SHEBANG@
 PYTHON_SITE_PKG = @PYTHON_SITE_PKG@
@@ -892,6 +899,7 @@ zfsexecdir = @zfsexecdir@
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/kernel/linux/compiler_compat.h \
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/kernel/linux/dcache_compat.h \
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/kernel/linux/kmap_compat.h \
+@BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/kernel/linux/mm_compat.h \
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/kernel/linux/mod_compat.h \
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/kernel/linux/page_compat.h \
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/kernel/linux/percpu_compat.h \
@@ -933,6 +941,7 @@ zfsexecdir = @zfsexecdir@
 
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@kernel_spl_rpcdir = $(kerneldir)/spl/rpc
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@kernel_spl_rpc_HEADERS = \
+@BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/spl/rpc/types.h \
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/spl/rpc/xdr.h
 
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@kernel_spl_sysdir = $(kerneldir)/spl/sys
@@ -1006,8 +1015,6 @@ zfsexecdir = @zfsexecdir@
 @BUILD_FREEBSD_TRUE@	os/freebsd/linux/types.h \
 @BUILD_FREEBSD_TRUE@	\
 @BUILD_FREEBSD_TRUE@	os/freebsd/spl/acl/acl_common.h \
-@BUILD_FREEBSD_TRUE@	\
-@BUILD_FREEBSD_TRUE@	os/freebsd/spl/rpc/xdr.h \
 @BUILD_FREEBSD_TRUE@	\
 @BUILD_FREEBSD_TRUE@	os/freebsd/spl/sys/ia32/asm_linkage.h \
 @BUILD_FREEBSD_TRUE@	\
@@ -1083,7 +1090,9 @@ zfsexecdir = @zfsexecdir@
 @BUILD_FREEBSD_TRUE@	os/freebsd/spl/sys/zmod.h \
 @BUILD_FREEBSD_TRUE@	os/freebsd/spl/sys/zone.h \
 @BUILD_FREEBSD_TRUE@	\
+@BUILD_FREEBSD_TRUE@	os/freebsd/zfs/sys/arc_os.h \
 @BUILD_FREEBSD_TRUE@	os/freebsd/zfs/sys/freebsd_crypto.h \
+@BUILD_FREEBSD_TRUE@	os/freebsd/zfs/sys/freebsd_event.h \
 @BUILD_FREEBSD_TRUE@	os/freebsd/zfs/sys/vdev_os.h \
 @BUILD_FREEBSD_TRUE@	os/freebsd/zfs/sys/zfs_bootenv_os.h \
 @BUILD_FREEBSD_TRUE@	os/freebsd/zfs/sys/zfs_context_os.h \

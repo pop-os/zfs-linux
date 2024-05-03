@@ -592,6 +592,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
 	$(top_srcdir)/config/kernel-mkdir.m4 \
 	$(top_srcdir)/config/kernel-mknod.m4 \
+	$(top_srcdir)/config/kernel-mm-page-size.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pagemap-folio_wait_bit.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
@@ -2636,6 +2637,7 @@ am__dist_noinst_DATA_DIST =  \
 	etc/systemd/system/zfs-zed.service.in \
 	etc/systemd/system/zfs.target.in man/man8/zed.8.in \
 	man/man8/zfs-mount-generator.8.in \
+	man/man8/zfs_prepare_disk.8.in \
 	tests/zfs-tests/include/default.cfg.in \
 	tests/test-runner/bin/test-runner.py.in \
 	tests/test-runner/bin/zts-report.py.in \
@@ -2686,27 +2688,27 @@ am__dist_noinst_DATA_DIST =  \
 	man/man8/zfs-unload-key.8 man/man8/zfs-unmount.8 \
 	man/man8/zfs-upgrade.8 man/man8/zfs-userspace.8 \
 	man/man8/zfs-wait.8 man/man8/zfs_ids_to_path.8 \
-	man/man8/zfs_prepare_disk.8 man/man8/zgenhostid.8 \
-	man/man8/zinject.8 man/man8/zpool.8 man/man8/zpool-add.8 \
-	man/man8/zpool-attach.8 man/man8/zpool-checkpoint.8 \
-	man/man8/zpool-clear.8 man/man8/zpool-create.8 \
-	man/man8/zpool-destroy.8 man/man8/zpool-detach.8 \
-	man/man8/zpool-events.8 man/man8/zpool-export.8 \
-	man/man8/zpool-get.8 man/man8/zpool-history.8 \
-	man/man8/zpool-import.8 man/man8/zpool-initialize.8 \
-	man/man8/zpool-iostat.8 man/man8/zpool-labelclear.8 \
-	man/man8/zpool-list.8 man/man8/zpool-offline.8 \
-	man/man8/zpool-online.8 man/man8/zpool-reguid.8 \
-	man/man8/zpool-remove.8 man/man8/zpool-reopen.8 \
-	man/man8/zpool-replace.8 man/man8/zpool-resilver.8 \
-	man/man8/zpool-scrub.8 man/man8/zpool-set.8 \
-	man/man8/zpool-split.8 man/man8/zpool-status.8 \
-	man/man8/zpool-sync.8 man/man8/zpool-trim.8 \
-	man/man8/zpool-upgrade.8 man/man8/zpool-wait.8 \
-	man/man8/zstream.8 man/man8/zstreamdump.8 \
-	man/man8/zpool_influxdb.8 man/man8/zfs-jail.8 \
-	man/man8/zfs-unjail.8 man/man8/zfs-unzone.8 \
-	man/man8/zfs-zone.8 tests/zfs-tests/cmd/file/file_common.h \
+	man/man8/zgenhostid.8 man/man8/zinject.8 man/man8/zpool.8 \
+	man/man8/zpool-add.8 man/man8/zpool-attach.8 \
+	man/man8/zpool-checkpoint.8 man/man8/zpool-clear.8 \
+	man/man8/zpool-create.8 man/man8/zpool-destroy.8 \
+	man/man8/zpool-detach.8 man/man8/zpool-events.8 \
+	man/man8/zpool-export.8 man/man8/zpool-get.8 \
+	man/man8/zpool-history.8 man/man8/zpool-import.8 \
+	man/man8/zpool-initialize.8 man/man8/zpool-iostat.8 \
+	man/man8/zpool-labelclear.8 man/man8/zpool-list.8 \
+	man/man8/zpool-offline.8 man/man8/zpool-online.8 \
+	man/man8/zpool-reguid.8 man/man8/zpool-remove.8 \
+	man/man8/zpool-reopen.8 man/man8/zpool-replace.8 \
+	man/man8/zpool-resilver.8 man/man8/zpool-scrub.8 \
+	man/man8/zpool-set.8 man/man8/zpool-split.8 \
+	man/man8/zpool-status.8 man/man8/zpool-sync.8 \
+	man/man8/zpool-trim.8 man/man8/zpool-upgrade.8 \
+	man/man8/zpool-wait.8 man/man8/zstream.8 \
+	man/man8/zstreamdump.8 man/man8/zpool_influxdb.8 \
+	man/man8/zfs-jail.8 man/man8/zfs-unjail.8 \
+	man/man8/zfs-unzone.8 man/man8/zfs-zone.8 \
+	tests/zfs-tests/cmd/file/file_common.h \
 	tests/zfs-tests/cmd/linux_dos_attributes/dos_attributes.h \
 	tests/README.md autogen.sh copy-builtin AUTHORS \
 	CODE_OF_CONDUCT.md COPYRIGHT LICENSE META NEWS NOTICE \
@@ -3077,6 +3079,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 INTLLIBS = @INTLLIBS@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
+IS_SYSV_RC = @IS_SYSV_RC@
 KERNEL_CC = @KERNEL_CC@
 KERNEL_DEBUG_CFLAGS = @KERNEL_DEBUG_CFLAGS@
 KERNEL_DEBUG_CPPFLAGS = @KERNEL_DEBUG_CPPFLAGS@
@@ -3165,6 +3168,7 @@ PYTHON_EXTRA_LDFLAGS = @PYTHON_EXTRA_LDFLAGS@
 PYTHON_EXTRA_LIBS = @PYTHON_EXTRA_LIBS@
 PYTHON_LIBS = @PYTHON_LIBS@
 PYTHON_PLATFORM = @PYTHON_PLATFORM@
+PYTHON_PLATFORM_SITE_PKG = @PYTHON_PLATFORM_SITE_PKG@
 PYTHON_PREFIX = @PYTHON_PREFIX@
 PYTHON_SHEBANG = @PYTHON_SHEBANG@
 PYTHON_SITE_PKG = @PYTHON_SITE_PKG@
@@ -3418,6 +3422,7 @@ subst_sed_cmd = \
 	-e 's|@ASAN_ENABLED[@]|$(ASAN_ENABLED)|g' \
 	-e 's|@DEFAULT_INIT_NFS_SERVER[@]|$(DEFAULT_INIT_NFS_SERVER)|g' \
 	-e 's|@DEFAULT_INIT_SHELL[@]|$(DEFAULT_INIT_SHELL)|g' \
+	-e 's|@IS_SYSV_RC[@]|$(IS_SYSV_RC)|g' \
 	-e 's|@LIBFETCH_DYNAMIC[@]|$(LIBFETCH_DYNAMIC)|g' \
 	-e 's|@LIBFETCH_SONAME[@]|$(LIBFETCH_SONAME)|g' \
 	-e 's|@PYTHON[@]|$(PYTHON)|g' \
@@ -4434,7 +4439,6 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@	man/man8/zfs-upgrade.8 \
 @CONFIG_USER_TRUE@	man/man8/zfs-userspace.8 man/man8/zfs-wait.8 \
 @CONFIG_USER_TRUE@	man/man8/zfs_ids_to_path.8 \
-@CONFIG_USER_TRUE@	man/man8/zfs_prepare_disk.8 \
 @CONFIG_USER_TRUE@	man/man8/zgenhostid.8 man/man8/zinject.8 \
 @CONFIG_USER_TRUE@	man/man8/zpool.8 man/man8/zpool-add.8 \
 @CONFIG_USER_TRUE@	man/man8/zpool-attach.8 \
@@ -4469,7 +4473,8 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@	$(am__append_80)
 @CONFIG_USER_TRUE@nodist_man_MANS = \
 @CONFIG_USER_TRUE@	man/man8/zed.8 \
-@CONFIG_USER_TRUE@	man/man8/zfs-mount-generator.8
+@CONFIG_USER_TRUE@	man/man8/zfs-mount-generator.8 \
+@CONFIG_USER_TRUE@	man/man8/zfs_prepare_disk.8
 
 @CONFIG_USER_TRUE@scripts_zfs_tests_bindir = $(datadir)/$(PACKAGE)/zfs-tests/bin
 @CONFIG_USER_TRUE@tests_zfs_tests_cmd_badsend_LDADD = \
@@ -13911,7 +13916,7 @@ $(1) : $(2)$(1).in Makefile;
 	mv -f $$@~ $$@
 endef
 
-$(call SUBST,%,)
+$(SUBSTFILES): $(call SUBST,%,)
 
 define SCRIPTS_EXTRA_ENVIRONMENT
 
