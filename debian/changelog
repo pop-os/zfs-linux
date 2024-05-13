@@ -4,8 +4,10 @@ zfs-linux (2.2.4-1) UNRELEASED; urgency=medium
   * d/patches: remove patches already applied by upstream
   * libzpool: update symbol list
   * d/tests: skip some flaky tests in zfs-test-suite-1
+  * d/control: update python3 dependency of zfs-dkms
+  * d/symbols: remove unreferenced libspl symbols (closes: #1070899)
 
- -- Shengqi Chen <harry-chen@outlook.com>  Fri, 03 May 2024 16:11:46 +0800
+ -- Shengqi Chen <harry-chen@outlook.com>  Mon, 13 May 2024 12:32:26 +0800
 
 zfs-linux (2.2.3-2) unstable; urgency=medium
 
