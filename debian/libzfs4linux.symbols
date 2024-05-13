@@ -251,8 +251,6 @@ libzfs.so.4 libzfs4linux #MINVER#
  snapshot_namecheck@Base 2.0
  spa_feature_table@Base 0.8.2
  spl_pagesize@Base 2.2
- strlcat@Base 2.2
- strlcpy@Base 2.2
  tpool_abandon@Base 2.2
  tpool_create@Base 2.2
  tpool_destroy@Base 2.2
@@ -811,5 +809,3 @@ libzfs_core.so.3 libzfs4linux #MINVER#
  mkdirp@Base 2.0
  print_timestamp@Base 2.0
  spl_pagesize@Base 2.0
- strlcat@Base 2.0
- strlcpy@Base 2.0

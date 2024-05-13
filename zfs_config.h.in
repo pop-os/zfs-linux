@@ -85,6 +85,9 @@
 /* bdev_check_media_change() exists */
 #undef HAVE_BDEV_CHECK_MEDIA_CHANGE
 
+/* bdev_file_open_by_path() exists */
+#undef HAVE_BDEV_FILE_OPEN_BY_PATH
+
 /* bdev_*_io_acct() available */
 #undef HAVE_BDEV_IO_ACCT_63
 
@@ -151,14 +154,23 @@
 /* blkdev_get_by_path() handles ERESTARTSYS */
 #undef HAVE_BLKDEV_GET_ERESTARTSYS
 
-/* blkdev_issue_discard() is available */
-#undef HAVE_BLKDEV_ISSUE_DISCARD
+/* __blkdev_issue_discard(flags) is available */
+#undef HAVE_BLKDEV_ISSUE_DISCARD_ASYNC_FLAGS
 
 /* __blkdev_issue_discard() is available */
-#undef HAVE_BLKDEV_ISSUE_DISCARD_ASYNC
+#undef HAVE_BLKDEV_ISSUE_DISCARD_ASYNC_NOFLAGS
+
+/* blkdev_issue_discard(flags) is available */
+#undef HAVE_BLKDEV_ISSUE_DISCARD_FLAGS
+
+/* blkdev_issue_discard() is available */
+#undef HAVE_BLKDEV_ISSUE_DISCARD_NOFLAGS
 
 /* blkdev_issue_secure_erase() is available */
 #undef HAVE_BLKDEV_ISSUE_SECURE_ERASE
+
+/* blkdev_put() exists */
+#undef HAVE_BLKDEV_PUT
 
 /* blkdev_put() accepts void* as arg 2 */
 #undef HAVE_BLKDEV_PUT_HOLDER
@@ -175,6 +187,9 @@
 /* blk_alloc_disk() exists */
 #undef HAVE_BLK_ALLOC_DISK
 
+/* blk_alloc_disk() exists and takes 2 args */
+#undef HAVE_BLK_ALLOC_DISK_2ARG
+
 /* blk_alloc_queue() expects request function */
 #undef HAVE_BLK_ALLOC_QUEUE_REQUEST_FN
 
@@ -189,6 +204,9 @@
 
 /* block multiqueue is available */
 #undef HAVE_BLK_MQ
+
+/* block multiqueue hardware context is cached in struct request */
+#undef HAVE_BLK_MQ_RQ_HCTX
 
 /* blk queue backing_dev_info is dynamic */
 #undef HAVE_BLK_QUEUE_BDI_DYNAMIC
@@ -653,6 +671,9 @@
 /* Define to 1 if you have the `mlockall' function. */
 #undef HAVE_MLOCKALL
 
+/* page_size() is available */
+#undef HAVE_MM_PAGE_SIZE
+
 /* lookup_bdev() wants mode arg */
 #undef HAVE_MODE_LOOKUP_BDEV
 
@@ -979,6 +1000,9 @@
 
 /* __set_page_dirty_nobuffers exists */
 #undef HAVE_VFS_SET_PAGE_DIRTY_NOBUFFERS
+
+/* splice_copy_file_range() is available */
+#undef HAVE_VFS_SPLICE_COPY_FILE_RANGE
 
 /* __vmalloc page flags exists */
 #undef HAVE_VMALLOC_PAGE_KERNEL

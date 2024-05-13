@@ -1,5 +1,3 @@
-0016-etc-init.d-decide-which-variant-to-use-at-build-time.patch
-0018-config-Substfiles.am-restrict-to-the-dedicated-list.patch
 1000-dont-symlink-zed-scripts.patch
 1001-Prevent-manual-builds-in-the-DKMS-source.patch
 1002-Check-for-META-and-DCH-consistency-in-autoconf.patch
@@ -22,4 +20,3 @@ ubuntu/zfs-mount-container-start.patch
 #ubuntu/4510-silently-ignore-modprobe-failure.patch
 #ubuntu/4751-suppress-types.patch
 fix-icp-sha2-on-armel.patch
-fix-manpage-build-for-zfs_prepare_disk.patch
