@@ -2092,8 +2092,6 @@ libzpool.so.5 libzpool5linux #MINVER#
  spl_fstrans_mark@Base 0.8.2
  spl_fstrans_unmark@Base 0.8.2
  spl_pagesize@Base 2.2.0
- strlcat@Base 2.2.0
- strlcpy@Base 2.2.0
  svr_sync@Base 0.8.2
  sync_error_list@Base 2.2.0
  system_delay_taskq@Base 0.8.2

@@ -174,8 +174,6 @@ libuutil.so.3 libuutil3linux #MINVER#
  mkdirp@Base 0.8.2
  print_timestamp@Base 0.8.2
  spl_pagesize@Base 0.8.2
- strlcat@Base 0.8.2
- strlcpy@Base 0.8.2
  uu_avl_create@Base 0.8.2
  uu_avl_destroy@Base 0.8.2
  uu_avl_find@Base 0.8.2
