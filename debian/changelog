@@ -1,4 +1,4 @@
-zfs-linux (2.2.4-1) UNRELEASED; urgency=medium
+zfs-linux (2.2.4-1) unstable; urgency=medium
 
   * New upstream version 2.2.4
   * d/patches: remove patches already applied by upstream
