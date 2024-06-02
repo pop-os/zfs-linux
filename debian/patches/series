@@ -1,7 +1,7 @@
 1000-dont-symlink-zed-scripts.patch
 1001-Prevent-manual-builds-in-the-DKMS-source.patch
 1002-Check-for-META-and-DCH-consistency-in-autoconf.patch
-1003-relocate-zvol_wait.patch
+#1003-relocate-zvol_wait.patch
 1005-enable-zed.patch
 1006-zed-service-bindir.patch
 1007-dkms-pkgcfg.patch

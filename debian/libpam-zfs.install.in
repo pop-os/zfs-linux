@@ -1,0 +1,2 @@
+usr/lib/@DEB_HOST_MULTIARCH@/security/pam_zfs_key.so
+usr/share/pam-configs/zfs_key

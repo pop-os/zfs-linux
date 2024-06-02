@@ -1,6 +1,6 @@
-usr/bin/arc_summary.py
 usr/share/zfs/enum-extract.pl
 usr/share/zfs/zfs-helpers.sh
 etc/init.d
 etc/sudoers.d
-lib/systemd/system/zfs-import.service
+usr/lib/systemd/system/zfs-import.service
+

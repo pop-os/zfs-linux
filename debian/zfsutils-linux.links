@@ -1,3 +1,6 @@
-sbin/zfs      bin/zfs
-sbin/zpool    bin/zpool
-usr/lib/zfs-linux/zpool_influxdb  bin/zpool_influxdb
+usr/sbin/zfs      usr/bin/zfs
+usr/sbin/zpool    usr/bin/zpool
+usr/lib/zfs-linux/zpool_influxdb  usr/bin/zpool_influxdb
+usr/bin/arc_summary  usr/sbin/arc_summary
+usr/bin/zilstat      usr/sbin/zilstat
+usr/bin/zvol_wait    usr/sbin/zvol_wait
