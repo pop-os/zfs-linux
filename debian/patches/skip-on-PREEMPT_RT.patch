@@ -2,6 +2,7 @@ Description: do not attempt to build the modules on PREEMPT_RT kernels
 Author: Andreas Beckmann <anbe@debian.org>
 Bug-Debian: https://bugs.debian.org/981212
 Bug: https://github.com/openzfs/zfs/issues/11097
+Last-Update: 2024-08-08
 
 Index: zfs-linux/scripts/dkms.mkconf
 ===================================================================
@@ -18,5 +19,5 @@ Index: zfs-linux/scripts/dkms.mkconf
 +    fi
 +fi
  PRE_BUILD="configure
+   --disable-dependency-tracking
    --prefix=/usr
-   --with-config=kernel
