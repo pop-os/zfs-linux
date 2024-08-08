@@ -1,8 +1,13 @@
 zfs-linux (2.2.5-1) UNRELEASED; urgency=medium
 
   * New upstream version 2.2.5
+    - fix bash-completion initialization (closes: #1074597)
+    - other fixes: https://github.com/openzfs/zfs/releases/tag/zfs-2.2.5
+  * d/patches:
+    - refresh existing patches
+    - add bump-linux-maximum.patch to compile on 6.10 (closes: #1077835)
 
- -- Shengqi Chen <harry-chen@outlook.com>  Thu, 08 Aug 2024 17:16:43 +0800
+ -- Shengqi Chen <harry-chen@outlook.com>  Thu, 08 Aug 2024 17:44:24 +0800
 
 zfs-linux (2.2.4-2) unstable; urgency=medium
 
