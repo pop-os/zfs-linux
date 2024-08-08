@@ -224,6 +224,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-totalhigh_pages.m4 \
 	$(top_srcdir)/config/kernel-totalram-pages-func.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
+	$(top_srcdir)/config/kernel-types.m4 \
 	$(top_srcdir)/config/kernel-user-ns-inum.m4 \
 	$(top_srcdir)/config/kernel-userns-capabilities.m4 \
 	$(top_srcdir)/config/kernel-usleep_range.m4 \
@@ -256,6 +257,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/po.m4 $(top_srcdir)/config/progtest.m4 \
 	$(top_srcdir)/config/toolchain-simd.m4 \
 	$(top_srcdir)/config/user-aio.h.m4 \
+	$(top_srcdir)/config/user-backtrace.m4 \
 	$(top_srcdir)/config/user-clock_gettime.m4 \
 	$(top_srcdir)/config/user-dracut.m4 \
 	$(top_srcdir)/config/user-gettext.m4 \
@@ -267,6 +269,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/user-libfetch.m4 \
 	$(top_srcdir)/config/user-libtirpc.m4 \
 	$(top_srcdir)/config/user-libudev.m4 \
+	$(top_srcdir)/config/user-libunwind.m4 \
 	$(top_srcdir)/config/user-libuuid.m4 \
 	$(top_srcdir)/config/user-makedev.m4 \
 	$(top_srcdir)/config/user-pam.m4 \
@@ -1372,6 +1375,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/fault/decompress_fault.ksh \
 	functional/fault/decrypt_fault.ksh \
 	functional/fault/scrub_after_resilver.ksh \
+	functional/fault/suspend_resume_single.ksh \
 	functional/fault/setup.ksh \
 	functional/fault/zpool_status_-s.ksh \
 	functional/features/async_destroy/async_destroy_001_pos.ksh \
@@ -2047,6 +2051,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BACKTRACE_LIBS = @BACKTRACE_LIBS@
 CC = @CC@
 CCAS = @CCAS@
 CCASDEPMODE = @CCASDEPMODE@
@@ -2158,6 +2163,9 @@ LIBTOOL = @LIBTOOL@
 LIBUDEV_CFLAGS = @LIBUDEV_CFLAGS@
 LIBUDEV_LIBS = @LIBUDEV_LIBS@
 LIBUDEV_PC = @LIBUDEV_PC@
+LIBUNWIND_CFLAGS = @LIBUNWIND_CFLAGS@
+LIBUNWIND_LIBS = @LIBUNWIND_LIBS@
+LIBUNWIND_PC = @LIBUNWIND_PC@
 LIBUUID_CFLAGS = @LIBUUID_CFLAGS@
 LIBUUID_LIBS = @LIBUUID_LIBS@
 LIBUUID_PC = @LIBUUID_PC@
@@ -3764,6 +3772,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/fault/decompress_fault.ksh \
 	functional/fault/decrypt_fault.ksh \
 	functional/fault/scrub_after_resilver.ksh \
+	functional/fault/suspend_resume_single.ksh \
 	functional/fault/setup.ksh \
 	functional/fault/zpool_status_-s.ksh \
 	functional/features/async_destroy/async_destroy_001_pos.ksh \
