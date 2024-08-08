@@ -1,3 +1,9 @@
+zfs-linux (2.2.5-1) UNRELEASED; urgency=medium
+
+  * New upstream version 2.2.5
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Thu, 08 Aug 2024 17:16:43 +0800
+
 zfs-linux (2.2.4-2) unstable; urgency=medium
 
   * d/tests: avoid running zfs-test-suite-* automatically
