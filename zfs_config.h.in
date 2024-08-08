@@ -79,6 +79,9 @@
 /* Define if host toolchain supports AVX512VL */
 #undef HAVE_AVX512VL
 
+/* backtrace() is available */
+#undef HAVE_BACKTRACE
+
 /* bdevname() is available */
 #undef HAVE_BDEVNAME
 
@@ -102,6 +105,9 @@
 
 /* bdev_max_secure_erase_sectors() is available */
 #undef HAVE_BDEV_MAX_SECURE_ERASE_SECTORS
+
+/* bdev_nr_bytes() is available */
+#undef HAVE_BDEV_NR_BYTES
 
 /* bdev_open_by_path() exists */
 #undef HAVE_BDEV_OPEN_BY_PATH
@@ -335,6 +341,9 @@
 /* sops->evict_inode() exists */
 #undef HAVE_EVICT_INODE
 
+/* Define to 1 if you have the `execvpe' function. */
+#undef HAVE_EXECVPE
+
 /* FALLOC_FL_ZERO_RANGE is defined */
 #undef HAVE_FALLOC_FL_ZERO_RANGE
 
@@ -406,6 +415,9 @@
 
 /* Define if the GNU gettext() function is already present or preinstalled. */
 #undef HAVE_GETTEXT
+
+/* Define to 1 if you have the `gettid' function. */
+#undef HAVE_GETTID
 
 /* iops->get_acl() exists */
 #undef HAVE_GET_ACL
@@ -584,6 +596,9 @@
 /* Define if compiler supports -Winfinite-recursion */
 #undef HAVE_KERNEL_INFINITE_RECURSION
 
+/* kernel defines intptr_t */
+#undef HAVE_KERNEL_INTPTR_T
+
 /* kernel has kernel_neon_* functions */
 #undef HAVE_KERNEL_NEON
 
@@ -643,6 +658,12 @@
 
 /* Define if you have [udev] */
 #undef HAVE_LIBUDEV
+
+/* Define if you have [unwind] */
+#undef HAVE_LIBUNWIND
+
+/* libunwind has unw_get_elf_filename */
+#undef HAVE_LIBUNWIND_ELF
 
 /* Define if you have [uuid] */
 #undef HAVE_LIBUUID
