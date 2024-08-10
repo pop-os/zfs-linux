@@ -1,4 +1,4 @@
-zfs-linux (2.2.5-1) UNRELEASED; urgency=medium
+zfs-linux (2.2.5-1) unstable; urgency=medium
 
   * New upstream version 2.2.5
     - fix bash-completion initialization (closes: #1074597)
