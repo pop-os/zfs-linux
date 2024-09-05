@@ -1,8 +1,7 @@
-Description: META: Bump Linux-Maximum to 6.10
- See https://github.com/openzfs/zfs/pull/16359#issuecomment-2273884334
+Description: META: Bump Linux-Maximum to 6.11
 Author: Shengqi Chen <harry-chen@outlook.com>
 Forwarded: not-needed
-Last-Update: 2024-08-08
+Last-Update: 2024-09-05
 
 Index: zfs-linux/META
 =======================================================
@@ -12,6 +11,6 @@ Index: zfs-linux/META
  Release-Tags:  relext
  License:       CDDL
  Author:        OpenZFS
--Linux-Maximum: 6.9
-+Linux-Maximum: 6.10
+-Linux-Maximum: 6.10
++Linux-Maximum: 6.11
  Linux-Minimum: 3.10
