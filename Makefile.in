@@ -235,9 +235,9 @@ target_triplet = @target@
 @CONFIG_USER_TRUE@@USING_PYTHON_TRUE@am__append_25 = arc_summary     arcstat        dbufstat        zilstat
 @CONFIG_USER_TRUE@@USING_PYTHON_TRUE@am__append_26 = arc_summary     arcstat        dbufstat        zilstat
 @CONFIG_USER_TRUE@@USING_PYTHON_TRUE@am__append_27 = cmd/arc_summary cmd/arcstat.in cmd/dbufstat.in cmd/zilstat.in
-@CONFIG_USER_TRUE@am__append_28 = $(nodist_bashcompletion_DATA) \
+@CONFIG_USER_TRUE@am__append_28 = $(COMPLETION_FILES) \
 @CONFIG_USER_TRUE@	contrib/pyzfs/setup.py
-@CONFIG_USER_TRUE@am__append_29 = $(nodist_bashcompletion_DATA)
+@CONFIG_USER_TRUE@am__append_29 = $(COMPLETION_FILES)
 @CONFIG_USER_TRUE@am__append_30 = contrib/pyzfs/libzfs_core \
 @CONFIG_USER_TRUE@	contrib/pyzfs/README contrib/pyzfs/LICENSE \
 @CONFIG_USER_TRUE@	contrib/pyzfs/docs contrib/zcp/autosnap.lua
@@ -593,7 +593,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
 	$(top_srcdir)/config/kernel-mkdir.m4 \
 	$(top_srcdir)/config/kernel-mknod.m4 \
-	$(top_srcdir)/config/kernel-mm-page-size.m4 \
+	$(top_srcdir)/config/kernel-mm-pagemap.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pagemap-folio_wait_bit.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
@@ -3795,7 +3795,8 @@ SUBDIRS = include $(am__append_85) $(am__append_94)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	$(LIBUDEV_LIBS) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	$(LIBUUID_LIBS)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@zed_LDFLAGS = -pthread
-@CONFIG_USER_TRUE@nodist_bashcompletion_DATA = contrib/bash_completion.d/zfs
+@CONFIG_USER_TRUE@nodist_bashcompletion_DATA = contrib/bash_completion.d/zfs contrib/bash_completion.d/zpool
+@CONFIG_USER_TRUE@COMPLETION_FILES = contrib/bash_completion.d/zfs
 @CONFIG_USER_TRUE@@PYZFS_ENABLED_TRUE@pyzfs_V_1 = -v
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@pkgdracut_02dir = $(dracutdir)/modules.d/02zfsexpandknowledge
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@pkgdracut_02_SCRIPTS = \
@@ -14013,7 +14014,10 @@ scripts-install-data-hook: scripts/common.sh.in Makefile
 @CONFIG_USER_TRUE@@USING_PYTHON_TRUE@arc_summary: cmd/arc_summary
 @CONFIG_USER_TRUE@@USING_PYTHON_TRUE@	$(AM_V_at)cp $< $@
 @CONFIG_USER_TRUE@cmd: $(bin_SCRIPTS) $(bin_PROGRAMS) $(sbin_SCRIPTS) $(sbin_PROGRAMS) $(dist_bin_SCRIPTS) $(zfsexec_PROGRAMS) $(mounthelper_PROGRAMS)
-@CONFIG_USER_TRUE@$(call SHELLCHECK_OPTS,$(nodist_bashcompletion_DATA)): SHELLCHECK_SHELL = bash
+@CONFIG_USER_TRUE@$(call SHELLCHECK_OPTS,$(COMPLETION_FILES)): SHELLCHECK_SHELL = bash
+
+@CONFIG_USER_TRUE@contrib/bash_completion.d/zpool: contrib/bash_completion.d/zfs
+@CONFIG_USER_TRUE@	$(LN_S) zfs $@
 @CONFIG_USER_TRUE@@PYZFS_ENABLED_TRUE@pyzfs-all-local: contrib/pyzfs/setup.py
 @CONFIG_USER_TRUE@@PYZFS_ENABLED_TRUE@	cd contrib/pyzfs && $(PYTHON) setup.py -q $(pyzfs_V_$(V)) egg_info -e . build
 
