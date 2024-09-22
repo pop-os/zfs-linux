@@ -184,7 +184,7 @@ Depends: dkms (>> 2.1.1.2-5),
          file,
          libc6-dev | libc-dev,
          lsb-release,
-         python3-distutils (<< 3.12) | libpython3-stdlib (>> 3.2),
+         libpython3-stdlib,
          ${misc:Depends},
          ${perl:Depends}
 Recommends: zfs-zed, zfsutils-linux (>= ${source:Version}), ${linux:Recommends}
