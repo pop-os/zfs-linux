@@ -142,6 +142,9 @@ libzfs.so.6 libzfs6linux #MINVER#
  avl_update_lt@Base 2.2
  avl_walk@Base 2.2
  bookmark_namecheck@Base 2.0
+ cityhash1@Base 2.3
+ cityhash2@Base 2.3
+ cityhash3@Base 2.3
  cityhash4@Base 2.0
  color_end@Base 2.0
  color_start@Base 2.0
@@ -178,9 +181,11 @@ libzfs.so.6 libzfs6linux #MINVER#
  fletcher_4_superscalar4_ops@Base 0.8.2
  fletcher_4_superscalar_ops@Base 0.8.2
  fletcher_init@Base 0.8.2
+ format_timestamp@Base 2.3
  fsleep@Base 2.2.3
  get_dataset_depth@Base 0.8.2
  get_system_hostid@Base 2.2
+ get_timestamp@Base 2.3
  getexecname@Base 2.2
  getextmntent@Base 2.2
  getmntany@Base 2.2
@@ -190,6 +195,7 @@ libzfs.so.6 libzfs6linux #MINVER#
  is_mpath_whole_disk@Base 2.2
  libpc_error_description@Base 2.2
  libspl_assertf@Base 2.2
+ libspl_backtrace@Base 2.3
  libspl_set_assert_ok@Base 2.2
  libzfs_add_handle@Base 0.8.2
  libzfs_config_ops@Base 0.8.2
@@ -279,6 +285,7 @@ libzfs.so.6 libzfs6linux #MINVER#
  vdev_prop_to_name@Base 2.2
  vdev_prop_user@Base 2.2
  vdev_prop_values@Base 2.2
+ zcmd_print_json@Base 2.3
  zfeature_checks_disable@Base 0.8.2
  zfeature_depends_on@Base 0.8.2
  zfeature_is_supported@Base 0.8.2
@@ -455,17 +462,28 @@ libzfs.so.6 libzfs6linux #MINVER#
  zfs_userquota_prop_prefixes@Base 0.8.2
  zfs_userspace@Base 0.8.2
  zfs_valid_proplist@Base 0.8.2
+ zfs_valstr_zio_flag@Base 2.3
+ zfs_valstr_zio_flag_bits@Base 2.3
+ zfs_valstr_zio_flag_pairs@Base 2.3
+ zfs_valstr_zio_priority@Base 2.3
+ zfs_valstr_zio_stage@Base 2.3
+ zfs_valstr_zio_stage_bits@Base 2.3
+ zfs_valstr_zio_stage_pairs@Base 2.3
  zfs_version_kernel@Base 0.8.2
+ zfs_version_nvlist@Base 2.3
  zfs_version_print@Base 0.8.2
  zfs_version_userland@Base 0.8.2
  zfs_wait_status@Base 2.0
  zfs_zpl_version_map@Base 0.8.2
  zpool_add@Base 0.8.2
+ zpool_add_propname@Base 2.3
  zpool_checkpoint@Base 0.8.2
  zpool_clear@Base 0.8.2
  zpool_clear_label@Base 0.8.2
  zpool_close@Base 0.8.2
+ zpool_collect_unsup_feat@Base 2.3
  zpool_create@Base 0.8.2
+ zpool_ddt_prune@Base 2.3
  zpool_default_search_paths@Base 2.2
  zpool_destroy@Base 0.8.2
  zpool_disable_datasets@Base 0.8.2
@@ -484,6 +502,7 @@ libzfs.so.6 libzfs6linux #MINVER#
  zpool_export_force@Base 0.8.2
  zpool_feature_init@Base 0.8.2
  zpool_find_config@Base 2.2
+ zpool_find_parent_vdev@Base 2.3
  zpool_find_vdev@Base 0.8.2
  zpool_find_vdev_by_physpath@Base 0.8.2
  zpool_free_handles@Base 0.8.2
@@ -524,9 +543,9 @@ libzfs.so.6 libzfs6linux #MINVER#
  zpool_open@Base 0.8.2
  zpool_open_canfail@Base 0.8.2
  zpool_pool_state_to_name@Base 0.8.2
+ zpool_prefetch@Base 2.3
  zpool_prepare_and_label_disk@Base 2.2.1
  zpool_prepare_disk@Base 2.2.1
- zpool_print_unsup_feat@Base 0.8.2
  zpool_prop_align_right@Base 0.8.2
  zpool_prop_column_name@Base 0.8.2
  zpool_prop_default_numeric@Base 0.8.2
@@ -553,6 +572,7 @@ libzfs.so.6 libzfs6linux #MINVER#
  zpool_scan@Base 0.8.2
  zpool_search_import@Base 2.2
  zpool_set_bootenv@Base 2.0
+ zpool_set_guid@Base 2.3
  zpool_set_prop@Base 0.8.2
  zpool_set_vdev_prop@Base 2.2
  zpool_skip_pool@Base 0.8.2
@@ -579,12 +599,14 @@ libzfs.so.6 libzfs6linux #MINVER#
  zpool_vdev_split@Base 0.8.2
  zpool_wait@Base 2.0
  zpool_wait_status@Base 2.0
+ zprop_collect_property@Base 2.3
  zprop_free_list@Base 0.8.2
  zprop_get_list@Base 0.8.2
  zprop_index_to_string@Base 0.8.2
  zprop_iter@Base 0.8.2
  zprop_iter_common@Base 0.8.2
  zprop_name_to_prop@Base 0.8.2
+ zprop_nvlist_one_property@Base 2.3
  zprop_print_one_property@Base 0.8.2
  zprop_random_value@Base 0.8.2
  zprop_register_hidden@Base 0.8.2
@@ -722,12 +744,15 @@ libzfs_core.so.3 libzfs6linux #MINVER#
  atomic_swap_uint@Base 2.0
  atomic_swap_ulong@Base 2.0
  atomic_swap_ushort@Base 2.0
+ format_timestamp@Base 2.3
  get_system_hostid@Base 2.0
+ get_timestamp@Base 2.3
  getexecname@Base 2.0
  getextmntent@Base 2.0
  getmntany@Base 2.0
  getzoneid@Base 2.0
  libspl_assertf@Base 2.0
+ libspl_backtrace@Base 2.3
  libspl_set_assert_ok@Base 2.2
  libzfs_core_fini@Base 0.8.2
  libzfs_core_init@Base 0.8.2
@@ -755,6 +780,7 @@ libzfs_core.so.3 libzfs6linux #MINVER#
  lzc_channel_program_nosync@Base 0.8.2
  lzc_clone@Base 0.8.2
  lzc_create@Base 0.8.2
+ lzc_ddt_prune@Base 2.3
  lzc_destroy@Base 0.8.2
  lzc_destroy_bookmarks@Base 0.8.2
  lzc_destroy_snaps@Base 0.8.2
@@ -763,6 +789,7 @@ libzfs_core.so.3 libzfs6linux #MINVER#
  lzc_get_bookmarks@Base 0.8.2
  lzc_get_bootenv@Base 2.0
  lzc_get_holds@Base 0.8.2
+ lzc_get_props@Base 2.3
  lzc_get_vdev_prop@Base 2.2
  lzc_hold@Base 0.8.2
  lzc_initialize@Base 0.8.2
@@ -770,6 +797,7 @@ libzfs_core.so.3 libzfs6linux #MINVER#
  lzc_load_key@Base 0.8.2
  lzc_pool_checkpoint@Base 0.8.2
  lzc_pool_checkpoint_discard@Base 0.8.2
+ lzc_pool_prefetch@Base 2.3
  lzc_promote@Base 0.8.2
  lzc_receive@Base 0.8.2
  lzc_receive_one@Base 0.8.2

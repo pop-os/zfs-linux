@@ -141,12 +141,15 @@ libuutil.so.3 libuutil3linux #MINVER#
  avl_update_gt@Base 2.0
  avl_update_lt@Base 2.0
  avl_walk@Base 0.8.2
+ format_timestamp@Base 2.3
  get_system_hostid@Base 0.8.2
+ get_timestamp@Base 2.3
  getexecname@Base 0.8.2
  getextmntent@Base 0.8.2
  getmntany@Base 0.8.2
  getzoneid@Base 0.8.2
  libspl_assertf@Base 2.0
+ libspl_backtrace@Base 2.3
  libspl_set_assert_ok@Base 2.2.0
  list_create@Base 0.8.2
  list_destroy@Base 0.8.2

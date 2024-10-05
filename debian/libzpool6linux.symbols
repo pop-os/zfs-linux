@@ -91,6 +91,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  abd_checksum_skein_tmpl_init@Base 0.8.2
  abd_cmp@Base 0.8.2
  abd_cmp_buf_off@Base 0.8.2
+ abd_cmp_zero_off@Base 2.3
  abd_copy_from_buf_off@Base 0.8.2
  abd_copy_off@Base 0.8.2
  abd_copy_to_buf_off@Base 0.8.2
@@ -105,12 +106,14 @@ libzpool.so.6 libzpool6linux #MINVER#
  abd_gang_add@Base 2.0
  abd_gang_get_offset@Base 2.0
  abd_get_from_buf@Base 0.8.2
+ abd_get_from_buf_struct@Base 2.3
  abd_get_offset@Base 0.8.2
  abd_get_offset_scatter@Base 2.0
  abd_get_offset_size@Base 0.8.2
  abd_get_offset_struct@Base 2.1
  abd_get_zeros@Base 2.0
  abd_init@Base 0.8.2
+ abd_init_struct@Base 2.3
  abd_iter_advance@Base 2.1
  abd_iter_at_end@Base 2.1
  abd_iter_init@Base 2.1
@@ -176,6 +179,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  arc_buf_sigsegv@Base 0.8.2
  arc_buf_size@Base 0.8.2
  arc_buf_thaw@Base 0.8.2
+ arc_cached@Base 2.3
  arc_convert_to_raw@Base 0.8.2
  arc_default_max@Base 2.0
  arc_fini@Base 0.8.2
@@ -434,10 +438,6 @@ libzpool.so.6 libzpool6linux #MINVER#
  byteswap_uint64_array@Base 0.8.2
  byteswap_uint8_array@Base 0.8.2
  calculate_ccm_mac@Base 0.8.2
- cbc_alloc_ctx@Base 0.8.2
- cbc_decrypt_contiguous_blocks@Base 0.8.2
- cbc_encrypt_contiguous_blocks@Base 0.8.2
- cbc_init_ctx@Base 0.8.2
  ccm_alloc_ctx@Base 0.8.2
  ccm_decrypt_final@Base 0.8.2
  ccm_encrypt_final@Base 0.8.2
@@ -446,6 +446,9 @@ libzpool.so.6 libzpool6linux #MINVER#
  ccm_mode_encrypt_contiguous_blocks@Base 0.8.2
  chksum_fini@Base 2.2.0
  chksum_init@Base 2.2.0
+ cityhash1@Base 2.3
+ cityhash2@Base 2.3
+ cityhash3@Base 2.3
  cityhash4@Base 0.8.2
  (arch=amd64)clear_fpu_regs_avx@Base 0.8.4
  cmn_err@Base 0.8.2
@@ -471,10 +474,6 @@ libzpool.so.6 libzpool6linux #MINVER#
  crypto_unregister_provider@Base 0.8.2
  crypto_update_iov@Base 0.8.2
  crypto_update_uio@Base 0.8.2
- ctr_alloc_ctx@Base 0.8.2
- ctr_init_ctx@Base 0.8.2
- ctr_mode_contiguous_blocks@Base 0.8.2
- ctr_mode_final@Base 0.8.2
  cv_broadcast@Base 0.8.2
  cv_destroy@Base 0.8.2
  cv_init@Base 0.8.2
@@ -524,53 +523,79 @@ libzpool.so.6 libzpool6linux #MINVER#
  dbuf_whichblock@Base 0.8.2
  ddi_strtoull@Base 0.8.2
  ddt_addref@Base 2.2.0
+ ddt_alloc_entry_io@Base 2.3
  ddt_bp_create@Base 0.8.2
  ddt_bp_fill@Base 0.8.2
  ddt_class_contains@Base 0.8.2
- ddt_compress@Base 0.8.2
  ddt_create@Base 0.8.2
- ddt_decompress@Base 0.8.2
+ ddt_dump_prune_histogram@Base 2.3
  ddt_enter@Base 0.8.2
- ddt_entry_compare@Base 0.8.2
  ddt_exit@Base 0.8.2
  ddt_fini@Base 0.8.2
+ ddt_get_ddt_dsize@Base 2.3
  ddt_get_dedup_dspace@Base 0.8.2
  ddt_get_dedup_histogram@Base 0.8.2
  ddt_get_dedup_object_stats@Base 0.8.2
  ddt_get_dedup_stats@Base 0.8.2
+ ddt_get_pool_dedup_cached@Base 2.3
  ddt_get_pool_dedup_ratio@Base 0.8.2
  ddt_histogram_add@Base 0.8.2
+ ddt_histogram_add_entry@Base 2.3
  ddt_histogram_empty@Base 0.8.2
- ddt_histogram_stat@Base 0.8.2
+ ddt_histogram_sub_entry@Base 2.3
+ ddt_histogram_total@Base 2.3
  ddt_init@Base 0.8.2
+ ddt_key_compare@Base 2.3
  ddt_key_fill@Base 0.8.2
  ddt_load@Base 0.8.2
+ ddt_log_alloc@Base 2.3
+ ddt_log_begin@Base 2.3
+ ddt_log_checkpoint@Base 2.3
+ ddt_log_commit@Base 2.3
+ ddt_log_destroy@Base 2.3
+ ddt_log_entry@Base 2.3
+ ddt_log_find_key@Base 2.3
+ ddt_log_fini@Base 2.3
+ ddt_log_free@Base 2.3
+ ddt_log_init@Base 2.3
+ ddt_log_load@Base 2.3
+ ddt_log_remove_key@Base 2.3
+ ddt_log_swap@Base 2.3
+ ddt_log_take_first@Base 2.3
+ ddt_log_truncate@Base 2.3
  ddt_lookup@Base 0.8.2
  ddt_object_count@Base 0.8.2
- ddt_object_exists@Base 0.8.2
  ddt_object_info@Base 0.8.2
  ddt_object_name@Base 0.8.2
- ddt_object_update@Base 0.8.2
  ddt_object_walk@Base 0.8.2
  ddt_phys_addref@Base 0.8.2
+ ddt_phys_birth@Base 2.3
  ddt_phys_clear@Base 0.8.2
+ ddt_phys_copy@Base 2.3
  ddt_phys_decref@Base 0.8.2
- ddt_phys_fill@Base 0.8.2
- ddt_phys_free@Base 0.8.2
+ ddt_phys_dva_count@Base 2.3
+ ddt_phys_extend@Base 2.3
+ ddt_phys_refcnt@Base 2.3
  ddt_phys_select@Base 0.8.2
  ddt_phys_total_refcnt@Base 0.8.2
  ddt_prefetch@Base 0.8.2
+ ddt_prefetch_all@Base 2.3
+ ddt_prune_artificial_age@Base 2.3
+ ddt_prune_unique_entries@Base 2.3
+ ddt_prune_walk@Base 2.3
  ddt_remove@Base 0.8.2
  ddt_repair_done@Base 0.8.2
  ddt_repair_start@Base 0.8.2
  ddt_select@Base 0.8.2
- ddt_stat_add@Base 0.8.2
  ddt_sync@Base 0.8.2
  ddt_unload@Base 0.8.2
  ddt_walk@Base 0.8.2
+ ddt_walk_init@Base 2.3
+ ddt_walk_ready@Base 2.3
  ddt_zap_ops@Base 0.8.2
  decode_embedded_bp@Base 0.8.2
  decode_embedded_bp_compressed@Base 0.8.2
+ dedup_class_wait_txgs@Base 2.3
  delay@Base 0.8.2
  dmu_assign_arcbuf_by_dbuf@Base 0.8.2
  dmu_assign_arcbuf_by_dnode@Base 0.8.2
@@ -579,8 +604,10 @@ libzpool.so.6 libzpool6linux #MINVER#
  dmu_bonus_max@Base 0.8.2
  dmu_brt_clone@Base 2.2.0
  dmu_buf_add_ref@Base 0.8.2
+ dmu_buf_add_user_size@Base 2.3
  dmu_buf_fill_done@Base 0.8.2
  dmu_buf_get_blkptr@Base 0.8.2
+ dmu_buf_get_bp_from_dbuf@Base 2.3
  dmu_buf_get_objset@Base 0.8.2
  dmu_buf_get_user@Base 0.8.2
  dmu_buf_hold@Base 0.8.2
@@ -601,15 +628,19 @@ libzpool.so.6 libzpool6linux #MINVER#
  dmu_buf_set_crypt_params@Base 0.8.2
  dmu_buf_set_user@Base 0.8.2
  dmu_buf_set_user_ie@Base 0.8.2
+ dmu_buf_sub_user_size@Base 2.3
  dmu_buf_try_add_ref@Base 0.8.2
  dmu_buf_unlock_parent@Base 2.0
+ dmu_buf_untransform_direct@Base 2.3
  dmu_buf_user_evict_wait@Base 0.8.2
  dmu_buf_user_refcount@Base 0.8.2
- dmu_buf_will_clone@Base 2.2.0
+ dmu_buf_user_size@Base 2.3
+ dmu_buf_will_clone_or_dio@Base 2.3
  dmu_buf_will_dirty@Base 0.8.2
  dmu_buf_will_fill@Base 0.8.2
  dmu_buf_will_not_fill@Base 0.8.2
  dmu_buf_write_embedded@Base 0.8.2
+ dmu_ddt_copies@Base 2.3
  dmu_diff@Base 0.8.2
  dmu_dir_list_next@Base 0.8.2
  dmu_fini@Base 0.8.2
@@ -626,6 +657,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  dmu_object_alloc_dnsize@Base 0.8.2
  dmu_object_alloc_hold@Base 0.8.2
  dmu_object_alloc_ibs@Base 0.8.2
+ dmu_object_cached_size@Base 2.3
  dmu_object_claim@Base 0.8.2
  dmu_object_claim_dnsize@Base 0.8.2
  dmu_object_dnsize_from_db@Base 0.8.2
@@ -714,7 +746,9 @@ libzpool.so.6 libzpool6linux #MINVER#
  dmu_prefetch_by_dnode@Base 2.2.4
  dmu_prefetch_dnode@Base 2.2.4
  dmu_prefetch_max@Base 0.8.2
+ dmu_prefetch_wait@Base 2.3
  dmu_read@Base 0.8.2
+ dmu_read_abd@Base 2.3
  dmu_read_by_dnode@Base 0.8.2
  dmu_read_l0_bps@Base 2.2.0
  dmu_recv_begin@Base 0.8.2
@@ -737,6 +771,8 @@ libzpool.so.6 libzpool6linux #MINVER#
  dmu_spill_hold_by_dnode@Base 0.8.2
  dmu_spill_hold_existing@Base 0.8.2
  dmu_sync@Base 0.8.2
+ dmu_sync_done@Base 2.3
+ dmu_sync_ready@Base 2.3
  dmu_tx_abort@Base 0.8.2
  dmu_tx_add_new_object@Base 0.8.2
  dmu_tx_assign@Base 0.8.2
@@ -772,7 +808,10 @@ libzpool.so.6 libzpool6linux #MINVER#
  dmu_tx_stats@Base 0.8.2
  dmu_tx_wait@Base 0.8.2
  dmu_write@Base 0.8.2
+ dmu_write_abd@Base 2.3
  dmu_write_by_dnode@Base 0.8.2
+ dmu_write_by_dnode_flags@Base 2.3
+ dmu_write_direct@Base 2.3
  dmu_write_embedded@Base 0.8.2
  dmu_write_policy@Base 0.8.2
  dmu_zfetch@Base 0.8.2
@@ -805,6 +844,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  dnode_set_blksz@Base 0.8.2
  dnode_set_dirtyctx@Base 2.0
  dnode_set_nlevels@Base 0.8.2
+ dnode_set_storage_type@Base 2.3
  dnode_setbonus_type@Base 0.8.2
  dnode_setbonuslen@Base 0.8.2
  dnode_setdirty@Base 0.8.2
@@ -1158,8 +1198,6 @@ libzpool.so.6 libzpool6linux #MINVER#
  dsl_sync_task_sig@Base 0.8.3
  dsl_sync_task_sync@Base 0.8.2
  dva_get_dsize_sync@Base 0.8.2
- ecb_alloc_ctx@Base 0.8.2
- ecb_cipher_contiguous_blocks@Base 0.8.2
  efi_alloc_and_init@Base 2.2.0
  efi_alloc_and_read@Base 2.2.0
  efi_debug@Base 2.2.0
@@ -1218,6 +1256,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  fm_nvlist_create@Base 0.8.2
  fm_nvlist_destroy@Base 0.8.2
  fm_payload_set@Base 0.8.2
+ format_timestamp@Base 2.3
  free_from_removing_vdev@Base 0.8.2
  fsleep@Base 2.2.3
  fzap_add@Base 0.8.2
@@ -1257,15 +1296,12 @@ libzpool.so.6 libzpool6linux #MINVER#
  get_dataset_depth@Base 0.8.2
  get_receive_resume_token@Base 2.2.0
  get_system_hostid@Base 2.2.0
+ get_timestamp@Base 2.3
  getexecname@Base 2.2.0
  getextmntent@Base 2.2.0
  getmntany@Base 2.2.0
  getzoneid@Base 2.2.0
  (optional)gf_clmul_mod_lt@Base 0.8.2
- gmac_alloc_ctx@Base 0.8.2
- gmac_init_ctx@Base 0.8.2
- gzip_compress@Base 0.8.2
- gzip_decompress@Base 0.8.2
  highbit64@Base 0.8.2
  hkdf_sha512@Base 0.8.2
  hostid@Base 2.2.0
@@ -1340,6 +1376,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  lcompat_strtoll@Base 0.8.2
  libpc_error_description@Base 2.2.0
  libspl_assertf@Base 2.2.0
+ libspl_backtrace@Base 2.3
  libspl_set_assert_ok@Base 2.2.0
  libzpool_config_ops@Base 0.8.2
  list_create@Base 2.2.0
@@ -1498,12 +1535,8 @@ libzpool.so.6 libzpool6linux #MINVER#
  luaopen_coroutine@Base 0.8.2
  luaopen_string@Base 0.8.2
  luaopen_table@Base 0.8.2
- lz4_compress_zfs@Base 0.8.2
- lz4_decompress_zfs@Base 0.8.2
  lz4_fini@Base 0.8.2
  lz4_init@Base 0.8.2
- lzjb_compress@Base 0.8.2
- lzjb_decompress@Base 0.8.2
  membar_consumer@Base 2.2.0
  membar_enter@Base 2.2.0
  membar_exit@Base 2.2.0
@@ -1513,6 +1546,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  metaslab_alloc_dva@Base 0.8.2
  metaslab_alloc_trace_cache@Base 2.1
  metaslab_allocated_space@Base 0.8.2
+ metaslab_allocator@Base 2.3
  metaslab_calculate_range_tree_type@Base 2.0
  metaslab_check_free@Base 0.8.2
  metaslab_claim@Base 0.8.2
@@ -1557,6 +1591,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  metaslab_init@Base 0.8.2
  metaslab_largest_allocatable@Base 2.0
  metaslab_load@Base 0.8.2
+ metaslab_ndf_clump_shift@Base 2.3
  metaslab_preload_limit@Base 0.8.2
  metaslab_recalculate_weight_and_sort@Base 0.8.2
  metaslab_set_selected_txg@Base 2.0
@@ -1637,6 +1672,9 @@ libzpool.so.6 libzpool6linux #MINVER#
  procfs_list_install@Base 0.8.2
  procfs_list_uninstall@Base 0.8.2
  prop_valid_for_ds@Base 0.8.2
+ raidz_dtl_reassessed@Base 2.3
+ raidz_expand_max_reflow_bytes@Base 2.3
+ raidz_expand_pause_point@Base 2.3
  raidz_gen_name@Base 0.8.2
  raidz_rec_name@Base 0.8.2
  raidz_will_scalar_work@Base 0.8.2
@@ -1764,13 +1802,14 @@ libzpool.so.6 libzpool6linux #MINVER#
  (arch=ppc64el)sha512_ppc_impl@Base 2.2.1
  (arch=amd64)sha512_x64_impl@Base 2.2.0
  show_pool_stats@Base 0.8.2
- skein_mod_fini@Base 0.8.2
- skein_mod_init@Base 0.8.2
+ simd_stat_fini@Base 2.3
+ simd_stat_init@Base 2.3
  sm_entry_is_debug@Base 0.8.2
  sm_entry_is_double_word@Base 0.8.2
  sm_entry_is_single_word@Base 0.8.2
  snapshot_namecheck@Base 2.0
  snprintf_blkptr@Base 0.8.2
+ spa_acq_allocator@Base 2.3
  spa_activate_allocation_classes@Base 0.8.2
  spa_activate_mos_feature@Base 0.8.2
  spa_activate_os@Base 2.2.0
@@ -1859,6 +1898,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  spa_freeze_txg@Base 0.8.2
  spa_generate_guid@Base 0.8.2
  spa_generate_syncing_log_sm@Base 2.0
+ spa_get_allocator@Base 2.3
  spa_get_autotrim@Base 0.8.2
  spa_get_checkpoint_space@Base 0.8.2
  spa_get_deadman_failmode@Base 0.8.2
@@ -1907,7 +1947,9 @@ libzpool.so.6 libzpool6linux #MINVER#
  spa_init@Base 0.8.2
  spa_inject_addref@Base 0.8.2
  spa_inject_delref@Base 0.8.2
+ spa_iostats_read_add@Base 2.3
  spa_iostats_trim_add@Base 0.8.2
+ spa_iostats_write_add@Base 2.3
  spa_is_initializing@Base 0.8.2
  spa_is_root@Base 0.8.2
  spa_keystore_change_key@Base 0.8.2
@@ -1965,6 +2007,8 @@ libzpool.so.6 libzpool6linux #MINVER#
  spa_mode_readable_spacemaps@Base 2.1.5
  spa_multihost@Base 0.8.2
  spa_name@Base 0.8.2
+ spa_namespace_avl@Base 2.3
+ spa_namespace_cv@Base 2.3
  spa_namespace_lock@Base 0.8.2
  spa_next@Base 0.8.2
  spa_normal_class@Base 0.8.2
@@ -1976,9 +2020,12 @@ libzpool.so.6 libzpool6linux #MINVER#
  spa_prev_software_version@Base 0.8.2
  spa_prop_clear_bootfs@Base 0.8.2
  spa_prop_get@Base 0.8.2
+ spa_prop_get_nvlist@Base 2.3
  spa_prop_set@Base 0.8.2
+ spa_raidz_expand_get_stats@Base 2.3
  spa_read_history_add@Base 0.8.2
  spa_refcount_zero@Base 0.8.2
+ spa_rel_allocator@Base 2.3
  spa_remap_blkptr@Base 0.8.2
  spa_removal_get_stats@Base 0.8.2
  spa_remove@Base 0.8.2
@@ -1993,6 +2040,8 @@ libzpool.so.6 libzpool6linux #MINVER#
  spa_scan_stat_init@Base 0.8.2
  spa_scan_stop@Base 0.8.2
  spa_scrub_pause_resume@Base 0.8.2
+ spa_select_allocator@Base 2.3
+ spa_set_allocator@Base 2.3
  spa_set_deadman_failmode@Base 0.8.2
  spa_set_deadman_synctime@Base 2.0
  spa_set_deadman_ziotime@Base 2.0
@@ -2006,7 +2055,9 @@ libzpool.so.6 libzpool6linux #MINVER#
  spa_spare_exists@Base 0.8.2
  spa_spare_remove@Base 0.8.2
  spa_special_class@Base 0.8.2
+ spa_special_has_ddt@Base 2.3
  spa_start_indirect_condensing_thread@Base 0.8.2
+ spa_start_raidz_expansion_thread@Base 2.3
  spa_state@Base 0.8.2
  spa_state_to_name@Base 0.8.2
  spa_stats_destroy@Base 0.8.2
@@ -2020,10 +2071,11 @@ libzpool.so.6 libzpool6linux #MINVER#
  spa_sync_allpools@Base 0.8.2
  spa_sync_close_syncing_log_sm@Base 2.0
  spa_sync_pass@Base 0.8.2
+ spa_sync_tq_create@Base 2.3
+ spa_sync_tq_destroy@Base 2.3
  spa_syncing_log_sm@Base 2.0
  spa_syncing_txg@Base 0.8.2
- spa_taskq_dispatch_ent@Base 0.8.2
- spa_taskq_dispatch_sync@Base 0.8.2
+ spa_taskq_dispatch@Base 2.3
  spa_top_vdevs_spacemap_addressable@Base 0.8.2
  spa_total_metaslabs@Base 2.0
  spa_trust_config@Base 0.8.2
@@ -2100,6 +2152,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  system_taskq_init@Base 0.8.2
  taskq_cancel_id@Base 0.8.2
  taskq_create@Base 0.8.2
+ taskq_create_synced@Base 2.3
  taskq_destroy@Base 0.8.2
  taskq_dispatch@Base 0.8.2
  taskq_dispatch_delay@Base 0.8.2
@@ -2187,6 +2240,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  vdev_autotrim_stop_all@Base 0.8.2
  vdev_autotrim_stop_wait@Base 0.8.2
  vdev_best_ashift@Base 2.1.6
+ vdev_check_boot_reserve@Base 2.3
  vdev_checkpoint_sm_object@Base 0.8.2
  vdev_children_are_offline@Base 0.8.2
  vdev_clear@Base 0.8.2
@@ -2342,6 +2396,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  vdev_prop_values@Base 2.2.0
  vdev_propagate_state@Base 0.8.2
  vdev_psize_to_asize@Base 0.8.2
+ vdev_psize_to_asize_txg@Base 2.3
  vdev_queue_change_io_priority@Base 0.8.2
  vdev_queue_class_length@Base 2.2.0
  vdev_queue_fini@Base 0.8.2
@@ -2350,19 +2405,23 @@ libzpool.so.6 libzpool6linux #MINVER#
  vdev_queue_io_done@Base 0.8.2
  vdev_queue_last_offset@Base 0.8.2
  vdev_queue_length@Base 0.8.2
+ (arch=arm64)vdev_raidz_aarch64_neon_impl@Base 0.8.2
+ (arch=arm64)vdev_raidz_aarch64_neonx2_impl@Base 0.8.2
+ vdev_raidz_attach_check@Base 2.3
+ vdev_raidz_attach_sync@Base 2.3
  (arch=amd64)vdev_raidz_avx2_impl@Base 0.8.2
  (arch=amd64)vdev_raidz_avx512bw_impl@Base 0.8.2
  (arch=amd64)vdev_raidz_avx512f_impl@Base 0.8.2
- (arch=arm64)vdev_raidz_aarch64_neon_impl@Base 0.8.2
- (arch=arm64)vdev_raidz_aarch64_neonx2_impl@Base 0.8.2
  vdev_raidz_checksum_error@Base 2.1.4
  vdev_raidz_child_done@Base 2.1
  vdev_raidz_generate_parity@Base 0.8.2
  vdev_raidz_generate_parity_row@Base 2.1
  vdev_raidz_impl_set@Base 0.8.2
  vdev_raidz_io_done@Base 2.1
+ vdev_raidz_load@Base 2.3
  vdev_raidz_log2@Base 0.8.2
  vdev_raidz_map_alloc@Base 0.8.2
+ vdev_raidz_map_alloc_expanded@Base 2.3
  vdev_raidz_map_free@Base 0.8.2
  vdev_raidz_math_fini@Base 0.8.2
  vdev_raidz_math_generate@Base 0.8.2
@@ -2373,6 +2432,8 @@ libzpool.so.6 libzpool6linux #MINVER#
  vdev_raidz_pow2@Base 0.8.2
  (arch=ppc64el ppc64)vdev_raidz_powerpc_altivec_impl@Base 2.1
  vdev_raidz_reconstruct@Base 0.8.2
+ vdev_raidz_reflow_copy_scratch@Base 2.3
+ vdev_raidz_row_alloc@Base 2.3
  vdev_raidz_scalar_impl@Base 0.8.2
  (arch=amd64)vdev_raidz_sse2_impl@Base 0.8.2
  (arch=amd64)vdev_raidz_ssse3_impl@Base 0.8.2
@@ -2416,6 +2477,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  vdev_trim_stop_all@Base 0.8.2
  vdev_trim_stop_wait@Base 0.8.2
  vdev_uberblock_load@Base 0.8.2
+ vdev_uberblock_sync_list@Base 2.3
  vdev_uninitialize@Base 2.1.12
  vdev_validate@Base 0.8.2
  vdev_validate_aux@Base 0.8.2
@@ -2432,6 +2494,9 @@ libzpool.so.6 libzpool6linux #MINVER#
  zap_add_int_key@Base 0.8.2
  zap_add_uint64@Base 0.8.2
  zap_add_uint64_by_dnode@Base 2.2.4
+ zap_attribute_alloc@Base 2.3
+ zap_attribute_free@Base 2.3
+ zap_attribute_long_alloc@Base 2.3
  zap_byteswap@Base 0.8.2
  zap_contains@Base 0.8.2
  zap_count@Base 0.8.2
@@ -2463,11 +2528,14 @@ libzpool.so.6 libzpool6linux #MINVER#
  zap_entry_remove@Base 0.8.2
  zap_entry_update@Base 0.8.2
  zap_evict_sync@Base 0.8.2
+ zap_fini@Base 2.3
+ zap_get_micro_max_size@Base 2.3
  zap_get_stats@Base 0.8.2
  zap_getflags@Base 0.8.2
  zap_hashbits@Base 0.8.2
  zap_increment@Base 0.8.2
  zap_increment_int@Base 0.8.2
+ zap_init@Base 2.3
  zap_join@Base 0.8.2
  zap_join_increment@Base 0.8.2
  zap_join_key@Base 0.8.2
@@ -2489,10 +2557,10 @@ libzpool.so.6 libzpool6linux #MINVER#
  zap_lookup_uint64@Base 0.8.2
  zap_match@Base 0.8.2
  zap_maxcd@Base 0.8.2
- zap_micro_max_size@Base 2.2.0
  zap_name_alloc_str@Base 2.1.9
  zap_name_free@Base 0.8.2
  zap_prefetch@Base 0.8.2
+ zap_prefetch_object@Base 2.3
  zap_prefetch_uint64@Base 0.8.2
  zap_put_leaf@Base 0.8.2
  zap_remove@Base 0.8.2
@@ -2501,6 +2569,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zap_remove_norm@Base 0.8.2
  zap_remove_uint64@Base 0.8.2
  zap_remove_uint64_by_dnode@Base 0.8.2
+ zap_shrink_enabled@Base 2.3
  zap_unlockdir@Base 0.8.2
  zap_update@Base 0.8.2
  zap_update_int_key@Base 0.8.2
@@ -2864,12 +2933,12 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_ZSTD_writeLastEmptyBlock@Base 2.0
  zfs_abd_scatter_enabled@Base 0.8.2
  zfs_acl_byteswap@Base 0.8.2
+ zfs_active_allocator@Base 2.3
  zfs_allocatable_devs@Base 0.8.2
  zfs_append_partition@Base 2.2.0
  zfs_arc_average_blocksize@Base 0.8.2
  zfs_arc_max@Base 0.8.2
  zfs_arc_min@Base 0.8.2
- zfs_arc_shrinker_limit@Base 2.0
  zfs_attr_table@Base 0.8.2
  zfs_basename@Base 2.2.0
  (arch=amd64)zfs_blake3_compress_in_place_avx512@Base 2.2.0
@@ -2921,6 +2990,13 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_deadman_failmode@Base 0.8.2
  zfs_deadman_synctime_ms@Base 0.8.2
  zfs_deadman_ziotime_ms@Base 0.8.2
+ zfs_dedup_log_flush_entries_min@Base 2.3
+ zfs_dedup_log_flush_flow_rate_txgs@Base 2.3
+ zfs_dedup_log_flush_min_time_ms@Base 2.3
+ zfs_dedup_log_flush_passes_max@Base 2.3
+ zfs_dedup_log_mem_max@Base 2.3
+ zfs_dedup_log_mem_max_percent@Base 2.3
+ zfs_dedup_log_txg_max@Base 2.3
  zfs_dedup_prefetch@Base 0.8.2
  zfs_default_bs@Base 0.8.2
  zfs_default_ibs@Base 0.8.2
@@ -2951,7 +3027,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_ereport_start_checksum@Base 0.8.2
  zfs_event_create@Base 0.8.2
  zfs_file_close@Base 2.0
- zfs_file_fallocate@Base 2.0
+ zfs_file_deallocate@Base 2.3
  zfs_file_fsync@Base 2.0
  zfs_file_get@Base 2.0
  zfs_file_getattr@Base 2.0
@@ -2974,6 +3050,8 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_get_enclosure_sysfs_path@Base 2.2.0
  zfs_get_underlying_path@Base 2.2.0
  zfs_get_zplprop@Base 2.2.0
+ zfs_gzip_compress@Base 2.3
+ zfs_gzip_decompress@Base 2.3
  zfs_history_event_names@Base 0.8.2
  zfs_impl_get_ops@Base 2.2.0
  zfs_isnumber@Base 2.2.0
@@ -2982,12 +3060,15 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_livelist_min_percent_shared@Base 2.0
  zfs_lua_max_instrlimit@Base 0.8.2
  zfs_lua_max_memlimit@Base 0.8.2
+ zfs_lz4_compress@Base 2.3
+ zfs_lz4_decompress@Base 2.3
+ zfs_lzjb_compress@Base 2.3
+ zfs_lzjb_decompress@Base 2.3
  zfs_max_dataset_nesting@Base 0.8.2
  zfs_max_missing_tvds@Base 0.8.2
  zfs_max_missing_tvds_cachefile@Base 0.8.2
  zfs_max_missing_tvds_scan@Base 0.8.2
  zfs_max_recordsize@Base 0.8.2
- zfs_metaslab_ops@Base 0.8.2
  zfs_metaslab_sm_blksz_no_log@Base 2.0
  zfs_metaslab_sm_blksz_with_log@Base 2.0
  zfs_mod_list_supported@Base 2.2.0
@@ -3004,6 +3085,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_nicetime@Base 2.2.0
  zfs_nocacheflush@Base 0.8.2
  zfs_obj_to_path@Base 0.8.2
+ zfs_obj_to_pobj@Base 2.3
  zfs_obj_to_stats@Base 0.8.2
  zfs_oldacl_byteswap@Base 0.8.2
  zfs_onexit_add_cb@Base 0.8.2
@@ -3111,11 +3193,19 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_trim_metaslab_skip@Base 0.8.2
  zfs_txg_timeout@Base 0.8.2
  zfs_userquota_prop_prefixes@Base 0.8.2
+ zfs_valstr_zio_flag@Base 2.3
+ zfs_valstr_zio_flag_bits@Base 2.3
+ zfs_valstr_zio_flag_pairs@Base 2.3
+ zfs_valstr_zio_priority@Base 2.3
+ zfs_valstr_zio_stage@Base 2.3
+ zfs_valstr_zio_stage_bits@Base 2.3
+ zfs_valstr_zio_stage_pairs@Base 2.3
  zfs_vdev_async_read_max_active@Base 0.8.2
  zfs_vdev_async_write_active_max_dirty_percent@Base 0.8.2
  zfs_vdev_async_write_active_min_dirty_percent@Base 0.8.2
  zfs_vdev_async_write_max_active@Base 0.8.2
  zfs_vdev_def_queue_depth@Base 0.8.2
+ zfs_vdev_direct_write_verify@Base 2.3
  zfs_vdev_dtl_sm_blksz@Base 2.0
  zfs_vdev_max_active@Base 0.8.2
  zfs_vdev_max_auto_ashift@Base 2.0
@@ -3123,11 +3213,12 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_vdev_queue_depth_pct@Base 0.8.2
  zfs_vdev_standard_sm_blksz@Base 2.0
  zfs_wrlog_data_max@Base 2.1.6
+ zfs_zle_compress@Base 2.3
+ zfs_zle_decompress@Base 2.3
  zfs_znode_byteswap@Base 0.8.2
  zfs_zpl_version_map@Base 0.8.2
  zfs_zstd_cache_reap_now@Base 2.0
  zfs_zstd_compress@Base 2.0
- zfs_zstd_compress_wrap@Base 2.2.0
  zfs_zstd_decompress@Base 2.0
  zfs_zstd_decompress_level@Base 2.0
  zfsvfs_update_fromname@Base 2.0
@@ -3215,7 +3306,6 @@ libzpool.so.6 libzpool6linux #MINVER#
  zio_data_buf_free@Base 0.8.2
  zio_deadman@Base 0.8.2
  zio_decompress_data@Base 0.8.2
- zio_decompress_data_buf@Base 0.8.2
  zio_delay_interrupt@Base 0.8.2
  zio_destroy@Base 2.2.0
  zio_do_crypt_abd@Base 0.8.2
@@ -3227,11 +3317,14 @@ libzpool.so.6 libzpool6linux #MINVER#
  zio_flush@Base 0.8.2
  zio_free@Base 0.8.2
  zio_free_sync@Base 0.8.2
+ zio_get_compression_max_size@Base 2.3
  zio_handle_decrypt_injection@Base 0.8.2
  zio_handle_device_injection@Base 0.8.2
  zio_handle_device_injections@Base 0.8.2
+ zio_handle_export_delay@Base 2.3
  zio_handle_fault_injection@Base 0.8.2
  zio_handle_ignored_writes@Base 0.8.2
+ zio_handle_import_delay@Base 2.3
  zio_handle_io_delay@Base 0.8.2
  zio_handle_label_injection@Base 0.8.2
  zio_handle_panic_injection@Base 0.8.2
@@ -3242,7 +3335,6 @@ libzpool.so.6 libzpool6linux #MINVER#
  zio_inject_list_next@Base 0.8.2
  zio_injection_enabled@Base 0.8.2
  zio_interrupt@Base 0.8.2
- zio_ioctl@Base 0.8.2
  zio_nowait@Base 0.8.2
  zio_null@Base 0.8.2
  zio_pop_transforms@Base 0.8.2
@@ -3272,8 +3364,6 @@ libzpool.so.6 libzpool6linux #MINVER#
  zio_write_override@Base 0.8.2
  zio_write_phys@Base 0.8.2
  zk_thread_create@Base 0.8.2
- zle_compress@Base 0.8.2
- zle_decompress@Base 0.8.2
  zone_get_hostid@Base 0.8.2
  zpool_default_search_paths@Base 2.2.0
  zpool_disk_wait@Base 2.2.3
