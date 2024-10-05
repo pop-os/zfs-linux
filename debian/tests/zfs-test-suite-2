@@ -1,0 +1,87 @@
+#!/bin/bash
+
+set -e
+
+# extracted from https://github.com/openzfs/zfs/blob/master/.github/workflows/scripts/setup-functional.sh (part2)
+tests=(
+  acl
+  alloc_class
+  append
+  arc
+  atime
+  bclone
+  block_cloning
+  bootfs
+  btree
+  cache
+  cachefile
+  casenorm
+  channel_program
+  chattr
+  checksum
+  clean_mirror
+  cli_user
+  compression
+  cp_files
+  crtime
+  ctime
+  deadman
+  delegate
+  devices
+  dos_attributes
+  events
+  exec
+  fadvise
+  fallocate
+  fault
+  features
+  grow
+  history
+  hkdf
+  idmap_mount
+  inheritance
+  inuse
+  io
+  l2arc
+  large_files
+  largest_pool
+  libzfs
+  limits
+  link_count
+  log_spacemap
+  migration
+  mmap
+  mmp
+  mount
+  mv_files
+)
+
+skip_list_mem=(
+  large_files
+  largest_pool
+)
+
+skip_list_flaky=(
+  arc
+  fault
+)
+
+free_mem=$(awk '/MemFree/ { printf "%d\n", $2/1024 }' /proc/meminfo)
+
+# We require at least 6GB memory (rough value) to run some large tests,
+# otherwise OOM killer might be triggered (especially on debci VMs).
+if [[ $free_mem -lt 6144 ]]; then
+    echo "$0: Skipping the following tests due to insufficient free memory...: ${skip_list[*]}"
+    for skip in "${skip_list_mem[@]}"; do
+        tests=("${tests[@]/$skip}")
+    done
+fi
+
+echo "$0: Skipping the following flaky tests...: ${skip_list[*]}"
+for skip in "${skip_list_flaky[@]}"; do
+    tests=("${tests[@]/$skip}")
+done
+
+test_list="$(IFS=,; echo "${tests[*]}")"
+
+./debian/tests/zfs-test-suite "$test_list"

@@ -190,6 +190,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
 	$(top_srcdir)/config/kernel-mkdir.m4 \
 	$(top_srcdir)/config/kernel-mknod.m4 \
+	$(top_srcdir)/config/kernel-mm-pagemap.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pagemap-folio_wait_bit.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
@@ -223,6 +224,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-totalhigh_pages.m4 \
 	$(top_srcdir)/config/kernel-totalram-pages-func.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
+	$(top_srcdir)/config/kernel-types.m4 \
 	$(top_srcdir)/config/kernel-user-ns-inum.m4 \
 	$(top_srcdir)/config/kernel-userns-capabilities.m4 \
 	$(top_srcdir)/config/kernel-usleep_range.m4 \
@@ -255,6 +257,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/po.m4 $(top_srcdir)/config/progtest.m4 \
 	$(top_srcdir)/config/toolchain-simd.m4 \
 	$(top_srcdir)/config/user-aio.h.m4 \
+	$(top_srcdir)/config/user-backtrace.m4 \
 	$(top_srcdir)/config/user-clock_gettime.m4 \
 	$(top_srcdir)/config/user-dracut.m4 \
 	$(top_srcdir)/config/user-gettext.m4 \
@@ -266,6 +269,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/user-libfetch.m4 \
 	$(top_srcdir)/config/user-libtirpc.m4 \
 	$(top_srcdir)/config/user-libudev.m4 \
+	$(top_srcdir)/config/user-libunwind.m4 \
 	$(top_srcdir)/config/user-libuuid.m4 \
 	$(top_srcdir)/config/user-makedev.m4 \
 	$(top_srcdir)/config/user-pam.m4 \
@@ -383,6 +387,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/block_cloning/block_cloning_replay.ksh \
 	functional/block_cloning/block_cloning_replay_encrypted.ksh \
 	functional/block_cloning/block_cloning_lwb_buffer_overflow.ksh \
+	functional/block_cloning/block_cloning_rlimit_fsize.ksh \
 	functional/bootfs/bootfs_001_pos.ksh \
 	functional/bootfs/bootfs_002_neg.ksh \
 	functional/bootfs/bootfs_003_pos.ksh \
@@ -671,6 +676,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/cli_root/zfs_mount/zfs_mount_all_fail.ksh \
 	functional/cli_root/zfs_mount/zfs_mount_all_mountpoints.ksh \
 	functional/cli_root/zfs_mount/zfs_mount_encrypted.ksh \
+	functional/cli_root/zfs_mount/zfs_mount_recursive.ksh \
 	functional/cli_root/zfs_mount/zfs_mount_remount.ksh \
 	functional/cli_root/zfs_mount/zfs_mount_test_race.ksh \
 	functional/cli_root/zfs_mount/zfs_multi_mount.ksh \
@@ -890,6 +896,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/cli_root/zpool_add/add_prop_ashift.ksh \
 	functional/cli_root/zpool_add/cleanup.ksh \
 	functional/cli_root/zpool_add/setup.ksh \
+	functional/cli_root/zpool_add/zpool_add--allow-ashift-mismatch.ksh \
 	functional/cli_root/zpool_add/zpool_add_001_pos.ksh \
 	functional/cli_root/zpool_add/zpool_add_002_pos.ksh \
 	functional/cli_root/zpool_add/zpool_add_003_pos.ksh \
@@ -1344,6 +1351,8 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/events/zed_fd_spill.ksh \
 	functional/events/zed_io_config.ksh \
 	functional/events/zed_rc_filter.ksh \
+	functional/events/zed_slow_io.ksh \
+	functional/events/zed_slow_io_many_vdevs.ksh \
 	functional/exec/cleanup.ksh functional/exec/exec_001_pos.ksh \
 	functional/exec/exec_002_neg.ksh functional/exec/setup.ksh \
 	functional/fadvise/cleanup.ksh \
@@ -1367,6 +1376,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/fault/decompress_fault.ksh \
 	functional/fault/decrypt_fault.ksh \
 	functional/fault/scrub_after_resilver.ksh \
+	functional/fault/suspend_resume_single.ksh \
 	functional/fault/setup.ksh \
 	functional/fault/zpool_status_-s.ksh \
 	functional/features/async_destroy/async_destroy_001_pos.ksh \
@@ -1469,6 +1479,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/mmp/mmp_on_zdb.ksh \
 	functional/mmp/mmp_reset_interval.ksh \
 	functional/mmp/mmp_write_distribution.ksh \
+	functional/mmp/mmp_write_slow_disk.ksh \
 	functional/mmp/mmp_write_uberblocks.ksh \
 	functional/mmp/multihost_history.ksh functional/mmp/setup.ksh \
 	functional/mount/cleanup.ksh functional/mount/setup.ksh \
@@ -2041,6 +2052,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BACKTRACE_LIBS = @BACKTRACE_LIBS@
 CC = @CC@
 CCAS = @CCAS@
 CCASDEPMODE = @CCASDEPMODE@
@@ -2115,6 +2127,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 INTLLIBS = @INTLLIBS@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
+IS_SYSV_RC = @IS_SYSV_RC@
 KERNEL_CC = @KERNEL_CC@
 KERNEL_DEBUG_CFLAGS = @KERNEL_DEBUG_CFLAGS@
 KERNEL_DEBUG_CPPFLAGS = @KERNEL_DEBUG_CPPFLAGS@
@@ -2151,6 +2164,9 @@ LIBTOOL = @LIBTOOL@
 LIBUDEV_CFLAGS = @LIBUDEV_CFLAGS@
 LIBUDEV_LIBS = @LIBUDEV_LIBS@
 LIBUDEV_PC = @LIBUDEV_PC@
+LIBUNWIND_CFLAGS = @LIBUNWIND_CFLAGS@
+LIBUNWIND_LIBS = @LIBUNWIND_LIBS@
+LIBUNWIND_PC = @LIBUNWIND_PC@
 LIBUUID_CFLAGS = @LIBUUID_CFLAGS@
 LIBUUID_LIBS = @LIBUUID_LIBS@
 LIBUUID_PC = @LIBUUID_PC@
@@ -2203,6 +2219,7 @@ PYTHON_EXTRA_LDFLAGS = @PYTHON_EXTRA_LDFLAGS@
 PYTHON_EXTRA_LIBS = @PYTHON_EXTRA_LIBS@
 PYTHON_LIBS = @PYTHON_LIBS@
 PYTHON_PLATFORM = @PYTHON_PLATFORM@
+PYTHON_PLATFORM_SITE_PKG = @PYTHON_PLATFORM_SITE_PKG@
 PYTHON_PREFIX = @PYTHON_PREFIX@
 PYTHON_SHEBANG = @PYTHON_SHEBANG@
 PYTHON_SITE_PKG = @PYTHON_SITE_PKG@
@@ -2364,6 +2381,7 @@ subst_sed_cmd = \
 	-e 's|@ASAN_ENABLED[@]|$(ASAN_ENABLED)|g' \
 	-e 's|@DEFAULT_INIT_NFS_SERVER[@]|$(DEFAULT_INIT_NFS_SERVER)|g' \
 	-e 's|@DEFAULT_INIT_SHELL[@]|$(DEFAULT_INIT_SHELL)|g' \
+	-e 's|@IS_SYSV_RC[@]|$(IS_SYSV_RC)|g' \
 	-e 's|@LIBFETCH_DYNAMIC[@]|$(LIBFETCH_DYNAMIC)|g' \
 	-e 's|@LIBFETCH_SONAME[@]|$(LIBFETCH_SONAME)|g' \
 	-e 's|@PYTHON[@]|$(PYTHON)|g' \
@@ -2767,6 +2785,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/block_cloning/block_cloning_replay.ksh \
 	functional/block_cloning/block_cloning_replay_encrypted.ksh \
 	functional/block_cloning/block_cloning_lwb_buffer_overflow.ksh \
+	functional/block_cloning/block_cloning_rlimit_fsize.ksh \
 	functional/bootfs/bootfs_001_pos.ksh \
 	functional/bootfs/bootfs_002_neg.ksh \
 	functional/bootfs/bootfs_003_pos.ksh \
@@ -3055,6 +3074,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/cli_root/zfs_mount/zfs_mount_all_fail.ksh \
 	functional/cli_root/zfs_mount/zfs_mount_all_mountpoints.ksh \
 	functional/cli_root/zfs_mount/zfs_mount_encrypted.ksh \
+	functional/cli_root/zfs_mount/zfs_mount_recursive.ksh \
 	functional/cli_root/zfs_mount/zfs_mount_remount.ksh \
 	functional/cli_root/zfs_mount/zfs_mount_test_race.ksh \
 	functional/cli_root/zfs_mount/zfs_multi_mount.ksh \
@@ -3274,6 +3294,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/cli_root/zpool_add/add_prop_ashift.ksh \
 	functional/cli_root/zpool_add/cleanup.ksh \
 	functional/cli_root/zpool_add/setup.ksh \
+	functional/cli_root/zpool_add/zpool_add--allow-ashift-mismatch.ksh \
 	functional/cli_root/zpool_add/zpool_add_001_pos.ksh \
 	functional/cli_root/zpool_add/zpool_add_002_pos.ksh \
 	functional/cli_root/zpool_add/zpool_add_003_pos.ksh \
@@ -3728,6 +3749,8 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/events/zed_fd_spill.ksh \
 	functional/events/zed_io_config.ksh \
 	functional/events/zed_rc_filter.ksh \
+	functional/events/zed_slow_io.ksh \
+	functional/events/zed_slow_io_many_vdevs.ksh \
 	functional/exec/cleanup.ksh functional/exec/exec_001_pos.ksh \
 	functional/exec/exec_002_neg.ksh functional/exec/setup.ksh \
 	functional/fadvise/cleanup.ksh \
@@ -3751,6 +3774,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/fault/decompress_fault.ksh \
 	functional/fault/decrypt_fault.ksh \
 	functional/fault/scrub_after_resilver.ksh \
+	functional/fault/suspend_resume_single.ksh \
 	functional/fault/setup.ksh \
 	functional/fault/zpool_status_-s.ksh \
 	functional/features/async_destroy/async_destroy_001_pos.ksh \
@@ -3853,6 +3877,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/mmp/mmp_on_zdb.ksh \
 	functional/mmp/mmp_reset_interval.ksh \
 	functional/mmp/mmp_write_distribution.ksh \
+	functional/mmp/mmp_write_slow_disk.ksh \
 	functional/mmp/mmp_write_uberblocks.ksh \
 	functional/mmp/multihost_history.ksh functional/mmp/setup.ksh \
 	functional/mount/cleanup.ksh functional/mount/setup.ksh \
@@ -4726,7 +4751,7 @@ $(1) : $(2)$(1).in Makefile;
 	mv -f $$@~ $$@
 endef
 
-$(call SUBST,%,)
+$(SUBSTFILES): $(call SUBST,%,)
 regen:
 	@$(MAKE) -C $(top_builddir) clean
 	@$(MAKE) clean

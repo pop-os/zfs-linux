@@ -20,7 +20,7 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2018 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2024 by Delphix. All rights reserved.
  * Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
  * Copyright (c) 2013 Steven Hartland. All rights reserved.
  * Copyright (c) 2014 Integros [integros.com]
@@ -2448,7 +2448,7 @@ ztest_get_data(void *arg, uint64_t arg2, lr_write_t *lr, char *buf,
 		ASSERT3P(zio, !=, NULL);
 		size = doi.doi_data_block_size;
 		if (ISP2(size)) {
-			offset = P2ALIGN(offset, size);
+			offset = P2ALIGN_TYPED(offset, size, uint64_t);
 		} else {
 			ASSERT3U(offset, <, size);
 			offset = 0;
@@ -3270,7 +3270,7 @@ ztest_vdev_add_remove(ztest_ds_t *zd, uint64_t id)
 		    "log" : NULL, ztest_opts.zo_raid_children, zs->zs_mirrors,
 		    1);
 
-		error = spa_vdev_add(spa, nvroot);
+		error = spa_vdev_add(spa, nvroot, B_FALSE);
 		fnvlist_free(nvroot);
 
 		switch (error) {
@@ -3332,7 +3332,7 @@ ztest_vdev_class_add(ztest_ds_t *zd, uint64_t id)
 	nvroot = make_vdev_root(NULL, NULL, NULL, ztest_opts.zo_vdev_size, 0,
 	    class, ztest_opts.zo_raid_children, zs->zs_mirrors, 1);
 
-	error = spa_vdev_add(spa, nvroot);
+	error = spa_vdev_add(spa, nvroot, B_FALSE);
 	fnvlist_free(nvroot);
 
 	if (error == ENOSPC)
@@ -3439,7 +3439,7 @@ ztest_vdev_aux_add_remove(ztest_ds_t *zd, uint64_t id)
 		 */
 		nvlist_t *nvroot = make_vdev_root(NULL, aux, NULL,
 		    (ztest_opts.zo_vdev_size * 5) / 4, 0, NULL, 0, 0, 1);
-		error = spa_vdev_add(spa, nvroot);
+		error = spa_vdev_add(spa, nvroot, B_FALSE);
 
 		switch (error) {
 		case 0:
@@ -4668,7 +4668,8 @@ ztest_dmu_object_next_chunk(ztest_ds_t *zd, uint64_t id)
 	 */
 	mutex_enter(&os->os_obj_lock);
 	object = ztest_random(os->os_obj_next_chunk);
-	os->os_obj_next_chunk = P2ALIGN(object, dnodes_per_chunk);
+	os->os_obj_next_chunk = P2ALIGN_TYPED(object, dnodes_per_chunk,
+	    uint64_t);
 	mutex_exit(&os->os_obj_lock);
 }
 
@@ -6284,7 +6285,8 @@ ztest_fault_inject(ztest_ds_t *zd, uint64_t id)
 		 * the end of the disk (vdev_psize) is aligned to
 		 * sizeof (vdev_label_t).
 		 */
-		uint64_t psize = P2ALIGN(fsize, sizeof (vdev_label_t));
+		uint64_t psize = P2ALIGN_TYPED(fsize, sizeof (vdev_label_t),
+		    uint64_t);
 		if ((leaf & 1) == 1 &&
 		    offset + sizeof (bad) > psize - VDEV_LABEL_END_SIZE)
 			continue;
@@ -6600,8 +6602,8 @@ ztest_fletcher_incr(ztest_ds_t *zd, uint64_t id)
 				size_t inc = 64 * ztest_random(size / 67);
 				/* sometimes add few bytes to test non-simd */
 				if (ztest_random(100) < 10)
-					inc += P2ALIGN(ztest_random(64),
-					    sizeof (uint32_t));
+					inc += P2ALIGN_TYPED(ztest_random(64),
+					    sizeof (uint32_t), uint64_t);
 
 				if (inc > (size - pos))
 					inc = size - pos;

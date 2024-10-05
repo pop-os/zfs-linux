@@ -46,6 +46,7 @@ CONTRIBUTORS:
     Alex Zhuravlev <alexey.zhuravlev@intel.com>
     Allan Jude <allanjude@freebsd.org>
     Allen Holl <allen.m.holl@gmail.com>
+    Alphan Yılmaz <alphanyilmaz@gmail.com>
     alteriks <alteriks@gmail.com>
     Alyssa Ross <hi@alyssa.is>
     Ameer Hamza <ahamza@ixsystems.com>
@@ -88,15 +89,18 @@ CONTRIBUTORS:
     Bassu <bassu@phi9.com>
     Ben Allen <bsallen@alcf.anl.gov>
     Ben Cordero <bencord0@condi.me>
+    Benda Xu <orv@debian.org>
     Benedikt Neuffer <github@itfriend.de>
     Benjamin Albrecht <git@albrecht.io>
     Benjamin Gentil <benjgentil.pro@gmail.com>
+    Benjamin Sherman <benjamin@holyarmy.org>
     Ben McGough <bmcgough@fredhutch.org>
     Ben Rubson <ben.rubson@gmail.com>
     Ben Wolsieffer <benwolsieffer@gmail.com>
     bernie1995 <bernie.pikes@gmail.com>
     Bill McGonigle <bill-github.com-public1@bfccomputing.com>
     Bill Pijewski <wdp@joyent.com>
+    Bojan Novković <bnovkov@FreeBSD.org>
     Boris Protopopov <boris.protopopov@nexenta.com>
     Brad Forschinger <github@bnjf.id.au>
     Brad Lewis <brad.lewis@delphix.com>
@@ -111,6 +115,7 @@ CONTRIBUTORS:
     bzzz77 <bzzz.tomas@gmail.com>
     cable2999 <cable2999@users.noreply.github.com>
     Caleb James DeLisle <calebdelisle@lavabit.com>
+    Cameron Harr <harr1@llnl.gov>
     Cao Xuewen <cao.xuewen@zte.com.cn>
     Carlo Landmeter <clandmeter@gmail.com>
     Carlos Alberto Lopez Perez <clopez@igalia.com>
@@ -120,12 +125,15 @@ CONTRIBUTORS:
     Chen Can <chen.can2@zte.com.cn>
     Chengfei Zhu <chengfeix.zhu@intel.com>
     Chen Haiquan <oc@yunify.com>
+    ChenHao Lu <18302010006@fudan.edu.cn>
     Chip Parker <aparker@enthought.com>
     Chris Burroughs <chris.burroughs@gmail.com>
+    Chris Davidson <christopher.davidson@gmail.com>
     Chris Dunlap <cdunlap@llnl.gov>
     Chris Dunlop <chris@onthe.net.au>
     Chris Lindee <chris.lindee+github@gmail.com>
     Chris McDonough <chrism@plope.com>
+    Chris Peredun <chris.peredun@ixsystems.com>
     Chris Siden <chris.siden@delphix.com>
     Chris Siebenmann <cks.github@cs.toronto.edu>
     Christer Ekholm <che@chrekh.se>
@@ -144,6 +152,7 @@ CONTRIBUTORS:
     Clint Armstrong <clint@clintarmstrong.net>
     Coleman Kane <ckane@colemankane.org>
     Colin Ian King <colin.king@canonical.com>
+    Colin Percival <cperciva@tarsnap.com>
     Colm Buckley <colm@tuatha.org>
     Crag Wang <crag0715@gmail.com>
     Craig Loomis <cloomis@astro.princeton.edu>
@@ -156,10 +165,12 @@ CONTRIBUTORS:
     Damiano Albani <damiano.albani@gmail.com>
     Damian Szuberski <szuberskidamian@gmail.com>
     Damian Wojsław <damian@wojslaw.pl>
+    Daniel Berlin <dberlin@dberlin.org>
     Daniel Hiepler <d-git@coderdu.de>
     Daniel Hoffman <dj.hoffman@delphix.com>
     Daniel Kobras <d.kobras@science-computing.de>
     Daniel Kolesa <daniel@octaforge.org>
+    Daniel Perry <dtperry@amazon.com>
     Daniel Reichelt <hacking@nachtgeist.net>
     Daniel Stevenson <bot@dstev.net>
     Daniel Verite <daniel@verite.pro>
@@ -176,8 +187,11 @@ CONTRIBUTORS:
     David Quigley <david.quigley@intel.com>
     Debabrata Banerjee <dbanerje@akamai.com>
     D. Ebdrup <debdrup@freebsd.org>
+    Dennis R. Friedrichsen <dennis.r.friedrichsen@gmail.com>
     Denys Rtveliashvili <denys@rtveliashvili.name>
     Derek Dai <daiderek@gmail.com>
+    Derek Schrock <dereks@lifeofadishwasher.com>
+    Dex Wood <slash2314@gmail.com>
     DHE <git@dehacked.net>
     Didier Roche <didrocks@ubuntu.com>
     Dimitri John Ledkov <xnox@ubuntu.com>
@@ -235,9 +249,12 @@ CONTRIBUTORS:
     Gionatan Danti <g.danti@assyoma.it>
     Giuseppe Di Natale <guss80@gmail.com>
     Glenn Washburn <development@efficientek.com>
+    glibg10b <glibg10b@users.noreply.github.com>
+    gofaster <felix.gofaster@gmail.com>
     Gordan Bobic <gordan@redsleeve.org>
     Gordon Bergling <gbergling@googlemail.com>
     Gordon Ross <gwr@nexenta.com>
+    Gordon Tetlow <gordon@freebsd.org>
     Graham Christensen <graham@grahamc.com>
     Graham Perrin <grahamperrin@gmail.com>
     Gregor Kopka <gregor@kopka.net>
@@ -265,6 +282,7 @@ CONTRIBUTORS:
     Igor Kozhukhov <ikozhukhov@gmail.com>
     Igor Lvovsky <ilvovsky@gmail.com>
     ilbsmart <wgqimut@gmail.com>
+    Ilkka Sovanto <github@ilkka.kapsi.fi>
     illiliti <illiliti@protonmail.com>
     ilovezfs <ilovezfs@icloud.com>
     InsanePrawn <Insane.Prawny@gmail.com>
@@ -280,9 +298,11 @@ CONTRIBUTORS:
     Jan Engelhardt <jengelh@inai.de>
     Jan Kryl <jan.kryl@nexenta.com>
     Jan Sanislo <oystr@cs.washington.edu>
+    Jaron Kent-Dobias <jaron@kent-dobias.com>
     Jason Cohen <jwittlincohen@gmail.com>
     Jason Harmening <jason.harmening@gmail.com>
     Jason King <jason.brian.king@gmail.com>
+    Jason Lee <jasonlee@lanl.gov>
     Jason Zaman <jasonzaman@gmail.com>
     Javen Wu <wu.javen@gmail.com>
     Jean-Baptiste Lallement <jean-baptiste@ubuntu.com>
@@ -313,6 +333,7 @@ CONTRIBUTORS:
     Jonathon Fernyhough <jonathon@m2x.dev>
     Jorgen Lundman <lundman@lundman.net>
     Josef 'Jeff' Sipek <josef.sipek@nexenta.com>
+    Jose Luis Duran <jlduran@gmail.com>
     Josh Soref <jsoref@users.noreply.github.com>
     Joshua M. Clulow <josh@sysmgr.org>
     José Luis Salvador Rufo <salvador.joseluis@gmail.com>
@@ -336,8 +357,10 @@ CONTRIBUTORS:
     Kash Pande <kash@tripleback.net>
     Kay Pedersen <christianpe96@gmail.com>
     Keith M Wesolowski <wesolows@foobazco.org>
+    Kent Ross <k@mad.cash>
     KernelOfTruth <kerneloftruth@gmail.com>
     Kevin Bowling <kevin.bowling@kev009.com>
+    Kevin Greene <kevin.greene@delphix.com>
     Kevin Jin <lostking2008@hotmail.com>
     Kevin P. Fleming <kevin@km6g.us>
     Kevin Tanguy <kevin.tanguy@ovh.net>
@@ -389,8 +412,10 @@ CONTRIBUTORS:
     Mark Shellenbaum <Mark.Shellenbaum@Oracle.COM>
     marku89 <mar42@kola.li>
     Mark Wright <markwright@internode.on.net>
+    Mart Frauenlob <allkind@fastest.cc>
     Martin Matuska <mm@FreeBSD.org>
     Martin Rüegg <martin.rueegg@metaworx.ch>
+    Martin Wagner <martin.wagner.dev@gmail.com>
     Massimo Maggi <me@massimo-maggi.eu>
     Mateusz Guzik <mjguzik@gmail.com>
     Mateusz Piotrowski <0mp@FreeBSD.org>
@@ -405,6 +430,7 @@ CONTRIBUTORS:
     Matus Kral <matuskral@me.com>
     Mauricio Faria de Oliveira <mfo@canonical.com>
     Max Grossman <max.grossman@delphix.com>
+    Maxim Filimonov <che@bein.link>
     Maximilian Mehnert <maximilian.mehnert@gmx.de>
     Max Zettlmeißl <max@zettlmeissl.de>
     Md Islam <mdnahian@outlook.com>
@@ -417,6 +443,7 @@ CONTRIBUTORS:
     Michael Niewöhner <foss@mniewoehner.de>
     Michael Zhivich <mzhivich@akamai.com>
     Michal Vasilek <michal@vasilek.cz>
+    MigeljanImeri <ImeriMigel@gmail.com>
     Mike Gerdts <mike.gerdts@joyent.com>
     Mike Harsch <mike@harschsystems.com>
     Mike Leddy <mike.leddy@gmail.com>
@@ -448,6 +475,7 @@ CONTRIBUTORS:
     Olaf Faaland <faaland1@llnl.gov>
     Oleg Drokin <green@linuxhacker.ru>
     Oleg Stepura <oleg@stepura.com>
+    Olivier Certner <olce.freebsd@certner.fr>
     Olivier Mazouffre <olivier.mazouffre@ims-bordeaux.fr>
     omni <omni+vagant@hack.org>
     Orivej Desh <orivej@gmx.fr>
@@ -466,6 +494,7 @@ CONTRIBUTORS:
     Peng <peng.hse@xtaotech.com>
     Peter Ashford <ashford@accs.com>
     Peter Dave Hello <hsu@peterdavehello.org>
+    Peter Doherty <peterd@acranox.org>
     Peter Levine <plevine457@gmail.com>
     Peter Wirdemo <peter.wirdemo@gmail.com>
     Petros Koutoupis <petros@petroskoutoupis.com>
@@ -479,6 +508,8 @@ CONTRIBUTORS:
     Prasad Joshi <prasadjoshi124@gmail.com>
     privb0x23 <privb0x23@users.noreply.github.com>
     P.SCH <p88@yahoo.com>
+    Qiuhao Chen <chenqiuhao1997@gmail.com>
+    Quartz <yyhran@163.com>
     Quentin Zdanis <zdanisq@gmail.com>
     Rafael Kitover <rkitover@gmail.com>
     RageLtMan <sempervictus@users.noreply.github.com>
@@ -491,11 +522,15 @@ CONTRIBUTORS:
     Riccardo Schirone <rschirone91@gmail.com>
     Richard Allen <belperite@gmail.com>
     Richard Elling <Richard.Elling@RichardElling.com>
+    Richard Kojedzinszky <richard@kojedz.in>
     Richard Laager <rlaager@wiktel.com>
     Richard Lowe <richlowe@richlowe.net>
     Richard Sharpe <rsharpe@samba.org>
     Richard Yao <ryao@gentoo.org>
     Rich Ercolani <rincebrain@gmail.com>
+    Rick Macklem <rmacklem@uoguelph.ca>
+    rilysh <nightquick@proton.me>
+    Robert Evans <evansr@google.com>
     Robert Novak <sailnfool@gmail.com>
     Roberto Ricci <ricci@disroot.org>
     Rob Norris <robn@despairlabs.com>
@@ -505,11 +540,14 @@ CONTRIBUTORS:
     Roman Strashkin <roman.strashkin@nexenta.com>
     Ross Williams <ross@ross-williams.net>
     Ruben Kerkhof <ruben@rubenkerkhof.com>
+    Ryan <errornointernet@envs.net>
     Ryan Hirasaki <ryanhirasaki@gmail.com>
     Ryan Lahfa <masterancpp@gmail.com>
     Ryan Libby <rlibby@FreeBSD.org>
     Ryan Moeller <freqlabs@FreeBSD.org>
+    Sam Atkinson <samatk@amazon.com>
     Sam Hathaway <github.com@munkynet.org>
+    Sam James <sam@gentoo.org>
     Sam Lunt <samuel.j.lunt@gmail.com>
     Samuel VERSCHELDE <stormi-github@ylix.fr>
     Samuel Wycliffe <samuelwycliffe@gmail.com>
@@ -527,9 +565,12 @@ CONTRIBUTORS:
     Sen Haerens <sen@senhaerens.be>
     Serapheim Dimitropoulos <serapheim@delphix.com>
     Seth Forshee <seth.forshee@canonical.com>
+    Seth Troisi <sethtroisi@google.com>
     Shaan Nobee <sniper111@gmail.com>
     Shampavman <sham.pavman@nexenta.com>
     Shaun Tancheff <shaun@aeonazure.com>
+    Shawn Bayern <sbayern@law.fsu.edu>
+    Shengqi Chen <harry-chen@outlook.com>
     Shen Yan <shenyanxxxy@qq.com>
     Simon Guest <simon.guest@tesujimath.org>
     Simon Klinkert <simon.klinkert@gmail.com>
@@ -537,6 +578,7 @@ CONTRIBUTORS:
     Spencer Kinny <spencerkinny1995@gmail.com>
     Srikanth N S <srikanth.nagasubbaraoseetharaman@hpe.com>
     Stanislav Seletskiy <s.seletskiy@gmail.com>
+    Stefan Lendl <s.lendl@proxmox.com>
     Steffen Müthing <steffen.muething@iwr.uni-heidelberg.de>
     Stephen Blinick <stephen.blinick@delphix.com>
     sterlingjensen <sterlingjensen@users.noreply.github.com>
@@ -557,6 +599,7 @@ CONTRIBUTORS:
     Teodor Spæren <teodor_spaeren@riseup.net>
     TerraTech <TerraTech@users.noreply.github.com>
     Thijs Cramer <thijs.cramer@gmail.com>
+    Thomas Bertschinger <bertschinger@lanl.gov>
     Thomas Geppert <geppi@digitx.de>
     Thomas Lamprecht <guggentom@hotmail.de>
     Till Maas <opensource@till.name>
@@ -569,6 +612,7 @@ CONTRIBUTORS:
     Tim Schumacher <timschumi@gmx.de>
     Tino Reichardt <milky-zfs@mcmilk.de>
     Tobin Harding <me@tobin.cc>
+    Todd Seidelmann <seidelma@users.noreply.github.com>
     Tom Caputi <tcaputi@datto.com>
     Tom Matthews <tom@axiom-partners.com>
     Tomohiro Kusumi <kusumi.tomohiro@gmail.com>
@@ -586,6 +630,7 @@ CONTRIBUTORS:
     Turbo Fredriksson <turbo@bayour.com>
     Tyler J. Stachecki <stachecki.tyler@gmail.com>
     Umer Saleem <usaleem@ixsystems.com>
+    Vaibhav Bhanawat <vaibhav.bhanawat@delphix.com>
     Valmiky Arquissandas <kayvlim@gmail.com>
     Val Packett <val@packett.cool>
     Vince van Oosten <techhazard@codeforyouand.me>
@@ -614,10 +659,13 @@ CONTRIBUTORS:
     yuina822 <ayuichi@club.kyutech.ac.jp>
     YunQiang Su <syq@debian.org>
     Yuri Pankov <yuri.pankov@gmail.com>
+    Yuxin Wang <yuxinwang9999@gmail.com>
     Yuxuan Shui <yshuiv7@gmail.com>
     Zachary Bedell <zac@thebedells.org>
     Zach Dykstra <dykstra.zachary@gmail.com>
     zgock <zgock@nuc.base.zgock-lab.net>
+    Zhao Yongming <zym@apache.org>
+    Zhenlei Huang <zlei@FreeBSD.org>
     Zhu Chuang <chuang@melty.land>
     Érico Nogueira <erico.erc@gmail.com>
     Đoàn Trần Công Danh <congdanhqx@gmail.com>

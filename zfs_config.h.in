@@ -79,11 +79,17 @@
 /* Define if host toolchain supports AVX512VL */
 #undef HAVE_AVX512VL
 
+/* backtrace() is available */
+#undef HAVE_BACKTRACE
+
 /* bdevname() is available */
 #undef HAVE_BDEVNAME
 
 /* bdev_check_media_change() exists */
 #undef HAVE_BDEV_CHECK_MEDIA_CHANGE
+
+/* bdev_file_open_by_path() exists */
+#undef HAVE_BDEV_FILE_OPEN_BY_PATH
 
 /* bdev_*_io_acct() available */
 #undef HAVE_BDEV_IO_ACCT_63
@@ -99,6 +105,9 @@
 
 /* bdev_max_secure_erase_sectors() is available */
 #undef HAVE_BDEV_MAX_SECURE_ERASE_SECTORS
+
+/* bdev_nr_bytes() is available */
+#undef HAVE_BDEV_NR_BYTES
 
 /* bdev_open_by_path() exists */
 #undef HAVE_BDEV_OPEN_BY_PATH
@@ -151,17 +160,29 @@
 /* blkdev_get_by_path() handles ERESTARTSYS */
 #undef HAVE_BLKDEV_GET_ERESTARTSYS
 
-/* blkdev_issue_discard() is available */
-#undef HAVE_BLKDEV_ISSUE_DISCARD
+/* __blkdev_issue_discard(flags) is available */
+#undef HAVE_BLKDEV_ISSUE_DISCARD_ASYNC_FLAGS
 
 /* __blkdev_issue_discard() is available */
-#undef HAVE_BLKDEV_ISSUE_DISCARD_ASYNC
+#undef HAVE_BLKDEV_ISSUE_DISCARD_ASYNC_NOFLAGS
+
+/* blkdev_issue_discard(flags) is available */
+#undef HAVE_BLKDEV_ISSUE_DISCARD_FLAGS
+
+/* blkdev_issue_discard() is available */
+#undef HAVE_BLKDEV_ISSUE_DISCARD_NOFLAGS
 
 /* blkdev_issue_secure_erase() is available */
 #undef HAVE_BLKDEV_ISSUE_SECURE_ERASE
 
+/* blkdev_put() exists */
+#undef HAVE_BLKDEV_PUT
+
 /* blkdev_put() accepts void* as arg 2 */
 #undef HAVE_BLKDEV_PUT_HOLDER
+
+/* struct queue_limits has a features field */
+#undef HAVE_BLKDEV_QUEUE_LIMITS_FEATURES
 
 /* blkdev_reread_part() exists */
 #undef HAVE_BLKDEV_REREAD_PART
@@ -174,6 +195,9 @@
 
 /* blk_alloc_disk() exists */
 #undef HAVE_BLK_ALLOC_DISK
+
+/* blk_alloc_disk() exists and takes 2 args */
+#undef HAVE_BLK_ALLOC_DISK_2ARG
 
 /* blk_alloc_queue() expects request function */
 #undef HAVE_BLK_ALLOC_QUEUE_REQUEST_FN
@@ -190,11 +214,17 @@
 /* block multiqueue is available */
 #undef HAVE_BLK_MQ
 
+/* block multiqueue hardware context is cached in struct request */
+#undef HAVE_BLK_MQ_RQ_HCTX
+
 /* blk queue backing_dev_info is dynamic */
 #undef HAVE_BLK_QUEUE_BDI_DYNAMIC
 
 /* blk_queue_discard() is available */
 #undef HAVE_BLK_QUEUE_DISCARD
+
+/* backing_dev_info is available through queue gendisk */
+#undef HAVE_BLK_QUEUE_DISK_BDI
 
 /* blk_queue_flag_clear() exists */
 #undef HAVE_BLK_QUEUE_FLAG_CLEAR
@@ -317,6 +347,9 @@
 /* sops->evict_inode() exists */
 #undef HAVE_EVICT_INODE
 
+/* Define to 1 if you have the `execvpe' function. */
+#undef HAVE_EXECVPE
+
 /* FALLOC_FL_ZERO_RANGE is defined */
 #undef HAVE_FALLOC_FL_ZERO_RANGE
 
@@ -388,6 +421,9 @@
 
 /* Define if the GNU gettext() function is already present or preinstalled. */
 #undef HAVE_GETTEXT
+
+/* Define to 1 if you have the `gettid' function. */
+#undef HAVE_GETTID
 
 /* iops->get_acl() exists */
 #undef HAVE_GET_ACL
@@ -566,6 +602,9 @@
 /* Define if compiler supports -Winfinite-recursion */
 #undef HAVE_KERNEL_INFINITE_RECURSION
 
+/* kernel defines intptr_t */
+#undef HAVE_KERNEL_INTPTR_T
+
 /* kernel has kernel_neon_* functions */
 #undef HAVE_KERNEL_NEON
 
@@ -626,6 +665,12 @@
 /* Define if you have [udev] */
 #undef HAVE_LIBUDEV
 
+/* Define if you have [unwind] */
+#undef HAVE_LIBUNWIND
+
+/* libunwind has unw_get_elf_filename */
+#undef HAVE_LIBUNWIND_ELF
+
 /* Define if you have [uuid] */
 #undef HAVE_LIBUUID
 
@@ -652,6 +697,12 @@
 
 /* Define to 1 if you have the `mlockall' function. */
 #undef HAVE_MLOCKALL
+
+/* page_mapping() is available */
+#undef HAVE_MM_PAGE_MAPPING
+
+/* page_size() is available */
+#undef HAVE_MM_PAGE_SIZE
 
 /* lookup_bdev() wants mode arg */
 #undef HAVE_MODE_LOOKUP_BDEV
@@ -695,6 +746,9 @@
 /* posix_acl_valid() wants user namespace */
 #undef HAVE_POSIX_ACL_VALID_WITH_NS
 
+/* proc_handler ctl_table arg is const */
+#undef HAVE_PROC_HANDLER_CTL_TABLE_CONST
+
 /* proc_ops structure exists */
 #undef HAVE_PROC_OPS_STRUCT
 
@@ -718,6 +772,9 @@
 
 /* register_shrinker is vararg */
 #undef HAVE_REGISTER_SHRINKER_VARARG
+
+/* register_sysctl_sz exists */
+#undef HAVE_REGISTER_SYSCTL_SZ
 
 /* register_sysctl_table exists */
 #undef HAVE_REGISTER_SYSCTL_TABLE
@@ -979,6 +1036,9 @@
 
 /* __set_page_dirty_nobuffers exists */
 #undef HAVE_VFS_SET_PAGE_DIRTY_NOBUFFERS
+
+/* splice_copy_file_range() is available */
+#undef HAVE_VFS_SPLICE_COPY_FILE_RANGE
 
 /* __vmalloc page flags exists */
 #undef HAVE_VMALLOC_PAGE_KERNEL

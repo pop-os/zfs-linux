@@ -347,7 +347,8 @@ vdev_get_min_asize(vdev_t *vd)
 	 * to the nearest metaslab.
 	 */
 	if (vd == vd->vdev_top)
-		return (P2ALIGN(vd->vdev_asize, 1ULL << vd->vdev_ms_shift));
+		return (P2ALIGN_TYPED(vd->vdev_asize, 1ULL << vd->vdev_ms_shift,
+		    uint64_t));
 
 	return (pvd->vdev_ops->vdev_op_min_asize(pvd));
 }
@@ -676,6 +677,8 @@ vdev_alloc_common(spa_t *spa, uint_t id, uint64_t guid, vdev_ops_t *ops)
 	vd->vdev_checksum_t = vdev_prop_default_numeric(VDEV_PROP_CHECKSUM_T);
 	vd->vdev_io_n = vdev_prop_default_numeric(VDEV_PROP_IO_N);
 	vd->vdev_io_t = vdev_prop_default_numeric(VDEV_PROP_IO_T);
+	vd->vdev_slow_io_n = vdev_prop_default_numeric(VDEV_PROP_SLOW_IO_N);
+	vd->vdev_slow_io_t = vdev_prop_default_numeric(VDEV_PROP_SLOW_IO_T);
 
 	list_link_init(&vd->vdev_config_dirty_node);
 	list_link_init(&vd->vdev_state_dirty_node);
@@ -1659,6 +1662,7 @@ vdev_metaslab_fini(vdev_t *vd)
 typedef struct vdev_probe_stats {
 	boolean_t	vps_readable;
 	boolean_t	vps_writeable;
+	boolean_t	vps_zio_done_probe;
 	int		vps_flags;
 } vdev_probe_stats_t;
 
@@ -1702,6 +1706,17 @@ vdev_probe_done(zio_t *zio)
 			(void) zfs_ereport_post(FM_EREPORT_ZFS_PROBE_FAILURE,
 			    spa, vd, NULL, NULL, 0);
 			zio->io_error = SET_ERROR(ENXIO);
+
+			/*
+			 * If this probe was initiated from zio pipeline, then
+			 * change the state in a spa_async_request. Probes that
+			 * were initiated from a vdev_open can change the state
+			 * as part of the open call.
+			 */
+			if (vps->vps_zio_done_probe) {
+				vd->vdev_fault_wanted = B_TRUE;
+				spa_async_request(spa, SPA_ASYNC_FAULT_VDEV);
+			}
 		}
 
 		mutex_enter(&vd->vdev_probe_lock);
@@ -1752,6 +1767,7 @@ vdev_probe(vdev_t *vd, zio_t *zio)
 
 		vps->vps_flags = ZIO_FLAG_CANFAIL | ZIO_FLAG_PROBE |
 		    ZIO_FLAG_DONT_AGGREGATE | ZIO_FLAG_TRYHARD;
+		vps->vps_zio_done_probe = (zio != NULL);
 
 		if (spa_config_held(spa, SCL_ZIO, RW_WRITER)) {
 			/*
@@ -1778,15 +1794,6 @@ vdev_probe(vdev_t *vd, zio_t *zio)
 		vd->vdev_probe_zio = pio = zio_null(NULL, spa, vd,
 		    vdev_probe_done, vps,
 		    vps->vps_flags | ZIO_FLAG_DONT_PROPAGATE);
-
-		/*
-		 * We can't change the vdev state in this context, so we
-		 * kick off an async task to do it on our behalf.
-		 */
-		if (zio != NULL) {
-			vd->vdev_probe_wanted = B_TRUE;
-			spa_async_request(spa, SPA_ASYNC_PROBE);
-		}
 	}
 
 	if (zio != NULL)
@@ -2001,6 +2008,7 @@ vdev_open(vdev_t *vd)
 	vd->vdev_stat.vs_aux = VDEV_AUX_NONE;
 	vd->vdev_cant_read = B_FALSE;
 	vd->vdev_cant_write = B_FALSE;
+	vd->vdev_fault_wanted = B_FALSE;
 	vd->vdev_min_asize = vdev_get_min_asize(vd);
 
 	/*
@@ -2101,8 +2109,8 @@ vdev_open(vdev_t *vd)
 		}
 	}
 
-	osize = P2ALIGN(osize, (uint64_t)sizeof (vdev_label_t));
-	max_osize = P2ALIGN(max_osize, (uint64_t)sizeof (vdev_label_t));
+	osize = P2ALIGN_TYPED(osize, sizeof (vdev_label_t), uint64_t);
+	max_osize = P2ALIGN_TYPED(max_osize, sizeof (vdev_label_t), uint64_t);
 
 	if (vd->vdev_children == 0) {
 		if (osize < SPA_MINDEVSIZE) {
@@ -3730,6 +3738,18 @@ vdev_load(vdev_t *vd)
 		if (error && error != ENOENT)
 			vdev_dbgmsg(vd, "vdev_load: zap_lookup(zap=%llu) "
 			    "failed [error=%d]", (u_longlong_t)zapobj, error);
+
+		error = vdev_prop_get_int(vd, VDEV_PROP_SLOW_IO_N,
+		    &vd->vdev_slow_io_n);
+		if (error && error != ENOENT)
+			vdev_dbgmsg(vd, "vdev_load: zap_lookup(zap=%llu) "
+			    "failed [error=%d]", (u_longlong_t)zapobj, error);
+
+		error = vdev_prop_get_int(vd, VDEV_PROP_SLOW_IO_T,
+		    &vd->vdev_slow_io_t);
+		if (error && error != ENOENT)
+			vdev_dbgmsg(vd, "vdev_load: zap_lookup(zap=%llu) "
+			    "failed [error=%d]", (u_longlong_t)zapobj, error);
 	}
 
 	/*
@@ -4712,9 +4732,9 @@ vdev_get_stats_ex(vdev_t *vd, vdev_stat_t *vs, vdev_stat_ex_t *vsx)
 		 * can expand.
 		 */
 		if (vd->vdev_aux == NULL && tvd != NULL) {
-			vs->vs_esize = P2ALIGN(
+			vs->vs_esize = P2ALIGN_TYPED(
 			    vd->vdev_max_asize - vd->vdev_asize,
-			    1ULL << tvd->vdev_ms_shift);
+			    1ULL << tvd->vdev_ms_shift, uint64_t);
 		}
 
 		vs->vs_configured_ashift = vd->vdev_top != NULL
@@ -5934,6 +5954,20 @@ vdev_prop_set(vdev_t *vd, nvlist_t *innvl, nvlist_t *outnvl)
 			}
 			vd->vdev_io_t = intval;
 			break;
+		case VDEV_PROP_SLOW_IO_N:
+			if (nvpair_value_uint64(elem, &intval) != 0) {
+				error = EINVAL;
+				break;
+			}
+			vd->vdev_slow_io_n = intval;
+			break;
+		case VDEV_PROP_SLOW_IO_T:
+			if (nvpair_value_uint64(elem, &intval) != 0) {
+				error = EINVAL;
+				break;
+			}
+			vd->vdev_slow_io_t = intval;
+			break;
 		default:
 			/* Most processing is done in vdev_props_set_sync */
 			break;
@@ -6269,6 +6303,8 @@ vdev_prop_get(vdev_t *vd, nvlist_t *innvl, nvlist_t *outnvl)
 			case VDEV_PROP_CHECKSUM_T:
 			case VDEV_PROP_IO_N:
 			case VDEV_PROP_IO_T:
+			case VDEV_PROP_SLOW_IO_N:
+			case VDEV_PROP_SLOW_IO_T:
 				err = vdev_prop_get_int(vd, prop, &intval);
 				if (err && err != ENOENT)
 					break;

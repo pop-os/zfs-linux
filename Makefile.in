@@ -235,9 +235,9 @@ target_triplet = @target@
 @CONFIG_USER_TRUE@@USING_PYTHON_TRUE@am__append_25 = arc_summary     arcstat        dbufstat        zilstat
 @CONFIG_USER_TRUE@@USING_PYTHON_TRUE@am__append_26 = arc_summary     arcstat        dbufstat        zilstat
 @CONFIG_USER_TRUE@@USING_PYTHON_TRUE@am__append_27 = cmd/arc_summary cmd/arcstat.in cmd/dbufstat.in cmd/zilstat.in
-@CONFIG_USER_TRUE@am__append_28 = $(nodist_bashcompletion_DATA) \
+@CONFIG_USER_TRUE@am__append_28 = $(COMPLETION_FILES) \
 @CONFIG_USER_TRUE@	contrib/pyzfs/setup.py
-@CONFIG_USER_TRUE@am__append_29 = $(nodist_bashcompletion_DATA)
+@CONFIG_USER_TRUE@am__append_29 = $(COMPLETION_FILES)
 @CONFIG_USER_TRUE@am__append_30 = contrib/pyzfs/libzfs_core \
 @CONFIG_USER_TRUE@	contrib/pyzfs/README contrib/pyzfs/LICENSE \
 @CONFIG_USER_TRUE@	contrib/pyzfs/docs contrib/zcp/autosnap.lua
@@ -365,64 +365,65 @@ target_triplet = @target@
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@	lib/libspl/os/freebsd/mnttab.c \
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@	lib/libspl/os/freebsd/zone.c
 
-@ASAN_ENABLED_FALSE@@CONFIG_USER_TRUE@am__append_61 = -Wl,-z,defs
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_62 = \
+@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_61 = -lpthread
+@ASAN_ENABLED_FALSE@@CONFIG_USER_TRUE@am__append_62 = -Wl,-z,defs
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_63 = \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	lib/libzfs_core/os/linux/libzfs_core_ioctl.c
 
-@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_63 = -Iinclude/os/freebsd/zfs
-@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_64 = \
+@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_64 = -Iinclude/os/freebsd/zfs
+@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_65 = \
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@	lib/libzfs_core/os/freebsd/libzfs_core_ioctl.c
 
-@ASAN_ENABLED_FALSE@@CONFIG_USER_TRUE@am__append_65 = -Wl,-z,defs
-@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_66 = -lutil -lgeom
-@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_67 = \
+@ASAN_ENABLED_FALSE@@CONFIG_USER_TRUE@am__append_66 = -Wl,-z,defs
+@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_67 = -lutil -lgeom
+@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_68 = \
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@	lib/libzfs/os/freebsd/libzfs_compat.c \
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@	lib/libzfs/os/freebsd/libzfs_zmount.c
 
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_68 = \
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_69 = \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	lib/libzfs/os/linux/libzfs_mount_os.c \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	lib/libzfs/os/linux/libzfs_pool_os.c \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	lib/libzfs/os/linux/libzfs_util_os.c
 
-@ASAN_ENABLED_FALSE@@CONFIG_USER_TRUE@am__append_69 = -Wl,-z,defs
-@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_70 = -lutil -lgeom
-@ASAN_ENABLED_FALSE@@CONFIG_USER_TRUE@am__append_71 = -Wl,-z,defs
+@ASAN_ENABLED_FALSE@@CONFIG_USER_TRUE@am__append_70 = -Wl,-z,defs
+@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_71 = -lutil -lgeom
 @ASAN_ENABLED_FALSE@@CONFIG_USER_TRUE@am__append_72 = -Wl,-z,defs
-@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_73 = -lgeom
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_74 = \
+@ASAN_ENABLED_FALSE@@CONFIG_USER_TRUE@am__append_73 = -Wl,-z,defs
+@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_74 = -lgeom
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_75 = \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	lib/libzutil/os/linux/zutil_setproctitle.c \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	lib/libzutil/os/linux/zutil_device_path_os.c \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	lib/libzutil/os/linux/zutil_import_os.c
 
-@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_75 = \
+@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_76 = \
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@	lib/libzutil/os/freebsd/zutil_device_path_os.c \
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@	lib/libzutil/os/freebsd/zutil_import_os.c
 
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_76 = \
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_77 = \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	libefi.la \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	-lrt
 
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_77 = libefi.la
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_78 = libefi.la \
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_78 = libefi.la
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_79 = libefi.la \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	udev/zvol_id
-@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_79 = \
+@BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@am__append_80 = \
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@	man/man8/zfs-jail.8 \
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@	man/man8/zfs-unjail.8
 
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_80 = \
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_81 = \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	man/man8/zfs-unzone.8 \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	man/man8/zfs-zone.8
 
-@CONFIG_USER_TRUE@am__append_81 = $(nodist_man_MANS) \
+@CONFIG_USER_TRUE@am__append_82 = $(nodist_man_MANS) \
 @CONFIG_USER_TRUE@	$(nodist_scripts_zfs_tests_include_DATA) \
 @CONFIG_USER_TRUE@	$(scripts_test_runner_bin_SCRIPTS)
-@CONFIG_USER_TRUE@am__append_82 = mancheck
+@CONFIG_USER_TRUE@am__append_83 = mancheck
 
 # The manual pager in most Linux distros defaults to "BSD" when .Os is blank,
 # but leaving it blank makes things a lot easier on
 # FreeBSD when OpenZFS is vendored in the base system.
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_83 = man-install-data-hook
-@CONFIG_USER_TRUE@am__append_84 = tests/zfs-tests/tests
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_84 = man-install-data-hook
+@CONFIG_USER_TRUE@am__append_85 = tests/zfs-tests/tests
 @CONFIG_USER_TRUE@scripts_zfs_tests_bin_PROGRAMS =  \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/chg_usr_exec$(EXEEXT) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/clonefile$(EXEEXT) \
@@ -469,9 +470,9 @@ target_triplet = @target@
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/sha2_test$(EXEEXT) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/blake3_test$(EXEEXT) \
 @CONFIG_USER_TRUE@	$(am__EXEEXT_5)
-@CONFIG_USER_TRUE@@WANT_DEVNAME2DEVID_TRUE@am__append_85 = tests/zfs-tests/cmd/devname2devid
-@CONFIG_USER_TRUE@@WANT_MMAP_LIBAIO_TRUE@am__append_86 = tests/zfs-tests/cmd/mmap_libaio
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_87 = tests/zfs-tests/cmd/getversion \
+@CONFIG_USER_TRUE@@WANT_DEVNAME2DEVID_TRUE@am__append_86 = tests/zfs-tests/cmd/devname2devid
+@CONFIG_USER_TRUE@@WANT_MMAP_LIBAIO_TRUE@am__append_87 = tests/zfs-tests/cmd/mmap_libaio
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_88 = tests/zfs-tests/cmd/getversion \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/user_ns_exec \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/renameat2 \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/xattrtest \
@@ -481,7 +482,7 @@ target_triplet = @target@
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/write_dos_attributes \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/randfree_file \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/file_fadvise
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_88 = tests/zfs-tests/cmd/linux_dos_attributes/dos_attributes.h
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_89 = tests/zfs-tests/cmd/linux_dos_attributes/dos_attributes.h
 @CONFIG_USER_TRUE@scripts_zfs_tests_functional_libzfs_PROGRAMS = tests/zfs-tests/tests/functional/libzfs/many_fds$(EXEEXT)
 @CONFIG_USER_TRUE@scripts_zfs_tests_functional_hkdf_PROGRAMS = tests/zfs-tests/tests/functional/hkdf/hkdf_test$(EXEEXT)
 @CONFIG_USER_TRUE@scripts_zfs_tests_functional_cp_files_PROGRAMS = tests/zfs-tests/tests/functional/cp_files/seekflood$(EXEEXT)
@@ -490,13 +491,13 @@ target_triplet = @target@
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/tests/functional/tmpfile/tmpfile_003_pos$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/tests/functional/tmpfile/tmpfile_stat_mode$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/tests/functional/tmpfile/tmpfile_test$(EXEEXT)
-@CONFIG_USER_TRUE@am__append_89 = tests/README.md
-@CONFIG_USER_TRUE@am__append_90 = $(shell find $(srcdir)/tests -name '*.sh')
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_91 = $(udevrule_DATA)
+@CONFIG_USER_TRUE@am__append_90 = tests/README.md
+@CONFIG_USER_TRUE@am__append_91 = $(shell find $(srcdir)/tests -name '*.sh')
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_92 = $(udevrule_DATA)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@udev_PROGRAMS =  \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	udev/zvol_id$(EXEEXT)
-@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_92 = udev
-@CONFIG_KERNEL_TRUE@am__append_93 = module
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_93 = udev
+@CONFIG_KERNEL_TRUE@am__append_94 = module
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
@@ -592,6 +593,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
 	$(top_srcdir)/config/kernel-mkdir.m4 \
 	$(top_srcdir)/config/kernel-mknod.m4 \
+	$(top_srcdir)/config/kernel-mm-pagemap.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pagemap-folio_wait_bit.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
@@ -625,6 +627,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-totalhigh_pages.m4 \
 	$(top_srcdir)/config/kernel-totalram-pages-func.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
+	$(top_srcdir)/config/kernel-types.m4 \
 	$(top_srcdir)/config/kernel-user-ns-inum.m4 \
 	$(top_srcdir)/config/kernel-userns-capabilities.m4 \
 	$(top_srcdir)/config/kernel-usleep_range.m4 \
@@ -657,6 +660,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/po.m4 $(top_srcdir)/config/progtest.m4 \
 	$(top_srcdir)/config/toolchain-simd.m4 \
 	$(top_srcdir)/config/user-aio.h.m4 \
+	$(top_srcdir)/config/user-backtrace.m4 \
 	$(top_srcdir)/config/user-clock_gettime.m4 \
 	$(top_srcdir)/config/user-dracut.m4 \
 	$(top_srcdir)/config/user-gettext.m4 \
@@ -668,6 +672,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/user-libfetch.m4 \
 	$(top_srcdir)/config/user-libtirpc.m4 \
 	$(top_srcdir)/config/user-libudev.m4 \
+	$(top_srcdir)/config/user-libunwind.m4 \
 	$(top_srcdir)/config/user-libuuid.m4 \
 	$(top_srcdir)/config/user-makedev.m4 \
 	$(top_srcdir)/config/user-pam.m4 \
@@ -994,7 +999,9 @@ libspl_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libspl_la_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 @CONFIG_USER_TRUE@am_libspl_la_rpath =
-libspl_assert_la_LIBADD =
+@CONFIG_USER_TRUE@libspl_assert_la_DEPENDENCIES =  \
+@CONFIG_USER_TRUE@	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+@CONFIG_USER_TRUE@	$(am__DEPENDENCIES_1)
 am__libspl_assert_la_SOURCES_DIST = lib/libspl/assert.c
 @CONFIG_USER_TRUE@am_libspl_assert_la_OBJECTS =  \
 @CONFIG_USER_TRUE@	lib/libspl/libspl_assert_la-assert.lo
@@ -2636,6 +2643,7 @@ am__dist_noinst_DATA_DIST =  \
 	etc/systemd/system/zfs-zed.service.in \
 	etc/systemd/system/zfs.target.in man/man8/zed.8.in \
 	man/man8/zfs-mount-generator.8.in \
+	man/man8/zfs_prepare_disk.8.in \
 	tests/zfs-tests/include/default.cfg.in \
 	tests/test-runner/bin/test-runner.py.in \
 	tests/test-runner/bin/zts-report.py.in \
@@ -2686,27 +2694,27 @@ am__dist_noinst_DATA_DIST =  \
 	man/man8/zfs-unload-key.8 man/man8/zfs-unmount.8 \
 	man/man8/zfs-upgrade.8 man/man8/zfs-userspace.8 \
 	man/man8/zfs-wait.8 man/man8/zfs_ids_to_path.8 \
-	man/man8/zfs_prepare_disk.8 man/man8/zgenhostid.8 \
-	man/man8/zinject.8 man/man8/zpool.8 man/man8/zpool-add.8 \
-	man/man8/zpool-attach.8 man/man8/zpool-checkpoint.8 \
-	man/man8/zpool-clear.8 man/man8/zpool-create.8 \
-	man/man8/zpool-destroy.8 man/man8/zpool-detach.8 \
-	man/man8/zpool-events.8 man/man8/zpool-export.8 \
-	man/man8/zpool-get.8 man/man8/zpool-history.8 \
-	man/man8/zpool-import.8 man/man8/zpool-initialize.8 \
-	man/man8/zpool-iostat.8 man/man8/zpool-labelclear.8 \
-	man/man8/zpool-list.8 man/man8/zpool-offline.8 \
-	man/man8/zpool-online.8 man/man8/zpool-reguid.8 \
-	man/man8/zpool-remove.8 man/man8/zpool-reopen.8 \
-	man/man8/zpool-replace.8 man/man8/zpool-resilver.8 \
-	man/man8/zpool-scrub.8 man/man8/zpool-set.8 \
-	man/man8/zpool-split.8 man/man8/zpool-status.8 \
-	man/man8/zpool-sync.8 man/man8/zpool-trim.8 \
-	man/man8/zpool-upgrade.8 man/man8/zpool-wait.8 \
-	man/man8/zstream.8 man/man8/zstreamdump.8 \
-	man/man8/zpool_influxdb.8 man/man8/zfs-jail.8 \
-	man/man8/zfs-unjail.8 man/man8/zfs-unzone.8 \
-	man/man8/zfs-zone.8 tests/zfs-tests/cmd/file/file_common.h \
+	man/man8/zgenhostid.8 man/man8/zinject.8 man/man8/zpool.8 \
+	man/man8/zpool-add.8 man/man8/zpool-attach.8 \
+	man/man8/zpool-checkpoint.8 man/man8/zpool-clear.8 \
+	man/man8/zpool-create.8 man/man8/zpool-destroy.8 \
+	man/man8/zpool-detach.8 man/man8/zpool-events.8 \
+	man/man8/zpool-export.8 man/man8/zpool-get.8 \
+	man/man8/zpool-history.8 man/man8/zpool-import.8 \
+	man/man8/zpool-initialize.8 man/man8/zpool-iostat.8 \
+	man/man8/zpool-labelclear.8 man/man8/zpool-list.8 \
+	man/man8/zpool-offline.8 man/man8/zpool-online.8 \
+	man/man8/zpool-reguid.8 man/man8/zpool-remove.8 \
+	man/man8/zpool-reopen.8 man/man8/zpool-replace.8 \
+	man/man8/zpool-resilver.8 man/man8/zpool-scrub.8 \
+	man/man8/zpool-set.8 man/man8/zpool-split.8 \
+	man/man8/zpool-status.8 man/man8/zpool-sync.8 \
+	man/man8/zpool-trim.8 man/man8/zpool-upgrade.8 \
+	man/man8/zpool-wait.8 man/man8/zstream.8 \
+	man/man8/zstreamdump.8 man/man8/zpool_influxdb.8 \
+	man/man8/zfs-jail.8 man/man8/zfs-unjail.8 \
+	man/man8/zfs-unzone.8 man/man8/zfs-zone.8 \
+	tests/zfs-tests/cmd/file/file_common.h \
 	tests/zfs-tests/cmd/linux_dos_attributes/dos_attributes.h \
 	tests/README.md autogen.sh copy-builtin AUTHORS \
 	CODE_OF_CONDUCT.md COPYRIGHT LICENSE META NEWS NOTICE \
@@ -3003,6 +3011,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BACKTRACE_LIBS = @BACKTRACE_LIBS@
 CC = @CC@
 CCAS = @CCAS@
 CCASDEPMODE = @CCASDEPMODE@
@@ -3077,6 +3086,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 INTLLIBS = @INTLLIBS@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
+IS_SYSV_RC = @IS_SYSV_RC@
 KERNEL_CC = @KERNEL_CC@
 KERNEL_DEBUG_CFLAGS = @KERNEL_DEBUG_CFLAGS@
 KERNEL_DEBUG_CPPFLAGS = @KERNEL_DEBUG_CPPFLAGS@
@@ -3113,6 +3123,9 @@ LIBTOOL = @LIBTOOL@
 LIBUDEV_CFLAGS = @LIBUDEV_CFLAGS@
 LIBUDEV_LIBS = @LIBUDEV_LIBS@
 LIBUDEV_PC = @LIBUDEV_PC@
+LIBUNWIND_CFLAGS = @LIBUNWIND_CFLAGS@
+LIBUNWIND_LIBS = @LIBUNWIND_LIBS@
+LIBUNWIND_PC = @LIBUNWIND_PC@
 LIBUUID_CFLAGS = @LIBUUID_CFLAGS@
 LIBUUID_LIBS = @LIBUUID_LIBS@
 LIBUUID_PC = @LIBUUID_PC@
@@ -3165,6 +3178,7 @@ PYTHON_EXTRA_LDFLAGS = @PYTHON_EXTRA_LDFLAGS@
 PYTHON_EXTRA_LIBS = @PYTHON_EXTRA_LIBS@
 PYTHON_LIBS = @PYTHON_LIBS@
 PYTHON_PLATFORM = @PYTHON_PLATFORM@
+PYTHON_PLATFORM_SITE_PKG = @PYTHON_PLATFORM_SITE_PKG@
 PYTHON_PREFIX = @PYTHON_PREFIX@
 PYTHON_SHEBANG = @PYTHON_SHEBANG@
 PYTHON_SITE_PKG = @PYTHON_SITE_PKG@
@@ -3314,7 +3328,7 @@ dist_noinst_DATA = $(SUBSTFILES:=.in) scripts/cstyle.pl \
 	$(am__append_6) $(am__append_9) $(am__append_23) \
 	$(am__append_27) $(am__append_30) $(am__append_33) \
 	$(am__append_36) $(am__append_41) $(am__append_53) \
-	$(am__append_88) $(am__append_89) autogen.sh copy-builtin \
+	$(am__append_89) $(am__append_90) autogen.sh copy-builtin \
 	AUTHORS CODE_OF_CONDUCT.md COPYRIGHT LICENSE META NEWS NOTICE \
 	README.md RELEASES.md module/lua/README.zfs \
 	module/os/linux/spl/README.md \
@@ -3333,13 +3347,13 @@ dist_noinst_DATA = $(SUBSTFILES:=.in) scripts/cstyle.pl \
 	module/zfs/THIRDPARTYLICENSE.cityhash \
 	module/zfs/THIRDPARTYLICENSE.cityhash.descrip
 INSTALL_DATA_HOOKS = scripts-install-data-hook $(am__append_15) \
-	$(am__append_24) $(am__append_45) $(am__append_83)
+	$(am__append_24) $(am__append_45) $(am__append_84)
 ALL_LOCAL = scripts-all-local $(am__append_31)
 CLEAN_LOCAL = scripts-clean-local $(am__append_32)
-CHECKS = shellcheck checkbashisms $(am__append_82) cstyle testscheck \
+CHECKS = shellcheck checkbashisms $(am__append_83) cstyle testscheck \
 	vcscheck zstdcheck flake8
 PHONY = cppcheck shellcheck checkbashisms $(am__append_16) \
-	$(am__append_92) gitrev install-data-hook \
+	$(am__append_93) gitrev install-data-hook \
 	$(INSTALL_DATA_HOOKS) maintainer-clean-local distclean-local \
 	$(CLEAN_LOCAL) $(ALL_LOCAL) codecheck $(CHECKS) checkstyle \
 	commitcheck lint paxcheck regen-tests ctags etags cscopelist \
@@ -3385,12 +3399,12 @@ CPPCHECKFLAGS = --std=c99 --quiet --max-configs=1 --error-exitcode=2 \
 	--inline-suppr -U_KERNEL
 CPPCHECKDIRS = module
 CPPCHECKTARGETS = $(am__append_10) $(am__append_18) $(am__append_46) \
-	$(am__append_51) $(am__append_78)
+	$(am__append_51) $(am__append_79)
 _CTGT = $(subst cppcheck-for-,,$@)
 SHELLCHECKSCRIPTS = $(dist_scripts_SCRIPTS) $(dist_noinst_SCRIPTS) \
 	$(am__append_7) $(am__append_21) $(am__append_29) \
 	$(am__append_34) $(am__append_38) $(am__append_40) \
-	$(am__append_43) $(am__append_90) autogen.sh
+	$(am__append_43) $(am__append_91) autogen.sh
 JUST_SHELLCHECK_OPTS = $(addprefix shellcheck-here-,$(subst /,^,$(1)))
 JUST_CHECKBASHISMS_OPTS = $(addprefix checkbashisms-here-,$(subst /,^,$(1)))
 SHELLCHECK_OPTS = $(call JUST_SHELLCHECK_OPTS,$(1)) $(call JUST_CHECKBASHISMS_OPTS,$(1))
@@ -3418,6 +3432,7 @@ subst_sed_cmd = \
 	-e 's|@ASAN_ENABLED[@]|$(ASAN_ENABLED)|g' \
 	-e 's|@DEFAULT_INIT_NFS_SERVER[@]|$(DEFAULT_INIT_NFS_SERVER)|g' \
 	-e 's|@DEFAULT_INIT_SHELL[@]|$(DEFAULT_INIT_SHELL)|g' \
+	-e 's|@IS_SYSV_RC[@]|$(IS_SYSV_RC)|g' \
 	-e 's|@LIBFETCH_DYNAMIC[@]|$(LIBFETCH_DYNAMIC)|g' \
 	-e 's|@LIBFETCH_SONAME[@]|$(LIBFETCH_SONAME)|g' \
 	-e 's|@PYTHON[@]|$(PYTHON)|g' \
@@ -3427,7 +3442,7 @@ subst_sed_cmd = \
 
 SUBSTFILES = $(am__append_22) $(am__append_28) $(am__append_35) \
 	$(am__append_37) $(am__append_39) $(am__append_42) \
-	$(am__append_44) $(am__append_81) $(am__append_91)
+	$(am__append_44) $(am__append_82) $(am__append_92)
 scriptsdir = $(datadir)/$(PACKAGE)
 dist_noinst_SCRIPTS = scripts/commitcheck.sh scripts/common.sh.in \
 	scripts/dkms.mkconf scripts/dkms.postbuild scripts/kmodtool \
@@ -3446,7 +3461,7 @@ scripts_scripts = \
 @CONFIG_USER_TRUE@	scripts/zfs_prepare_disk
 
 ACLOCAL_AMFLAGS = -I config
-SUBDIRS = include $(am__append_84) $(am__append_93)
+SUBDIRS = include $(am__append_85) $(am__append_94)
 @CONFIG_USER_TRUE@bin_SCRIPTS = $(am__append_25)
 @CONFIG_USER_TRUE@sbin_SCRIPTS = fsck.zfs
 @CONFIG_USER_TRUE@dist_bin_SCRIPTS = $(am__append_20)
@@ -3780,7 +3795,8 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	$(LIBUDEV_LIBS) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	$(LIBUUID_LIBS)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@zed_LDFLAGS = -pthread
-@CONFIG_USER_TRUE@nodist_bashcompletion_DATA = contrib/bash_completion.d/zfs
+@CONFIG_USER_TRUE@nodist_bashcompletion_DATA = contrib/bash_completion.d/zfs contrib/bash_completion.d/zpool
+@CONFIG_USER_TRUE@COMPLETION_FILES = contrib/bash_completion.d/zfs
 @CONFIG_USER_TRUE@@PYZFS_ENABLED_TRUE@pyzfs_V_1 = -v
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@pkgdracut_02dir = $(dracutdir)/modules.d/02zfsexpandknowledge
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@pkgdracut_02_SCRIPTS = \
@@ -3900,7 +3916,7 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@noinst_LTLIBRARIES = libavl.la libicp.la libshare.la \
 @CONFIG_USER_TRUE@	libspl_assert.la libspl.la libtpool.la \
 @CONFIG_USER_TRUE@	libunicode.la libzstd.la libzutil.la \
-@CONFIG_USER_TRUE@	$(am__append_77)
+@CONFIG_USER_TRUE@	$(am__append_78)
 @CONFIG_USER_TRUE@lib_LTLIBRARIES = libnvpair.la libuutil.la \
 @CONFIG_USER_TRUE@	libzfs_core.la libzfs.la libzfsbootenv.la \
 @CONFIG_USER_TRUE@	libzpool.la
@@ -4042,7 +4058,7 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@libspl_sys_dktp_HEADERS = \
 @CONFIG_USER_TRUE@	lib/libspl/include/sys/dktp/fdisk.h
 
-@CONFIG_USER_TRUE@libspl_assert_la_CFLAGS = $(AM_CFLAGS) $(LIBRARY_CFLAGS)
+@CONFIG_USER_TRUE@libspl_assert_la_CFLAGS = $(AM_CFLAGS) $(LIBRARY_CFLAGS) $(LIBUNWIND_CFLAGS)
 @CONFIG_USER_TRUE@libspl_la_CFLAGS = $(libspl_assert_la_CFLAGS)
 @CONFIG_USER_TRUE@libspl_assert_la_SOURCES = \
 @CONFIG_USER_TRUE@	lib/libspl/assert.c
@@ -4057,6 +4073,8 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@	$(am__append_59) $(am__append_60)
 @CONFIG_USER_TRUE@libspl_la_LIBADD = libspl_assert.la \
 @CONFIG_USER_TRUE@	$(LIBATOMIC_LIBS) $(LIBCLOCK_GETTIME)
+@CONFIG_USER_TRUE@libspl_assert_la_LIBADD = $(BACKTRACE_LIBS) \
+@CONFIG_USER_TRUE@	$(LIBUNWIND_LIBS) $(am__append_61)
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61118
 @CONFIG_USER_TRUE@libtpool_la_CFLAGS = $(AM_CFLAGS) $(LIBRARY_CFLAGS) \
 @CONFIG_USER_TRUE@	-fvisibility=hidden $(NO_CLOBBERED)
@@ -4080,21 +4098,21 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 
 @CONFIG_USER_TRUE@libuutil_la_LIBADD = libavl.la libspl.la \
 @CONFIG_USER_TRUE@	$(LTLIBINTL)
-@CONFIG_USER_TRUE@libuutil_la_LDFLAGS = -pthread $(am__append_61) \
+@CONFIG_USER_TRUE@libuutil_la_LDFLAGS = -pthread $(am__append_62) \
 @CONFIG_USER_TRUE@	-version-info 3:0:0
 @CONFIG_USER_TRUE@libzfs_core_la_CFLAGS = $(AM_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) -fvisibility=hidden
 @CONFIG_USER_TRUE@libzfs_core_la_SOURCES =  \
 @CONFIG_USER_TRUE@	lib/libzfs_core/libzfs_core.c \
-@CONFIG_USER_TRUE@	$(am__append_62) $(am__append_64)
+@CONFIG_USER_TRUE@	$(am__append_63) $(am__append_65)
 @CONFIG_USER_TRUE@libzfs_core_la_CPPFLAGS = $(AM_CPPFLAGS) \
-@CONFIG_USER_TRUE@	$(am__append_63)
+@CONFIG_USER_TRUE@	$(am__append_64)
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@nodist_libzfs_core_la_SOURCES = \
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@	module/os/freebsd/zfs/zfs_ioctl_compat.c
 
 @CONFIG_USER_TRUE@libzfs_core_la_LIBADD = libnvpair.la libspl.la \
-@CONFIG_USER_TRUE@	$(LTLIBINTL) $(am__append_66)
-@CONFIG_USER_TRUE@libzfs_core_la_LDFLAGS = -pthread $(am__append_65) \
+@CONFIG_USER_TRUE@	$(LTLIBINTL) $(am__append_67)
+@CONFIG_USER_TRUE@libzfs_core_la_LDFLAGS = -pthread $(am__append_66) \
 @CONFIG_USER_TRUE@	-version-info 3:0:0
 @CONFIG_USER_TRUE@libzfs_la_CFLAGS = $(AM_CFLAGS) $(LIBRARY_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBCRYPTO_CFLAGS) $(ZLIB_CFLAGS) \
@@ -4111,8 +4129,8 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@	lib/libzfs/libzfs_pool.c \
 @CONFIG_USER_TRUE@	lib/libzfs/libzfs_sendrecv.c \
 @CONFIG_USER_TRUE@	lib/libzfs/libzfs_status.c \
-@CONFIG_USER_TRUE@	lib/libzfs/libzfs_util.c $(am__append_67) \
-@CONFIG_USER_TRUE@	$(am__append_68)
+@CONFIG_USER_TRUE@	lib/libzfs/libzfs_util.c $(am__append_68) \
+@CONFIG_USER_TRUE@	$(am__append_69)
 @CONFIG_USER_TRUE@nodist_libzfs_la_SOURCES = \
 @CONFIG_USER_TRUE@	module/zcommon/cityhash.c \
 @CONFIG_USER_TRUE@	module/zcommon/zfeature_common.c \
@@ -4134,8 +4152,8 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@	libnvpair.la libzutil.la libuutil.la -lrt \
 @CONFIG_USER_TRUE@	-lm $(LIBCRYPTO_LIBS) $(ZLIB_LIBS) \
 @CONFIG_USER_TRUE@	$(LIBFETCH_LIBS) $(LTLIBINTL) \
-@CONFIG_USER_TRUE@	$(am__append_70)
-@CONFIG_USER_TRUE@libzfs_la_LDFLAGS = -pthread $(am__append_69) \
+@CONFIG_USER_TRUE@	$(am__append_71)
+@CONFIG_USER_TRUE@libzfs_la_LDFLAGS = -pthread $(am__append_70) \
 @CONFIG_USER_TRUE@	-version-info 5:0:1
 @CONFIG_USER_TRUE@libzfsbootenv_la_CFLAGS = $(AM_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) -fvisibility=hidden
@@ -4150,7 +4168,7 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@	libzfs.la \
 @CONFIG_USER_TRUE@	libnvpair.la
 
-@CONFIG_USER_TRUE@libzfsbootenv_la_LDFLAGS = $(am__append_71) \
+@CONFIG_USER_TRUE@libzfsbootenv_la_LDFLAGS = $(am__append_72) \
 @CONFIG_USER_TRUE@	-version-info 1:0:0
 @CONFIG_USER_TRUE@libzpool_la_CFLAGS = $(AM_CFLAGS) $(KERNEL_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) $(ZLIB_CFLAGS)
@@ -4339,8 +4357,8 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@libzpool_la_LIBADD = libicp.la libunicode.la \
 @CONFIG_USER_TRUE@	libnvpair.la libzstd.la libzutil.la \
 @CONFIG_USER_TRUE@	$(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm \
-@CONFIG_USER_TRUE@	$(am__append_73)
-@CONFIG_USER_TRUE@libzpool_la_LDFLAGS = -pthread $(am__append_72) \
+@CONFIG_USER_TRUE@	$(am__append_74)
+@CONFIG_USER_TRUE@libzpool_la_LDFLAGS = -pthread $(am__append_73) \
 @CONFIG_USER_TRUE@	-version-info 5:0:0
 # -fno-tree-vectorize is set for gcc in zstd/common/compiler.h
 # Set it for other compilers, too.
@@ -4382,10 +4400,10 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@	lib/libzutil/zutil_import.c \
 @CONFIG_USER_TRUE@	lib/libzutil/zutil_import.h \
 @CONFIG_USER_TRUE@	lib/libzutil/zutil_nicenum.c \
-@CONFIG_USER_TRUE@	lib/libzutil/zutil_pool.c $(am__append_74) \
-@CONFIG_USER_TRUE@	$(am__append_75)
+@CONFIG_USER_TRUE@	lib/libzutil/zutil_pool.c $(am__append_75) \
+@CONFIG_USER_TRUE@	$(am__append_76)
 @CONFIG_USER_TRUE@libzutil_la_LIBADD = libavl.la libtpool.la \
-@CONFIG_USER_TRUE@	libnvpair.la libspl.la $(am__append_76) -lm \
+@CONFIG_USER_TRUE@	libnvpair.la libspl.la $(am__append_77) -lm \
 @CONFIG_USER_TRUE@	$(LIBBLKID_LIBS) $(LIBUDEV_LIBS)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@libefi_la_CFLAGS = $(AM_CFLAGS) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) \
@@ -4434,7 +4452,6 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@	man/man8/zfs-upgrade.8 \
 @CONFIG_USER_TRUE@	man/man8/zfs-userspace.8 man/man8/zfs-wait.8 \
 @CONFIG_USER_TRUE@	man/man8/zfs_ids_to_path.8 \
-@CONFIG_USER_TRUE@	man/man8/zfs_prepare_disk.8 \
 @CONFIG_USER_TRUE@	man/man8/zgenhostid.8 man/man8/zinject.8 \
 @CONFIG_USER_TRUE@	man/man8/zpool.8 man/man8/zpool-add.8 \
 @CONFIG_USER_TRUE@	man/man8/zpool-attach.8 \
@@ -4465,11 +4482,12 @@ SUBDIRS = include $(am__append_84) $(am__append_93)
 @CONFIG_USER_TRUE@	man/man8/zpool-upgrade.8 \
 @CONFIG_USER_TRUE@	man/man8/zpool-wait.8 man/man8/zstream.8 \
 @CONFIG_USER_TRUE@	man/man8/zstreamdump.8 \
-@CONFIG_USER_TRUE@	man/man8/zpool_influxdb.8 $(am__append_79) \
-@CONFIG_USER_TRUE@	$(am__append_80)
+@CONFIG_USER_TRUE@	man/man8/zpool_influxdb.8 $(am__append_80) \
+@CONFIG_USER_TRUE@	$(am__append_81)
 @CONFIG_USER_TRUE@nodist_man_MANS = \
 @CONFIG_USER_TRUE@	man/man8/zed.8 \
-@CONFIG_USER_TRUE@	man/man8/zfs-mount-generator.8
+@CONFIG_USER_TRUE@	man/man8/zfs-mount-generator.8 \
+@CONFIG_USER_TRUE@	man/man8/zfs_prepare_disk.8
 
 @CONFIG_USER_TRUE@scripts_zfs_tests_bindir = $(datadir)/$(PACKAGE)/zfs-tests/bin
 @CONFIG_USER_TRUE@tests_zfs_tests_cmd_badsend_LDADD = \
@@ -13911,7 +13929,7 @@ $(1) : $(2)$(1).in Makefile;
 	mv -f $$@~ $$@
 endef
 
-$(call SUBST,%,)
+$(SUBSTFILES): $(call SUBST,%,)
 
 define SCRIPTS_EXTRA_ENVIRONMENT
 
@@ -13996,7 +14014,10 @@ scripts-install-data-hook: scripts/common.sh.in Makefile
 @CONFIG_USER_TRUE@@USING_PYTHON_TRUE@arc_summary: cmd/arc_summary
 @CONFIG_USER_TRUE@@USING_PYTHON_TRUE@	$(AM_V_at)cp $< $@
 @CONFIG_USER_TRUE@cmd: $(bin_SCRIPTS) $(bin_PROGRAMS) $(sbin_SCRIPTS) $(sbin_PROGRAMS) $(dist_bin_SCRIPTS) $(zfsexec_PROGRAMS) $(mounthelper_PROGRAMS)
-@CONFIG_USER_TRUE@$(call SHELLCHECK_OPTS,$(nodist_bashcompletion_DATA)): SHELLCHECK_SHELL = bash
+@CONFIG_USER_TRUE@$(call SHELLCHECK_OPTS,$(COMPLETION_FILES)): SHELLCHECK_SHELL = bash
+
+@CONFIG_USER_TRUE@contrib/bash_completion.d/zpool: contrib/bash_completion.d/zfs
+@CONFIG_USER_TRUE@	$(LN_S) zfs $@
 @CONFIG_USER_TRUE@@PYZFS_ENABLED_TRUE@pyzfs-all-local: contrib/pyzfs/setup.py
 @CONFIG_USER_TRUE@@PYZFS_ENABLED_TRUE@	cd contrib/pyzfs && $(PYTHON) setup.py -q $(pyzfs_V_$(V)) egg_info -e . build
 

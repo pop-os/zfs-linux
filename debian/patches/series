@@ -1,4 +1,3 @@
-#unapplied/init-debian-openrc-workaround.patch # OpenRC users can apply this locally
 1000-dont-symlink-zed-scripts.patch
 1001-Prevent-manual-builds-in-the-DKMS-source.patch
 1002-Check-for-META-and-DCH-consistency-in-autoconf.patch
@@ -19,4 +18,4 @@ cross-compile.patch
 ubuntu/zfs-mount-container-start.patch
 #ubuntu/4510-silently-ignore-modprobe-failure.patch
 #ubuntu/4751-suppress-types.patch
-fix-icp-sha2-on-armel.patch
+bump-linux-maximum.patch

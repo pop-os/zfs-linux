@@ -429,8 +429,6 @@ libzpool.so.5 libzpool5linux #MINVER#
  brt_sums@Base 2.2.0
  brt_sync@Base 2.2.0
  brt_unload@Base 2.2.0
- brt_zap_indirect_blockshift@Base 2.2.0
- brt_zap_leaf_blockshift@Base 2.2.0
  byteswap_uint16_array@Base 0.8.2
  byteswap_uint32_array@Base 0.8.2
  byteswap_uint64_array@Base 0.8.2
@@ -581,8 +579,6 @@ libzpool.so.5 libzpool5linux #MINVER#
  dmu_bonus_max@Base 0.8.2
  dmu_brt_clone@Base 2.2.0
  dmu_buf_add_ref@Base 0.8.2
- dmu_buf_dnode_enter@Base 0.8.2
- dmu_buf_dnode_exit@Base 0.8.2
  dmu_buf_fill_done@Base 0.8.2
  dmu_buf_get_blkptr@Base 0.8.2
  dmu_buf_get_objset@Base 0.8.2
@@ -715,6 +711,8 @@ libzpool.so.5 libzpool5linux #MINVER#
  dmu_ot_byteswap@Base 0.8.2
  dmu_prealloc@Base 0.8.2
  dmu_prefetch@Base 0.8.2
+ dmu_prefetch_by_dnode@Base 2.2.4
+ dmu_prefetch_dnode@Base 2.2.4
  dmu_prefetch_max@Base 0.8.2
  dmu_read@Base 0.8.2
  dmu_read_by_dnode@Base 0.8.2
@@ -1597,11 +1595,14 @@ libzpool.so.5 libzpool5linux #MINVER#
  multilist_link_init@Base 0.8.2
  multilist_remove@Base 0.8.2
  multilist_sublist_head@Base 0.8.2
+ multilist_sublist_insert_after@Base 2.2.4
+ multilist_sublist_insert_before@Base 2.2.4
  multilist_sublist_insert_head@Base 0.8.2
  multilist_sublist_insert_tail@Base 0.8.2
  multilist_sublist_is_empty@Base 0.8.2
  multilist_sublist_is_empty_idx@Base 0.8.2
  multilist_sublist_lock@Base 0.8.2
+ multilist_sublist_lock_idx@Base 2.2.4
  multilist_sublist_lock_obj@Base 0.8.2
  multilist_sublist_move_forward@Base 0.8.2
  multilist_sublist_next@Base 0.8.2
@@ -1898,6 +1899,8 @@ libzpool.so.5 libzpool5linux #MINVER#
  spa_import_progress_remove@Base 0.8.2
  spa_import_progress_set_max_txg@Base 0.8.2
  spa_import_progress_set_mmp_check@Base 0.8.2
+ spa_import_progress_set_notes@Base 2.2.4
+ spa_import_progress_set_notes_nolog@Base 2.2.4
  spa_import_progress_set_state@Base 0.8.2
  spa_importing_readonly_checkpoint@Base 0.8.2
  spa_indirect_vdevs_loaded@Base 0.8.2
@@ -1956,6 +1959,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  spa_mmp_history_add@Base 0.8.2
  spa_mmp_history_set@Base 0.8.2
  spa_mmp_history_set_skip@Base 0.8.2
+ spa_mmp_remote_host_activity@Base 2.2.4
  spa_mode@Base 0.8.2
  spa_mode_global@Base 0.8.2
  spa_mode_readable_spacemaps@Base 2.1.5
@@ -2088,8 +2092,6 @@ libzpool.so.5 libzpool5linux #MINVER#
  spl_fstrans_mark@Base 0.8.2
  spl_fstrans_unmark@Base 0.8.2
  spl_pagesize@Base 2.2.0
- strlcat@Base 2.2.0
- strlcpy@Base 2.2.0
  svr_sync@Base 0.8.2
  sync_error_list@Base 2.2.0
  system_delay_taskq@Base 0.8.2
@@ -2429,6 +2431,7 @@ libzpool.so.5 libzpool5linux #MINVER#
  zap_add_int@Base 0.8.2
  zap_add_int_key@Base 0.8.2
  zap_add_uint64@Base 0.8.2
+ zap_add_uint64_by_dnode@Base 2.2.4
  zap_byteswap@Base 0.8.2
  zap_contains@Base 0.8.2
  zap_count@Base 0.8.2
@@ -2497,10 +2500,12 @@ libzpool.so.5 libzpool5linux #MINVER#
  zap_remove_int@Base 0.8.2
  zap_remove_norm@Base 0.8.2
  zap_remove_uint64@Base 0.8.2
+ zap_remove_uint64_by_dnode@Base 0.8.2
  zap_unlockdir@Base 0.8.2
  zap_update@Base 0.8.2
  zap_update_int_key@Base 0.8.2
  zap_update_uint64@Base 0.8.2
+ zap_update_uint64_by_dnode@Base 2.2.4
  zap_value_search@Base 0.8.2
  zbookmark_compare@Base 0.8.2
  zbookmark_subtree_completed@Base 0.8.2
@@ -2529,9 +2534,11 @@ libzpool.so.5 libzpool5linux #MINVER#
  zfeature_lookup_guid@Base 0.8.2
  zfeature_lookup_name@Base 0.8.2
  zfetch_fini@Base 0.8.2
+ zfetch_hole_shift@Base 2.2.4
  zfetch_init@Base 0.8.2
  zfetch_max_distance@Base 0.8.2
  zfetch_max_idistance@Base 0.8.2
+ zfetch_max_reorder@Base 2.2.4
  zfetch_sums@Base 2.1
  zfs_ERR_getErrorString@Base 2.0
  zfs_FSE_NCountWriteBound@Base 2.0
@@ -2877,7 +2884,6 @@ libzpool.so.5 libzpool5linux #MINVER#
  (arch=amd64 arm64 ppc64el)zfs_blake3_hash_many_sse41@Base 2.2.0
  zfs_blake3_ops@Base 2.2.0
  zfs_blkptr_verify@Base 2.0
- zfs_brt_prefetch@Base 2.2.0
  zfs_btree_add@Base 2.0
  zfs_btree_add_idx@Base 2.0
  zfs_btree_clear@Base 2.0

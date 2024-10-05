@@ -1,3 +1,84 @@
+zfs-linux (2.2.6-1) unstable; urgency=medium
+
+  * New upstream version 2.2.6
+    - compatibile with Linux 4.18 - 6.11rc
+  * d/patches: refresh patches & removed applied patch
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Thu, 05 Sep 2024 10:56:11 +0800
+
+zfs-linux (2.2.5-1) unstable; urgency=medium
+
+  * New upstream version 2.2.5
+    - fix bash-completion initialization (closes: #1074597)
+    - other fixes: https://github.com/openzfs/zfs/releases/tag/zfs-2.2.5
+  * d/patches:
+    - refresh existing patches
+    - add bump-linux-maximum.patch to compile on 6.10 (closes: #1077835)
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Thu, 08 Aug 2024 17:44:24 +0800
+
+zfs-linux (2.2.4-2) unstable; urgency=medium
+
+  * d/tests: avoid running zfs-test-suite-* automatically
+    by adding custom restrictions
+  * Opt-in usr-merge:
+    - d/: install files into /usr (closes: #1061359)
+    - d/: move some tools out of /usr/sbin and add links for compatibility
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Sun, 02 Jun 2024 15:12:52 +0800
+
+zfs-linux (2.2.4-1) unstable; urgency=medium
+
+  * New upstream version 2.2.4
+  * d/patches: remove patches already applied by upstream
+  * libzpool: update symbol list
+  * d/tests: skip some flaky tests in zfs-test-suite-{1,2}
+  * d/control: update python3 dependency of zfs-dkms
+  * d/symbols: remove unreferenced libspl symbols (closes: #1070899)
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Mon, 13 May 2024 13:57:29 +0800
+
+zfs-linux (2.2.3-2) unstable; urgency=medium
+
+  [ Shengqi Chen ]
+  * d/control: add Build-Depends on libtirpc-dev (closes: #1067088)
+  * Add patch to fix path in man/zfs_prepare_disk.8
+  * d/control: upgrade to std-ver 4.7.0 (no changes required)
+  * Some improvements to autopkgtest (see: #1068559):
+    - d/control: add more recommends for zfs-test to fix tests
+    - split zfs-test-suite into four smaller parts
+    - try to skip some tests that require large memory
+    - use presistent tmpdir for zfs-test-suite
+
+  [ Benda Xu ]
+  * OpenRC no longer breaks the ZFS initscripts on Debian.
+  * Fix substitution behaviour in config/Substfiles.am
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Sun, 14 Apr 2024 10:59:52 +0800
+
+zfs-linux (2.2.3-1) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * d/control: add Shengqi Chen to Uploaders
+
+  [ Shengqi Chen ]
+  * New upstream version 2.2.3
+    - add compatibility with Linux 6.6 (closes: #1060899)
+    - fix private mmap permission of R/O files (closes: #1052472)
+    - ...and many more fixes (see upstream changelog)
+  * Some packaging updates:
+    - symbols: add new symbols for 2.2.3 in libzfs4 and libzpool5
+    - lintian-overrides: remove obsolete rules, update rule names
+    - README.debian: fix a typo
+    - control: lift dh-compat to 13
+    - not-installed: remove actually installed files
+    - patches:
+      + remove some outdated / applied patches
+      + fix a typo in 2100-zfs-load-module.patch (related: #1041857)
+      + enable ubuntu/zfs-mount-container-start.patch
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 23 Feb 2024 21:28:24 +0800
+
 zfs-linux (2.2.3-1~exp1) UNRELEASED; urgency=medium
 
   * New upstream version 2.2.3

@@ -6,7 +6,7 @@ Index: zfs-linux/scripts/dkms.mkconf
 ===================================================================
 --- zfs-linux.orig/scripts/dkms.mkconf
 +++ zfs-linux/scripts/dkms.mkconf
-@@ -50,6 +50,12 @@ PRE_BUILD="configure
+@@ -51,6 +51,12 @@ PRE_BUILD="configure
      }
    )
    \$(
