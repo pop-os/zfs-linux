@@ -1,4 +1,4 @@
-libzpool.so.5 libzpool5linux #MINVER#
+libzpool.so.6 libzpool6linux #MINVER#
 * Build-Depends-Package: libzfslinux-dev
  ARC_anon@Base 2.0
  ARC_l2c_only@Base 2.0

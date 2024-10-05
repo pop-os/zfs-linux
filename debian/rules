@@ -153,9 +153,9 @@ override_dh_makeshlibs:
 ifeq ($(BUILD_UDEB), true)
 	dh_makeshlibs -V -plibnvpair3linux --add-udeb=libnvpair3-udeb
 	dh_makeshlibs -V -plibuutil3linux --add-udeb=libuutil3-udeb
-	dh_makeshlibs -V -plibzfs4linux --add-udeb=libzfs4-udeb
+	dh_makeshlibs -V -plibzfs5linux --add-udeb=libzfs5-udeb
 	dh_makeshlibs -V -plibzfsbootenv1linux --add-udeb=libzfsbootenv1-udeb
-	dh_makeshlibs -V -plibzpool5linux --add-udeb=libzpool5-udeb
+	dh_makeshlibs -V -plibzpool6linux --add-udeb=libzpool6-udeb
 	dh_makeshlibs -V -pzfsutils-linux --add-udeb=zfsutils-udeb
 endif
 
@@ -164,9 +164,9 @@ override_dh_strip:
 ifeq ($(BUILD_UDEB), true)
 	dh_strip -plibnvpair3-udeb
 	dh_strip -plibuutil3-udeb
-	dh_strip -plibzfs4-udeb
+	dh_strip -plibzfs5-udeb
 	dh_strip -plibzfsbootenv1-udeb
-	dh_strip -plibzpool5-udeb
+	dh_strip -plibzpool6-udeb
 	dh_strip -pzfsutils-udeb
 endif
 

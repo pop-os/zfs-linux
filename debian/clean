@@ -8,8 +8,8 @@ debian/libnvpair3linux-udeb.install
 debian/libnvpair3linux.install
 debian/libuutil3linux-udeb.install
 debian/libuutil3linux.install
-debian/libzfs4linux-udeb.install
-debian/libzfs4linux.install
+debian/libzfs6linux-udeb.install
+debian/libzfs6linux.install
 debian/libzfslinux-dev.install
-debian/libzpool5linux-udeb.install
-debian/libzpool5linux.install
+debian/libzpool6linux-udeb.install
+debian/libzpool6linux.install
