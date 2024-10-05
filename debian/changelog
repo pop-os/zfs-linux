@@ -1,4 +1,4 @@
-zfs-linux (2.3.0-rc1-1~exp1) experimental; urgency=medium
+zfs-linux (2.3.0-rc1-1~exp1) UNRELEASED; urgency=medium
 
   [ Alexandre Detiste ]
   * d/control: remove python3-distutils from Depends: alternative
@@ -10,8 +10,10 @@ zfs-linux (2.3.0-rc1-1~exp1) experimental; urgency=medium
   * d/patches: add patch to bump SONAME
   * d/not-installed: update list
   * d/symbols: refresh symbol list for all libraries
+  * d/rules: run override_dh_autoreconf when building zfs-modules deb
+  * d/tests: remove call to autoreconf in binary-debs-modules script
 
- -- Shengqi Chen <harry-chen@outlook.com>  Sat, 05 Oct 2024 21:18:21 +0800
+ -- Shengqi Chen <harry-chen@outlook.com>  Sun, 06 Oct 2024 00:42:30 +0800
 
 zfs-linux (2.2.6-1) unstable; urgency=medium
 
