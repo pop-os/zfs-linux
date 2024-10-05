@@ -218,7 +218,7 @@ override_dh_prep-deb-files:
 	< debian/control.modules.in > debian/control
 
 override_dh_configure_modules_udeb: override_dh_configure_modules_udeb_stamp
-override_dh_configure_modules_udeb_stamp:
+override_dh_configure_modules_udeb_stamp: override_dh_autoreconf
 	./configure \
 		--without-selinux \
 		--with-config=kernel \
@@ -227,7 +227,7 @@ override_dh_configure_modules_udeb_stamp:
 	touch override_dh_configure_modules_udeb_stamp
 
 override_dh_configure_modules: override_dh_configure_modules_stamp
-override_dh_configure_modules_stamp:
+override_dh_configure_modules_stamp: override_dh_autoreconf
 	./configure \
 		--with-config=kernel \
 		--with-linux=$(KSRC) \
