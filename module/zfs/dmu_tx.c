@@ -22,6 +22,7 @@
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
  * Copyright (c) 2012, 2017 by Delphix. All rights reserved.
+ * Copyright (c) 2024, Klara, Inc.
  */
 
 #include <sys/dmu.h>
@@ -575,7 +576,6 @@ dmu_tx_hold_zap_impl(dmu_tx_hold_t *txh, const char *name)
 	dmu_tx_t *tx = txh->txh_tx;
 	dnode_t *dn = txh->txh_dnode;
 	int err;
-	extern int zap_micro_max_size;
 
 	ASSERT(tx->tx_txg == 0);
 
@@ -591,7 +591,7 @@ dmu_tx_hold_zap_impl(dmu_tx_hold_t *txh, const char *name)
 	 *    - 2 grown ptrtbl blocks
 	 */
 	(void) zfs_refcount_add_many(&txh->txh_space_towrite,
-	    zap_micro_max_size, FTAG);
+	    zap_get_micro_max_size(tx->tx_pool->dp_spa), FTAG);
 
 	if (dn == NULL)
 		return;
@@ -1520,11 +1520,8 @@ dmu_tx_hold_sa(dmu_tx_t *tx, sa_handle_t *hdl, boolean_t may_grow)
 		ASSERT(tx->tx_txg == 0);
 		dmu_tx_hold_spill(tx, object);
 	} else {
-		dnode_t *dn;
-
 		DB_DNODE_ENTER(db);
-		dn = DB_DNODE(db);
-		if (dn->dn_have_spill) {
+		if (DB_DNODE(db)->dn_have_spill) {
 			ASSERT(tx->tx_txg == 0);
 			dmu_tx_hold_spill(tx, object);
 		}
