@@ -9,11 +9,9 @@ Author: Chris Dos <chris@chrisdos.com>
 Bug-Debian: https://bugs.debian.org/849813
 Bug-Debian: https://bugs.debian.org/826994
 Forwarded: not-needed
-Index: zfs-linux/etc/systemd/system/zfs-zed.service.in
-===================================================================
---- zfs-linux.orig/etc/systemd/system/zfs-zed.service.in
-+++ zfs-linux/etc/systemd/system/zfs-zed.service.in
-@@ -5,7 +5,7 @@ ConditionPathIsDirectory=/sys/module/zfs
+--- a/etc/systemd/system/zfs-zed.service.in
++++ b/etc/systemd/system/zfs-zed.service.in
+@@ -5,7 +5,7 @@
  
  [Service]
  EnvironmentFile=-@initconfdir@/zfs
@@ -22,11 +20,9 @@ Index: zfs-linux/etc/systemd/system/zfs-zed.service.in
  Restart=always
  
  [Install]
-Index: zfs-linux/etc/zfs/zfs-functions.in
-===================================================================
---- zfs-linux.orig/etc/zfs/zfs-functions.in
-+++ zfs-linux/etc/zfs/zfs-functions.in
-@@ -88,7 +88,7 @@ fi
+--- a/etc/zfs/zfs-functions.in
++++ b/etc/zfs/zfs-functions.in
+@@ -88,7 +88,7 @@
  
  # Paths to what we need
  ZFS="@sbindir@/zfs"

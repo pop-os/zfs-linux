@@ -5,11 +5,9 @@ Description: Reduce the timeout to zero seconds when running in a container (LP:
 Origin: ubuntu
 Forwarded: not-needed
 Bug: https://bugs.launchpad.net/ubuntu/+source/zfs-linux/+bug/1760173
-Index: zfs-linux/lib/libzfs/os/linux/libzfs_util_os.c
-===================================================================
---- zfs-linux.orig/lib/libzfs/os/linux/libzfs_util_os.c
-+++ zfs-linux/lib/libzfs/os/linux/libzfs_util_os.c
-@@ -109,6 +109,16 @@ libzfs_load_module(void)
+--- a/lib/libzfs/os/linux/libzfs_util_os.c
++++ b/lib/libzfs/os/linux/libzfs_util_os.c
+@@ -109,6 +109,16 @@
  
  	const char *timeout_str = getenv("ZFS_MODULE_TIMEOUT");
  	int seconds = 10;

@@ -1,8 +1,6 @@
 Forwarded: not-needed
-Index: zfs-linux/scripts/dkms.mkconf
-===================================================================
---- zfs-linux.orig/scripts/dkms.mkconf
-+++ zfs-linux/scripts/dkms.mkconf
+--- a/scripts/dkms.mkconf
++++ b/scripts/dkms.mkconf
 @@ -2,7 +2,7 @@
  
  PROG=$0

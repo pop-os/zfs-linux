@@ -6,10 +6,8 @@ Date:   Fri Jan 15 14:26:42 2021 +0800
     We regenerate Makefile.in, so we don't have to modify them explicitly here.
 
 Forwarded: not needed
-Index: zfs-linux/man/man8/arcstat.8
-===================================================================
 --- /dev/null
-+++ zfs-linux/man/man8/arcstat.8
++++ b/man/man8/arcstat.8
 @@ -0,0 +1,260 @@
 +.\"
 +.\" This file and its contents are supplied under the terms of the
@@ -271,11 +269,9 @@ Index: zfs-linux/man/man8/arcstat.8
 +.Ar count
 +reports.
 +.El
-Index: zfs-linux/man/Makefile.am
-===================================================================
---- zfs-linux.orig/man/Makefile.am
-+++ zfs-linux/man/Makefile.am
-@@ -2,7 +2,6 @@ dist_noinst_man_MANS = \
+--- a/man/Makefile.am
++++ b/man/Makefile.am
+@@ -2,7 +2,6 @@
  	%D%/man1/cstyle.1
  
  dist_man_MANS = \
@@ -283,7 +279,7 @@ Index: zfs-linux/man/Makefile.am
  	%D%/man1/raidz_test.1 \
  	%D%/man1/test-runner.1 \
  	%D%/man1/zhack.1 \
-@@ -22,6 +21,7 @@ dist_man_MANS = \
+@@ -22,6 +21,7 @@
  	%D%/man7/zpoolconcepts.7 \
  	%D%/man7/zpoolprops.7 \
  	\
