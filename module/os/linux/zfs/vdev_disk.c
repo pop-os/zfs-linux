@@ -38,9 +38,7 @@
 #include <linux/blkpg.h>
 #include <linux/msdos_fs.h>
 #include <linux/vfs_compat.h>
-#ifdef HAVE_LINUX_BLK_CGROUP_HEADER
 #include <linux/blk-cgroup.h>
-#endif
 
 /*
  * Linux 6.8.x uses a bdev_handle as an instance/refcount for an underlying
@@ -401,7 +399,7 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 			if (v->vdev_removed)
 				break;
 
-			schedule_timeout(MSEC_TO_TICK(10));
+			schedule_timeout_interruptible(MSEC_TO_TICK(10));
 		} else if (unlikely(BDH_PTR_ERR(bdh) == -ERESTARTSYS)) {
 			timeout = MSEC2NSEC(zfs_vdev_open_timeout_ms * 10);
 			continue;
@@ -433,8 +431,11 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 	/*  Determine the logical block size */
 	int logical_block_size = bdev_logical_block_size(bdev);
 
-	/* Clear the nowritecache bit, causes vdev_reopen() to try again. */
-	v->vdev_nowritecache = B_FALSE;
+	/*
+	 * If the device has a write cache, clear the nowritecache flag,
+	 * so that we start issuing flush requests again.
+	 */
+	v->vdev_nowritecache = !zfs_bdev_has_write_cache(bdev);
 
 	/* Set when device reports it supports TRIM. */
 	v->vdev_has_trim = bdev_discard_supported(bdev);
@@ -478,16 +479,6 @@ vdev_disk_close(vdev_t *v)
 	v->vdev_tsd = NULL;
 }
 
-static inline void
-vdev_submit_bio_impl(struct bio *bio)
-{
-#ifdef HAVE_1ARG_SUBMIT_BIO
-	(void) submit_bio(bio);
-#else
-	(void) submit_bio(bio_data_dir(bio), bio);
-#endif
-}
-
 /*
  * preempt_schedule_notrace is GPL-only which breaks the ZFS build, so
  * replace it with preempt_schedule under the following condition:
@@ -505,7 +496,6 @@ vdev_submit_bio_impl(struct bio *bio)
  */
 #if !defined(HAVE_BIO_ALLOC_4ARG)
 
-#ifdef HAVE_BIO_SET_DEV
 #if defined(CONFIG_BLK_CGROUP) && defined(HAVE_BIO_SET_DEV_GPL_ONLY)
 /*
  * The Linux 5.5 kernel updated percpu_ref_tryget() which is inlined by
@@ -591,16 +581,6 @@ vdev_bio_set_dev(struct bio *bio, struct block_device *bdev)
 #define	bio_set_dev		vdev_bio_set_dev
 #endif
 #endif
-#else
-/*
- * Provide a bio_set_dev() helper macro for pre-Linux 4.14 kernels.
- */
-static inline void
-bio_set_dev(struct bio *bio, struct block_device *bdev)
-{
-	bio->bi_bdev = bdev;
-}
-#endif /* HAVE_BIO_SET_DEV */
 #endif /* !HAVE_BIO_ALLOC_4ARG */
 
 static inline void
@@ -608,7 +588,7 @@ vdev_submit_bio(struct bio *bio)
 {
 	struct bio_list *bio_list = current->bio_list;
 	current->bio_list = NULL;
-	vdev_submit_bio_impl(bio);
+	(void) submit_bio(bio);
 	current->bio_list = bio_list;
 }
 
@@ -706,7 +686,7 @@ vbio_alloc(zio_t *zio, struct block_device *bdev, int flags)
 	return (vbio);
 }
 
-BIO_END_IO_PROTO(vbio_completion, bio, error);
+static void vbio_completion(struct bio *bio);
 
 static int
 vbio_add_page(vbio_t *vbio, struct page *page, uint_t size, uint_t offset)
@@ -802,7 +782,8 @@ vbio_submit(vbio_t *vbio, abd_t *abd, uint64_t size)
 }
 
 /* IO completion callback */
-BIO_END_IO_PROTO(vbio_completion, bio, error)
+static void
+vbio_completion(struct bio *bio)
 {
 	vbio_t *vbio = bio->bi_private;
 	zio_t *zio = vbio->vbio_zio;
@@ -810,15 +791,7 @@ BIO_END_IO_PROTO(vbio_completion, bio, error)
 	ASSERT(zio);
 
 	/* Capture and log any errors */
-#ifdef HAVE_1ARG_BIO_END_IO_T
-	zio->io_error = BIO_END_IO_ERROR(bio);
-#else
-	zio->io_error = 0;
-	if (error)
-		zio->io_error = -(error);
-	else if (!test_bit(BIO_UPTODATE, &bio->bi_flags))
-		zio->io_error = EIO;
-#endif
+	zio->io_error = bi_status_to_errno(bio->bi_status);
 	ASSERT3U(zio->io_error, >=, 0);
 
 	if (zio->io_error)
@@ -857,6 +830,11 @@ BIO_END_IO_PROTO(vbio_completion, bio, error)
  * pages) but we still have to ensure the data portion is correctly sized and
  * aligned to the logical block size, to ensure that if the kernel wants to
  * split the BIO, the two halves will still be properly aligned.
+ *
+ * NOTE: if you change this function, change the copy in
+ * tests/zfs-tests/tests/functional/vdev_disk/page_alignment.c, and add test
+ * data there to validate the change you're making.
+ *
  */
 typedef struct {
 	uint_t  bmask;
@@ -867,6 +845,7 @@ typedef struct {
 static int
 vdev_disk_check_pages_cb(struct page *page, size_t off, size_t len, void *priv)
 {
+	(void) page;
 	vdev_disk_check_pages_t *s = priv;
 
 	/*
@@ -985,10 +964,8 @@ vdev_disk_io_rw(zio_t *zio)
 /*
  * This is the classic, battle-tested BIO submission code. Until we're totally
  * sure that the new code is safe and correct in all cases, this will remain
- * available.
- *
- * It is enabled by setting zfs_vdev_disk_classic=1 at module load time. It is
- * enabled (=1) by default since 2.2.4, and disabled by default (=0) on master.
+ * available and can be enabled by setting zfs_vdev_disk_classic=1 at module
+ * load time.
  *
  * These functions have been renamed to vdev_classic_* to make it clear what
  * they belong to, but their implementations are unchanged.
@@ -1065,19 +1042,13 @@ vdev_classic_dio_put(dio_request_t *dr)
 	}
 }
 
-BIO_END_IO_PROTO(vdev_classic_physio_completion, bio, error)
+static void
+vdev_classic_physio_completion(struct bio *bio)
 {
 	dio_request_t *dr = bio->bi_private;
 
 	if (dr->dr_error == 0) {
-#ifdef HAVE_1ARG_BIO_END_IO_T
-		dr->dr_error = BIO_END_IO_ERROR(bio);
-#else
-		if (error)
-			dr->dr_error = -(error);
-		else if (!test_bit(BIO_UPTODATE, &bio->bi_flags))
-			dr->dr_error = EIO;
-#endif
+		dr->dr_error = bi_status_to_errno(bio->bi_status);
 	}
 
 	/* Drop reference acquired by vdev_classic_physio */
@@ -1216,14 +1187,11 @@ retry:
 
 /* ========== */
 
-BIO_END_IO_PROTO(vdev_disk_io_flush_completion, bio, error)
+static void
+vdev_disk_io_flush_completion(struct bio *bio)
 {
 	zio_t *zio = bio->bi_private;
-#ifdef HAVE_1ARG_BIO_END_IO_T
-	zio->io_error = BIO_END_IO_ERROR(bio);
-#else
-	zio->io_error = -error;
-#endif
+	zio->io_error = bi_status_to_errno(bio->bi_status);
 
 	if (zio->io_error && (zio->io_error == EOPNOTSUPP))
 		zio->io_vd->vdev_nowritecache = B_TRUE;
@@ -1258,14 +1226,12 @@ vdev_disk_io_flush(struct block_device *bdev, zio_t *zio)
 	return (0);
 }
 
-BIO_END_IO_PROTO(vdev_disk_discard_end_io, bio, error)
+static void
+vdev_disk_discard_end_io(struct bio *bio)
 {
 	zio_t *zio = bio->bi_private;
-#ifdef HAVE_1ARG_BIO_END_IO_T
-	zio->io_error = BIO_END_IO_ERROR(bio);
-#else
-	zio->io_error = -error;
-#endif
+	zio->io_error = bi_status_to_errno(bio->bi_status);
+
 	bio_put(bio);
 	if (zio->io_error)
 		vdev_disk_error(zio);
@@ -1400,41 +1366,32 @@ vdev_disk_io_start(zio_t *zio)
 	}
 
 	switch (zio->io_type) {
-	case ZIO_TYPE_IOCTL:
+	case ZIO_TYPE_FLUSH:
 
 		if (!vdev_readable(v)) {
-			rw_exit(&vd->vd_lock);
-			zio->io_error = SET_ERROR(ENXIO);
-			zio_interrupt(zio);
-			return;
-		}
-
-		switch (zio->io_cmd) {
-		case DKIOCFLUSHWRITECACHE:
-
-			if (zfs_nocacheflush)
-				break;
-
-			if (v->vdev_nowritecache) {
-				zio->io_error = SET_ERROR(ENOTSUP);
-				break;
-			}
-
+			/* Drive not there, can't flush */
+			error = SET_ERROR(ENXIO);
+		} else if (zfs_nocacheflush) {
+			/* Flushing disabled by operator, declare success */
+			error = 0;
+		} else if (v->vdev_nowritecache) {
+			/* This vdev not capable of flushing */
+			error = SET_ERROR(ENOTSUP);
+		} else {
+			/*
+			 * Issue the flush. If successful, the response will
+			 * be handled in the completion callback, so we're done.
+			 */
 			error = vdev_disk_io_flush(BDH_BDEV(vd->vd_bdh), zio);
 			if (error == 0) {
 				rw_exit(&vd->vd_lock);
 				return;
 			}
-
-			zio->io_error = error;
-
-			break;
-
-		default:
-			zio->io_error = SET_ERROR(ENOTSUP);
 		}
 
+		/* Couldn't issue the flush, so set the error and return it */
 		rw_exit(&vd->vd_lock);
+		zio->io_error = error;
 		zio_execute(zio);
 		return;
 
@@ -1527,7 +1484,7 @@ vdev_disk_rele(vdev_t *vd)
  * BIO submission method. See comment above about vdev_classic.
  * Set zfs_vdev_disk_classic=0 for new, =1 for classic
  */
-static uint_t zfs_vdev_disk_classic = 1;	/* default classic */
+static uint_t zfs_vdev_disk_classic = 0;	/* default new */
 
 /* Set submission function from module parameter */
 static int

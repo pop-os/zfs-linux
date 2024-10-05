@@ -40,8 +40,6 @@
 #include <sys/zap.h>
 #include <sys/btree.h>
 
-#define	WITH_DF_BLOCK_ALLOCATOR
-
 #define	GANG_ALLOCATION(flags) \
 	((flags) & (METASLAB_GANG_CHILD | METASLAB_GANG_HEADER))
 
@@ -1616,9 +1614,6 @@ metaslab_block_find(zfs_btree_t *t, range_tree_t *rt, uint64_t start,
 	return (rs);
 }
 
-#if defined(WITH_DF_BLOCK_ALLOCATOR) || \
-    defined(WITH_CF_BLOCK_ALLOCATOR)
-
 /*
  * This is a helper function that can be used by the allocator to find a
  * suitable block to allocate. This will search the specified B-tree looking
@@ -1653,9 +1648,74 @@ metaslab_block_picker(range_tree_t *rt, uint64_t *cursor, uint64_t size,
 	*cursor = 0;
 	return (-1ULL);
 }
-#endif /* WITH_DF/CF_BLOCK_ALLOCATOR */
 
-#if defined(WITH_DF_BLOCK_ALLOCATOR)
+static uint64_t metaslab_df_alloc(metaslab_t *msp, uint64_t size);
+static uint64_t metaslab_cf_alloc(metaslab_t *msp, uint64_t size);
+static uint64_t metaslab_ndf_alloc(metaslab_t *msp, uint64_t size);
+metaslab_ops_t *metaslab_allocator(spa_t *spa);
+
+static metaslab_ops_t metaslab_allocators[] = {
+	{ "dynamic", metaslab_df_alloc },
+	{ "cursor", metaslab_cf_alloc },
+	{ "new-dynamic", metaslab_ndf_alloc },
+};
+
+static int
+spa_find_allocator_byname(const char *val)
+{
+	int a = ARRAY_SIZE(metaslab_allocators) - 1;
+	if (strcmp("new-dynamic", val) == 0)
+		return (-1); /* remove when ndf is working */
+	for (; a >= 0; a--) {
+		if (strcmp(val, metaslab_allocators[a].msop_name) == 0)
+			return (a);
+	}
+	return (-1);
+}
+
+void
+spa_set_allocator(spa_t *spa, const char *allocator)
+{
+	int a = spa_find_allocator_byname(allocator);
+	if (a < 0) a = 0;
+	spa->spa_active_allocator = a;
+	zfs_dbgmsg("spa allocator: %s", metaslab_allocators[a].msop_name);
+}
+
+int
+spa_get_allocator(spa_t *spa)
+{
+	return (spa->spa_active_allocator);
+}
+
+#if defined(_KERNEL)
+int
+param_set_active_allocator_common(const char *val)
+{
+	char *p;
+
+	if (val == NULL)
+		return (SET_ERROR(EINVAL));
+
+	if ((p = strchr(val, '\n')) != NULL)
+		*p = '\0';
+
+	int a = spa_find_allocator_byname(val);
+	if (a < 0)
+		return (SET_ERROR(EINVAL));
+
+	zfs_active_allocator = metaslab_allocators[a].msop_name;
+	return (0);
+}
+#endif
+
+metaslab_ops_t *
+metaslab_allocator(spa_t *spa)
+{
+	int allocator = spa_get_allocator(spa);
+	return (&metaslab_allocators[allocator]);
+}
+
 /*
  * ==========================================================================
  * Dynamic Fit (df) block allocator
@@ -1730,12 +1790,6 @@ metaslab_df_alloc(metaslab_t *msp, uint64_t size)
 	return (offset);
 }
 
-const metaslab_ops_t zfs_metaslab_ops = {
-	metaslab_df_alloc
-};
-#endif /* WITH_DF_BLOCK_ALLOCATOR */
-
-#if defined(WITH_CF_BLOCK_ALLOCATOR)
 /*
  * ==========================================================================
  * Cursor fit block allocator -
@@ -1778,12 +1832,6 @@ metaslab_cf_alloc(metaslab_t *msp, uint64_t size)
 	return (offset);
 }
 
-const metaslab_ops_t zfs_metaslab_ops = {
-	metaslab_cf_alloc
-};
-#endif /* WITH_CF_BLOCK_ALLOCATOR */
-
-#if defined(WITH_NDF_BLOCK_ALLOCATOR)
 /*
  * ==========================================================================
  * New dynamic fit allocator -
@@ -1839,12 +1887,6 @@ metaslab_ndf_alloc(metaslab_t *msp, uint64_t size)
 	}
 	return (-1ULL);
 }
-
-const metaslab_ops_t zfs_metaslab_ops = {
-	metaslab_ndf_alloc
-};
-#endif /* WITH_NDF_BLOCK_ALLOCATOR */
-
 
 /*
  * ==========================================================================
@@ -4303,7 +4345,8 @@ metaslab_sync_done(metaslab_t *msp, uint64_t txg)
 
 	uint64_t free_space = metaslab_class_get_space(spa_normal_class(spa)) -
 	    metaslab_class_get_alloc(spa_normal_class(spa));
-	if (free_space <= spa_get_slop_space(spa) || vd->vdev_removing) {
+	if (free_space <= spa_get_slop_space(spa) || vd->vdev_removing ||
+	    vd->vdev_rz_expanding) {
 		defer_allowed = B_FALSE;
 	}
 
@@ -4611,6 +4654,7 @@ metaslab_block_alloc(metaslab_t *msp, uint64_t size, uint64_t txg)
 	ASSERT(MUTEX_HELD(&msp->ms_lock));
 	VERIFY(!msp->ms_condensing);
 	VERIFY0(msp->ms_disabled);
+	VERIFY0(msp->ms_new);
 
 	start = mc->mc_ops->msop_alloc(msp, size);
 	if (start != -1ULL) {
@@ -4682,10 +4726,10 @@ find_valid_metaslab(metaslab_group_t *mg, uint64_t activation_weight,
 		}
 
 		/*
-		 * If the selected metaslab is condensing or disabled,
-		 * skip it.
+		 * If the selected metaslab is condensing or disabled, or
+		 * hasn't gone through a metaslab_sync_done(), then skip it.
 		 */
-		if (msp->ms_condensing || msp->ms_disabled > 0)
+		if (msp->ms_condensing || msp->ms_disabled > 0 || msp->ms_new)
 			continue;
 
 		*was_active = msp->ms_allocator != -1;
@@ -5228,7 +5272,7 @@ top:
 
 		ASSERT(mg->mg_class == mc);
 
-		uint64_t asize = vdev_psize_to_asize(vd, psize);
+		uint64_t asize = vdev_psize_to_asize_txg(vd, psize, txg);
 		ASSERT(P2PHASE(asize, 1ULL << vd->vdev_ashift) == 0);
 
 		/*
@@ -5454,8 +5498,9 @@ remap_blkptr_cb(uint64_t inner_offset, vdev_t *vd, uint64_t offset,
 	vdev_t *oldvd = vdev_lookup_top(vd->vdev_spa,
 	    DVA_GET_VDEV(&bp->blk_dva[0]));
 	vdev_indirect_births_t *vib = oldvd->vdev_indirect_births;
-	bp->blk_phys_birth = vdev_indirect_births_physbirth(vib,
+	uint64_t physical_birth = vdev_indirect_births_physbirth(vib,
 	    DVA_GET_OFFSET(&bp->blk_dva[0]), DVA_GET_ASIZE(&bp->blk_dva[0]));
+	BP_SET_PHYSICAL_BIRTH(bp, physical_birth);
 
 	DVA_SET_VDEV(&bp->blk_dva[0], vd->vdev_id);
 	DVA_SET_OFFSET(&bp->blk_dva[0], offset);
@@ -5804,8 +5849,8 @@ metaslab_alloc(spa_t *spa, metaslab_class_t *mc, uint64_t psize, blkptr_t *bp,
 	dva_t *hintdva = (hintbp != NULL) ? hintbp->blk_dva : NULL;
 	int error = 0;
 
-	ASSERT(bp->blk_birth == 0);
-	ASSERT(BP_PHYSICAL_BIRTH(bp) == 0);
+	ASSERT0(BP_GET_LOGICAL_BIRTH(bp));
+	ASSERT0(BP_GET_PHYSICAL_BIRTH(bp));
 
 	spa_config_enter(spa, SCL_ALLOC, FTAG, RW_READER);
 
@@ -5859,7 +5904,7 @@ metaslab_free(spa_t *spa, const blkptr_t *bp, uint64_t txg, boolean_t now)
 	int ndvas = BP_GET_NDVAS(bp);
 
 	ASSERT(!BP_IS_HOLE(bp));
-	ASSERT(!now || bp->blk_birth >= spa_syncing_txg(spa));
+	ASSERT(!now || BP_GET_LOGICAL_BIRTH(bp) >= spa_syncing_txg(spa));
 
 	/*
 	 * If we have a checkpoint for the pool we need to make sure that
@@ -5877,7 +5922,7 @@ metaslab_free(spa_t *spa, const blkptr_t *bp, uint64_t txg, boolean_t now)
 	 * normally as they will be referenced by the checkpointed uberblock.
 	 */
 	boolean_t checkpoint = B_FALSE;
-	if (bp->blk_birth <= spa->spa_checkpoint_txg &&
+	if (BP_GET_LOGICAL_BIRTH(bp) <= spa->spa_checkpoint_txg &&
 	    spa_syncing_txg(spa) > spa->spa_checkpoint_txg) {
 		/*
 		 * At this point, if the block is part of the checkpoint
@@ -6234,3 +6279,9 @@ ZFS_MODULE_PARAM(zfs_metaslab, zfs_metaslab_, try_hard_before_gang, INT,
 
 ZFS_MODULE_PARAM(zfs_metaslab, zfs_metaslab_, find_max_tries, UINT, ZMOD_RW,
 	"Normally only consider this many of the best metaslabs in each vdev");
+
+/* BEGIN CSTYLED */
+ZFS_MODULE_PARAM_CALL(zfs, zfs_, active_allocator,
+	param_set_active_allocator, param_get_charp, ZMOD_RW,
+	"SPA active allocator");
+/* END CSTYLED */

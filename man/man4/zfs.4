@@ -16,7 +16,9 @@
 .\" own identifying information:
 .\" Portions Copyright [yyyy] [name of copyright owner]
 .\"
-.Dd January 9, 2024
+.\" Copyright (c) 2024, Klara, Inc.
+.\"
+.Dd October 2, 2024
 .Dt ZFS 4
 .Os
 .
@@ -77,6 +79,17 @@ the array is dynamically sized based on total system memory.
 dnode slots allocated in a single operation as a power of 2.
 The default value minimizes lock contention for the bulk operation performed.
 .
+.It Sy dmu_ddt_copies Ns = Ns Sy 3 Pq uint
+Controls the number of copies stored for DeDup Table
+.Pq DDT
+objects.
+Reducing the number of copies to 1 from the previous default of 3
+can reduce the write inflation caused by deduplication.
+This assumes redundancy for this data is provided by the vdev layer.
+If the DDT is damaged, space may be leaked
+.Pq not freed
+when the DDT can not report the correct reference count.
+.
 .It Sy dmu_prefetch_max Ns = Ns Sy 134217728 Ns B Po 128 MiB Pc Pq uint
 Limit the amount we can prefetch with one call to this amount in bytes.
 This helps to limit the amount of memory that can be used by prefetching.
@@ -98,7 +111,7 @@ and only applicable in related situations.
 .It Sy l2arc_feed_secs Ns = Ns Sy 1 Pq u64
 Seconds between L2ARC writing.
 .
-.It Sy l2arc_headroom Ns = Ns Sy 2 Pq u64
+.It Sy l2arc_headroom Ns = Ns Sy 8 Pq u64
 How far through the ARC lists to search for L2ARC cacheable content,
 expressed as a multiplier of
 .Sy l2arc_write_max .
@@ -207,12 +220,12 @@ to enable caching/reading prefetches to/from L2ARC.
 .It Sy l2arc_norw Ns = Ns Sy 0 Ns | Ns 1 Pq int
 No reads during writes.
 .
-.It Sy l2arc_write_boost Ns = Ns Sy 8388608 Ns B Po 8 MiB Pc Pq u64
+.It Sy l2arc_write_boost Ns = Ns Sy 33554432 Ns B Po 32 MiB Pc Pq u64
 Cold L2ARC devices will have
 .Sy l2arc_write_max
 increased by this amount while they remain cold.
 .
-.It Sy l2arc_write_max Ns = Ns Sy 8388608 Ns B Po 8 MiB Pc Pq u64
+.It Sy l2arc_write_max Ns = Ns Sy 33554432 Ns B Po 32 MiB Pc Pq u64
 Max write bytes per interval.
 .
 .It Sy l2arc_rebuild_enabled Ns = Ns Sy 1 Ns | Ns 0 Pq int
@@ -279,6 +292,14 @@ Default dnode block size as a power of 2.
 .
 .It Sy zfs_default_ibs Ns = Ns Sy 17 Po 128 KiB Pc Pq int
 Default dnode indirect block size as a power of 2.
+.
+.It Sy zfs_dio_enabled Ns = Ns Sy 0 Ns | Ns 1 Pq int
+Enable Direct I/O.
+If this setting is 0, then all I/O requests will be directed through the ARC
+acting as though the dataset property
+.Sy direct
+was set to
+.Sy disabled .
 .
 .It Sy zfs_history_output_max Ns = Ns Sy 1048576 Ns B Po 1 MiB Pc Pq u64
 When attempting to log an output nvlist of an ioctl in the on-disk history,
@@ -405,6 +426,26 @@ May be increased up to
 .Sy ASHIFT_MAX Po 16 Pc ,
 but this may negatively impact pool space efficiency.
 .
+.It Sy zfs_vdev_direct_write_verify Ns = Ns Sy Linux 1 | FreeBSD 0 Pq uint
+If non-zero, then a Direct I/O write's checksum will be verified every
+time the write is issued and before it is commited to the block pointer.
+In the event the checksum is not valid then the I/O operation will return EIO.
+This module parameter can be used to detect if the
+contents of the users buffer have changed in the process of doing a Direct I/O
+write.
+It can also help to identify if reported checksum errors are tied to Direct I/O
+writes.
+Each verify error causes a
+.Sy dio_verify
+zevent.
+Direct Write I/O checkum verify errors can be seen with
+.Nm zpool Cm status Fl d .
+The default value for this is 1 on Linux, but is 0 for
+.Fx
+because user pages can be placed under write protection in
+.Fx
+before the Direct I/O write is issued.
+.
 .It Sy zfs_vdev_min_auto_ashift Ns = Ns Sy ASHIFT_MIN Po 9 Pc Pq uint
 Minimum ashift used when creating new top-level vdevs.
 .
@@ -448,6 +489,19 @@ Note, that both this many milliseconds and
 TXGs must pass before unloading will occur.
 .
 .It Sy reference_history Ns = Ns Sy 3 Pq uint
+Maximum reference holders being tracked when reference_tracking_enable is
+active.
+.It Sy raidz_expand_max_copy_bytes Ns = Ns Sy 160MB Pq ulong
+Max amount of memory to use for RAID-Z expansion I/O.
+This limits how much I/O can be outstanding at once.
+.
+.It Sy raidz_expand_max_reflow_bytes Ns = Ns Sy 0 Pq ulong
+For testing, pause RAID-Z expansion when reflow amount reaches this value.
+.
+.It Sy raidz_io_aggregate_rows Ns = Ns Sy 4 Pq ulong
+For expanded RAID-Z, aggregate reads that have more rows than this.
+.
+.It Sy reference_history Ns = Ns Sy 3 Pq int
 Maximum reference holders being tracked when reference_tracking_enable is
 active.
 .
@@ -516,6 +570,20 @@ If we have less than this amount of free space,
 most ZPL operations (e.g. write, create) will return
 .Sy ENOSPC .
 .
+.It Sy spa_num_allocators Ns = Ns Sy 4 Pq int
+Determines the number of block alloctators to use per spa instance.
+Capped by the number of actual CPUs in the system via
+.Sy spa_cpus_per_allocator .
+.Pp
+Note that setting this value too high could result in performance
+degredation and/or excess fragmentation.
+Set value only applies to pools imported/created after that.
+.
+.It Sy spa_cpus_per_allocator Ns = Ns Sy 4 Pq int
+Determines the minimum number of CPUs in a system for block alloctator
+per spa instance.
+Set value only applies to pools imported/created after that.
+.
 .It Sy spa_upgrade_errlog_limit Ns = Ns Sy 0 Pq uint
 Limits the number of on-disk error log entries that will be converted to the
 new format when enabling the
@@ -548,11 +616,14 @@ However, this is limited by
 .
 .It Sy zap_micro_max_size Ns = Ns Sy 131072 Ns B Po 128 KiB Pc Pq int
 Maximum micro ZAP size.
-A micro ZAP is upgraded to a fat ZAP, once it grows beyond the specified size.
+A "micro" ZAP is upgraded to a "fat" ZAP once it grows beyond the specified
+size.
+Sizes higher than 128KiB will be clamped to 128KiB unless the
+.Sy large_microzap
+feature is enabled.
 .
-.It Sy zfetch_hole_shift Ns = Ns Sy 2 Pq uint
-Log2 fraction of holes in speculative prefetch stream allowed for it to
-proceed.
+.It Sy zap_shrink_enabled Ns = Ns Sy 1 Ns | Ns 0 Pq int
+If set, adjacent empty ZAP blocks will be collapsed, reducing disk space.
 .
 .It Sy zfetch_min_distance Ns = Ns Sy 4194304 Ns B Po 4 MiB Pc Pq uint
 Min bytes to prefetch per stream.
@@ -675,10 +746,7 @@ Max size of ARC in bytes.
 If
 .Sy 0 ,
 then the max size of ARC is determined by the amount of system memory installed.
-Under Linux, half of system memory will be used as the limit.
-Under
-.Fx ,
-the larger of
+The larger of
 .Sy all_system_memory No \- Sy 1 GiB
 and
 .Sy 5/8 No \(mu Sy all_system_memory
@@ -804,6 +872,7 @@ This is a limit on how many pages the ARC shrinker makes available for
 eviction in response to one page allocation attempt.
 Note that in practice, the kernel's shrinker can ask us to evict
 up to about four times this for one allocation attempt.
+To reduce OOM risk, this limit is applied for kswapd reclaims only.
 .Pp
 The default limit of
 .Sy 10000 Pq in practice, Em 160 MiB No per allocation attempt with 4 KiB pages
@@ -813,6 +882,13 @@ even with a small average compressed block size of ~8 KiB.
 .Pp
 The parameter can be set to 0 (zero) to disable the limit,
 and only applies on Linux.
+.
+.It Sy zfs_arc_shrinker_seeks Ns = Ns Sy 2 Pq int
+Relative cost of ARC eviction on Linux, AKA number of seeks needed to
+restore evicted page.
+Bigger values make ARC more precious and evictions smaller, comparing to
+other kernel subsystems.
+Value of 4 means parity with page cache.
 .
 .It Sy zfs_arc_sys_free Ns = Ns Sy 0 Ns B Pq u64
 The target number of bytes the ARC should leave as free memory on the system.
@@ -889,6 +965,13 @@ Historically used for controlling what reporting was available under
 .Pa /proc/spl/kstat/zfs .
 No effect.
 .
+.It Sy zfs_deadman_checktime_ms Ns = Ns Sy 60000 Ns ms Po 1 min Pc Pq u64
+Check time in milliseconds.
+This defines the frequency at which we check for hung I/O requests
+and potentially invoke the
+.Sy zfs_deadman_failmode
+behavior.
+.
 .It Sy zfs_deadman_enabled Ns = Ns Sy 1 Ns | Ns 0 Pq int
 When a pool sync operation takes longer than
 .Sy zfs_deadman_synctime_ms ,
@@ -903,6 +986,10 @@ By default, the deadman is enabled and set to
 .Sy wait
 which results in "hung" I/O operations only being logged.
 The deadman is automatically disabled when a pool gets suspended.
+.
+.It Sy zfs_deadman_events_per_second Ns = Ns Sy 1 Ns /s Pq int
+Rate limit deadman zevents (which report hung I/O operations) to this many per
+second.
 .
 .It Sy zfs_deadman_failmode Ns = Ns Sy wait Pq charp
 Controls the failure behavior when the deadman detects a "hung" I/O operation.
@@ -920,13 +1007,6 @@ Panic the system.
 This can be used to facilitate automatic fail-over
 to a properly configured fail-over partner.
 .El
-.
-.It Sy zfs_deadman_checktime_ms Ns = Ns Sy 60000 Ns ms Po 1 min Pc Pq u64
-Check time in milliseconds.
-This defines the frequency at which we check for hung I/O requests
-and potentially invoke the
-.Sy zfs_deadman_failmode
-behavior.
 .
 .It Sy zfs_deadman_synctime_ms Ns = Ns Sy 600000 Ns ms Po 10 min Pc Pq u64
 Interval in milliseconds after which the deadman is triggered and also
@@ -946,6 +1026,88 @@ milliseconds until the operation completes.
 .It Sy zfs_dedup_prefetch Ns = Ns Sy 0 Ns | Ns 1 Pq int
 Enable prefetching dedup-ed blocks which are going to be freed.
 .
+.It Sy zfs_dedup_log_flush_passes_max Ns = Ns Sy 8 Ns Pq uint
+Maximum number of dedup log flush passes (iterations) each transaction.
+.Pp
+At the start of each transaction, OpenZFS will estimate how many entries it
+needs to flush out to keep up with the change rate, taking the amount and time
+taken to flush on previous txgs into account (see
+.Sy zfs_dedup_log_flush_flow_rate_txgs ) .
+It will spread this amount into a number of passes.
+At each pass, it will use the amount already flushed and the total time taken
+by flushing and by other IO to recompute how much it should do for the remainder
+of the txg.
+.Pp
+Reducing the max number of passes will make flushing more aggressive, flushing
+out more entries on each pass.
+This can be faster, but also more likely to compete with other IO.
+Increasing the max number of passes will put fewer entries onto each pass,
+keeping the overhead of dedup changes to a minimum but possibly causing a large
+number of changes to be dumped on the last pass, which can blow out the txg
+sync time beyond
+.Sy zfs_txg_timeout .
+.
+.It Sy zfs_dedup_log_flush_min_time_ms Ns = Ns Sy 1000 Ns Pq uint
+Minimum time to spend on dedup log flush each transaction.
+.Pp
+At least this long will be spent flushing dedup log entries each transaction,
+up to
+.Sy zfs_txg_timeout .
+This occurs even if doing so would delay the transaction, that is, other IO
+completes under this time.
+.
+.It Sy zfs_dedup_log_flush_entries_min Ns = Ns Sy 1000 Ns Pq uint
+Flush at least this many entries each transaction.
+.Pp
+OpenZFS will estimate how many entries it needs to flush each transaction to
+keep up with the ingest rate (see
+.Sy zfs_dedup_log_flush_flow_rate_txgs ) .
+This sets the minimum for that estimate.
+Raising it can force OpenZFS to flush more aggressively, keeping the log small
+and so reducing pool import times, but can make it less able to back off if
+log flushing would compete with other IO too much.
+.
+.It Sy zfs_dedup_log_flush_flow_rate_txgs Ns = Ns Sy 10 Ns Pq uint
+Number of transactions to use to compute the flow rate.
+.Pp
+OpenZFS will estimate how many entries it needs to flush each transaction by
+monitoring the number of entries changed (ingest rate), number of entries
+flushed (flush rate) and time spent flushing (flush time rate) and combining
+these into an overall "flow rate".
+It will use an exponential weighted moving average over some number of recent
+transactions to compute these rates.
+This sets the number of transactions to compute these averages over.
+Setting it higher can help to smooth out the flow rate in the face of spiky
+workloads, but will take longer for the flow rate to adjust to a sustained
+change in the ingress rate.
+.
+.It Sy zfs_dedup_log_txg_max Ns = Ns Sy 8 Ns Pq uint
+Max transactions to before starting to flush dedup logs.
+.Pp
+OpenZFS maintains two dedup logs, one receiving new changes, one flushing.
+If there is nothing to flush, it will accumulate changes for no more than this
+many transactions before switching the logs and starting to flush entries out.
+.
+.It Sy zfs_dedup_log_mem_max Ns = Ns Sy 0 Ns Pq u64
+Max memory to use for dedup logs.
+.Pp
+OpenZFS will spend no more than this much memory on maintaining the in-memory
+dedup log.
+Flushing will begin when around half this amount is being spent on logs.
+The default value of
+.Sy 0
+will cause it to be set by
+.Sy zfs_dedup_log_mem_max_percent
+instead.
+.
+.It Sy zfs_dedup_log_mem_max_percent Ns = Ns Sy 1 Ns % Pq uint
+Max memory to use for dedup logs, as a percentage of total memory.
+.Pp
+If
+.Sy zfs_dedup_log_mem_max
+is not set, it will be initialised as a percentage of the total memory in the
+system.
+.
 .It Sy zfs_delay_min_dirty_percent Ns = Ns Sy 60 Ns % Pq uint
 Start to delay each transaction once there is this amount of dirty data,
 expressed as a percentage of
@@ -964,6 +1126,9 @@ This will smoothly handle between ten times and a tenth of this number.
 .No See Sx ZFS TRANSACTION DELAY .
 .Pp
 .Sy zfs_delay_scale No \(mu Sy zfs_dirty_data_max Em must No be smaller than Sy 2^64 .
+.
+.It Sy zfs_dio_write_verify_events_per_second Ns = Ns Sy 20 Ns /s Pq uint
+Rate limit Direct I/O write verify events to this many per second.
 .
 .It Sy zfs_disable_ivset_guid_check Ns = Ns Sy 0 Ns | Ns 1 Pq int
 Disables requirement for IVset GUIDs to be present and match when doing a raw
@@ -985,8 +1150,7 @@ will result in objects waiting when there is not actually contention on the
 same object.
 .
 .It Sy zfs_slow_io_events_per_second Ns = Ns Sy 20 Ns /s Pq int
-Rate limit delay and deadman zevents (which report slow I/O operations) to this
-many per
+Rate limit delay zevents (which report slow I/O operations) to this many per
 second.
 .
 .It Sy zfs_unflushed_max_mem_amt Ns = Ns Sy 1073741824 Ns B Po 1 GiB Pc Pq u64
@@ -1385,30 +1549,17 @@ This parameter only applies on Linux.
 This parameter is ignored if
 .Sy zfs_vdev_disk_classic Ns = Ns Sy 1 .
 .
-.It Sy zfs_vdev_disk_classic Ns = Ns 0 Ns | Ns Sy 1 Pq uint
-Controls the method used to submit IO to the Linux block layer
-(default
-.Sy 1 "classic" Ns
-)
-.Pp
-If set to 1, the "classic" method is used.
-This is the method that has been in use since the earliest versions of
-ZFS-on-Linux.
-It has known issues with highly fragmented IO requests and is less efficient on
-many workloads, but it well known and well understood.
-.Pp
-If set to 0, the "new" method is used.
-This method is available since 2.2.4 and should resolve all known issues and be
-far more efficient, but has not had as much testing.
-In the 2.2.x series, this parameter defaults to 1, to use the "classic" method.
-.Pp
-It is not recommended that you change it except on advice from the OpenZFS
-developers.
-If you do change it, please also open a bug report describing why you did so,
+.It Sy zfs_vdev_disk_classic Ns = Ns Sy 0 Ns | Ns 1 Pq uint
+If set to 1, OpenZFS will submit IO to Linux using the method it used in 2.2
+and earlier.
+This "classic" method has known issues with highly fragmented IO requests and
+is slower on many workloads, but it has been in use for many years and is known
+to be very stable.
+If you set this parameter, please also open a bug report why you did so,
 including the workload involved and any error messages.
 .Pp
-This parameter and the "classic" submission method will be removed in a future
-release of OpenZFS once we have total confidence in the new method.
+This parameter and the classic submission method will be removed once we have
+total confidence in the new method.
 .Pp
 This parameter only applies on Linux, and can only be set at module load time.
 .
@@ -1424,6 +1575,15 @@ When enabled, this functionality works both locally and over NFS exports
 which have the
 .Em no_root_squash
 option set.
+.
+.It Sy zfs_snapshot_no_setuid Ns = Ns Sy 0 Ns | Ns 1 Pq int
+Whether to disable
+.Em setuid/setgid
+support for snapshot mounts triggered by access to the
+.Sy .zfs/snapshot
+directory by setting the
+.Em nosuid
+mount option.
 .
 .It Sy zfs_flags Ns = Ns Sy 0 Pq int
 Set additional debugging flags.
@@ -1604,6 +1764,11 @@ Therefore, we formerly forbade creating blocks larger than 1M.
 Larger blocks could be created by changing it,
 and pools with larger blocks can always be imported and used,
 regardless of this setting.
+.Pp
+Note that it is still limited by default to
+.Ar 1 MiB
+on x86_32, because Linux's
+3/1 memory split doesn't leave much room for 16M chunks.
 .
 .It Sy zfs_allow_redacted_dataset_mount Ns = Ns Sy 0 Ns | Ns 1 Pq int
 Allow datasets received with redacted send/receive to be mounted.
@@ -1847,6 +2012,13 @@ Ignore the
 feature, causing an operation that would start a resilver to
 immediately restart the one in progress.
 .
+.It Sy zfs_resilver_defer_percent Ns = Ns Sy 10 Ns % Pq uint
+If the ongoing resilver progress is below this threshold, a new resilver will
+restart from scratch instead of being deferred after the current one finishes,
+even if the
+.Sy resilver_defer
+feature is enabled.
+.
 .It Sy zfs_resilver_min_time_ms Ns = Ns Sy 3000 Ns ms Po 3 s Pc Pq uint
 Resilvers are processed by the sync thread.
 While resilvering, it will spend at least this much time
@@ -1857,6 +2029,12 @@ If set, remove the DTL (dirty time list) upon completion of a pool scan (scrub),
 even if there were unrepairable errors.
 Intended to be used during pool repair or recovery to
 stop resilvering when the pool is next imported.
+.
+.It Sy zfs_scrub_after_expand Ns = Ns Sy 1 Ns | Ns 0 Pq int
+Automatically start a pool scrub after a RAIDZ expansion completes
+in order to verify the checksums of all blocks which have been
+copied during the expansion.
+This is enabled by default and strongly recommended.
 .
 .It Sy zfs_scrub_min_time_ms Ns = Ns Sy 1000 Ns ms Po 1 s Pc Pq uint
 Scrubs are processed by the sync thread.
@@ -2058,13 +2236,6 @@ and may need to load new metaslabs to satisfy these allocations.
 .It Sy zfs_sync_pass_rewrite Ns = Ns Sy 2 Pq uint
 Rewrite new block pointers starting in this pass.
 .
-.It Sy zfs_sync_taskq_batch_pct Ns = Ns Sy 75 Ns % Pq int
-This controls the number of threads used by
-.Sy dp_sync_taskq .
-The default value of
-.Sy 75%
-will create a maximum of one thread per CPU.
-.
 .It Sy zfs_trim_extent_bytes_max Ns = Ns Sy 134217728 Ns B Po 128 MiB Pc Pq uint
 Maximum size of TRIM command.
 Larger ranges will be split into chunks no larger than this value before
@@ -2107,7 +2278,7 @@ The default of
 .Sy 32
 was determined to be a reasonable compromise.
 .
-.It Sy zfs_txg_history Ns = Ns Sy 0 Pq uint
+.It Sy zfs_txg_history Ns = Ns Sy 100 Pq uint
 Historical statistics for this many latest TXGs will be available in
 .Pa /proc/spl/kstat/zfs/ Ns Ao Ar pool Ac Ns Pa /TXGs .
 .
@@ -2343,12 +2514,19 @@ Set value only applies to pools imported/created after that.
 .
 .It Sy zio_taskq_batch_tpq Ns = Ns Sy 0 Pq uint
 Number of worker threads per taskq.
-Lower values improve I/O ordering and CPU utilization,
-while higher reduces lock contention.
+Higher values improve I/O ordering and CPU utilization,
+while lower reduce lock contention.
+Set value only applies to pools imported/created after that.
 .Pp
 If
 .Sy 0 ,
 generate a system-dependent value close to 6 threads per taskq.
+Set value only applies to pools imported/created after that.
+.
+.It Sy zio_taskq_write_tpq Ns = Ns Sy 16 Pq uint
+Determines the minumum number of threads per write issue taskq.
+Higher values improve CPU utilization on high throughput,
+while lower reduce taskq locks contention on high IOPS.
 Set value only applies to pools imported/created after that.
 .
 .It Sy zio_taskq_read Ns = Ns Sy fixed,1,8 null scale null Pq charp
@@ -2357,7 +2535,7 @@ This is an advanced debugging parameter.
 Don't change this unless you understand what it does.
 Set values only apply to pools imported/created after that.
 .
-.It Sy zio_taskq_write Ns = Ns Sy batch fixed,1,5 scale fixed,1,5 Pq charp
+.It Sy zio_taskq_write Ns = Ns Sy sync null scale null Pq charp
 Set the queue and thread configuration for the IO write queues.
 This is an advanced debugging parameter.
 Don't change this unless you understand what it does.
