@@ -1,3 +1,18 @@
+zfs-linux (2.3.0-rc1-1~exp1) experimental; urgency=medium
+
+  [ Alexandre Detiste ]
+  * d/control: remove python3-distutils from Depends: alternative
+    (Closes: #1082141)
+
+  [ Shengqi Chen ]
+  * New upstream version 2.3.0-rc1
+  * d/patches: refresh files & disable bump-linux-maximum.patch
+  * d/patches: add patch to bump SONAME
+  * d/not-installed: update list
+  * d/symbols: refresh symbol list for all libraries
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Sat, 05 Oct 2024 21:18:21 +0800
+
 zfs-linux (2.2.6-1) unstable; urgency=medium
 
   * New upstream version 2.2.6
