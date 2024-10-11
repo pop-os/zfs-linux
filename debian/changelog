@@ -12,8 +12,9 @@ zfs-linux (2.3.0~rc1-1~exp1) UNRELEASED; urgency=medium
   * d/symbols: refresh symbol list for all libraries
   * d/rules: run override_dh_autoreconf when building zfs-modules deb
   * d/tests: remove call to autoreconf in binary-debs-modules script
+  * d/patches: add patch to fix pyzfs version
 
- -- Shengqi Chen <harry-chen@outlook.com>  Sun, 06 Oct 2024 00:42:30 +0800
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 11 Oct 2024 15:43:28 +0800
 
 zfs-linux (2.2.6-1) unstable; urgency=medium
 
