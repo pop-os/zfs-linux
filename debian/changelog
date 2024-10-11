@@ -1,11 +1,11 @@
-zfs-linux (2.3.0-rc1-1~exp1) UNRELEASED; urgency=medium
+zfs-linux (2.3.0~rc1-1~exp1) UNRELEASED; urgency=medium
 
   [ Alexandre Detiste ]
   * d/control: remove python3-distutils from Depends: alternative
     (Closes: #1082141)
 
   [ Shengqi Chen ]
-  * New upstream version 2.3.0-rc1
+  * New upstream version 2.3.0~rc1
   * d/patches: refresh files & disable bump-linux-maximum.patch
   * d/patches: add patch to bump SONAME
   * d/not-installed: update list
