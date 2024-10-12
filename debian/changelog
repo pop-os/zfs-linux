@@ -1,3 +1,13 @@
+zfs-linux (2.2.6-2) unstable; urgency=high
+
+  [ Alexandre Detiste ]
+  * d/control: remove python3-distutils from Depends: alternative (Closes: #1082141)
+
+  [ Aron Xu ]
+  * Revert "d/patches: add bump-linux-maximum.patch"
+
+ -- Aron Xu <aron@debian.org>  Sat, 12 Oct 2024 19:05:55 +0800
+
 zfs-linux (2.2.6-1) unstable; urgency=medium
 
   * New upstream version 2.2.6
