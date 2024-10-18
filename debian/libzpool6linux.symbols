@@ -3308,6 +3308,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zio_decompress_data@Base 0.8.2
  zio_delay_interrupt@Base 0.8.2
  zio_destroy@Base 2.2.0
+ zio_dio_chksum_verify_error_report@Base 2.3.0
  zio_do_crypt_abd@Base 0.8.2
  zio_do_crypt_data@Base 0.8.2
  zio_dva_throttle_enabled@Base 0.8.2
