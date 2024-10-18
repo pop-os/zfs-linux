@@ -252,14 +252,14 @@ target_triplet = @target@
 @CONFIG_USER_TRUE@	contrib/debian/openzfs-libpam-zfs.prerm \
 @CONFIG_USER_TRUE@	contrib/debian/openzfs-libuutil3.docs \
 @CONFIG_USER_TRUE@	contrib/debian/openzfs-libuutil3.install.in \
-@CONFIG_USER_TRUE@	contrib/debian/openzfs-libzfs4.docs \
-@CONFIG_USER_TRUE@	contrib/debian/openzfs-libzfs4.install.in \
+@CONFIG_USER_TRUE@	contrib/debian/openzfs-libzfs6.docs \
+@CONFIG_USER_TRUE@	contrib/debian/openzfs-libzfs6.install.in \
 @CONFIG_USER_TRUE@	contrib/debian/openzfs-libzfsbootenv1.docs \
 @CONFIG_USER_TRUE@	contrib/debian/openzfs-libzfsbootenv1.install.in \
 @CONFIG_USER_TRUE@	contrib/debian/openzfs-libzfs-dev.docs \
 @CONFIG_USER_TRUE@	contrib/debian/openzfs-libzfs-dev.install.in \
-@CONFIG_USER_TRUE@	contrib/debian/openzfs-libzpool5.docs \
-@CONFIG_USER_TRUE@	contrib/debian/openzfs-libzpool5.install.in \
+@CONFIG_USER_TRUE@	contrib/debian/openzfs-libzpool6.docs \
+@CONFIG_USER_TRUE@	contrib/debian/openzfs-libzpool6.install.in \
 @CONFIG_USER_TRUE@	contrib/debian/openzfs-python3-pyzfs.install \
 @CONFIG_USER_TRUE@	contrib/debian/openzfs-zfs-dkms.config \
 @CONFIG_USER_TRUE@	contrib/debian/openzfs-zfs-dkms.dkms \
@@ -2722,14 +2722,14 @@ am__dist_noinst_DATA_DIST =  \
 	contrib/debian/openzfs-libpam-zfs.prerm \
 	contrib/debian/openzfs-libuutil3.docs \
 	contrib/debian/openzfs-libuutil3.install.in \
-	contrib/debian/openzfs-libzfs4.docs \
-	contrib/debian/openzfs-libzfs4.install.in \
+	contrib/debian/openzfs-libzfs6.docs \
+	contrib/debian/openzfs-libzfs6.install.in \
 	contrib/debian/openzfs-libzfsbootenv1.docs \
 	contrib/debian/openzfs-libzfsbootenv1.install.in \
 	contrib/debian/openzfs-libzfs-dev.docs \
 	contrib/debian/openzfs-libzfs-dev.install.in \
-	contrib/debian/openzfs-libzpool5.docs \
-	contrib/debian/openzfs-libzpool5.install.in \
+	contrib/debian/openzfs-libzpool6.docs \
+	contrib/debian/openzfs-libzpool6.install.in \
 	contrib/debian/openzfs-python3-pyzfs.install \
 	contrib/debian/openzfs-zfs-dkms.config \
 	contrib/debian/openzfs-zfs-dkms.dkms \
@@ -4271,7 +4271,7 @@ SUBDIRS = include $(am__append_86) $(am__append_95)
 @CONFIG_USER_TRUE@	$(LIBFETCH_LIBS) $(LTLIBINTL) \
 @CONFIG_USER_TRUE@	$(am__append_72)
 @CONFIG_USER_TRUE@libzfs_la_LDFLAGS = -pthread $(am__append_71) \
-@CONFIG_USER_TRUE@	-version-info 5:0:1
+@CONFIG_USER_TRUE@	-version-info 6:0:0
 @CONFIG_USER_TRUE@libzfsbootenv_la_CFLAGS = $(AM_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) -fvisibility=hidden
 @CONFIG_USER_TRUE@libzfsbootenv_la_CPPFLAGS = $(AM_CPPFLAGS) \
@@ -4486,7 +4486,7 @@ SUBDIRS = include $(am__append_86) $(am__append_95)
 @CONFIG_USER_TRUE@	$(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm \
 @CONFIG_USER_TRUE@	$(am__append_75)
 @CONFIG_USER_TRUE@libzpool_la_LDFLAGS = -pthread $(am__append_74) \
-@CONFIG_USER_TRUE@	-version-info 5:0:0
+@CONFIG_USER_TRUE@	-version-info 6:0:0
 
 # -fno-tree-vectorize is set for gcc in zstd/common/compiler.h
 # Set it for other compilers, too.
@@ -14718,9 +14718,9 @@ deb-utils: deb-local rpm-utils-initramfs
 	pkg1=$${name}-$${version}.$${arch}.rpm; \
 	pkg2=libnvpair3-$${version}.$${arch}.rpm; \
 	pkg3=libuutil3-$${version}.$${arch}.rpm; \
-	pkg4=libzfs5-$${version}.$${arch}.rpm; \
-	pkg5=libzpool5-$${version}.$${arch}.rpm; \
-	pkg6=libzfs5-devel-$${version}.$${arch}.rpm; \
+	pkg4=libzfs6-$${version}.$${arch}.rpm; \
+	pkg5=libzpool6-$${version}.$${arch}.rpm; \
+	pkg6=libzfs6-devel-$${version}.$${arch}.rpm; \
 	pkg7=$${name}-test-$${version}.$${arch}.rpm; \
 	pkg8=$${name}-dracut-$${version}.noarch.rpm; \
 	pkg9=$${name}-initramfs-$${version}.$${arch}.rpm; \
@@ -14729,7 +14729,7 @@ deb-utils: deb-local rpm-utils-initramfs
 	path_prepend=`mktemp -d /tmp/intercept.XXXXXX`; \
 	echo "#!$(SHELL)" > $${path_prepend}/dh_shlibdeps; \
 	echo "`which dh_shlibdeps` -- \
-	 -xlibuutil3linux -xlibnvpair3linux -xlibzfs5linux -xlibzpool5linux" \
+	 -xlibuutil3linux -xlibnvpair3linux -xlibzfs6linux -xlibzpool6linux" \
 	 >> $${path_prepend}/dh_shlibdeps; \
 	chmod +x $${path_prepend}/dh_shlibdeps; \
 	env "PATH=$${path_prepend}:$${PATH}" \
@@ -14747,16 +14747,20 @@ debian:
 	cp -r contrib/debian debian; chmod +x debian/rules;
 
 native-deb-utils: native-deb-local debian
+	while [ -f debian/deb-build.lock ]; do sleep 1; done; \
+	echo "native-deb-utils" > debian/deb-build.lock; \
 	cp contrib/debian/control debian/control; \
-	$(DPKGBUILD) -b -rfakeroot -us -uc;
+	$(DPKGBUILD) -b -rfakeroot -us -uc; \
+	$(RM) -f debian/deb-build.lock
 
 native-deb-kmod: native-deb-local debian
+	while [ -f debian/deb-build.lock ]; do sleep 1; done; \
+	echo "native-deb-kmod" > debian/deb-build.lock; \
 	sh scripts/make_gitrev.sh; \
-	fakeroot debian/rules override_dh_binary-modules;
+	fakeroot debian/rules override_dh_binary-modules; \
+	$(RM) -f debian/deb-build.lock
 
 native-deb: native-deb-utils native-deb-kmod
-
-.NOTPARALLEL: native-deb native-deb-utils native-deb-kmod
 
 tgz-local:
 	@(if test "${HAVE_ALIEN}" = "no"; then \
