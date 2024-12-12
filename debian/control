@@ -190,7 +190,7 @@ Depends: dkms (>> 2.1.1.2-5),
 Recommends: zfs-zed, zfsutils-linux (>= ${source:Version}), ${linux:Recommends}
 # suggests debhelper because e.g. `dkms mkdeb -m zfs -v 0.8.2` needs dh_testdir (#909183)
 Suggests: debhelper
-Breaks: spl-dkms (<< 0.8.0~rc1), zfs-fuse
+Breaks: spl-dkms (<< 0.8.0~rc1), zfs-fuse (<< ${source:Version})
 Replaces: spl-dkms
 Provides: zfs-modules
 Description: OpenZFS filesystem kernel modules for Linux
