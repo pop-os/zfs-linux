@@ -4,11 +4,9 @@ Bug-Debian: https://bugs.debian.org/981212
 Bug: https://github.com/openzfs/zfs/issues/11097
 Last-Update: 2024-08-08
 
-Index: zfs-linux/scripts/dkms.mkconf
-===================================================================
---- zfs-linux.orig/scripts/dkms.mkconf
-+++ zfs-linux/scripts/dkms.mkconf
-@@ -25,6 +25,12 @@ PACKAGE_NAME="${pkgname}"
+--- a/scripts/dkms.mkconf
++++ b/scripts/dkms.mkconf
+@@ -25,6 +25,12 @@
  PACKAGE_VERSION="${pkgver}"
  PACKAGE_CONFIG="${pkgcfg}"
  NO_WEAK_MODULES="yes"

@@ -4,11 +4,9 @@ Description: Start zfs-mount.service after zfs-load-module.service, and if zfs
 Author: Dimitri John Ledkov <xnox@ubuntu.com>
 
 
-Index: zfs-linux-2.0.1/etc/systemd/system/zfs-mount.service.in
-===================================================================
---- zfs-linux-2.0.1.orig/etc/systemd/system/zfs-mount.service.in
-+++ zfs-linux-2.0.1/etc/systemd/system/zfs-mount.service.in
-@@ -5,6 +5,7 @@ DefaultDependencies=no
+--- a/etc/systemd/system/zfs-mount.service.in
++++ b/etc/systemd/system/zfs-mount.service.in
+@@ -5,6 +5,7 @@
  After=systemd-udev-settle.service
  After=zfs-import.target
  After=systemd-remount-fs.service
