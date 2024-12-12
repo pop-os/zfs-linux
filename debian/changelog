@@ -1,3 +1,17 @@
+zfs-linux (2.2.7-1) UNRELEASED; urgency=medium
+
+  [ Aron Xu ]
+  * d/control: Breaks zfs-fuse (Closes: #1058684)
+
+  [ Shengqi Chen ]
+  * New upstream version 2.2.7 (Closes: #1089578, #1089488, #1084964)
+  * Refresh existing patches & symbol control files
+  * d/rules: skip installing upstream removed files
+  * d/copyright: remove superfluous files
+  * d/control: add zfs-fuse version to Breaks
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 13 Dec 2024 01:31:52 +0800
+
 zfs-linux (2.2.6-2) unstable; urgency=high
 
   [ Alexandre Detiste ]
