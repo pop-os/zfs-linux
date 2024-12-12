@@ -7,8 +7,7 @@ noinst_LTLIBRARIES += libspl_assert.la libspl.la
 CPPCHECKTARGETS    += libspl_assert.la libspl.la
 
 libspl_assert_la_SOURCES = \
-	%D%/assert.c \
-	%D%/backtrace.c
+	%D%/assert.c
 
 libspl_la_SOURCES = \
 	%D%/libspl_impl.h \

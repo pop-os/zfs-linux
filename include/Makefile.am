@@ -38,7 +38,6 @@ COMMON_H = \
 	sys/dataset_kstats.h \
 	sys/dbuf.h \
 	sys/ddt.h \
-	sys/ddt_impl.h \
 	sys/dmu.h \
 	sys/dmu_impl.h \
 	sys/dmu_objset.h \
@@ -188,7 +187,6 @@ USER_H = \
 	libuutil.h \
 	libuutil_common.h \
 	libuutil_impl.h \
-	libzdb.h \
 	libzfs.h \
 	libzfs_core.h \
 	libzfsbootenv.h \

@@ -62,7 +62,6 @@
 #include <sys/spa_impl.h>
 #include <sys/stat.h>
 #include <sys/sunddi.h>
-#include <sys/sysctl.h>
 #include <sys/systm.h>
 #include <sys/taskqueue.h>
 #include <sys/uio.h>
@@ -111,7 +110,6 @@ static int zfs__fini(void);
 static void zfs_shutdown(void *, int);
 
 static eventhandler_tag zfs_shutdown_event_tag;
-static eventhandler_tag zfs_mountroot_event_tag;
 
 #define	ZFS_MIN_KSTACK_PAGES 4
 
@@ -306,25 +304,16 @@ zfs_modevent(module_t mod, int type, void *unused __unused)
 	switch (type) {
 	case MOD_LOAD:
 		err = zfs__init();
-		if (err == 0) {
+		if (err == 0)
 			zfs_shutdown_event_tag = EVENTHANDLER_REGISTER(
 			    shutdown_post_sync, zfs_shutdown, NULL,
 			    SHUTDOWN_PRI_FIRST);
-			zfs_mountroot_event_tag = EVENTHANDLER_REGISTER(
-			    mountroot, spa_boot_init, NULL,
-			    SI_ORDER_ANY);
-		}
 		return (err);
 	case MOD_UNLOAD:
 		err = zfs__fini();
-		if (err == 0) {
-			if (zfs_shutdown_event_tag != NULL)
-				EVENTHANDLER_DEREGISTER(shutdown_post_sync,
-				    zfs_shutdown_event_tag);
-			if (zfs_mountroot_event_tag != NULL)
-				EVENTHANDLER_DEREGISTER(mountroot,
-				    zfs_mountroot_event_tag);
-		}
+		if (err == 0 && zfs_shutdown_event_tag != NULL)
+			EVENTHANDLER_DEREGISTER(shutdown_post_sync,
+			    zfs_shutdown_event_tag);
 		return (err);
 	case MOD_SHUTDOWN:
 		return (0);
@@ -340,8 +329,9 @@ static moduledata_t zfs_mod = {
 	0
 };
 
-
-FEATURE(zfs, "OpenZFS support");
+#ifdef _KERNEL
+EVENTHANDLER_DEFINE(mountroot, spa_boot_init, NULL, 0);
+#endif
 
 DECLARE_MODULE(zfsctrl, zfs_mod, SI_SUB_CLOCKS, SI_ORDER_ANY);
 MODULE_VERSION(zfsctrl, 1);

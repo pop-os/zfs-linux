@@ -20,14 +20,14 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2024 by Delphix. All rights reserved.
+ * Copyright (c) 2011, 2019 by Delphix. All rights reserved.
  * Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
  * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
  * Copyright 2013 Saso Kiselkov. All rights reserved.
  * Copyright (c) 2017 Datto Inc.
  * Copyright (c) 2017, Intel Corporation.
  * Copyright (c) 2019, loli10K <ezomori.nozomu@gmail.com>. All rights reserved.
- * Copyright (c) 2023, 2024, Klara Inc.
+ * Copyright (c) 2023, Klara Inc.
  */
 
 #include <sys/zfs_context.h>
@@ -82,8 +82,7 @@
  *		- Check if spa_refcount is zero
  *		- Rename a spa_t
  *		- add/remove/attach/detach devices
- *		- Held for the duration of create/destroy
- *		- Held at the start and end of import and export
+ *		- Held for the duration of create/destroy/import/export
  *
  *	It does not need to handle recursion.  A create or destroy may
  *	reference objects (files or zvols) in other pools, but by
@@ -236,9 +235,9 @@
  * locking is, always, based on spa_namespace_lock and spa_config_lock[].
  */
 
-avl_tree_t spa_namespace_avl;
+static avl_tree_t spa_namespace_avl;
 kmutex_t spa_namespace_lock;
-kcondvar_t spa_namespace_cv;
+static kcondvar_t spa_namespace_cv;
 static const int spa_max_replication_override = SPA_DVAS_PER_BP;
 
 static kmutex_t spa_spare_lock;
@@ -389,18 +388,8 @@ uint_t spa_asize_inflation = 24;
 uint_t spa_slop_shift = 5;
 static const uint64_t spa_min_slop = 128ULL * 1024 * 1024;
 static const uint64_t spa_max_slop = 128ULL * 1024 * 1024 * 1024;
+static const int spa_allocators = 4;
 
-/*
- * Number of allocators to use, per spa instance
- */
-static int spa_num_allocators = 4;
-static int spa_cpus_per_allocator = 4;
-
-/*
- * Spa active allocator.
- * Valid values are zfs_active_allocator=<dynamic|cursor|new-dynamic>.
- */
-const char *zfs_active_allocator = "dynamic";
 
 void
 spa_load_failed(spa_t *spa, const char *fmt, ...)
@@ -621,7 +610,6 @@ spa_lookup(const char *name)
 
 	ASSERT(MUTEX_HELD(&spa_namespace_lock));
 
-retry:
 	(void) strlcpy(search.spa_name, name, sizeof (search.spa_name));
 
 	/*
@@ -633,20 +621,6 @@ retry:
 		*cp = '\0';
 
 	spa = avl_find(&spa_namespace_avl, &search, &where);
-	if (spa == NULL)
-		return (NULL);
-
-	/*
-	 * Avoid racing with import/export, which don't hold the namespace
-	 * lock for their entire duration.
-	 */
-	if ((spa->spa_load_thread != NULL &&
-	    spa->spa_load_thread != curthread) ||
-	    (spa->spa_export_thread != NULL &&
-	    spa->spa_export_thread != curthread)) {
-		cv_wait(&spa_namespace_cv, &spa_namespace_lock);
-		goto retry;
-	}
 
 	return (spa);
 }
@@ -739,13 +713,11 @@ spa_add(const char *name, nvlist_t *config, const char *altroot)
 	spa->spa_deadman_synctime = MSEC2NSEC(zfs_deadman_synctime_ms);
 	spa->spa_deadman_ziotime = MSEC2NSEC(zfs_deadman_ziotime_ms);
 	spa_set_deadman_failmode(spa, zfs_deadman_failmode);
-	spa_set_allocator(spa, zfs_active_allocator);
 
 	zfs_refcount_create(&spa->spa_refcount);
 	spa_config_lock_init(spa);
 	spa_stats_init(spa);
 
-	ASSERT(MUTEX_HELD(&spa_namespace_lock));
 	avl_add(&spa_namespace_avl, spa);
 
 	/*
@@ -754,10 +726,7 @@ spa_add(const char *name, nvlist_t *config, const char *altroot)
 	if (altroot)
 		spa->spa_root = spa_strdup(altroot);
 
-	/* Do not allow more allocators than fraction of CPUs. */
-	spa->spa_alloc_count = MAX(MIN(spa_num_allocators,
-	    boot_ncpus / MAX(spa_cpus_per_allocator, 1)), 1);
-
+	spa->spa_alloc_count = spa_allocators;
 	spa->spa_allocs = kmem_zalloc(spa->spa_alloc_count *
 	    sizeof (spa_alloc_t), KM_SLEEP);
 	for (int i = 0; i < spa->spa_alloc_count; i++) {
@@ -766,13 +735,6 @@ spa_add(const char *name, nvlist_t *config, const char *altroot)
 		avl_create(&spa->spa_allocs[i].spaa_tree, zio_bookmark_compare,
 		    sizeof (zio_t), offsetof(zio_t, io_queue_node.a));
 	}
-	if (spa->spa_alloc_count > 1) {
-		spa->spa_allocs_use = kmem_zalloc(offsetof(spa_allocs_use_t,
-		    sau_inuse[spa->spa_alloc_count]), KM_SLEEP);
-		mutex_init(&spa->spa_allocs_use->sau_lock, NULL, MUTEX_DEFAULT,
-		    NULL);
-	}
-
 	avl_create(&spa->spa_metaslabs_by_flushed, metaslab_sort_by_flushed,
 	    sizeof (metaslab_t), offsetof(metaslab_t, ms_spa_txg_node));
 	avl_create(&spa->spa_sm_logs_by_txg, spa_log_sm_sort_by_txg,
@@ -851,6 +813,7 @@ spa_remove(spa_t *spa)
 	nvlist_free(spa->spa_config_splitting);
 
 	avl_remove(&spa_namespace_avl, spa);
+	cv_broadcast(&spa_namespace_cv);
 
 	if (spa->spa_root)
 		spa_strfree(spa->spa_root);
@@ -867,11 +830,6 @@ spa_remove(spa_t *spa)
 	}
 	kmem_free(spa->spa_allocs, spa->spa_alloc_count *
 	    sizeof (spa_alloc_t));
-	if (spa->spa_alloc_count > 1) {
-		mutex_destroy(&spa->spa_allocs_use->sau_lock);
-		kmem_free(spa->spa_allocs_use, offsetof(spa_allocs_use_t,
-		    sau_inuse[spa->spa_alloc_count]));
-	}
 
 	avl_destroy(&spa->spa_metaslabs_by_flushed);
 	avl_destroy(&spa->spa_sm_logs_by_txg);
@@ -949,22 +907,19 @@ void
 spa_open_ref(spa_t *spa, const void *tag)
 {
 	ASSERT(zfs_refcount_count(&spa->spa_refcount) >= spa->spa_minref ||
-	    MUTEX_HELD(&spa_namespace_lock) ||
-	    spa->spa_load_thread == curthread);
+	    MUTEX_HELD(&spa_namespace_lock));
 	(void) zfs_refcount_add(&spa->spa_refcount, tag);
 }
 
 /*
  * Remove a reference to the given spa_t.  Must have at least one reference, or
- * have the namespace lock held or be part of a pool import/export.
+ * have the namespace lock held.
  */
 void
 spa_close(spa_t *spa, const void *tag)
 {
 	ASSERT(zfs_refcount_count(&spa->spa_refcount) > spa->spa_minref ||
-	    MUTEX_HELD(&spa_namespace_lock) ||
-	    spa->spa_load_thread == curthread ||
-	    spa->spa_export_thread == curthread);
+	    MUTEX_HELD(&spa_namespace_lock));
 	(void) zfs_refcount_remove(&spa->spa_refcount, tag);
 }
 
@@ -984,15 +939,13 @@ spa_async_close(spa_t *spa, const void *tag)
 
 /*
  * Check to see if the spa refcount is zero.  Must be called with
- * spa_namespace_lock held or be the spa export thread.  We really
- * compare against spa_minref, which is the  number of references
- * acquired when opening a pool
+ * spa_namespace_lock held.  We really compare against spa_minref, which is the
+ * number of references acquired when opening a pool
  */
 boolean_t
 spa_refcount_zero(spa_t *spa)
 {
-	ASSERT(MUTEX_HELD(&spa_namespace_lock) ||
-	    spa->spa_export_thread == curthread);
+	ASSERT(MUTEX_HELD(&spa_namespace_lock));
 
 	return (zfs_refcount_count(&spa->spa_refcount) == spa->spa_minref);
 }
@@ -1240,8 +1193,6 @@ spa_vdev_enter(spa_t *spa)
 	mutex_enter(&spa->spa_vdev_top_lock);
 	mutex_enter(&spa_namespace_lock);
 
-	ASSERT0(spa->spa_export_thread);
-
 	vdev_autotrim_stop_all(spa);
 
 	return (spa_vdev_config_enter(spa));
@@ -1258,8 +1209,6 @@ spa_vdev_detach_enter(spa_t *spa, uint64_t guid)
 {
 	mutex_enter(&spa->spa_vdev_top_lock);
 	mutex_enter(&spa_namespace_lock);
-
-	ASSERT0(spa->spa_export_thread);
 
 	vdev_autotrim_stop_all(spa);
 
@@ -1996,31 +1945,13 @@ spa_dedup_class(spa_t *spa)
 	return (spa->spa_dedup_class);
 }
 
-boolean_t
-spa_special_has_ddt(spa_t *spa)
-{
-	return (zfs_ddt_data_is_special &&
-	    spa->spa_special_class->mc_groups != 0);
-}
-
 /*
  * Locate an appropriate allocation class
  */
 metaslab_class_t *
-spa_preferred_class(spa_t *spa, const zio_t *zio)
+spa_preferred_class(spa_t *spa, uint64_t size, dmu_object_type_t objtype,
+    uint_t level, uint_t special_smallblk)
 {
-	const zio_prop_t *zp = &zio->io_prop;
-
-	/*
-	 * Override object type for the purposes of selecting a storage class.
-	 * Primarily for DMU_OTN_ types where we can't explicitly control their
-	 * storage class; instead, choose a static type most closely matches
-	 * what we want.
-	 */
-	dmu_object_type_t objtype =
-	    zp->zp_storage_type == DMU_OT_NONE ?
-	    zp->zp_type : zp->zp_storage_type;
-
 	/*
 	 * ZIL allocations determine their class in zio_alloc_zil().
 	 */
@@ -2038,15 +1969,14 @@ spa_preferred_class(spa_t *spa, const zio_t *zio)
 	}
 
 	/* Indirect blocks for user data can land in special if allowed */
-	if (zp->zp_level > 0 &&
-	    (DMU_OT_IS_FILE(objtype) || objtype == DMU_OT_ZVOL)) {
+	if (level > 0 && (DMU_OT_IS_FILE(objtype) || objtype == DMU_OT_ZVOL)) {
 		if (has_special_class && zfs_user_indirect_is_special)
 			return (spa_special_class(spa));
 		else
 			return (spa_normal_class(spa));
 	}
 
-	if (DMU_OT_IS_METADATA(objtype) || zp->zp_level > 0) {
+	if (DMU_OT_IS_METADATA(objtype) || level > 0) {
 		if (has_special_class)
 			return (spa_special_class(spa));
 		else
@@ -2059,7 +1989,7 @@ spa_preferred_class(spa_t *spa, const zio_t *zio)
 	 * zfs_special_class_metadata_reserve_pct exclusively for metadata.
 	 */
 	if (DMU_OT_IS_FILE(objtype) &&
-	    has_special_class && zio->io_size <= zp->zp_zpl_smallblk) {
+	    has_special_class && size <= special_smallblk) {
 		metaslab_class_t *special = spa_special_class(spa);
 		uint64_t alloc = metaslab_class_get_alloc(special);
 		uint64_t space = metaslab_class_get_space(special);
@@ -2590,7 +2520,6 @@ spa_init(spa_mode_t mode)
 	scan_init();
 	qat_init();
 	spa_import_progress_init();
-	zap_init();
 }
 
 void
@@ -2617,7 +2546,6 @@ spa_fini(void)
 	scan_fini();
 	qat_fini();
 	spa_import_progress_destroy();
-	zap_fini();
 
 	avl_destroy(&spa_namespace_avl);
 	avl_destroy(&spa_spare_avl);
@@ -3142,9 +3070,3 @@ ZFS_MODULE_PARAM(zfs, zfs_, special_class_metadata_reserve_pct, UINT, ZMOD_RW,
 
 ZFS_MODULE_PARAM_CALL(zfs_spa, spa_, slop_shift, param_set_slop_shift,
 	param_get_uint, ZMOD_RW, "Reserved free space in pool");
-
-ZFS_MODULE_PARAM(zfs, spa_, num_allocators, INT, ZMOD_RW,
-	"Number of allocators per spa");
-
-ZFS_MODULE_PARAM(zfs, spa_, cpus_per_allocator, INT, ZMOD_RW,
-	"Minimum number of CPUs per allocators");

@@ -178,7 +178,6 @@ zfs_obj_to_path_impl(objset_t *osp, uint64_t obj, sa_handle_t *hdl,
 	dmu_buf_t *prevdb = NULL;
 	dmu_buf_t *sa_db = NULL;
 	char *path = buf + len - 1;
-	char *comp_buf;
 	int error;
 
 	*path = '\0';
@@ -194,10 +193,9 @@ zfs_obj_to_path_impl(objset_t *osp, uint64_t obj, sa_handle_t *hdl,
 		return (error);
 	}
 
-	comp_buf = kmem_alloc(ZAP_MAXNAMELEN_NEW + 2, KM_SLEEP);
 	for (;;) {
 		uint64_t pobj = 0;
-		char *component = comp_buf;
+		char component[MAXNAMELEN + 2];
 		size_t complen;
 		int is_xattrdir = 0;
 
@@ -221,8 +219,7 @@ zfs_obj_to_path_impl(objset_t *osp, uint64_t obj, sa_handle_t *hdl,
 			strcpy(component + 1, "<xattrdir>");
 		} else {
 			error = zap_value_search(osp, pobj, obj,
-			    ZFS_DIRENT_OBJ(-1ULL), component + 1,
-			    ZAP_MAXNAMELEN_NEW);
+			    ZFS_DIRENT_OBJ(-1ULL), component + 1);
 			if (error != 0)
 				break;
 		}
@@ -253,7 +250,6 @@ zfs_obj_to_path_impl(objset_t *osp, uint64_t obj, sa_handle_t *hdl,
 	if (error == 0)
 		(void) memmove(buf, path, buf + len - path);
 
-	kmem_free(comp_buf, ZAP_MAXNAMELEN_NEW +2);
 	return (error);
 }
 

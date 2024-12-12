@@ -1497,7 +1497,7 @@ spa_keystore_change_key_sync_impl(uint64_t rddobj, uint64_t ddobj,
 	}
 
 	zc = kmem_alloc(sizeof (zap_cursor_t), KM_SLEEP);
-	za = zap_attribute_alloc();
+	za = kmem_alloc(sizeof (zap_attribute_t), KM_SLEEP);
 
 	/* Recurse into all child dsl dirs. */
 	for (zap_cursor_init(zc, dp->dp_meta_objset,
@@ -1529,7 +1529,7 @@ spa_keystore_change_key_sync_impl(uint64_t rddobj, uint64_t ddobj,
 	}
 	zap_cursor_fini(zc);
 
-	zap_attribute_free(za);
+	kmem_free(za, sizeof (zap_attribute_t));
 	kmem_free(zc, sizeof (zap_cursor_t));
 
 	dsl_dir_rele(dd, FTAG);

@@ -42,20 +42,20 @@ getzoneid(void)
 	int c = snprintf(path, sizeof (path), "/proc/self/ns/user");
 	/* This API doesn't have any error checking... */
 	if (c < 0 || c >= sizeof (path))
-		return (GLOBAL_ZONEID);
+		return (0);
 
 	ssize_t r = readlink(path, buf, sizeof (buf) - 1);
 	if (r < 0)
-		return (GLOBAL_ZONEID);
+		return (0);
 
 	cp = strchr(buf, '[');
 	if (cp == NULL)
-		return (GLOBAL_ZONEID);
+		return (0);
 	cp++;
 
 	unsigned long n = strtoul(cp, NULL, 10);
 	if (n == ULONG_MAX && errno == ERANGE)
-		return (GLOBAL_ZONEID);
+		return (0);
 	zoneid_t z = (zoneid_t)n;
 
 	return (z);

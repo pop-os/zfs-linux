@@ -22,6 +22,8 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * $FreeBSD$
  */
 
 #ifndef _OPENSOLARIS_SYS_TIME_H_
@@ -89,6 +91,6 @@ gethrtime(void)
 {
 	struct timespec ts;
 	clock_gettime(CLOCK_UPTIME, &ts);
-	return (((uint64_t)ts.tv_sec) * NANOSEC + ts.tv_nsec);
+	return (((u_int64_t)ts.tv_sec) * NANOSEC + ts.tv_nsec);
 }
 #endif	/* !_OPENSOLARIS_SYS_TIME_H_ */

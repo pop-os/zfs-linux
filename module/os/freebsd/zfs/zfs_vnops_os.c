@@ -230,15 +230,9 @@ zfs_open(vnode_t **vpp, int flag, cred_t *cr)
 		return (SET_ERROR(EPERM));
 	}
 
-	/*
-	 * Keep a count of the synchronous opens in the znode.  On first
-	 * synchronous open we must convert all previous async transactions
-	 * into sync to keep correct ordering.
-	 */
-	if (flag & O_SYNC) {
-		if (atomic_inc_32_nv(&zp->z_sync_cnt) == 1)
-			zil_async_to_sync(zfsvfs->z_log, zp->z_id);
-	}
+	/* Keep a count of the synchronous opens in the znode */
+	if (flag & O_SYNC)
+		atomic_inc_32(&zp->z_sync_cnt);
 
 	zfs_exit(zfsvfs, FTAG);
 	return (0);
@@ -774,8 +768,6 @@ zfs_lookup(vnode_t *dvp, const char *nm, vnode_t **vpp,
 	}
 	if (zfs_has_ctldir(zdp) && strcmp(nm, ZFS_CTLDIR_NAME) == 0) {
 		zfs_exit(zfsvfs, FTAG);
-		if (zfsvfs->z_show_ctldir == ZFS_SNAPDIR_DISABLED)
-			return (SET_ERROR(ENOENT));
 		if ((cnp->cn_flags & ISLASTCN) != 0 && nameiop != LOOKUP)
 			return (SET_ERROR(ENOTSUP));
 		error = zfsctl_root(zfsvfs, cnp->cn_lkflags, vpp);
@@ -894,14 +886,6 @@ zfs_lookup(vnode_t *dvp, const char *nm, vnode_t **vpp,
 	return (error);
 }
 
-static inline bool
-is_nametoolong(zfsvfs_t *zfsvfs, const char *name)
-{
-	size_t dlen = strlen(name);
-	return ((!zfsvfs->z_longname && dlen >= ZAP_MAXNAMELEN) ||
-	    dlen >= ZAP_MAXNAMELEN_NEW);
-}
-
 /*
  * Attempt to create a new entry in a directory.  If the entry
  * already exists, truncate the file if permissible, else return
@@ -946,9 +930,6 @@ zfs_create(znode_t *dzp, const char *name, vattr_t *vap, int excl, int mode,
 #ifdef DEBUG_VFS_LOCKS
 	vnode_t	*dvp = ZTOV(dzp);
 #endif
-
-	if (is_nametoolong(zfsvfs, name))
-		return (SET_ERROR(ENAMETOOLONG));
 
 	/*
 	 * If we have an ephemeral id, ACL, or XVATTR then
@@ -1314,9 +1295,6 @@ zfs_mkdir(znode_t *dzp, const char *dirname, vattr_t *vap, znode_t **zpp,
 
 	ASSERT3U(vap->va_type, ==, VDIR);
 
-	if (is_nametoolong(zfsvfs, dirname))
-		return (SET_ERROR(ENAMETOOLONG));
-
 	/*
 	 * If we have an ephemeral id, ACL, or XVATTR then
 	 * make sure file system is at proper version
@@ -1584,7 +1562,7 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 	caddr_t		outbuf;
 	size_t		bufsize;
 	zap_cursor_t	zc;
-	zap_attribute_t	*zap;
+	zap_attribute_t	zap;
 	uint_t		bytes_wanted;
 	uint64_t	offset; /* must be unsigned; checks for < 1 */
 	uint64_t	parent;
@@ -1632,7 +1610,6 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 	os = zfsvfs->z_os;
 	offset = zfs_uio_offset(uio);
 	prefetch = zp->z_zn_prefetch;
-	zap = zap_attribute_long_alloc();
 
 	/*
 	 * Initialize the iterator cursor.
@@ -1688,33 +1665,33 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 		 * Special case `.', `..', and `.zfs'.
 		 */
 		if (offset == 0) {
-			(void) strcpy(zap->za_name, ".");
-			zap->za_normalization_conflict = 0;
+			(void) strcpy(zap.za_name, ".");
+			zap.za_normalization_conflict = 0;
 			objnum = zp->z_id;
 			type = DT_DIR;
 		} else if (offset == 1) {
-			(void) strcpy(zap->za_name, "..");
-			zap->za_normalization_conflict = 0;
+			(void) strcpy(zap.za_name, "..");
+			zap.za_normalization_conflict = 0;
 			objnum = parent;
 			type = DT_DIR;
 		} else if (offset == 2 && zfs_show_ctldir(zp)) {
-			(void) strcpy(zap->za_name, ZFS_CTLDIR_NAME);
-			zap->za_normalization_conflict = 0;
+			(void) strcpy(zap.za_name, ZFS_CTLDIR_NAME);
+			zap.za_normalization_conflict = 0;
 			objnum = ZFSCTL_INO_ROOT;
 			type = DT_DIR;
 		} else {
 			/*
 			 * Grab next entry.
 			 */
-			if ((error = zap_cursor_retrieve(&zc, zap))) {
+			if ((error = zap_cursor_retrieve(&zc, &zap))) {
 				if ((*eofp = (error == ENOENT)) != 0)
 					break;
 				else
 					goto update;
 			}
 
-			if (zap->za_integer_length != 8 ||
-			    zap->za_num_integers != 1) {
+			if (zap.za_integer_length != 8 ||
+			    zap.za_num_integers != 1) {
 				cmn_err(CE_WARN, "zap_readdir: bad directory "
 				    "entry, obj = %lld, offset = %lld\n",
 				    (u_longlong_t)zp->z_id,
@@ -1723,15 +1700,15 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 				goto update;
 			}
 
-			objnum = ZFS_DIRENT_OBJ(zap->za_first_integer);
+			objnum = ZFS_DIRENT_OBJ(zap.za_first_integer);
 			/*
 			 * MacOS X can extract the object type here such as:
 			 * uint8_t type = ZFS_DIRENT_TYPE(zap.za_first_integer);
 			 */
-			type = ZFS_DIRENT_TYPE(zap->za_first_integer);
+			type = ZFS_DIRENT_TYPE(zap.za_first_integer);
 		}
 
-		reclen = DIRENT64_RECLEN(strlen(zap->za_name));
+		reclen = DIRENT64_RECLEN(strlen(zap.za_name));
 
 		/*
 		 * Will this entry fit in the buffer?
@@ -1751,10 +1728,10 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 		 */
 		odp->d_ino = objnum;
 		odp->d_reclen = reclen;
-		odp->d_namlen = strlen(zap->za_name);
+		odp->d_namlen = strlen(zap.za_name);
 		/* NOTE: d_off is the offset for the *next* entry. */
 		next = &odp->d_off;
-		strlcpy(odp->d_name, zap->za_name, odp->d_namlen + 1);
+		strlcpy(odp->d_name, zap.za_name, odp->d_namlen + 1);
 		odp->d_type = type;
 		dirent_terminate(odp);
 		odp = (dirent64_t *)((intptr_t)odp + reclen);
@@ -1805,7 +1782,6 @@ zfs_readdir(vnode_t *vp, zfs_uio_t *uio, cred_t *cr, int *eofp,
 
 update:
 	zap_cursor_fini(&zc);
-	zap_attribute_free(zap);
 	if (zfs_uio_segflg(uio) != UIO_SYSSPACE || zfs_uio_iovcnt(uio) != 1)
 		kmem_free(outbuf, bufsize);
 
@@ -1900,8 +1876,6 @@ zfs_getattr(vnode_t *vp, vattr_t *vap, int flags, cred_t *cr)
 	vap->va_size = zp->z_size;
 	if (vp->v_type == VBLK || vp->v_type == VCHR)
 		vap->va_rdev = zfs_cmpldev(rdev);
-	else
-		vap->va_rdev = 0;
 	vap->va_gen = zp->z_gen;
 	vap->va_flags = 0;	/* FreeBSD: Reset chflags(2) flags. */
 	vap->va_filerev = zp->z_seq;
@@ -3310,9 +3284,6 @@ zfs_rename(znode_t *sdzp, const char *sname, znode_t *tdzp, const char *tname,
 	int error;
 	svp = tvp = NULL;
 
-	if (is_nametoolong(tdzp->z_zfsvfs, tname))
-		return (SET_ERROR(ENAMETOOLONG));
-
 	if (rflags != 0 || wo_vap != NULL)
 		return (SET_ERROR(EINVAL));
 
@@ -3376,9 +3347,6 @@ zfs_symlink(znode_t *dzp, const char *name, vattr_t *vap,
 	uint64_t	txtype = TX_SYMLINK;
 
 	ASSERT3S(vap->va_type, ==, VLNK);
-
-	if (is_nametoolong(zfsvfs, name))
-		return (SET_ERROR(ENAMETOOLONG));
 
 	if ((error = zfs_enter_verify_zp(zfsvfs, dzp, FTAG)) != 0)
 		return (error);
@@ -3561,9 +3529,6 @@ zfs_link(znode_t *tdzp, znode_t *szp, const char *name, cred_t *cr,
 	uid_t		owner;
 
 	ASSERT3S(ZTOV(tdzp)->v_type, ==, VDIR);
-
-	if (is_nametoolong(zfsvfs, name))
-		return (SET_ERROR(ENAMETOOLONG));
 
 	if ((error = zfs_enter_verify_zp(zfsvfs, tdzp, FTAG)) != 0)
 		return (error);
@@ -4102,10 +4067,6 @@ zfs_putpages(struct vnode *vp, vm_page_t *ma, size_t len, int flags,
 	}
 	zfs_vmobject_wunlock(object);
 
-	boolean_t commit = (flags & (zfs_vm_pagerput_sync |
-	    zfs_vm_pagerput_inval)) != 0 ||
-	    zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS;
-
 	if (ncount == 0)
 		goto out;
 
@@ -4158,7 +4119,7 @@ zfs_putpages(struct vnode *vp, vm_page_t *ma, size_t len, int flags,
 		 * but that would make the locking messier
 		 */
 		zfs_log_write(zfsvfs->z_log, tx, TX_WRITE, zp, off,
-		    len, commit, B_FALSE, NULL, NULL);
+		    len, 0, NULL, NULL);
 
 		zfs_vmobject_wlock(object);
 		for (i = 0; i < ncount; i++) {
@@ -4173,7 +4134,8 @@ zfs_putpages(struct vnode *vp, vm_page_t *ma, size_t len, int flags,
 
 out:
 	zfs_rangelock_exit(lr);
-	if (commit)
+	if ((flags & (zfs_vm_pagerput_sync | zfs_vm_pagerput_inval)) != 0 ||
+	    zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
 		zil_commit(zfsvfs->z_log, zp->z_id);
 
 	dataset_kstats_update_write_kstats(&zfsvfs->z_kstat, len);
@@ -4293,8 +4255,6 @@ ioflags(int ioflags)
 		flags |= O_APPEND;
 	if (ioflags & IO_NDELAY)
 		flags |= O_NONBLOCK;
-	if (ioflags & IO_DIRECT)
-		flags |= O_DIRECT;
 	if (ioflags & IO_SYNC)
 		flags |= O_SYNC;
 
@@ -4314,36 +4274,9 @@ static int
 zfs_freebsd_read(struct vop_read_args *ap)
 {
 	zfs_uio_t uio;
-	int error = 0;
 	zfs_uio_init(&uio, ap->a_uio);
-	error = zfs_read(VTOZ(ap->a_vp), &uio, ioflags(ap->a_ioflag),
-	    ap->a_cred);
-	/*
-	 * XXX We occasionally get an EFAULT for Direct I/O reads on
-	 * FreeBSD 13. This still needs to be resolved. The EFAULT comes
-	 * from:
-	 * zfs_uio_get__dio_pages_alloc() ->
-	 * zfs_uio_get_dio_pages_impl() ->
-	 * zfs_uio_iov_step() ->
-	 * zfs_uio_get_user_pages().
-	 * We return EFAULT from zfs_uio_iov_step(). When a Direct I/O
-	 * read fails to map in the user pages (returning EFAULT) the
-	 * Direct I/O request is broken up into two separate IO requests
-	 * and issued separately using Direct I/O.
-	 */
-#ifdef ZFS_DEBUG
-	if (error == EFAULT && uio.uio_extflg & UIO_DIRECT) {
-#if 0
-		printf("%s(%d): Direct I/O read returning EFAULT "
-		    "uio = %p, zfs_uio_offset(uio) = %lu "
-		    "zfs_uio_resid(uio) = %lu\n",
-		    __FUNCTION__, __LINE__, &uio, zfs_uio_offset(&uio),
-		    zfs_uio_resid(&uio));
-#endif
-	}
-
-#endif
-	return (error);
+	return (zfs_read(VTOZ(ap->a_vp), &uio, ioflags(ap->a_ioflag),
+	    ap->a_cred));
 }
 
 #ifndef _SYS_SYSPROTO_H_
@@ -6021,8 +5954,7 @@ zfs_vptocnp(struct vop_vptocnp_args *ap)
 		znode_t *dzp;
 		size_t len;
 
-		error = zfs_znode_parent_and_name(zp, &dzp, name,
-		    sizeof (name));
+		error = zfs_znode_parent_and_name(zp, &dzp, name);
 		if (error == 0) {
 			len = strlen(name);
 			if (*ap->a_buflen < len)
@@ -6182,9 +6114,7 @@ zfs_freebsd_copy_file_range(struct vop_copy_file_range_args *ap)
 	    error == EOPNOTSUPP)
 		goto bad_locked_fallback;
 	*ap->a_lenp = (size_t)len;
-#ifdef MAC
 out_locked:
-#endif
 	if (invp != outvp)
 		VOP_UNLOCK(invp);
 	VOP_UNLOCK(outvp);

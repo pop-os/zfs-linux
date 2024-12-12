@@ -32,8 +32,8 @@ extern "C" {
 
 struct abd_scatter {
 	uint_t		abd_offset;
-	uint_t		abd_iovcnt;
-	struct iovec	abd_iov[1]; /* actually variable-length */
+	uint_t		abd_nents;
+	struct scatterlist *abd_sgl;
 };
 
 struct abd_linear {

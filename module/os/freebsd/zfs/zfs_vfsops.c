@@ -614,14 +614,6 @@ acl_type_changed_cb(void *arg, uint64_t newval)
 	zfsvfs->z_acl_type = newval;
 }
 
-static void
-longname_changed_cb(void *arg, uint64_t newval)
-{
-	zfsvfs_t *zfsvfs = arg;
-
-	zfsvfs->z_longname = newval;
-}
-
 static int
 zfs_register_callbacks(vfs_t *vfsp)
 {
@@ -759,8 +751,6 @@ zfs_register_callbacks(vfs_t *vfsp)
 	error = error ? error : dsl_prop_register(ds,
 	    zfs_prop_to_name(ZFS_PROP_ACLINHERIT), acl_inherit_changed_cb,
 	    zfsvfs);
-	error = error ? error : dsl_prop_register(ds,
-	    zfs_prop_to_name(ZFS_PROP_LONGNAME), longname_changed_cb, zfsvfs);
 	dsl_pool_config_exit(dmu_objset_pool(os), FTAG);
 	if (error)
 		goto unregister;
@@ -1499,8 +1489,7 @@ zfs_statfs(vfs_t *vfsp, struct statfs *statp)
 	strlcpy(statp->f_mntonname, vfsp->mnt_stat.f_mntonname,
 	    sizeof (statp->f_mntonname));
 
-	statp->f_namemax =
-	    zfsvfs->z_longname ? (ZAP_MAXNAMELEN_NEW - 1) : (MAXNAMELEN - 1);
+	statp->f_namemax = MAXNAMELEN - 1;
 
 	zfs_exit(zfsvfs, FTAG);
 	return (0);
@@ -1647,18 +1636,9 @@ zfsvfs_teardown(zfsvfs_t *zfsvfs, boolean_t unmounting)
 	zfs_unregister_callbacks(zfsvfs);
 
 	/*
-	 * Evict cached data. We must write out any dirty data before
-	 * disowning the dataset.
+	 * Evict cached data
 	 */
-	objset_t *os = zfsvfs->z_os;
-	boolean_t os_dirty = B_FALSE;
-	for (int t = 0; t < TXG_SIZE; t++) {
-		if (dmu_objset_is_dirty(os, t)) {
-			os_dirty = B_TRUE;
-			break;
-		}
-	}
-	if (!zfs_is_readonly(zfsvfs) && os_dirty)
+	if (!zfs_is_readonly(zfsvfs))
 		txg_wait_synced(dmu_objset_pool(zfsvfs->z_os), 0);
 	dmu_objset_evict_dbufs(zfsvfs->z_os);
 	dd = zfsvfs->z_os->os_dsl_dataset->ds_dir;

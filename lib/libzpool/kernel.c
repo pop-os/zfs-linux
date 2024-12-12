@@ -92,8 +92,7 @@ zk_thread_wrapper(void *arg)
 }
 
 kthread_t *
-zk_thread_create(const char *name, void (*func)(void *), void *arg,
-    size_t stksize, int state)
+zk_thread_create(void (*func)(void *), void *arg, size_t stksize, int state)
 {
 	pthread_attr_t attr;
 	pthread_t tid;
@@ -140,8 +139,6 @@ zk_thread_create(const char *name, void (*func)(void *), void *arg,
 	ztw->arg = arg;
 	VERIFY0(pthread_create(&tid, &attr, zk_thread_wrapper, ztw));
 	VERIFY0(pthread_attr_destroy(&attr));
-
-	pthread_setname_np(tid, name);
 
 	return ((void *)(uintptr_t)tid);
 }
@@ -1380,12 +1377,6 @@ zfs_file_deallocate(zfs_file_t *fp, loff_t offset, loff_t len)
 #if defined(__linux__)
 	rc = fallocate(fp->f_fd,
 	    FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, offset, len);
-#elif defined(__FreeBSD__) && (__FreeBSD_version >= 1400029)
-	struct spacectl_range rqsr = {
-		.r_offset = offset,
-		.r_len = len,
-	};
-	rc = fspacectl(fp->f_fd, SPACECTL_DEALLOC, &rqsr, 0, &rqsr);
 #else
 	(void) fp, (void) offset, (void) len;
 	rc = EOPNOTSUPP;

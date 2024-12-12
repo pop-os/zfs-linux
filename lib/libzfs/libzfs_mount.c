@@ -83,6 +83,8 @@
 #include <sys/systeminfo.h>
 #define	MAXISALEN	257	/* based on sysinfo(2) man page */
 
+static int mount_tp_nthr = 512;	/* tpool threads for multi-threaded mounting */
+
 static void zfs_mount_task(void *);
 
 static const proto_table_t proto_table[SA_PROTOCOL_COUNT] = {
@@ -1096,10 +1098,7 @@ zfs_dispatch_mount(libzfs_handle_t *hdl, zfs_handle_t **handles,
 	mnt_param->mnt_func = func;
 	mnt_param->mnt_data = data;
 
-	if (tpool_dispatch(tp, zfs_mount_task, (void*)mnt_param)) {
-		/* Could not dispatch to thread pool; execute directly */
-		zfs_mount_task((void*)mnt_param);
-	}
+	(void) tpool_dispatch(tp, zfs_mount_task, (void*)mnt_param);
 }
 
 /*
@@ -1203,20 +1202,19 @@ out:
  *
  * Callbacks are issued in one of two ways:
  *
- * 1. Sequentially: If the nthr argument is <= 1 or the ZFS_SERIAL_MOUNT
+ * 1. Sequentially: If the parallel argument is B_FALSE or the ZFS_SERIAL_MOUNT
  *    environment variable is set, then we issue callbacks sequentially.
  *
- * 2. In parallel: If the nthr argument is > 1 and the ZFS_SERIAL_MOUNT
+ * 2. In parallel: If the parallel argument is B_TRUE and the ZFS_SERIAL_MOUNT
  *    environment variable is not set, then we use a tpool to dispatch threads
  *    to mount filesystems in parallel. This function dispatches tasks to mount
  *    the filesystems at the top-level mountpoints, and these tasks in turn
  *    are responsible for recursively mounting filesystems in their children
- *    mountpoints.  The value of the nthr argument will be the number of worker
- *    threads for the thread pool.
+ *    mountpoints.
  */
 void
 zfs_foreach_mountpoint(libzfs_handle_t *hdl, zfs_handle_t **handles,
-    size_t num_handles, zfs_iter_f func, void *data, uint_t nthr)
+    size_t num_handles, zfs_iter_f func, void *data, boolean_t parallel)
 {
 	zoneid_t zoneid = getzoneid();
 
@@ -1225,7 +1223,7 @@ zfs_foreach_mountpoint(libzfs_handle_t *hdl, zfs_handle_t **handles,
 	 * variable that can be used as a convenience to do a/b comparison
 	 * of serial vs. parallel mounting.
 	 */
-	boolean_t serial_mount = nthr <= 1 ||
+	boolean_t serial_mount = !parallel ||
 	    (getenv("ZFS_SERIAL_MOUNT") != NULL);
 
 	/*
@@ -1245,7 +1243,7 @@ zfs_foreach_mountpoint(libzfs_handle_t *hdl, zfs_handle_t **handles,
 	 * Issue the callback function for each dataset using a parallel
 	 * algorithm that uses a thread pool to manage threads.
 	 */
-	tpool_t *tp = tpool_create(1, nthr, 0, NULL);
+	tpool_t *tp = tpool_create(1, mount_tp_nthr, 0, NULL);
 
 	/*
 	 * There may be multiple "top level" mountpoints outside of the pool's
@@ -1272,12 +1270,10 @@ zfs_foreach_mountpoint(libzfs_handle_t *hdl, zfs_handle_t **handles,
 
 /*
  * Mount and share all datasets within the given pool.  This assumes that no
- * datasets within the pool are currently mounted.  nthr will be number of
- * worker threads to use while mounting datasets.
+ * datasets within the pool are currently mounted.
  */
 int
-zpool_enable_datasets(zpool_handle_t *zhp, const char *mntopts, int flags,
-    uint_t nthr)
+zpool_enable_datasets(zpool_handle_t *zhp, const char *mntopts, int flags)
 {
 	get_all_cb_t cb = { 0 };
 	mount_state_t ms = { 0 };
@@ -1303,7 +1299,7 @@ zpool_enable_datasets(zpool_handle_t *zhp, const char *mntopts, int flags,
 	ms.ms_mntopts = mntopts;
 	ms.ms_mntflags = flags;
 	zfs_foreach_mountpoint(zhp->zpool_hdl, cb.cb_handles, cb.cb_used,
-	    zfs_mount_one, &ms, nthr);
+	    zfs_mount_one, &ms, B_TRUE);
 	if (ms.ms_mntstatus != 0)
 		ret = EZFS_MOUNTFAILED;
 
@@ -1314,7 +1310,7 @@ zpool_enable_datasets(zpool_handle_t *zhp, const char *mntopts, int flags,
 	 */
 	ms.ms_mntstatus = 0;
 	zfs_foreach_mountpoint(zhp->zpool_hdl, cb.cb_handles, cb.cb_used,
-	    zfs_share_one, &ms, 1);
+	    zfs_share_one, &ms, B_FALSE);
 	if (ms.ms_mntstatus != 0)
 		ret = EZFS_SHAREFAILED;
 	else

@@ -67,8 +67,6 @@ function cleanup
 	#
 	wait_freeing $TESTPOOL
 	sync_pool $TESTPOOL
-
-	reset_quota $TESTPOOL/$TESTCTR/$TESTFS1
 }
 
 log_onexit cleanup

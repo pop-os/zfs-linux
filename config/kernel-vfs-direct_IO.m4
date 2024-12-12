@@ -1,5 +1,5 @@
 dnl #
-dnl # Check for Direct I/O interfaces.
+dnl # Check for direct IO interfaces.
 dnl #
 AC_DEFUN([ZFS_AC_KERNEL_SRC_VFS_DIRECT_IO], [
 	ZFS_LINUX_TEST_SRC([direct_io_iter], [

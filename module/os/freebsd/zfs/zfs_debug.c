@@ -213,19 +213,12 @@ __dprintf(boolean_t dprint, const char *file, const char *func,
 	}
 
 	/*
-	 * Get rid of trailing newline for dprintf logs.
+	 * Get rid of trailing newline.
 	 */
-	if (dprint && buf[0] != '\0') {
-		nl = &buf[strlen(buf) - 1];
-		if (*nl == '\n')
-			*nl = '\0';
-	}
+	nl = strrchr(buf, '\n');
+	if (nl != NULL)
+		*nl = '\0';
 
-	/*
-	 * To get this data:
-	 *
-	 * $ sysctl -n kstat.zfs.misc.dbgmsg
-	 */
 	__zfs_dbgmsg(buf);
 
 	kmem_free(buf, size);

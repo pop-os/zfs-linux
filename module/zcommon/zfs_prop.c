@@ -238,7 +238,6 @@ zfs_prop_init(void)
 	static const zprop_index_t snapdir_table[] = {
 		{ "hidden",	ZFS_SNAPDIR_HIDDEN },
 		{ "visible",	ZFS_SNAPDIR_VISIBLE },
-		{ "disabled",	ZFS_SNAPDIR_DISABLED },
 		{ NULL }
 	};
 
@@ -363,7 +362,7 @@ zfs_prop_init(void)
 
 	static const zprop_index_t xattr_table[] = {
 		{ "off",	ZFS_XATTR_OFF },
-		{ "on",		ZFS_XATTR_SA },
+		{ "on",		ZFS_XATTR_DIR },
 		{ "sa",		ZFS_XATTR_SA },
 		{ "dir",	ZFS_XATTR_DIR },
 		{ NULL }
@@ -394,13 +393,6 @@ zfs_prop_init(void)
 		{ "geom",	ZFS_VOLMODE_GEOM },
 		{ "dev",	ZFS_VOLMODE_DEV },
 		{ "none",	ZFS_VOLMODE_NONE },
-		{ NULL }
-	};
-
-	static const zprop_index_t direct_table[] = {
-		{ "disabled",	ZFS_DIRECT_DISABLED },
-		{ "standard",	ZFS_DIRECT_STANDARD },
-		{ "always",	ZFS_DIRECT_ALWAYS },
 		{ NULL }
 	};
 
@@ -437,7 +429,7 @@ zfs_prop_init(void)
 	    "COMPRESS", compress_table, sfeatures);
 	zprop_register_index(ZFS_PROP_SNAPDIR, "snapdir", ZFS_SNAPDIR_HIDDEN,
 	    PROP_INHERIT, ZFS_TYPE_FILESYSTEM,
-	    "disabled | hidden | visible", "SNAPDIR", snapdir_table, sfeatures);
+	    "hidden | visible", "SNAPDIR", snapdir_table, sfeatures);
 	zprop_register_index(ZFS_PROP_SNAPDEV, "snapdev", ZFS_SNAPDEV_HIDDEN,
 	    PROP_INHERIT, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
 	    "hidden | visible", "SNAPDEV", snapdev_table, sfeatures);
@@ -476,7 +468,7 @@ zfs_prop_init(void)
 	zprop_register_index(ZFS_PROP_LOGBIAS, "logbias", ZFS_LOGBIAS_LATENCY,
 	    PROP_INHERIT, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
 	    "latency | throughput", "LOGBIAS", logbias_table, sfeatures);
-	zprop_register_index(ZFS_PROP_XATTR, "xattr", ZFS_XATTR_SA,
+	zprop_register_index(ZFS_PROP_XATTR, "xattr", ZFS_XATTR_DIR,
 	    PROP_INHERIT, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_SNAPSHOT,
 	    "on | off | dir | sa", "XATTR", xattr_table, sfeatures);
 	zprop_register_index(ZFS_PROP_DNODESIZE, "dnodesize",
@@ -487,10 +479,6 @@ zfs_prop_init(void)
 	    ZFS_VOLMODE_DEFAULT, PROP_INHERIT,
 	    ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME,
 	    "default | full | geom | dev | none", "VOLMODE", volmode_table,
-	    sfeatures);
-	zprop_register_index(ZFS_PROP_DIRECT, "direct",
-	    ZFS_DIRECT_STANDARD, PROP_INHERIT, ZFS_TYPE_FILESYSTEM,
-	    "disabled | standard | always", "DIRECT", direct_table,
 	    sfeatures);
 
 	/* inherit index (boolean) properties */
@@ -641,9 +629,6 @@ zfs_prop_init(void)
 	    ZVOL_DEFAULT_BLOCKSIZE, PROP_ONETIME,
 	    ZFS_TYPE_VOLUME, "512 to 128k, power of 2",	"VOLBLOCK", B_FALSE,
 	    sfeatures);
-	zprop_register_index(ZFS_PROP_VOLTHREADING, "volthreading",
-	    1, PROP_DEFAULT, ZFS_TYPE_VOLUME, "on | off", "zvol threading",
-	    boolean_table, sfeatures);
 	zprop_register_number(ZFS_PROP_USEDSNAP, "usedbysnapshots", 0,
 	    PROP_READONLY, ZFS_TYPE_FILESYSTEM | ZFS_TYPE_VOLUME, "<size>",
 	    "USEDSNAP", B_FALSE, sfeatures);
@@ -772,10 +757,6 @@ zfs_prop_init(void)
 	    PROP_TYPE_NUMBER, 0, NULL, PROP_READONLY, ZFS_TYPE_FILESYSTEM |
 	    ZFS_TYPE_VOLUME, "<date>", "SNAPSHOTS_CHANGED", B_FALSE, B_TRUE,
 	    B_TRUE, NULL, sfeatures);
-
-	zprop_register_index(ZFS_PROP_LONGNAME, "longname", 0, PROP_INHERIT,
-	    ZFS_TYPE_FILESYSTEM, "on | off", "LONGNAME", boolean_table,
-	    sfeatures);
 
 	zfs_mod_list_supported_free(sfeatures);
 }

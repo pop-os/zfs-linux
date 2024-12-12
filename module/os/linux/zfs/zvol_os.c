@@ -390,7 +390,7 @@ zvol_discard(zv_request_t *zvr)
 	if (error != 0) {
 		dmu_tx_abort(tx);
 	} else {
-		zvol_log_truncate(zv, tx, start, size);
+		zvol_log_truncate(zv, tx, start, size, B_TRUE);
 		dmu_tx_commit(tx);
 		error = dmu_free_long_range(zv->zv_objset,
 		    ZVOL_OBJ, start, size);
@@ -520,7 +520,7 @@ zvol_request_impl(zvol_state_t *zv, struct bio *bio, struct request *rq,
 		goto out;
 	}
 
-	if (zvol_request_sync || zv->zv_threading == B_FALSE)
+	if (zvol_request_sync)
 		force_sync = 1;
 
 	zv_request_t zvr = {
@@ -551,8 +551,8 @@ zvol_request_impl(zvol_state_t *zv, struct bio *bio, struct request *rq,
 		blk_mq_hw_queue =
 		    rq->q->queue_hw_ctx[rq->q->mq_map[rq->cpu]]->queue_num;
 #endif
-	taskq_hash = cityhash3((uintptr_t)zv, offset >> ZVOL_TASKQ_OFFSET_SHIFT,
-	    blk_mq_hw_queue);
+	taskq_hash = cityhash4((uintptr_t)zv, offset >> ZVOL_TASKQ_OFFSET_SHIFT,
+	    blk_mq_hw_queue, 0);
 	tq_idx = taskq_hash % ztqs->tqs_cnt;
 
 	if (rw == WRITE) {
@@ -790,7 +790,6 @@ retry:
 			if (!mutex_tryenter(&spa_namespace_lock)) {
 				mutex_exit(&zv->zv_state_lock);
 				rw_exit(&zv->zv_suspend_lock);
-				drop_suspend = B_FALSE;
 
 #ifdef HAVE_BLKDEV_GET_ERESTARTSYS
 				schedule();
@@ -1406,7 +1405,7 @@ zvol_alloc(dev_t dev, const char *name, uint64_t volblocksize)
 	zso->zvo_queue->queuedata = zv;
 	zso->zvo_dev = dev;
 	zv->zv_open_count = 0;
-	strlcpy(zv->zv_name, name, sizeof (zv->zv_name));
+	strlcpy(zv->zv_name, name, MAXNAMELEN);
 
 	zfs_rangelock_init(&zv->zv_rangelock, NULL, NULL);
 	rw_init(&zv->zv_suspend_lock, NULL, RW_DEFAULT, NULL);
@@ -1605,7 +1604,6 @@ zvol_os_create_minor(const char *name)
 	int error = 0;
 	int idx;
 	uint64_t hash = zvol_name_hash(name);
-	uint64_t volthreading;
 	bool replayed_zil = B_FALSE;
 
 	if (zvol_inhibit_dev)
@@ -1658,12 +1656,6 @@ zvol_os_create_minor(const char *name)
 
 	zv->zv_volsize = volsize;
 	zv->zv_objset = os;
-
-	/* Default */
-	zv->zv_threading = B_TRUE;
-	if (dsl_prop_get_integer(name, "volthreading", &volthreading, NULL)
-	    == 0)
-		zv->zv_threading = volthreading;
 
 	set_capacity(zv->zv_zso->zvo_disk, zv->zv_volsize >> 9);
 

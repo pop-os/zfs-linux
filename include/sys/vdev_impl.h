@@ -35,6 +35,7 @@
 #include <sys/nvpair.h>
 #include <sys/space_map.h>
 #include <sys/vdev.h>
+#include <sys/dkio.h>
 #include <sys/uberblock_impl.h>
 #include <sys/vdev_indirect_mapping.h>
 #include <sys/vdev_indirect_births.h>
@@ -72,7 +73,7 @@ typedef void	vdev_fini_func_t(vdev_t *vd);
 typedef int	vdev_open_func_t(vdev_t *vd, uint64_t *size, uint64_t *max_size,
     uint64_t *ashift, uint64_t *pshift);
 typedef void	vdev_close_func_t(vdev_t *vd);
-typedef uint64_t vdev_asize_func_t(vdev_t *vd, uint64_t psize, uint64_t txg);
+typedef uint64_t vdev_asize_func_t(vdev_t *vd, uint64_t psize);
 typedef uint64_t vdev_min_asize_func_t(vdev_t *vd);
 typedef uint64_t vdev_min_alloc_func_t(vdev_t *vd);
 typedef void	vdev_io_start_func_t(zio_t *zio);
@@ -281,7 +282,6 @@ struct vdev {
 	uint64_t	vdev_noalloc;	/* device is passivated?	*/
 	uint64_t	vdev_removing;	/* device is being removed?	*/
 	uint64_t	vdev_failfast;	/* device failfast setting	*/
-	boolean_t	vdev_rz_expanding; /* raidz is being expanded?	*/
 	boolean_t	vdev_ishole;	/* is a hole in the namespace	*/
 	uint64_t	vdev_top_zap;
 	vdev_alloc_bias_t vdev_alloc_bias; /* metaslab allocation bias	*/
@@ -448,14 +448,9 @@ struct vdev {
 	/*
 	 * We rate limit ZIO delay, deadman, and checksum events, since they
 	 * can flood ZED with tons of events when a drive is acting up.
-	 *
-	 * We also rate limit Direct I/O write verify errors, since a user might
-	 * be continually manipulating a buffer that can flood ZED with tons of
-	 * events.
 	 */
 	zfs_ratelimit_t vdev_delay_rl;
 	zfs_ratelimit_t vdev_deadman_rl;
-	zfs_ratelimit_t vdev_dio_verify_rl;
 	zfs_ratelimit_t vdev_checksum_rl;
 
 	/*
@@ -544,7 +539,6 @@ typedef struct vdev_label {
 /*
  * Size of embedded boot loader region on each label.
  * The total size of the first two labels plus the boot area is 4MB.
- * On RAIDZ, this space is overwritten during RAIDZ expansion.
  */
 #define	VDEV_BOOT_SIZE		(7ULL << 19)			/* 3.5M */
 
@@ -617,7 +611,7 @@ extern vdev_ops_t vdev_indirect_ops;
  */
 extern void vdev_default_xlate(vdev_t *vd, const range_seg64_t *logical_rs,
     range_seg64_t *physical_rs, range_seg64_t *remain_rs);
-extern uint64_t vdev_default_asize(vdev_t *vd, uint64_t psize, uint64_t txg);
+extern uint64_t vdev_default_asize(vdev_t *vd, uint64_t psize);
 extern uint64_t vdev_default_min_asize(vdev_t *vd);
 extern uint64_t vdev_get_min_asize(vdev_t *vd);
 extern void vdev_set_min_asize(vdev_t *vd);
@@ -653,11 +647,6 @@ extern uint_t zfs_vdev_min_auto_ashift;
 extern uint_t zfs_vdev_max_auto_ashift;
 int param_set_min_auto_ashift(ZFS_MODULE_PARAM_ARGS);
 int param_set_max_auto_ashift(ZFS_MODULE_PARAM_ARGS);
-
-/*
- * VDEV checksum verification for Direct I/O writes
- */
-extern uint_t zfs_vdev_direct_write_verify;
 
 #ifdef	__cplusplus
 }

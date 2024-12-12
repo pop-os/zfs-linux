@@ -101,7 +101,7 @@ gethrtime(void)
 {
 	struct timespec ts;
 	(void) clock_gettime(CLOCK_MONOTONIC, &ts);
-	return ((((uint64_t)ts.tv_sec) * NANOSEC) + ts.tv_nsec);
+	return ((((u_int64_t)ts.tv_sec) * NANOSEC) + ts.tv_nsec);
 }
 
 #endif /* _LIBSPL_SYS_TIME_H */

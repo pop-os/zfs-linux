@@ -72,7 +72,6 @@ dist_man_MANS = \
 	%D%/man8/zpool-create.8 \
 	%D%/man8/zpool-destroy.8 \
 	%D%/man8/zpool-detach.8 \
-	%D%/man8/zpool-ddtprune.8 \
 	%D%/man8/zpool-events.8 \
 	%D%/man8/zpool-export.8 \
 	%D%/man8/zpool-get.8 \
@@ -84,7 +83,6 @@ dist_man_MANS = \
 	%D%/man8/zpool-list.8 \
 	%D%/man8/zpool-offline.8 \
 	%D%/man8/zpool-online.8 \
-	%D%/man8/zpool-prefetch.8 \
 	%D%/man8/zpool-reguid.8 \
 	%D%/man8/zpool-remove.8 \
 	%D%/man8/zpool-reopen.8 \

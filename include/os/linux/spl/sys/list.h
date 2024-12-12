@@ -48,6 +48,7 @@
 typedef struct list_head list_node_t;
 
 typedef struct list {
+	size_t list_size;
 	size_t list_offset;
 	list_node_t list_head;
 } list_t;
@@ -71,8 +72,7 @@ list_link_init(list_node_t *node)
 static inline void
 list_create(list_t *list, size_t size, size_t offset)
 {
-	(void) size;
-
+	list->list_size = size;
 	list->list_offset = offset;
 	INIT_LIST_HEAD(&list->list_head);
 }

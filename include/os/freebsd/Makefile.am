@@ -20,6 +20,7 @@ noinst_HEADERS = \
 	%D%/spl/sys/debug.h \
 	%D%/spl/sys/dirent.h \
 	%D%/spl/sys/disp.h \
+	%D%/spl/sys/dkio.h \
 	%D%/spl/sys/fcntl.h \
 	%D%/spl/sys/file.h \
 	%D%/spl/sys/freebsd_rwlock.h \

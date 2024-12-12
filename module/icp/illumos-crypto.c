@@ -107,6 +107,7 @@
 void
 icp_fini(void)
 {
+	skein_mod_fini();
 	sha2_mod_fini();
 	aes_mod_fini();
 	kcf_sched_destroy();
@@ -133,6 +134,12 @@ icp_init(void)
 	/* initialize algorithms */
 	aes_mod_init();
 	sha2_mod_init();
+	skein_mod_init();
 
 	return (0);
 }
+
+#if defined(_KERNEL) && defined(__FreeBSD__)
+module_exit(icp_fini);
+module_init(icp_init);
+#endif

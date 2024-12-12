@@ -67,10 +67,6 @@
 #include "libzfs_impl.h"
 #include "zfs_deleg.h"
 
-static __thread struct passwd gpwd;
-static __thread struct group ggrp;
-static __thread char rpbuf[2048];
-
 static int userquota_propname_decode(const char *propname, boolean_t zoned,
     zfs_userquota_prop_t *typep, char *domain, int domainlen, uint64_t *ridp);
 
@@ -3199,15 +3195,11 @@ userquota_propname_decode(const char *propname, boolean_t zoned,
 
 	cp = strchr(propname, '@') + 1;
 
-	if (isuser &&
-	    getpwnam_r(cp, &gpwd, rpbuf, sizeof (rpbuf), &pw) == 0 &&
-	    pw != NULL) {
+	if (isuser && (pw = getpwnam(cp)) != NULL) {
 		if (zoned && getzoneid() == GLOBAL_ZONEID)
 			return (ENOENT);
 		*ridp = pw->pw_uid;
-	} else if (isgroup &&
-	    getgrnam_r(cp, &ggrp, rpbuf, sizeof (rpbuf), &gr) == 0 &&
-	    gr != NULL) {
+	} else if (isgroup && (gr = getgrnam(cp)) != NULL) {
 		if (zoned && getzoneid() == GLOBAL_ZONEID)
 			return (ENOENT);
 		*ridp = gr->gr_gid;
@@ -5565,21 +5557,8 @@ volsize_from_vdevs(zpool_handle_t *zhp, uint64_t nblocks, uint64_t blksize)
 		/*
 		 * Scale this size down as a ratio of 128k / tsize.
 		 * See theory statement above.
-		 *
-		 * Bitshift is to avoid the case of nblocks * asize < tsize
-		 * producing a size of 0.
 		 */
-		volsize = (nblocks * asize) / (tsize >> SPA_MINBLOCKSHIFT);
-		/*
-		 * If we would blow UINT64_MAX with this next multiplication,
-		 * don't.
-		 */
-		if (volsize >
-		    (UINT64_MAX / (SPA_OLD_MAXBLOCKSIZE >> SPA_MINBLOCKSHIFT)))
-			volsize = UINT64_MAX;
-		else
-			volsize *= (SPA_OLD_MAXBLOCKSIZE >> SPA_MINBLOCKSHIFT);
-
+		volsize = nblocks * asize * SPA_OLD_MAXBLOCKSIZE / tsize;
 		if (volsize > ret) {
 			ret = volsize;
 		}

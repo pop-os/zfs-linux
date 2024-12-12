@@ -247,7 +247,7 @@ vdev_file_io_start(zio_t *zio)
 	vdev_t *vd = zio->io_vd;
 	vdev_file_t *vf = vd->vdev_tsd;
 
-	if (zio->io_type == ZIO_TYPE_FLUSH) {
+	if (zio->io_type == ZIO_TYPE_IOCTL) {
 		/* XXPOLICY */
 		if (!vdev_readable(vd)) {
 			zio->io_error = SET_ERROR(ENXIO);
@@ -255,7 +255,14 @@ vdev_file_io_start(zio_t *zio)
 			return;
 		}
 
-		zio->io_error = zfs_file_fsync(vf->vf_file, O_SYNC|O_DSYNC);
+		switch (zio->io_cmd) {
+		case DKIOCFLUSHWRITECACHE:
+			zio->io_error = zfs_file_fsync(vf->vf_file,
+			    O_SYNC|O_DSYNC);
+			break;
+		default:
+			zio->io_error = SET_ERROR(ENOTSUP);
+		}
 
 		zio_execute(zio);
 		return;

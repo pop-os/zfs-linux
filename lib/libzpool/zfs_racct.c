@@ -26,13 +26,13 @@
 #include <sys/zfs_racct.h>
 
 void
-zfs_racct_read(spa_t *spa, uint64_t size, uint64_t iops, uint32_t flags)
+zfs_racct_read(uint64_t size, uint64_t iops)
 {
-	(void) spa, (void) size, (void) iops, (void) flags;
+	(void) size, (void) iops;
 }
 
 void
-zfs_racct_write(spa_t *spa, uint64_t size, uint64_t iops, uint32_t flags)
+zfs_racct_write(uint64_t size, uint64_t iops)
 {
-	(void) spa, (void) size, (void) iops, (void) flags;
+	(void) size, (void) iops;
 }

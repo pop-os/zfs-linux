@@ -101,7 +101,10 @@ ICP_OBJS := \
 	algs/blake3/blake3_generic.o \
 	algs/blake3/blake3_impl.o \
 	algs/edonr/edonr.o \
+	algs/modes/cbc.o \
 	algs/modes/ccm.o \
+	algs/modes/ctr.o \
+	algs/modes/ecb.o \
 	algs/modes/gcm.o \
 	algs/modes/gcm_generic.o \
 	algs/modes/modes.o \
@@ -122,6 +125,7 @@ ICP_OBJS := \
 	illumos-crypto.o \
 	io/aes.o \
 	io/sha2_mod.o \
+	io/skein_mod.o \
 	spi/kcf_spi.o
 
 ICP_OBJS_X86_64 := \
@@ -324,11 +328,8 @@ ZFS_OBJS := \
 	dbuf.o \
 	dbuf_stats.o \
 	ddt.o \
-	ddt_log.o \
-	ddt_stats.o \
 	ddt_zap.o \
 	dmu.o \
-	dmu_direct.o \
 	dmu_diff.o \
 	dmu_object.o \
 	dmu_objset.o \
@@ -448,7 +449,6 @@ ZFS_OBJS_OS := \
 	trace.o \
 	vdev_disk.o \
 	vdev_file.o \
-	vdev_label_os.o \
 	zfs_acl.o \
 	zfs_ctldir.o \
 	zfs_debug.o \

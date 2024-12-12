@@ -1049,7 +1049,7 @@ vdev_geom_io_intr(struct bio *bp)
 	/*
 	 * We have to split bio freeing into two parts, because the ABD code
 	 * cannot be called in this context and vdev_op_io_done is not called
-	 * for ZIO_TYPE_FLUSH zio-s.
+	 * for ZIO_TYPE_IOCTL zio-s.
 	 */
 	if (zio->io_type != ZIO_TYPE_READ && zio->io_type != ZIO_TYPE_WRITE) {
 		g_destroy_bio(bp);
@@ -1149,35 +1149,46 @@ vdev_geom_io_start(zio_t *zio)
 
 	vd = zio->io_vd;
 
-	if (zio->io_type == ZIO_TYPE_FLUSH) {
+	switch (zio->io_type) {
+	case ZIO_TYPE_IOCTL:
 		/* XXPOLICY */
 		if (!vdev_readable(vd)) {
 			zio->io_error = SET_ERROR(ENXIO);
 			zio_interrupt(zio);
 			return;
+		} else {
+			switch (zio->io_cmd) {
+			case DKIOCFLUSHWRITECACHE:
+				if (zfs_nocacheflush ||
+				    vdev_geom_bio_flush_disable)
+					break;
+				if (vd->vdev_nowritecache) {
+					zio->io_error = SET_ERROR(ENOTSUP);
+					break;
+				}
+				goto sendreq;
+			default:
+				zio->io_error = SET_ERROR(ENOTSUP);
+			}
 		}
 
-		if (zfs_nocacheflush || vdev_geom_bio_flush_disable) {
-			zio_execute(zio);
-			return;
+		zio_execute(zio);
+		return;
+	case ZIO_TYPE_TRIM:
+		if (!vdev_geom_bio_delete_disable) {
+			goto sendreq;
 		}
-
-		if (vd->vdev_nowritecache) {
-			zio->io_error = SET_ERROR(ENOTSUP);
-			zio_execute(zio);
-			return;
-		}
-	} else if (zio->io_type == ZIO_TYPE_TRIM) {
-		if (vdev_geom_bio_delete_disable) {
-			zio_execute(zio);
-			return;
-		}
+		zio_execute(zio);
+		return;
+	default:
+			;
+		/* PASSTHROUGH --- placate compiler */
 	}
-
+sendreq:
 	ASSERT(zio->io_type == ZIO_TYPE_READ ||
 	    zio->io_type == ZIO_TYPE_WRITE ||
 	    zio->io_type == ZIO_TYPE_TRIM ||
-	    zio->io_type == ZIO_TYPE_FLUSH);
+	    zio->io_type == ZIO_TYPE_IOCTL);
 
 	cp = vd->vdev_tsd;
 	if (cp == NULL) {
@@ -1229,7 +1240,7 @@ vdev_geom_io_start(zio_t *zio)
 		bp->bio_offset = zio->io_offset;
 		bp->bio_length = zio->io_size;
 		break;
-	case ZIO_TYPE_FLUSH:
+	case ZIO_TYPE_IOCTL:
 		bp->bio_cmd = BIO_FLUSH;
 		bp->bio_data = NULL;
 		bp->bio_offset = cp->provider->mediasize;

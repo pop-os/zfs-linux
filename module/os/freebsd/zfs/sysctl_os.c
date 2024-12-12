@@ -124,6 +124,7 @@ SYSCTL_NODE(_vfs_zfs, OID_AUTO, zio, CTLFLAG_RW, 0, "ZFS ZIO");
 
 SYSCTL_NODE(_vfs_zfs_livelist, OID_AUTO, condense, CTLFLAG_RW, 0,
 	"ZFS livelist condense");
+SYSCTL_NODE(_vfs_zfs_vdev, OID_AUTO, cache, CTLFLAG_RW, 0, "ZFS VDEV Cache");
 SYSCTL_NODE(_vfs_zfs_vdev, OID_AUTO, file, CTLFLAG_RW, 0, "ZFS VDEV file");
 SYSCTL_NODE(_vfs_zfs_vdev, OID_AUTO, mirror, CTLFLAG_RD, 0,
 	"ZFS VDEV mirror");
@@ -498,24 +499,6 @@ SYSCTL_UINT(_vfs_zfs_zfetch, OID_AUTO, max_idistance,
 /* dsl_scan.c */
 
 /* metaslab.c */
-
-int
-param_set_active_allocator(SYSCTL_HANDLER_ARGS)
-{
-	char buf[16];
-	int rc;
-
-	if (req->newptr == NULL)
-		strlcpy(buf, zfs_active_allocator, sizeof (buf));
-
-	rc = sysctl_handle_string(oidp, buf, sizeof (buf), req);
-	if (rc || req->newptr == NULL)
-		return (rc);
-	if (strcmp(buf, zfs_active_allocator) == 0)
-		return (0);
-
-	return (param_set_active_allocator_common(buf));
-}
 
 /*
  * In pools where the log space map feature is not enabled we touch

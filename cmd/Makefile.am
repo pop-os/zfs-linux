@@ -24,7 +24,7 @@ zfs_ids_to_path_LDADD = \
 	libzfs.la
 
 
-zhack_CPPFLAGS = $(AM_CPPFLAGS) $(LIBZPOOL_CPPFLAGS)
+zhack_CPPFLAGS = $(AM_CPPFLAGS) $(FORCEDEBUG_CPPFLAGS)
 
 sbin_PROGRAMS   += zhack
 CPPCHECKTARGETS += zhack
@@ -39,7 +39,9 @@ zhack_LDADD = \
 
 
 ztest_CFLAGS    = $(AM_CFLAGS) $(KERNEL_CFLAGS)
-ztest_CPPFLAGS  = $(AM_CPPFLAGS) $(LIBZPOOL_CPPFLAGS)
+# Get rid of compiler warning for unchecked truncating snprintfs on gcc 7.1.1
+ztest_CFLAGS   += $(NO_FORMAT_TRUNCATION)
+ztest_CPPFLAGS  = $(AM_CPPFLAGS) $(FORCEDEBUG_CPPFLAGS)
 
 sbin_PROGRAMS   += ztest
 CPPCHECKTARGETS += ztest
