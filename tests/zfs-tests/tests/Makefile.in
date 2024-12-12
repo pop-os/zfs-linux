@@ -93,7 +93,8 @@ target_triplet = @target@
 @BUILD_LINUX_TRUE@am__append_1 = \
 @BUILD_LINUX_TRUE@	functional/simd/simd_supported.ksh \
 @BUILD_LINUX_TRUE@	functional/tmpfile/cleanup.ksh \
-@BUILD_LINUX_TRUE@	functional/tmpfile/setup.ksh
+@BUILD_LINUX_TRUE@	functional/tmpfile/setup.ksh \
+@BUILD_LINUX_TRUE@	functional/luks/luks_sanity.ksh
 
 subdir = tests/zfs-tests/tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -115,95 +116,67 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/gettext.m4 \
 	$(top_srcdir)/config/host-cpu-c-abi.m4 \
 	$(top_srcdir)/config/iconv.m4 \
-	$(top_srcdir)/config/intlmacosx.m4 \
 	$(top_srcdir)/config/kernel-access-ok-type.m4 \
 	$(top_srcdir)/config/kernel-acl.m4 \
 	$(top_srcdir)/config/kernel-add-disk.m4 \
-	$(top_srcdir)/config/kernel-aio-fsync.m4 \
+	$(top_srcdir)/config/kernel-assign_str.m4 \
 	$(top_srcdir)/config/kernel-automount.m4 \
-	$(top_srcdir)/config/kernel-bdi.m4 \
 	$(top_srcdir)/config/kernel-bio.m4 \
 	$(top_srcdir)/config/kernel-bio_max_segs.m4 \
 	$(top_srcdir)/config/kernel-blk-queue.m4 \
 	$(top_srcdir)/config/kernel-blkdev.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations.m4 \
-	$(top_srcdir)/config/kernel-clear-inode.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-config-defined.m4 \
 	$(top_srcdir)/config/kernel-copy-from-user-inatomic.m4 \
 	$(top_srcdir)/config/kernel-cpu_has_feature.m4 \
-	$(top_srcdir)/config/kernel-current-time.m4 \
 	$(top_srcdir)/config/kernel-declare-event-class.m4 \
-	$(top_srcdir)/config/kernel-dentry-alias.m4 \
-	$(top_srcdir)/config/kernel-dentry-operations.m4 \
-	$(top_srcdir)/config/kernel-dirty-inode.m4 \
 	$(top_srcdir)/config/kernel-discard-granularity.m4 \
-	$(top_srcdir)/config/kernel-encode-fh-inode.m4 \
-	$(top_srcdir)/config/kernel-evict-inode.m4 \
-	$(top_srcdir)/config/kernel-fadvise.m4 \
-	$(top_srcdir)/config/kernel-fallocate.m4 \
-	$(top_srcdir)/config/kernel-file-dentry.m4 \
-	$(top_srcdir)/config/kernel-file-inode.m4 \
+	$(top_srcdir)/config/kernel-file.m4 \
 	$(top_srcdir)/config/kernel-filemap-splice-read.m4 \
-	$(top_srcdir)/config/kernel-filemap.m4 \
 	$(top_srcdir)/config/kernel-flush_dcache_page.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
 	$(top_srcdir)/config/kernel-follow-down-one.m4 \
 	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-fst-mount.m4 \
 	$(top_srcdir)/config/kernel-fsync-bdev.m4 \
-	$(top_srcdir)/config/kernel-fsync.m4 \
 	$(top_srcdir)/config/kernel-generic_fadvise.m4 \
 	$(top_srcdir)/config/kernel-generic_fillattr.m4 \
 	$(top_srcdir)/config/kernel-generic_io_acct.m4 \
-	$(top_srcdir)/config/kernel-generic_readlink.m4 \
 	$(top_srcdir)/config/kernel-genhd-flags.m4 \
 	$(top_srcdir)/config/kernel-get-disk-ro.m4 \
-	$(top_srcdir)/config/kernel-get-link.m4 \
-	$(top_srcdir)/config/kernel-global_page_state.m4 \
-	$(top_srcdir)/config/kernel-group-info.m4 \
-	$(top_srcdir)/config/kernel-hotplug.m4 \
 	$(top_srcdir)/config/kernel-iattr-vfsid.m4 \
 	$(top_srcdir)/config/kernel-idmap_mnt_api.m4 \
-	$(top_srcdir)/config/kernel-in-compat-syscall.m4 \
 	$(top_srcdir)/config/kernel-inode-create.m4 \
 	$(top_srcdir)/config/kernel-inode-getattr.m4 \
-	$(top_srcdir)/config/kernel-inode-lock.m4 \
 	$(top_srcdir)/config/kernel-inode-lookup.m4 \
 	$(top_srcdir)/config/kernel-inode-permission.m4 \
-	$(top_srcdir)/config/kernel-inode-set-flags.m4 \
-	$(top_srcdir)/config/kernel-inode-set-iversion.m4 \
 	$(top_srcdir)/config/kernel-inode-setattr.m4 \
 	$(top_srcdir)/config/kernel-inode-times.m4 \
 	$(top_srcdir)/config/kernel-insert-inode-locked.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
 	$(top_srcdir)/config/kernel-kmap-atomic-args.m4 \
-	$(top_srcdir)/config/kernel-kmem-cache.m4 \
+	$(top_srcdir)/config/kernel-kmap-local-page.m4 \
 	$(top_srcdir)/config/kernel-kmem.m4 \
-	$(top_srcdir)/config/kernel-kstrtoul.m4 \
 	$(top_srcdir)/config/kernel-kthread.m4 \
-	$(top_srcdir)/config/kernel-ktime.m4 \
 	$(top_srcdir)/config/kernel-kuid-helpers.m4 \
 	$(top_srcdir)/config/kernel-kuidgid.m4 \
-	$(top_srcdir)/config/kernel-lseek-execute.m4 \
 	$(top_srcdir)/config/kernel-make-request-fn.m4 \
 	$(top_srcdir)/config/kernel-misc-minor.m4 \
 	$(top_srcdir)/config/kernel-mkdir.m4 \
 	$(top_srcdir)/config/kernel-mknod.m4 \
+	$(top_srcdir)/config/kernel-mm-page-flags.m4 \
 	$(top_srcdir)/config/kernel-mm-pagemap.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pagemap-folio_wait_bit.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
 	$(top_srcdir)/config/kernel-percpu.m4 \
 	$(top_srcdir)/config/kernel-proc-operations.m4 \
-	$(top_srcdir)/config/kernel-put-link.m4 \
 	$(top_srcdir)/config/kernel-readpages.m4 \
 	$(top_srcdir)/config/kernel-reclaim_state.m4 \
 	$(top_srcdir)/config/kernel-register_sysctl_table.m4 \
 	$(top_srcdir)/config/kernel-rename.m4 \
 	$(top_srcdir)/config/kernel-revalidate-disk-size.m4 \
-	$(top_srcdir)/config/kernel-rw.m4 \
-	$(top_srcdir)/config/kernel-rwsem.m4 \
 	$(top_srcdir)/config/kernel-sched.m4 \
 	$(top_srcdir)/config/kernel-security-inode-init.m4 \
 	$(top_srcdir)/config/kernel-set-nlink.m4 \
@@ -212,38 +185,26 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-show-options.m4 \
 	$(top_srcdir)/config/kernel-shrink.m4 \
 	$(top_srcdir)/config/kernel-siginfo.m4 \
-	$(top_srcdir)/config/kernel-signal-stop.m4 \
-	$(top_srcdir)/config/kernel-special-state.m4 \
 	$(top_srcdir)/config/kernel-stdarg.m4 \
 	$(top_srcdir)/config/kernel-strlcpy.m4 \
-	$(top_srcdir)/config/kernel-super-userns.m4 \
 	$(top_srcdir)/config/kernel-symlink.m4 \
 	$(top_srcdir)/config/kernel-sysfs.m4 \
-	$(top_srcdir)/config/kernel-timer.m4 \
 	$(top_srcdir)/config/kernel-tmpfile.m4 \
 	$(top_srcdir)/config/kernel-totalhigh_pages.m4 \
 	$(top_srcdir)/config/kernel-totalram-pages-func.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
 	$(top_srcdir)/config/kernel-types.m4 \
-	$(top_srcdir)/config/kernel-user-ns-inum.m4 \
-	$(top_srcdir)/config/kernel-userns-capabilities.m4 \
 	$(top_srcdir)/config/kernel-usleep_range.m4 \
 	$(top_srcdir)/config/kernel-vfs-direct_IO.m4 \
-	$(top_srcdir)/config/kernel-vfs-extended-file_range.m4 \
 	$(top_srcdir)/config/kernel-vfs-file_range.m4 \
 	$(top_srcdir)/config/kernel-vfs-filemap_dirty_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-fsync.m4 \
-	$(top_srcdir)/config/kernel-vfs-getattr.m4 \
 	$(top_srcdir)/config/kernel-vfs-iov_iter.m4 \
-	$(top_srcdir)/config/kernel-vfs-iterate.m4 \
 	$(top_srcdir)/config/kernel-vfs-read_folio.m4 \
-	$(top_srcdir)/config/kernel-vfs-rw-iterate.m4 \
 	$(top_srcdir)/config/kernel-vfs-set_page_dirty.m4 \
-	$(top_srcdir)/config/kernel-wait.m4 \
 	$(top_srcdir)/config/kernel-writepage_t.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
 	$(top_srcdir)/config/kernel-zero_page.m4 \
-	$(top_srcdir)/config/kernel-zlib.m4 \
 	$(top_srcdir)/config/kernel.m4 $(top_srcdir)/config/lib-ld.m4 \
 	$(top_srcdir)/config/lib-link.m4 \
 	$(top_srcdir)/config/lib-prefix.m4 \
@@ -304,7 +265,8 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	perf/regression/setup.ksh perf/scripts/prefetch_io.sh \
 	functional/simd/simd_supported.ksh \
 	functional/tmpfile/cleanup.ksh functional/tmpfile/setup.ksh \
-	functional/acl/off/cleanup.ksh functional/acl/off/dosmode.ksh \
+	functional/luks/luks_sanity.ksh functional/acl/off/cleanup.ksh \
+	functional/acl/off/dosmode.ksh \
 	functional/acl/off/posixmode.ksh functional/acl/off/setup.ksh \
 	functional/acl/posix/cleanup.ksh \
 	functional/acl/posix/posix_001_pos.ksh \
@@ -2126,7 +2088,6 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 INTLLIBS = @INTLLIBS@
-INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 IS_SYSV_RC = @IS_SYSV_RC@
 KERNEL_CC = @KERNEL_CC@
 KERNEL_DEBUG_CFLAGS = @KERNEL_DEBUG_CFLAGS@
