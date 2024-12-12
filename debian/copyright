@@ -740,13 +740,6 @@ Copyright: 2015, Chunwei Chen.
   2005, 2010, Oracle and/or its affiliates.
 License: CDDL-1.0
 
-Files: module/os/freebsd/zfs/zfs_znode.c
-  module/os/linux/zfs/zfs_znode.c
-Copyright: 2013, 2015 Delphix.
-  2007, Jeremy Teo
-  2005, 2010, Oracle and/or its affiliates.
-License: CDDL-1.0
-
 Files: module/zfs/zio_compress.c
 Copyright: 2013, Saso Kiselkov.
   2013, Delphix.
