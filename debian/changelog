@@ -1,4 +1,4 @@
-zfs-linux (2.2.7-1) UNRELEASED; urgency=medium
+zfs-linux (2.2.7-1) unstable; urgency=medium
 
   [ Aron Xu ]
   * d/control: Breaks zfs-fuse (Closes: #1058684)
