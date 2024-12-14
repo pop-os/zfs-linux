@@ -226,8 +226,8 @@
 /* DECLARE_EVENT_CLASS() is available */
 #undef HAVE_DECLARE_EVENT_CLASS
 
-/* dequeue_signal() takes a task argument */
-#undef HAVE_DEQUEUE_SIGNAL_3ARG_TASK
+/* 3-arg dequeue_signal() takes a type argument */
+#undef HAVE_DEQUEUE_SIGNAL_3ARG_TYPE
 
 /* dequeue_signal() takes 4 arguments */
 #undef HAVE_DEQUEUE_SIGNAL_4ARG
@@ -682,20 +682,17 @@
 /* generic_copy_file_range() is available */
 #undef HAVE_VFS_GENERIC_COPY_FILE_RANGE
 
-/* invalidate_folio exists */
-#undef HAVE_VFS_INVALIDATE_FOLIO
-
 /* All required iov_iter interfaces are available */
 #undef HAVE_VFS_IOV_ITER
+
+/* migrate_folio exists */
+#undef HAVE_VFS_MIGRATE_FOLIO
 
 /* address_space_operations->readpages exists */
 #undef HAVE_VFS_READPAGES
 
 /* read_folio exists */
 #undef HAVE_VFS_READ_FOLIO
-
-/* release_folio exists */
-#undef HAVE_VFS_RELEASE_FOLIO
 
 /* fops->remap_file_range() is available */
 #undef HAVE_VFS_REMAP_FILE_RANGE

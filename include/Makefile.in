@@ -193,10 +193,9 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-vfs-file_range.m4 \
 	$(top_srcdir)/config/kernel-vfs-filemap_dirty_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-fsync.m4 \
-	$(top_srcdir)/config/kernel-vfs-invalidate_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-iov_iter.m4 \
+	$(top_srcdir)/config/kernel-vfs-migrate_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-read_folio.m4 \
-	$(top_srcdir)/config/kernel-vfs-release_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-set_page_dirty.m4 \
 	$(top_srcdir)/config/kernel-writepage_t.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \

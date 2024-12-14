@@ -35797,22 +35797,17 @@ fi
 
 
 
-test -d build/vfs_has_release_folio || mkdir -p build/vfs_has_release_folio
-cat confdefs.h - <<_ACEOF >build/vfs_has_release_folio/vfs_has_release_folio.c
+test -d build/vfs_has_migrate_folio || mkdir -p build/vfs_has_migrate_folio
+cat confdefs.h - <<_ACEOF >build/vfs_has_migrate_folio/vfs_has_migrate_folio.c
 
 #include <linux/module.h>
 
 		#include <linux/fs.h>
-
-		static bool
-		test_release_folio(struct folio *folio, gfp_t gfp) {
-			(void) folio; (void) gfp;
-			return (0);
-		}
+		#include <linux/migrate.h>
 
 		static const struct address_space_operations
 		    aops __attribute__ ((unused)) = {
-			.release_folio	= test_release_folio,
+			.migrate_folio	= migrate_folio,
 		};
 
 
@@ -35833,45 +35828,40 @@ _ACEOF
 
 
 	test -d build || mkdir -p build
-	test -d build/vfs_has_release_folio || mkdir -p build/vfs_has_release_folio
+	test -d build/vfs_has_migrate_folio || mkdir -p build/vfs_has_migrate_folio
 
-	file=build/vfs_has_release_folio/Makefile
+	file=build/vfs_has_migrate_folio/Makefile
 
 		cat - <<_ACEOF >$file
 # Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_release_folio
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_migrate_folio
 
 ccflags-y := -Werror $FRAME_LARGER_THAN
 _ACEOF
 
 
 
-		echo "obj-m := vfs_has_release_folio.o" >>$file
+		echo "obj-m := vfs_has_migrate_folio.o" >>$file
 
 	if test "xyes" = "xyes"; then :
-  echo "obj-m += vfs_has_release_folio/" >>build/Makefile
+  echo "obj-m += vfs_has_migrate_folio/" >>build/Makefile
 fi
 
 
 	if  test -n "" ; then :
 
 
-test -d build/vfs_has_release_folio_license || mkdir -p build/vfs_has_release_folio_license
-cat confdefs.h - <<_ACEOF >build/vfs_has_release_folio_license/vfs_has_release_folio_license.c
+test -d build/vfs_has_migrate_folio_license || mkdir -p build/vfs_has_migrate_folio_license
+cat confdefs.h - <<_ACEOF >build/vfs_has_migrate_folio_license/vfs_has_migrate_folio_license.c
 
 #include <linux/module.h>
 
 		#include <linux/fs.h>
-
-		static bool
-		test_release_folio(struct folio *folio, gfp_t gfp) {
-			(void) folio; (void) gfp;
-			return (0);
-		}
+		#include <linux/migrate.h>
 
 		static const struct address_space_operations
 		    aops __attribute__ ((unused)) = {
-			.release_folio	= test_release_folio,
+			.migrate_folio	= migrate_folio,
 		};
 
 
@@ -35892,146 +35882,23 @@ _ACEOF
 
 
 	test -d build || mkdir -p build
-	test -d build/vfs_has_release_folio_license || mkdir -p build/vfs_has_release_folio_license
+	test -d build/vfs_has_migrate_folio_license || mkdir -p build/vfs_has_migrate_folio_license
 
-	file=build/vfs_has_release_folio_license/Makefile
+	file=build/vfs_has_migrate_folio_license/Makefile
 
 		cat - <<_ACEOF >$file
 # Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_release_folio_license
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_migrate_folio_license
 
 ccflags-y := -Werror $FRAME_LARGER_THAN
 _ACEOF
 
 
 
-		echo "obj-m := vfs_has_release_folio_license.o" >>$file
+		echo "obj-m := vfs_has_migrate_folio_license.o" >>$file
 
 	if test "xyes" = "xyes"; then :
-  echo "obj-m += vfs_has_release_folio_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
-
-test -d build/vfs_has_invalidate_folio || mkdir -p build/vfs_has_invalidate_folio
-cat confdefs.h - <<_ACEOF >build/vfs_has_invalidate_folio/vfs_has_invalidate_folio.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static void
-		test_invalidate_folio(struct folio *folio, size_t offset,
-		                      size_t len) {
-			(void) folio; (void) offset; (void) len;
-			return;
-		}
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.invalidate_folio	= test_invalidate_folio,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/vfs_has_invalidate_folio || mkdir -p build/vfs_has_invalidate_folio
-
-	file=build/vfs_has_invalidate_folio/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_invalidate_folio
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := vfs_has_invalidate_folio.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += vfs_has_invalidate_folio/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/vfs_has_invalidate_folio_license || mkdir -p build/vfs_has_invalidate_folio_license
-cat confdefs.h - <<_ACEOF >build/vfs_has_invalidate_folio_license/vfs_has_invalidate_folio_license.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static void
-		test_invalidate_folio(struct folio *folio, size_t offset,
-		                      size_t len) {
-			(void) folio; (void) offset; (void) len;
-			return;
-		}
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.invalidate_folio	= test_invalidate_folio,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/vfs_has_invalidate_folio_license || mkdir -p build/vfs_has_invalidate_folio_license
-
-	file=build/vfs_has_invalidate_folio_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_invalidate_folio_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := vfs_has_invalidate_folio_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += vfs_has_invalidate_folio_license/" >>build/Makefile
+  echo "obj-m += vfs_has_migrate_folio_license/" >>build/Makefile
 fi
 
 
@@ -42465,118 +42332,6 @@ fi
 
 
 
-test -d build/kthread_dequeue_signal_3arg_task || mkdir -p build/kthread_dequeue_signal_3arg_task
-cat confdefs.h - <<_ACEOF >build/kthread_dequeue_signal_3arg_task/kthread_dequeue_signal_3arg_task.c
-
-#include <linux/module.h>
-
-		#include <linux/sched/signal.h>
-
-
-int
-main (void)
-{
-
-		struct task_struct *task = NULL;
-		sigset_t *mask = NULL;
-		kernel_siginfo_t *info = NULL;
-		int error __attribute__ ((unused));
-
-		error = dequeue_signal(task, mask, info);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/kthread_dequeue_signal_3arg_task || mkdir -p build/kthread_dequeue_signal_3arg_task
-
-	file=build/kthread_dequeue_signal_3arg_task/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/kthread_dequeue_signal_3arg_task
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := kthread_dequeue_signal_3arg_task.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += kthread_dequeue_signal_3arg_task/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/kthread_dequeue_signal_3arg_task_license || mkdir -p build/kthread_dequeue_signal_3arg_task_license
-cat confdefs.h - <<_ACEOF >build/kthread_dequeue_signal_3arg_task_license/kthread_dequeue_signal_3arg_task_license.c
-
-#include <linux/module.h>
-
-		#include <linux/sched/signal.h>
-
-
-int
-main (void)
-{
-
-		struct task_struct *task = NULL;
-		sigset_t *mask = NULL;
-		kernel_siginfo_t *info = NULL;
-		int error __attribute__ ((unused));
-
-		error = dequeue_signal(task, mask, info);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/kthread_dequeue_signal_3arg_task_license || mkdir -p build/kthread_dequeue_signal_3arg_task_license
-
-	file=build/kthread_dequeue_signal_3arg_task_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/kthread_dequeue_signal_3arg_task_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := kthread_dequeue_signal_3arg_task_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += kthread_dequeue_signal_3arg_task_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
 test -d build/kthread_dequeue_signal_4arg || mkdir -p build/kthread_dequeue_signal_4arg
 cat confdefs.h - <<_ACEOF >build/kthread_dequeue_signal_4arg/kthread_dequeue_signal_4arg.c
 
@@ -42683,6 +42438,118 @@ _ACEOF
 
 	if test "xyes" = "xyes"; then :
   echo "obj-m += kthread_dequeue_signal_4arg_license/" >>build/Makefile
+fi
+
+
+fi
+
+
+
+
+test -d build/kthread_dequeue_signal_3arg_type || mkdir -p build/kthread_dequeue_signal_3arg_type
+cat confdefs.h - <<_ACEOF >build/kthread_dequeue_signal_3arg_type/kthread_dequeue_signal_3arg_type.c
+
+#include <linux/module.h>
+
+		#include <linux/sched/signal.h>
+
+
+int
+main (void)
+{
+
+		sigset_t *mask = NULL;
+		kernel_siginfo_t *info = NULL;
+		enum pid_type *type = NULL;
+		int error __attribute__ ((unused));
+
+		error = dequeue_signal(mask, info, type);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE("Dual BSD/GPL");
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/kthread_dequeue_signal_3arg_type || mkdir -p build/kthread_dequeue_signal_3arg_type
+
+	file=build/kthread_dequeue_signal_3arg_type/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/kthread_dequeue_signal_3arg_type
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := kthread_dequeue_signal_3arg_type.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += kthread_dequeue_signal_3arg_type/" >>build/Makefile
+fi
+
+
+	if  test -n "" ; then :
+
+
+test -d build/kthread_dequeue_signal_3arg_type_license || mkdir -p build/kthread_dequeue_signal_3arg_type_license
+cat confdefs.h - <<_ACEOF >build/kthread_dequeue_signal_3arg_type_license/kthread_dequeue_signal_3arg_type_license.c
+
+#include <linux/module.h>
+
+		#include <linux/sched/signal.h>
+
+
+int
+main (void)
+{
+
+		sigset_t *mask = NULL;
+		kernel_siginfo_t *info = NULL;
+		enum pid_type *type = NULL;
+		int error __attribute__ ((unused));
+
+		error = dequeue_signal(mask, info, type);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE();
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/kthread_dequeue_signal_3arg_type_license || mkdir -p build/kthread_dequeue_signal_3arg_type_license
+
+	file=build/kthread_dequeue_signal_3arg_type_license/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/kthread_dequeue_signal_3arg_type_license
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := kthread_dequeue_signal_3arg_type_license.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += kthread_dequeue_signal_3arg_type_license/" >>build/Makefile
 fi
 
 
@@ -43559,7 +43426,7 @@ int
 main (void)
 {
 
-		struct ctl_table test_table[] __attribute__((unused)) = {0};
+		struct ctl_table test_table[] __attribute__((unused)) = {{}};
 		register_sysctl_sz("", test_table, 0);
 
 	;
@@ -43610,7 +43477,7 @@ int
 main (void)
 {
 
-		struct ctl_table test_table[] __attribute__((unused)) = {0};
+		struct ctl_table test_table[] __attribute__((unused)) = {{}};
 		register_sysctl_sz("", test_table, 0);
 
 	;
@@ -49948,17 +49815,17 @@ fi
 
 
 
-				{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether release_folio exists" >&5
-$as_echo_n "checking whether release_folio exists... " >&6; }
+				{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether migrate_folio exists" >&5
+$as_echo_n "checking whether migrate_folio exists... " >&6; }
 
-	if test -d build/vfs_has_release_folio; then :
+	if test -d build/vfs_has_migrate_folio; then :
 
-		if test -f build/vfs_has_release_folio/vfs_has_release_folio.ko; then :
+		if test -f build/vfs_has_migrate_folio/vfs_has_migrate_folio.ko; then :
 
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-$as_echo "#define HAVE_VFS_RELEASE_FOLIO 1" >>confdefs.h
+$as_echo "#define HAVE_VFS_MIGRATE_FOLIO 1" >>confdefs.h
 
 
 else
@@ -49971,38 +49838,7 @@ fi
 else
 
 		as_fn_error $? "
-	*** No matching source for the \"vfs_has_release_folio\" test, check that
-	*** both the test source and result macros refer to the same name.
-		" "$LINENO" 5
-
-fi
-
-
-
-				{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether invalidate_folio exists" >&5
-$as_echo_n "checking whether invalidate_folio exists... " >&6; }
-
-	if test -d build/vfs_has_invalidate_folio; then :
-
-		if test -f build/vfs_has_invalidate_folio/vfs_has_invalidate_folio.ko; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-$as_echo "#define HAVE_VFS_INVALIDATE_FOLIO 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-
-else
-
-		as_fn_error $? "
-	*** No matching source for the \"vfs_has_invalidate_folio\" test, check that
+	*** No matching source for the \"vfs_has_migrate_folio\" test, check that
 	*** both the test source and result macros refer to the same name.
 		" "$LINENO" 5
 
@@ -52063,7 +51899,7 @@ fi
 
 
 
-											{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether dequeue_signal() takes 4 arguments" >&5
+																		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether dequeue_signal() takes 4 arguments" >&5
 $as_echo_n "checking whether dequeue_signal() takes 4 arguments... " >&6; }
 
 	if test -d build/kthread_dequeue_signal_4arg; then :
@@ -52080,17 +51916,17 @@ else
 
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether dequeue_signal() a task argument" >&5
-$as_echo_n "checking whether dequeue_signal() a task argument... " >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether 3-arg dequeue_signal() takes a type argument" >&5
+$as_echo_n "checking whether 3-arg dequeue_signal() takes a type argument... " >&6; }
 
-	if test -d build/kthread_dequeue_signal_3arg_task; then :
+	if test -d build/kthread_dequeue_signal_3arg_type; then :
 
-		if test -f build/kthread_dequeue_signal_3arg_task/kthread_dequeue_signal_3arg_task.ko; then :
+		if test -f build/kthread_dequeue_signal_3arg_type/kthread_dequeue_signal_3arg_type.ko; then :
 
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-$as_echo "#define HAVE_DEQUEUE_SIGNAL_3ARG_TASK 1" >>confdefs.h
+$as_echo "#define HAVE_DEQUEUE_SIGNAL_3ARG_TYPE 1" >>confdefs.h
 
 
 else
@@ -52103,7 +51939,7 @@ fi
 else
 
 		as_fn_error $? "
-	*** No matching source for the \"kthread_dequeue_signal_3arg_task\" test, check that
+	*** No matching source for the \"kthread_dequeue_signal_3arg_type\" test, check that
 	*** both the test source and result macros refer to the same name.
 		" "$LINENO" 5
 
@@ -78963,22 +78799,17 @@ fi
 
 
 
-test -d build/vfs_has_release_folio || mkdir -p build/vfs_has_release_folio
-cat confdefs.h - <<_ACEOF >build/vfs_has_release_folio/vfs_has_release_folio.c
+test -d build/vfs_has_migrate_folio || mkdir -p build/vfs_has_migrate_folio
+cat confdefs.h - <<_ACEOF >build/vfs_has_migrate_folio/vfs_has_migrate_folio.c
 
 #include <linux/module.h>
 
 		#include <linux/fs.h>
-
-		static bool
-		test_release_folio(struct folio *folio, gfp_t gfp) {
-			(void) folio; (void) gfp;
-			return (0);
-		}
+		#include <linux/migrate.h>
 
 		static const struct address_space_operations
 		    aops __attribute__ ((unused)) = {
-			.release_folio	= test_release_folio,
+			.migrate_folio	= migrate_folio,
 		};
 
 
@@ -78999,45 +78830,40 @@ _ACEOF
 
 
 	test -d build || mkdir -p build
-	test -d build/vfs_has_release_folio || mkdir -p build/vfs_has_release_folio
+	test -d build/vfs_has_migrate_folio || mkdir -p build/vfs_has_migrate_folio
 
-	file=build/vfs_has_release_folio/Makefile
+	file=build/vfs_has_migrate_folio/Makefile
 
 		cat - <<_ACEOF >$file
 # Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_release_folio
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_migrate_folio
 
 ccflags-y := -Werror $FRAME_LARGER_THAN
 _ACEOF
 
 
 
-		echo "obj-m := vfs_has_release_folio.o" >>$file
+		echo "obj-m := vfs_has_migrate_folio.o" >>$file
 
 	if test "xyes" = "xyes"; then :
-  echo "obj-m += vfs_has_release_folio/" >>build/Makefile
+  echo "obj-m += vfs_has_migrate_folio/" >>build/Makefile
 fi
 
 
 	if  test -n "" ; then :
 
 
-test -d build/vfs_has_release_folio_license || mkdir -p build/vfs_has_release_folio_license
-cat confdefs.h - <<_ACEOF >build/vfs_has_release_folio_license/vfs_has_release_folio_license.c
+test -d build/vfs_has_migrate_folio_license || mkdir -p build/vfs_has_migrate_folio_license
+cat confdefs.h - <<_ACEOF >build/vfs_has_migrate_folio_license/vfs_has_migrate_folio_license.c
 
 #include <linux/module.h>
 
 		#include <linux/fs.h>
-
-		static bool
-		test_release_folio(struct folio *folio, gfp_t gfp) {
-			(void) folio; (void) gfp;
-			return (0);
-		}
+		#include <linux/migrate.h>
 
 		static const struct address_space_operations
 		    aops __attribute__ ((unused)) = {
-			.release_folio	= test_release_folio,
+			.migrate_folio	= migrate_folio,
 		};
 
 
@@ -79058,146 +78884,23 @@ _ACEOF
 
 
 	test -d build || mkdir -p build
-	test -d build/vfs_has_release_folio_license || mkdir -p build/vfs_has_release_folio_license
+	test -d build/vfs_has_migrate_folio_license || mkdir -p build/vfs_has_migrate_folio_license
 
-	file=build/vfs_has_release_folio_license/Makefile
+	file=build/vfs_has_migrate_folio_license/Makefile
 
 		cat - <<_ACEOF >$file
 # Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_release_folio_license
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_migrate_folio_license
 
 ccflags-y := -Werror $FRAME_LARGER_THAN
 _ACEOF
 
 
 
-		echo "obj-m := vfs_has_release_folio_license.o" >>$file
+		echo "obj-m := vfs_has_migrate_folio_license.o" >>$file
 
 	if test "xyes" = "xyes"; then :
-  echo "obj-m += vfs_has_release_folio_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
-
-test -d build/vfs_has_invalidate_folio || mkdir -p build/vfs_has_invalidate_folio
-cat confdefs.h - <<_ACEOF >build/vfs_has_invalidate_folio/vfs_has_invalidate_folio.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static void
-		test_invalidate_folio(struct folio *folio, size_t offset,
-		                      size_t len) {
-			(void) folio; (void) offset; (void) len;
-			return;
-		}
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.invalidate_folio	= test_invalidate_folio,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/vfs_has_invalidate_folio || mkdir -p build/vfs_has_invalidate_folio
-
-	file=build/vfs_has_invalidate_folio/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_invalidate_folio
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := vfs_has_invalidate_folio.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += vfs_has_invalidate_folio/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/vfs_has_invalidate_folio_license || mkdir -p build/vfs_has_invalidate_folio_license
-cat confdefs.h - <<_ACEOF >build/vfs_has_invalidate_folio_license/vfs_has_invalidate_folio_license.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static void
-		test_invalidate_folio(struct folio *folio, size_t offset,
-		                      size_t len) {
-			(void) folio; (void) offset; (void) len;
-			return;
-		}
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.invalidate_folio	= test_invalidate_folio,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/vfs_has_invalidate_folio_license || mkdir -p build/vfs_has_invalidate_folio_license
-
-	file=build/vfs_has_invalidate_folio_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/vfs_has_invalidate_folio_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := vfs_has_invalidate_folio_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += vfs_has_invalidate_folio_license/" >>build/Makefile
+  echo "obj-m += vfs_has_migrate_folio_license/" >>build/Makefile
 fi
 
 
@@ -85631,118 +85334,6 @@ fi
 
 
 
-test -d build/kthread_dequeue_signal_3arg_task || mkdir -p build/kthread_dequeue_signal_3arg_task
-cat confdefs.h - <<_ACEOF >build/kthread_dequeue_signal_3arg_task/kthread_dequeue_signal_3arg_task.c
-
-#include <linux/module.h>
-
-		#include <linux/sched/signal.h>
-
-
-int
-main (void)
-{
-
-		struct task_struct *task = NULL;
-		sigset_t *mask = NULL;
-		kernel_siginfo_t *info = NULL;
-		int error __attribute__ ((unused));
-
-		error = dequeue_signal(task, mask, info);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/kthread_dequeue_signal_3arg_task || mkdir -p build/kthread_dequeue_signal_3arg_task
-
-	file=build/kthread_dequeue_signal_3arg_task/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/kthread_dequeue_signal_3arg_task
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := kthread_dequeue_signal_3arg_task.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += kthread_dequeue_signal_3arg_task/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/kthread_dequeue_signal_3arg_task_license || mkdir -p build/kthread_dequeue_signal_3arg_task_license
-cat confdefs.h - <<_ACEOF >build/kthread_dequeue_signal_3arg_task_license/kthread_dequeue_signal_3arg_task_license.c
-
-#include <linux/module.h>
-
-		#include <linux/sched/signal.h>
-
-
-int
-main (void)
-{
-
-		struct task_struct *task = NULL;
-		sigset_t *mask = NULL;
-		kernel_siginfo_t *info = NULL;
-		int error __attribute__ ((unused));
-
-		error = dequeue_signal(task, mask, info);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/kthread_dequeue_signal_3arg_task_license || mkdir -p build/kthread_dequeue_signal_3arg_task_license
-
-	file=build/kthread_dequeue_signal_3arg_task_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/kthread_dequeue_signal_3arg_task_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := kthread_dequeue_signal_3arg_task_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += kthread_dequeue_signal_3arg_task_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
 test -d build/kthread_dequeue_signal_4arg || mkdir -p build/kthread_dequeue_signal_4arg
 cat confdefs.h - <<_ACEOF >build/kthread_dequeue_signal_4arg/kthread_dequeue_signal_4arg.c
 
@@ -85849,6 +85440,118 @@ _ACEOF
 
 	if test "xyes" = "xyes"; then :
   echo "obj-m += kthread_dequeue_signal_4arg_license/" >>build/Makefile
+fi
+
+
+fi
+
+
+
+
+test -d build/kthread_dequeue_signal_3arg_type || mkdir -p build/kthread_dequeue_signal_3arg_type
+cat confdefs.h - <<_ACEOF >build/kthread_dequeue_signal_3arg_type/kthread_dequeue_signal_3arg_type.c
+
+#include <linux/module.h>
+
+		#include <linux/sched/signal.h>
+
+
+int
+main (void)
+{
+
+		sigset_t *mask = NULL;
+		kernel_siginfo_t *info = NULL;
+		enum pid_type *type = NULL;
+		int error __attribute__ ((unused));
+
+		error = dequeue_signal(mask, info, type);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE("Dual BSD/GPL");
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/kthread_dequeue_signal_3arg_type || mkdir -p build/kthread_dequeue_signal_3arg_type
+
+	file=build/kthread_dequeue_signal_3arg_type/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/kthread_dequeue_signal_3arg_type
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := kthread_dequeue_signal_3arg_type.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += kthread_dequeue_signal_3arg_type/" >>build/Makefile
+fi
+
+
+	if  test -n "" ; then :
+
+
+test -d build/kthread_dequeue_signal_3arg_type_license || mkdir -p build/kthread_dequeue_signal_3arg_type_license
+cat confdefs.h - <<_ACEOF >build/kthread_dequeue_signal_3arg_type_license/kthread_dequeue_signal_3arg_type_license.c
+
+#include <linux/module.h>
+
+		#include <linux/sched/signal.h>
+
+
+int
+main (void)
+{
+
+		sigset_t *mask = NULL;
+		kernel_siginfo_t *info = NULL;
+		enum pid_type *type = NULL;
+		int error __attribute__ ((unused));
+
+		error = dequeue_signal(mask, info, type);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE();
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/kthread_dequeue_signal_3arg_type_license || mkdir -p build/kthread_dequeue_signal_3arg_type_license
+
+	file=build/kthread_dequeue_signal_3arg_type_license/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/kthread_dequeue_signal_3arg_type_license
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := kthread_dequeue_signal_3arg_type_license.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += kthread_dequeue_signal_3arg_type_license/" >>build/Makefile
 fi
 
 
@@ -86725,7 +86428,7 @@ int
 main (void)
 {
 
-		struct ctl_table test_table[] __attribute__((unused)) = {0};
+		struct ctl_table test_table[] __attribute__((unused)) = {{}};
 		register_sysctl_sz("", test_table, 0);
 
 	;
@@ -86776,7 +86479,7 @@ int
 main (void)
 {
 
-		struct ctl_table test_table[] __attribute__((unused)) = {0};
+		struct ctl_table test_table[] __attribute__((unused)) = {{}};
 		register_sysctl_sz("", test_table, 0);
 
 	;
@@ -93114,17 +92817,17 @@ fi
 
 
 
-				{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether release_folio exists" >&5
-$as_echo_n "checking whether release_folio exists... " >&6; }
+				{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether migrate_folio exists" >&5
+$as_echo_n "checking whether migrate_folio exists... " >&6; }
 
-	if test -d build/vfs_has_release_folio; then :
+	if test -d build/vfs_has_migrate_folio; then :
 
-		if test -f build/vfs_has_release_folio/vfs_has_release_folio.ko; then :
+		if test -f build/vfs_has_migrate_folio/vfs_has_migrate_folio.ko; then :
 
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-$as_echo "#define HAVE_VFS_RELEASE_FOLIO 1" >>confdefs.h
+$as_echo "#define HAVE_VFS_MIGRATE_FOLIO 1" >>confdefs.h
 
 
 else
@@ -93137,38 +92840,7 @@ fi
 else
 
 		as_fn_error $? "
-	*** No matching source for the \"vfs_has_release_folio\" test, check that
-	*** both the test source and result macros refer to the same name.
-		" "$LINENO" 5
-
-fi
-
-
-
-				{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether invalidate_folio exists" >&5
-$as_echo_n "checking whether invalidate_folio exists... " >&6; }
-
-	if test -d build/vfs_has_invalidate_folio; then :
-
-		if test -f build/vfs_has_invalidate_folio/vfs_has_invalidate_folio.ko; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-$as_echo "#define HAVE_VFS_INVALIDATE_FOLIO 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-
-else
-
-		as_fn_error $? "
-	*** No matching source for the \"vfs_has_invalidate_folio\" test, check that
+	*** No matching source for the \"vfs_has_migrate_folio\" test, check that
 	*** both the test source and result macros refer to the same name.
 		" "$LINENO" 5
 
@@ -95229,7 +94901,7 @@ fi
 
 
 
-											{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether dequeue_signal() takes 4 arguments" >&5
+																		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether dequeue_signal() takes 4 arguments" >&5
 $as_echo_n "checking whether dequeue_signal() takes 4 arguments... " >&6; }
 
 	if test -d build/kthread_dequeue_signal_4arg; then :
@@ -95246,17 +94918,17 @@ else
 
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether dequeue_signal() a task argument" >&5
-$as_echo_n "checking whether dequeue_signal() a task argument... " >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether 3-arg dequeue_signal() takes a type argument" >&5
+$as_echo_n "checking whether 3-arg dequeue_signal() takes a type argument... " >&6; }
 
-	if test -d build/kthread_dequeue_signal_3arg_task; then :
+	if test -d build/kthread_dequeue_signal_3arg_type; then :
 
-		if test -f build/kthread_dequeue_signal_3arg_task/kthread_dequeue_signal_3arg_task.ko; then :
+		if test -f build/kthread_dequeue_signal_3arg_type/kthread_dequeue_signal_3arg_type.ko; then :
 
 			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-$as_echo "#define HAVE_DEQUEUE_SIGNAL_3ARG_TASK 1" >>confdefs.h
+$as_echo "#define HAVE_DEQUEUE_SIGNAL_3ARG_TYPE 1" >>confdefs.h
 
 
 else
@@ -95269,7 +94941,7 @@ fi
 else
 
 		as_fn_error $? "
-	*** No matching source for the \"kthread_dequeue_signal_3arg_task\" test, check that
+	*** No matching source for the \"kthread_dequeue_signal_3arg_type\" test, check that
 	*** both the test source and result macros refer to the same name.
 		" "$LINENO" 5
 

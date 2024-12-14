@@ -93,7 +93,8 @@ target_triplet = @target@
 @BUILD_LINUX_TRUE@am__append_1 = \
 @BUILD_LINUX_TRUE@	functional/simd/simd_supported.ksh \
 @BUILD_LINUX_TRUE@	functional/tmpfile/cleanup.ksh \
-@BUILD_LINUX_TRUE@	functional/tmpfile/setup.ksh
+@BUILD_LINUX_TRUE@	functional/tmpfile/setup.ksh \
+@BUILD_LINUX_TRUE@	functional/luks/luks_sanity.ksh
 
 subdir = tests/zfs-tests/tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -199,10 +200,9 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-vfs-file_range.m4 \
 	$(top_srcdir)/config/kernel-vfs-filemap_dirty_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-fsync.m4 \
-	$(top_srcdir)/config/kernel-vfs-invalidate_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-iov_iter.m4 \
+	$(top_srcdir)/config/kernel-vfs-migrate_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-read_folio.m4 \
-	$(top_srcdir)/config/kernel-vfs-release_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-set_page_dirty.m4 \
 	$(top_srcdir)/config/kernel-writepage_t.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
@@ -267,7 +267,8 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	perf/regression/setup.ksh perf/scripts/prefetch_io.sh \
 	functional/simd/simd_supported.ksh \
 	functional/tmpfile/cleanup.ksh functional/tmpfile/setup.ksh \
-	functional/acl/off/cleanup.ksh functional/acl/off/dosmode.ksh \
+	functional/luks/luks_sanity.ksh functional/acl/off/cleanup.ksh \
+	functional/acl/off/dosmode.ksh \
 	functional/acl/off/posixmode.ksh functional/acl/off/setup.ksh \
 	functional/acl/posix/cleanup.ksh \
 	functional/acl/posix/posix_001_pos.ksh \
@@ -351,6 +352,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/block_cloning/block_cloning_replay_encrypted.ksh \
 	functional/block_cloning/block_cloning_lwb_buffer_overflow.ksh \
 	functional/block_cloning/block_cloning_rlimit_fsize.ksh \
+	functional/block_cloning/block_cloning_large_offset.ksh \
 	functional/bootfs/bootfs_001_pos.ksh \
 	functional/bootfs/bootfs_002_neg.ksh \
 	functional/bootfs/bootfs_003_pos.ksh \
@@ -1091,6 +1093,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/cli_root/zpool_scrub/zpool_scrub_multiple_copies.ksh \
 	functional/cli_root/zpool_scrub/zpool_scrub_offline_device.ksh \
 	functional/cli_root/zpool_scrub/zpool_scrub_print_repairing.ksh \
+	functional/cli_root/zpool_scrub/zpool_scrub_txg_continue_from_last.ksh \
 	functional/cli_root/zpool_scrub/zpool_error_scrub_001_pos.ksh \
 	functional/cli_root/zpool_scrub/zpool_error_scrub_002_pos.ksh \
 	functional/cli_root/zpool_scrub/zpool_error_scrub_003_pos.ksh \
@@ -2810,6 +2813,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/block_cloning/block_cloning_replay_encrypted.ksh \
 	functional/block_cloning/block_cloning_lwb_buffer_overflow.ksh \
 	functional/block_cloning/block_cloning_rlimit_fsize.ksh \
+	functional/block_cloning/block_cloning_large_offset.ksh \
 	functional/bootfs/bootfs_001_pos.ksh \
 	functional/bootfs/bootfs_002_neg.ksh \
 	functional/bootfs/bootfs_003_pos.ksh \
@@ -3550,6 +3554,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/cli_root/zpool_scrub/zpool_scrub_multiple_copies.ksh \
 	functional/cli_root/zpool_scrub/zpool_scrub_offline_device.ksh \
 	functional/cli_root/zpool_scrub/zpool_scrub_print_repairing.ksh \
+	functional/cli_root/zpool_scrub/zpool_scrub_txg_continue_from_last.ksh \
 	functional/cli_root/zpool_scrub/zpool_error_scrub_001_pos.ksh \
 	functional/cli_root/zpool_scrub/zpool_error_scrub_002_pos.ksh \
 	functional/cli_root/zpool_scrub/zpool_error_scrub_003_pos.ksh \
