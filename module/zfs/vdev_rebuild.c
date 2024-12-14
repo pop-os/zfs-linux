@@ -23,6 +23,7 @@
  * Copyright (c) 2018, Intel Corporation.
  * Copyright (c) 2020 by Lawrence Livermore National Security, LLC.
  * Copyright (c) 2022 Hewlett Packard Enterprise Development LP.
+ * Copyright (c) 2024 by Delphix. All rights reserved.
  */
 
 #include <sys/vdev_impl.h>
@@ -344,10 +345,14 @@ vdev_rebuild_complete_sync(void *arg, dmu_tx_t *tx)
 	 * While we're in syncing context take the opportunity to
 	 * setup the scrub when there are no more active rebuilds.
 	 */
-	pool_scan_func_t func = POOL_SCAN_SCRUB;
-	if (dsl_scan_setup_check(&func, tx) == 0 &&
+	setup_sync_arg_t setup_sync_arg = {
+		.func = POOL_SCAN_SCRUB,
+		.txgstart = 0,
+		.txgend = 0,
+	};
+	if (dsl_scan_setup_check(&setup_sync_arg.func, tx) == 0 &&
 	    zfs_rebuild_scrub_enabled) {
-		dsl_scan_setup_sync(&func, tx);
+		dsl_scan_setup_sync(&setup_sync_arg, tx);
 	}
 
 	cv_broadcast(&vd->vdev_rebuild_cv);
@@ -1071,7 +1076,8 @@ vdev_rebuild_restart_impl(vdev_t *vd)
 void
 vdev_rebuild_restart(spa_t *spa)
 {
-	ASSERT(MUTEX_HELD(&spa_namespace_lock));
+	ASSERT(MUTEX_HELD(&spa_namespace_lock) ||
+	    spa->spa_load_thread == curthread);
 
 	vdev_rebuild_restart_impl(spa->spa_root_vdev);
 }
@@ -1085,7 +1091,8 @@ vdev_rebuild_stop_wait(vdev_t *vd)
 {
 	spa_t *spa = vd->vdev_spa;
 
-	ASSERT(MUTEX_HELD(&spa_namespace_lock));
+	ASSERT(MUTEX_HELD(&spa_namespace_lock) ||
+	    spa->spa_export_thread == curthread);
 
 	if (vd == spa->spa_root_vdev) {
 		for (uint64_t i = 0; i < vd->vdev_children; i++)

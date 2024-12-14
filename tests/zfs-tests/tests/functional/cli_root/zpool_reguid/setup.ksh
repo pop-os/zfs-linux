@@ -21,21 +21,14 @@
 #
 
 #
-# Copyright (c) 2020 by vStack. All rights reserved.
+# Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+# Use is subject to license terms.
 #
 
 . $STF_SUITE/include/libtest.shlib
 
-#
-# DESCRIPTION:
-#	Call the raidz_test tool with -S and -e to test all supported raidz
-#	implementations with expanded map and default reflow offset.
-#	This options will test several raidz block geometries and several zio
-#	parameters that affect raidz block layout. Data reconstruction performs
-#	all combinations of failed disks. Wall time is set to 5min, but actual
-#	runtime might be longer.
-#
+verify_runnable "global"
 
-log_must raidz_test -S -e -t 60
+DISK=${DISKS%% *}
 
-log_pass "raidz_test parameter sweep test with expanded map succeeded."
+default_setup $DISK

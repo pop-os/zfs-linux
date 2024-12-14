@@ -2,9 +2,8 @@
  * CDDL HEADER START
  *
  * The contents of this file are subject to the terms of the
- * Common Development and Distribution License, Version 1.0 only
- * (the "License").  You may not use this file except in compliance
- * with the License.
+ * Common Development and Distribution License (the "License").
+ * You may not use this file except in compliance with the License.
  *
  * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
  * or https://opensource.org/licenses/CDDL-1.0.
@@ -19,18 +18,28 @@
  *
  * CDDL HEADER END
  */
+
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
- * Use is subject to license terms.
+ * Copyright (c) 2023 by iXsystems, Inc.
  */
 
-#ifndef _SYS_STACK_H
-#define	_SYS_STACK_H
+#include <sys/zfs_context.h>
+#include <sys/spa.h>
+#include <sys/spa_impl.h>
+#include <sys/vdev.h>
+#include <sys/vdev_impl.h>
 
-#if defined(__i386) || defined(__amd64)
+/*
+ * Check if the reserved boot area is in-use.
+ *
+ * This function always returns 0, as there are no known external uses
+ * of the reserved area on Linux.
+ */
+int
+vdev_check_boot_reserve(spa_t *spa, vdev_t *childvd)
+{
+	(void) spa;
+	(void) childvd;
 
-#include <sys/ia32/stack.h>	/* XX64 x86/sys/stack.h */
-
-#endif
-
-#endif	/* _SYS_STACK_H */
+	return (0);
+}

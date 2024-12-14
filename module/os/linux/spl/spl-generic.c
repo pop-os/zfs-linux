@@ -54,7 +54,6 @@
 unsigned long spl_hostid = 0;
 EXPORT_SYMBOL(spl_hostid);
 
-/* CSTYLED */
 module_param(spl_hostid, ulong, 0644);
 MODULE_PARM_DESC(spl_hostid, "The system hostid.");
 
@@ -840,16 +839,16 @@ spl_init(void)
 	if ((rc = spl_tsd_init()))
 		goto out2;
 
-	if ((rc = spl_taskq_init()))
+	if ((rc = spl_proc_init()))
 		goto out3;
 
-	if ((rc = spl_kmem_cache_init()))
+	if ((rc = spl_kstat_init()))
 		goto out4;
 
-	if ((rc = spl_proc_init()))
+	if ((rc = spl_taskq_init()))
 		goto out5;
 
-	if ((rc = spl_kstat_init()))
+	if ((rc = spl_kmem_cache_init()))
 		goto out6;
 
 	if ((rc = spl_zlib_init()))
@@ -863,13 +862,13 @@ spl_init(void)
 out8:
 	spl_zlib_fini();
 out7:
-	spl_kstat_fini();
-out6:
-	spl_proc_fini();
-out5:
 	spl_kmem_cache_fini();
-out4:
+out6:
 	spl_taskq_fini();
+out5:
+	spl_kstat_fini();
+out4:
+	spl_proc_fini();
 out3:
 	spl_tsd_fini();
 out2:
@@ -885,10 +884,10 @@ spl_fini(void)
 {
 	spl_zone_fini();
 	spl_zlib_fini();
-	spl_kstat_fini();
-	spl_proc_fini();
 	spl_kmem_cache_fini();
 	spl_taskq_fini();
+	spl_kstat_fini();
+	spl_proc_fini();
 	spl_tsd_fini();
 	spl_kvmem_fini();
 	spl_random_fini();

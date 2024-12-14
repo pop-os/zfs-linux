@@ -431,8 +431,11 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 	/*  Determine the logical block size */
 	int logical_block_size = bdev_logical_block_size(bdev);
 
-	/* Clear the nowritecache bit, causes vdev_reopen() to try again. */
-	v->vdev_nowritecache = B_FALSE;
+	/*
+	 * If the device has a write cache, clear the nowritecache flag,
+	 * so that we start issuing flush requests again.
+	 */
+	v->vdev_nowritecache = !zfs_bdev_has_write_cache(bdev);
 
 	/* Set when device reports it supports TRIM. */
 	v->vdev_has_trim = bdev_discard_supported(bdev);
@@ -816,6 +819,10 @@ vbio_completion(struct bio *bio)
  * pages) but we still have to ensure the data portion is correctly sized and
  * aligned to the logical block size, to ensure that if the kernel wants to
  * split the BIO, the two halves will still be properly aligned.
+ *
+ * NOTE: if you change this function, change the copy in
+ * tests/zfs-tests/tests/functional/vdev_disk/page_alignment.c, and add test
+ * data there to validate the change you're making.
  */
 typedef struct {
 	size_t	blocksize;
@@ -963,10 +970,8 @@ vdev_disk_io_rw(zio_t *zio)
 /*
  * This is the classic, battle-tested BIO submission code. Until we're totally
  * sure that the new code is safe and correct in all cases, this will remain
- * available.
- *
- * It is enabled by setting zfs_vdev_disk_classic=1 at module load time. It is
- * enabled (=1) by default since 2.2.4, and disabled by default (=0) on master.
+ * available and can be enabled by setting zfs_vdev_disk_classic=1 at module
+ * load time.
  *
  * These functions have been renamed to vdev_classic_* to make it clear what
  * they belong to, but their implementations are unchanged.
@@ -1367,41 +1372,32 @@ vdev_disk_io_start(zio_t *zio)
 	}
 
 	switch (zio->io_type) {
-	case ZIO_TYPE_IOCTL:
+	case ZIO_TYPE_FLUSH:
 
 		if (!vdev_readable(v)) {
-			rw_exit(&vd->vd_lock);
-			zio->io_error = SET_ERROR(ENXIO);
-			zio_interrupt(zio);
-			return;
-		}
-
-		switch (zio->io_cmd) {
-		case DKIOCFLUSHWRITECACHE:
-
-			if (zfs_nocacheflush)
-				break;
-
-			if (v->vdev_nowritecache) {
-				zio->io_error = SET_ERROR(ENOTSUP);
-				break;
-			}
-
+			/* Drive not there, can't flush */
+			error = SET_ERROR(ENXIO);
+		} else if (zfs_nocacheflush) {
+			/* Flushing disabled by operator, declare success */
+			error = 0;
+		} else if (v->vdev_nowritecache) {
+			/* This vdev not capable of flushing */
+			error = SET_ERROR(ENOTSUP);
+		} else {
+			/*
+			 * Issue the flush. If successful, the response will
+			 * be handled in the completion callback, so we're done.
+			 */
 			error = vdev_disk_io_flush(BDH_BDEV(vd->vd_bdh), zio);
 			if (error == 0) {
 				rw_exit(&vd->vd_lock);
 				return;
 			}
-
-			zio->io_error = error;
-
-			break;
-
-		default:
-			zio->io_error = SET_ERROR(ENOTSUP);
 		}
 
+		/* Couldn't issue the flush, so set the error and return it */
 		rw_exit(&vd->vd_lock);
+		zio->io_error = error;
 		zio_execute(zio);
 		return;
 
@@ -1516,7 +1512,7 @@ vdev_disk_rele(vdev_t *vd)
  * BIO submission method. See comment above about vdev_classic.
  * Set zfs_vdev_disk_classic=0 for new, =1 for classic
  */
-static uint_t zfs_vdev_disk_classic = 1;	/* default classic */
+static uint_t zfs_vdev_disk_classic = 0;	/* default new */
 
 /* Set submission function from module parameter */
 static int

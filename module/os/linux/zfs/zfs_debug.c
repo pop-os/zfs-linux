@@ -168,7 +168,8 @@ __dprintf(boolean_t dprint, const char *file, const char *func,
 		newfile = file;
 	}
 
-	i = snprintf(buf, size, "%s%s:%d:%s(): ", prefix, newfile, line, func);
+	i = snprintf(buf, size, "%px %s%s:%d:%s(): ",
+	    curthread, prefix, newfile, line, func);
 
 	if (i < size) {
 		va_start(adx, fmt);
@@ -213,7 +214,5 @@ __dprintf(boolean_t dprint, const char *file, const char *func,
 module_param(zfs_dbgmsg_enable, int, 0644);
 MODULE_PARM_DESC(zfs_dbgmsg_enable, "Enable ZFS debug message log");
 
-/* BEGIN CSTYLED */
 module_param(zfs_dbgmsg_maxsize, uint, 0644);
-/* END CSTYLED */
 MODULE_PARM_DESC(zfs_dbgmsg_maxsize, "Maximum ZFS debug log size");

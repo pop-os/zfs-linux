@@ -132,7 +132,6 @@ zpl_get_name(struct dentry *parent, char *name, struct dentry *child)
 	return (error);
 }
 
-
 static struct dentry *
 zpl_get_parent(struct dentry *child)
 {

@@ -28,6 +28,7 @@
 #include <linux/compat.h>
 #endif
 #include <linux/fs.h>
+#include <linux/migrate.h>
 #include <sys/file.h>
 #include <sys/dmu_objset.h>
 #include <sys/zfs_znode.h>
@@ -1090,6 +1091,11 @@ const struct address_space_operations zpl_address_space_operations = {
 #ifdef HAVE_VFS_FILEMAP_DIRTY_FOLIO
 	.dirty_folio	= filemap_dirty_folio,
 #endif
+#ifdef HAVE_VFS_MIGRATE_FOLIO
+	.migrate_folio	= migrate_folio,
+#else
+	.migratepage	= migrate_page,
+#endif
 };
 
 const struct file_operations zpl_file_operations = {
@@ -1137,7 +1143,6 @@ const struct file_operations zpl_dir_file_operations = {
 #endif
 };
 
-/* CSTYLED */
 module_param(zfs_fallocate_reserve_percent, uint, 0644);
 MODULE_PARM_DESC(zfs_fallocate_reserve_percent,
 	"Percentage of length to use for the available capacity check");

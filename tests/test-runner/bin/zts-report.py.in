@@ -259,6 +259,7 @@ maybe = {
     'snapused/snapused_004_pos': ['FAIL', 5513],
     'trim/setup': ['SKIP', trim_reason],
     'upgrade/upgrade_projectquota_001_pos': ['SKIP', project_id_reason],
+    'upgrade/upgrade_projectquota_002_pos': ['SKIP', project_id_reason],
     'user_namespace/setup': ['SKIP', user_ns_reason],
     'userquota/setup': ['SKIP', exec_reason],
     'vdev_zaps/vdev_zaps_004_pos': ['FAIL', known_reason],
@@ -337,6 +338,8 @@ elif sys.platform.startswith('linux'):
         'block_cloning/block_cloning_replay_encrypted':
             ['SKIP', cfr_reason],
         'block_cloning/block_cloning_rlimit_fsize':
+            ['SKIP', cfr_reason],
+        'block_cloning/block_cloning_large_offset':
             ['SKIP', cfr_reason],
         'cli_root/zfs_rename/zfs_rename_002_pos': ['FAIL', known_reason],
         'cli_root/zpool_reopen/zpool_reopen_003_pos': ['FAIL', known_reason],

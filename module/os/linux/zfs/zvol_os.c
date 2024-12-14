@@ -390,7 +390,7 @@ zvol_discard(zv_request_t *zvr)
 	if (error != 0) {
 		dmu_tx_abort(tx);
 	} else {
-		zvol_log_truncate(zv, tx, start, size, B_TRUE);
+		zvol_log_truncate(zv, tx, start, size);
 		dmu_tx_commit(tx);
 		error = dmu_free_long_range(zv->zv_objset,
 		    ZVOL_OBJ, start, size);
@@ -520,7 +520,7 @@ zvol_request_impl(zvol_state_t *zv, struct bio *bio, struct request *rq,
 		goto out;
 	}
 
-	if (zvol_request_sync)
+	if (zvol_request_sync || zv->zv_threading == B_FALSE)
 		force_sync = 1;
 
 	zv_request_t zvr = {
@@ -551,8 +551,8 @@ zvol_request_impl(zvol_state_t *zv, struct bio *bio, struct request *rq,
 		blk_mq_hw_queue =
 		    rq->q->queue_hw_ctx[rq->q->mq_map[rq->cpu]]->queue_num;
 #endif
-	taskq_hash = cityhash4((uintptr_t)zv, offset >> ZVOL_TASKQ_OFFSET_SHIFT,
-	    blk_mq_hw_queue, 0);
+	taskq_hash = cityhash3((uintptr_t)zv, offset >> ZVOL_TASKQ_OFFSET_SHIFT,
+	    blk_mq_hw_queue);
 	tq_idx = taskq_hash % ztqs->tqs_cnt;
 
 	if (rw == WRITE) {
@@ -790,6 +790,7 @@ retry:
 			if (!mutex_tryenter(&spa_namespace_lock)) {
 				mutex_exit(&zv->zv_state_lock);
 				rw_exit(&zv->zv_suspend_lock);
+				drop_suspend = B_FALSE;
 
 #ifdef HAVE_BLKDEV_GET_ERESTARTSYS
 				schedule();
@@ -1175,7 +1176,7 @@ zvol_queue_limits_init(zvol_queue_limits_t *limits, zvol_state_t *zv,
 		limits->zql_max_segment_size = UINT_MAX;
 	}
 
-	limits->zql_io_opt = zv->zv_volblocksize;
+	limits->zql_io_opt = DMU_MAX_ACCESS / 2;
 
 	limits->zql_physical_block_size = zv->zv_volblocksize;
 	limits->zql_max_discard_sectors =
@@ -1405,7 +1406,7 @@ zvol_alloc(dev_t dev, const char *name, uint64_t volblocksize)
 	zso->zvo_queue->queuedata = zv;
 	zso->zvo_dev = dev;
 	zv->zv_open_count = 0;
-	strlcpy(zv->zv_name, name, MAXNAMELEN);
+	strlcpy(zv->zv_name, name, sizeof (zv->zv_name));
 
 	zfs_rangelock_init(&zv->zv_rangelock, NULL, NULL);
 	rw_init(&zv->zv_suspend_lock, NULL, RW_DEFAULT, NULL);
@@ -1604,6 +1605,7 @@ zvol_os_create_minor(const char *name)
 	int error = 0;
 	int idx;
 	uint64_t hash = zvol_name_hash(name);
+	uint64_t volthreading;
 	bool replayed_zil = B_FALSE;
 
 	if (zvol_inhibit_dev)
@@ -1656,6 +1658,12 @@ zvol_os_create_minor(const char *name)
 
 	zv->zv_volsize = volsize;
 	zv->zv_objset = os;
+
+	/* Default */
+	zv->zv_threading = B_TRUE;
+	if (dsl_prop_get_integer(name, "volthreading", &volthreading, NULL)
+	    == 0)
+		zv->zv_threading = volthreading;
 
 	set_capacity(zv->zv_zso->zvo_disk, zv->zv_volsize >> 9);
 
@@ -1891,7 +1899,6 @@ zvol_fini(void)
 	ida_destroy(&zvol_ida);
 }
 
-/* BEGIN CSTYLED */
 module_param(zvol_inhibit_dev, uint, 0644);
 MODULE_PARM_DESC(zvol_inhibit_dev, "Do not create zvol device nodes");
 
@@ -1900,7 +1907,7 @@ MODULE_PARM_DESC(zvol_major, "Major number for zvol device");
 
 module_param(zvol_threads, uint, 0444);
 MODULE_PARM_DESC(zvol_threads, "Number of threads to handle I/O requests. Set"
-    "to 0 to use all active CPUs");
+	"to 0 to use all active CPUs");
 
 module_param(zvol_request_sync, uint, 0644);
 MODULE_PARM_DESC(zvol_request_sync, "Synchronously handle bio requests");
@@ -1925,11 +1932,9 @@ MODULE_PARM_DESC(zvol_use_blk_mq, "Use the blk-mq API for zvols");
 
 module_param(zvol_blk_mq_blocks_per_thread, uint, 0644);
 MODULE_PARM_DESC(zvol_blk_mq_blocks_per_thread,
-    "Process volblocksize blocks per thread");
+	"Process volblocksize blocks per thread");
 
 #ifndef HAVE_BLKDEV_GET_ERESTARTSYS
 module_param(zvol_open_timeout_ms, uint, 0644);
 MODULE_PARM_DESC(zvol_open_timeout_ms, "Timeout for ZVOL open retries");
 #endif
-
-/* END CSTYLED */

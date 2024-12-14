@@ -1518,20 +1518,16 @@ zio_crypt_init_uios_zil(boolean_t encrypt, uint8_t *plainbuf,
 		 * authenticate it.
 		 */
 		if (txtype == TX_WRITE) {
-			crypt_len = sizeof (lr_write_t) -
-			    sizeof (lr_t) - sizeof (blkptr_t);
+			const size_t o = offsetof(lr_write_t, lr_blkptr);
+			crypt_len = o - sizeof (lr_t);
 			src_iovecs[nr_iovecs].iov_base = slrp + sizeof (lr_t);
 			src_iovecs[nr_iovecs].iov_len = crypt_len;
 			dst_iovecs[nr_iovecs].iov_base = dlrp + sizeof (lr_t);
 			dst_iovecs[nr_iovecs].iov_len = crypt_len;
 
 			/* copy the bp now since it will not be encrypted */
-			memcpy(dlrp + sizeof (lr_write_t) - sizeof (blkptr_t),
-			    slrp + sizeof (lr_write_t) - sizeof (blkptr_t),
-			    sizeof (blkptr_t));
-			memcpy(aadp,
-			    slrp + sizeof (lr_write_t) - sizeof (blkptr_t),
-			    sizeof (blkptr_t));
+			memcpy(dlrp + o, slrp + o, sizeof (blkptr_t));
+			memcpy(aadp, slrp + o, sizeof (blkptr_t));
 			aadp += sizeof (blkptr_t);
 			aad_len += sizeof (blkptr_t);
 			nr_iovecs++;
@@ -2077,7 +2073,6 @@ error:
 }
 
 #if defined(_KERNEL)
-/* CSTYLED */
 module_param(zfs_key_max_salt_uses, ulong, 0644);
 MODULE_PARM_DESC(zfs_key_max_salt_uses, "Max number of times a salt value "
 	"can be used for generating encryption keys before it is rotated");

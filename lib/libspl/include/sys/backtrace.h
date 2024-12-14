@@ -20,17 +20,13 @@
  * CDDL HEADER END
  */
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
- * Use is subject to license terms.
+ * Copyright (c) 2024, Rob Norris <robn@despairlabs.com>
+ * Copyright (c) 2024, Klara Inc.
  */
 
-#ifndef _SYS_TRAP_H
-#define	_SYS_TRAP_H
+#ifndef _LIBSPL_SYS_BACKTRACE_H
+#define	_LIBSPL_SYS_BACKTRACE_H
 
-#if defined(__i386) || defined(__amd64)
-
-#include <sys/ia32/trap.h>	/* XX64	x86/sys/trap.h */
+void libspl_backtrace(int fd);
 
 #endif
-
-#endif	/* _SYS_TRAP_H */

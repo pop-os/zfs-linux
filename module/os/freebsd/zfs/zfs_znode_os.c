@@ -370,8 +370,6 @@ zfs_znode_sa_init(zfsvfs_t *zfsvfs, znode_t *zp,
 	 */
 	if (zp->z_id == zfsvfs->z_root && zfsvfs->z_parent == zfsvfs)
 		ZTOV(zp)->v_flag |= VROOT;
-
-	vn_exists(ZTOV(zp));
 }
 
 void
@@ -1792,7 +1790,8 @@ zfs_znode_update_vfs(znode_t *zp)
 }
 
 int
-zfs_znode_parent_and_name(znode_t *zp, znode_t **dzpp, char *buf)
+zfs_znode_parent_and_name(znode_t *zp, znode_t **dzpp, char *buf,
+    uint64_t buflen)
 {
 	zfsvfs_t *zfsvfs = zp->z_zfsvfs;
 	uint64_t parent;
@@ -1814,7 +1813,7 @@ zfs_znode_parent_and_name(znode_t *zp, znode_t **dzpp, char *buf)
 		return (SET_ERROR(EINVAL));
 
 	err = zap_value_search(zfsvfs->z_os, parent, zp->z_id,
-	    ZFS_DIRENT_OBJ(-1ULL), buf);
+	    ZFS_DIRENT_OBJ(-1ULL), buf, buflen);
 	if (err != 0)
 		return (err);
 	err = zfs_zget(zfsvfs, parent, dzpp);
