@@ -20,3 +20,4 @@ ubuntu/zfs-mount-container-start.patch
 #ubuntu/4751-suppress-types.patch
 #bump-linux-maximum.patch
 fix-pyzfs-version.patch
+fix-simd-stat-armel.patch
