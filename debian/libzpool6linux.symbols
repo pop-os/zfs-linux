@@ -490,6 +490,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  dbuf_create_bonus@Base 0.8.2
  dbuf_destroy@Base 0.8.2
  dbuf_dirty@Base 0.8.2
+ dbuf_dirty_kmem_cache@Base 2.3
  dbuf_dirty_lightweight@Base 2.1
  dbuf_dnode_findbp@Base 2.0
  dbuf_find@Base 0.8.2
@@ -1364,6 +1365,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  l2arc_rebuild_vdev@Base 2.0
  l2arc_remove_vdev@Base 0.8.2
  l2arc_spa_rebuild_start@Base 2.0
+ l2arc_spa_rebuild_stop@Base 2.3
  l2arc_start@Base 0.8.2
  l2arc_stop@Base 0.8.2
  l2arc_vdev_get@Base 2.0
@@ -1910,6 +1912,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  spa_get_hostid@Base 0.8.2
  spa_get_last_errlog_size@Base 2.2.0
  spa_get_last_removal_txg@Base 0.8.2
+ spa_get_last_scrubbed_txg@Base 2.3
  spa_get_log_state@Base 0.8.2
  spa_get_rootblkptr@Base 0.8.2
  spa_get_slop_space@Base 0.8.2
@@ -2037,6 +2040,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  spa_restart_removal@Base 0.8.2
  spa_scan@Base 0.8.2
  spa_scan_get_stats@Base 0.8.2
+ spa_scan_range@Base 2.3
  spa_scan_stat_init@Base 0.8.2
  spa_scan_stop@Base 0.8.2
  spa_scrub_pause_resume@Base 0.8.2
@@ -2555,6 +2559,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zap_lookup_norm@Base 0.8.2
  zap_lookup_norm_by_dnode@Base 0.8.2
  zap_lookup_uint64@Base 0.8.2
+ zap_lookup_uint64_by_dnode@Base 2.3
  zap_match@Base 0.8.2
  zap_maxcd@Base 0.8.2
  zap_name_alloc_str@Base 2.1.9
@@ -2562,6 +2567,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zap_prefetch@Base 0.8.2
  zap_prefetch_object@Base 2.3
  zap_prefetch_uint64@Base 0.8.2
+ zap_prefetch_uint64_by_dnode@Base 2.3
  zap_put_leaf@Base 0.8.2
  zap_remove@Base 0.8.2
  zap_remove_by_dnode@Base 0.8.2
@@ -3308,7 +3314,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zio_decompress_data@Base 0.8.2
  zio_delay_interrupt@Base 0.8.2
  zio_destroy@Base 2.2.0
- zio_dio_chksum_verify_error_report@Base 2.3.0
+ zio_dio_chksum_verify_error_report@Base 2.3
  zio_do_crypt_abd@Base 0.8.2
  zio_do_crypt_data@Base 0.8.2
  zio_dva_throttle_enabled@Base 0.8.2
