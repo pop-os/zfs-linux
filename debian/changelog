@@ -1,3 +1,9 @@
+zfs-linux (2.2.7-2) unstable; urgency=medium
+
+  * Add patch to fix simd_stat compilation on armel
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Wed, 25 Dec 2024 16:11:41 +0800
+
 zfs-linux (2.2.7-1) unstable; urgency=medium
 
   [ Aron Xu ]
