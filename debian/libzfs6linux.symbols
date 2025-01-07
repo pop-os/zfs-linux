@@ -621,6 +621,7 @@ libzfs.so.6 libzfs6linux #MINVER#
  zprop_width@Base 0.8.2
  zvol_volsize_to_reservation@Base 0.8.2
 libzfs_core.so.3 libzfs6linux #MINVER#
+* Build-Depends-Package: libzfslinux-dev
  _sol_getmntent@Base 2.0
  atomic_add_16@Base 2.0
  atomic_add_16_nv@Base 2.0
