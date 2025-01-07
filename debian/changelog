@@ -1,11 +1,12 @@
-zfs-linux (2.3.0~rc4-1~exp1) UNRELEASED; urgency=medium
+zfs-linux (2.3.0~rc5-1~exp1) experimental; urgency=medium
 
   [ Alexandre Detiste ]
   * d/control: remove python3-distutils from Depends: alternative
     (Closes: #1082141)
 
   [ Shengqi Chen ]
-  * New upstream version 2.3.0~rc4
+  * New upstream version 2.3.0~rc5
+    * Bump SONAME to libzpoollinux6
   * d/not-installed: update list
   * d/symbols: refresh symbol list for all libraries
   * d/rules: run override_dh_autoreconf when building zfs-modules deb
@@ -13,9 +14,8 @@ zfs-linux (2.3.0~rc4-1~exp1) UNRELEASED; urgency=medium
   * d/patches:
     + refresh patches & disable bump-linux-maximum.patch
     + add patch to fix pyzfs version
-    + add patch to fix simd_stat compilation on armel
 
- -- Shengqi Chen <harry-chen@outlook.com>  Sat, 14 Dec 2024 20:08:39 +0800
+ -- Shengqi Chen <harry@debian.org>  Tue, 07 Jan 2025 23:04:20 +0800
 
 zfs-linux (2.2.6-1) unstable; urgency=medium
 
