@@ -828,6 +828,8 @@ GETTEXT_MACRO_VERSION
 USE_NLS
 KERNEL_MAKE
 LINUX_SYMBOLS
+KERNEL_ARCH
+KERNEL_CROSS_COMPILE
 KERNEL_LLVM
 KERNEL_LD
 KERNEL_CC
@@ -1145,6 +1147,8 @@ TEST_JOBS
 KERNEL_CC
 KERNEL_LD
 KERNEL_LLVM
+KERNEL_CROSS_COMPILE
+KERNEL_ARCH
 ZLIB_CFLAGS
 ZLIB_LIBS
 LIBUDEV_CFLAGS
@@ -1897,6 +1901,9 @@ Some influential environment variables:
   KERNEL_CC   C compiler for building kernel modules
   KERNEL_LD   Linker for building kernel modules
   KERNEL_LLVM Binary option to build kernel modules with LLVM/CLANG toolchain
+  KERNEL_CROSS_COMPILE
+              Cross compile prefix for kernel module builds
+  KERNEL_ARCH Architecture to build kernel modules for
   ZLIB_CFLAGS C compiler flags for ZLIB, overriding pkg-config
   ZLIB_LIBS   linker flags for ZLIB, overriding pkg-config
   LIBUDEV_CFLAGS
@@ -19850,11 +19857,15 @@ $as_echo_n "checking for kernel config option compatibility... " >&6; }
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="yes" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build >build/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -19894,11 +19905,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN="yes"
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/$name >build/$name/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -19943,11 +19958,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN="yes"
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build >build/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -20106,11 +20125,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -20206,11 +20229,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -20518,11 +20545,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -20609,11 +20640,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -20710,11 +20745,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -20823,11 +20862,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -20914,11 +20957,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -21015,11 +21062,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -21135,11 +21186,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -21235,11 +21290,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -21408,11 +21467,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -21548,11 +21611,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -36011,235 +36078,6 @@ fi
 
 
 
-test -d build/direct_io_iter || mkdir -p build/direct_io_iter
-cat confdefs.h - <<_ACEOF >build/direct_io_iter/direct_io_iter.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static ssize_t test_direct_IO(struct kiocb *kiocb,
-		    struct iov_iter *iter) { return 0; }
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.direct_IO = test_direct_IO,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/direct_io_iter || mkdir -p build/direct_io_iter
-
-	file=build/direct_io_iter/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/direct_io_iter
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := direct_io_iter.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += direct_io_iter/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/direct_io_iter_license || mkdir -p build/direct_io_iter_license
-cat confdefs.h - <<_ACEOF >build/direct_io_iter_license/direct_io_iter_license.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static ssize_t test_direct_IO(struct kiocb *kiocb,
-		    struct iov_iter *iter) { return 0; }
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.direct_IO = test_direct_IO,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/direct_io_iter_license || mkdir -p build/direct_io_iter_license
-
-	file=build/direct_io_iter_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/direct_io_iter_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := direct_io_iter_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += direct_io_iter_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
-test -d build/direct_io_iter_offset || mkdir -p build/direct_io_iter_offset
-cat confdefs.h - <<_ACEOF >build/direct_io_iter_offset/direct_io_iter_offset.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static ssize_t test_direct_IO(struct kiocb *kiocb,
-		    struct iov_iter *iter, loff_t offset) { return 0; }
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.direct_IO = test_direct_IO,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/direct_io_iter_offset || mkdir -p build/direct_io_iter_offset
-
-	file=build/direct_io_iter_offset/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/direct_io_iter_offset
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := direct_io_iter_offset.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += direct_io_iter_offset/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/direct_io_iter_offset_license || mkdir -p build/direct_io_iter_offset_license
-cat confdefs.h - <<_ACEOF >build/direct_io_iter_offset_license/direct_io_iter_offset_license.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static ssize_t test_direct_IO(struct kiocb *kiocb,
-		    struct iov_iter *iter, loff_t offset) { return 0; }
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.direct_IO = test_direct_IO,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/direct_io_iter_offset_license || mkdir -p build/direct_io_iter_offset_license
-
-	file=build/direct_io_iter_offset_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/direct_io_iter_offset_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := direct_io_iter_offset_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += direct_io_iter_offset_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
-
 test -d build/vfs_has_readpages || mkdir -p build/vfs_has_readpages
 cat confdefs.h - <<_ACEOF >build/vfs_has_readpages/vfs_has_readpages.c
 
@@ -36572,242 +36410,6 @@ fi
 
 
 
-test -d build/iov_iter_get_pages2 || mkdir -p build/iov_iter_get_pages2
-cat confdefs.h - <<_ACEOF >build/iov_iter_get_pages2/iov_iter_get_pages2.c
-
-#include <linux/module.h>
-
-		#include <linux/uio.h>
-
-
-int
-main (void)
-{
-
-		struct iov_iter iter = { 0 };
-		struct page **pages = NULL;
-		size_t maxsize = 4096;
-		unsigned maxpages = 1;
-		size_t start;
-		size_t ret __attribute__ ((unused));
-
-		ret = iov_iter_get_pages2(&iter, pages, maxsize, maxpages,
-		    &start);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/iov_iter_get_pages2 || mkdir -p build/iov_iter_get_pages2
-
-	file=build/iov_iter_get_pages2/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iov_iter_get_pages2
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := iov_iter_get_pages2.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += iov_iter_get_pages2/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/iov_iter_get_pages2_license || mkdir -p build/iov_iter_get_pages2_license
-cat confdefs.h - <<_ACEOF >build/iov_iter_get_pages2_license/iov_iter_get_pages2_license.c
-
-#include <linux/module.h>
-
-		#include <linux/uio.h>
-
-
-int
-main (void)
-{
-
-		struct iov_iter iter = { 0 };
-		struct page **pages = NULL;
-		size_t maxsize = 4096;
-		unsigned maxpages = 1;
-		size_t start;
-		size_t ret __attribute__ ((unused));
-
-		ret = iov_iter_get_pages2(&iter, pages, maxsize, maxpages,
-		    &start);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/iov_iter_get_pages2_license || mkdir -p build/iov_iter_get_pages2_license
-
-	file=build/iov_iter_get_pages2_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iov_iter_get_pages2_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := iov_iter_get_pages2_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += iov_iter_get_pages2_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
-test -d build/iov_iter_get_pages || mkdir -p build/iov_iter_get_pages
-cat confdefs.h - <<_ACEOF >build/iov_iter_get_pages/iov_iter_get_pages.c
-
-#include <linux/module.h>
-
-		#include <linux/uio.h>
-
-
-int
-main (void)
-{
-
-		struct iov_iter iter = { 0 };
-		struct page **pages = NULL;
-		size_t maxsize = 4096;
-		unsigned maxpages = 1;
-		size_t start;
-		size_t ret __attribute__ ((unused));
-
-		ret = iov_iter_get_pages(&iter, pages, maxsize, maxpages,
-		    &start);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/iov_iter_get_pages || mkdir -p build/iov_iter_get_pages
-
-	file=build/iov_iter_get_pages/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iov_iter_get_pages
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := iov_iter_get_pages.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += iov_iter_get_pages/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/iov_iter_get_pages_license || mkdir -p build/iov_iter_get_pages_license
-cat confdefs.h - <<_ACEOF >build/iov_iter_get_pages_license/iov_iter_get_pages_license.c
-
-#include <linux/module.h>
-
-		#include <linux/uio.h>
-
-
-int
-main (void)
-{
-
-		struct iov_iter iter = { 0 };
-		struct page **pages = NULL;
-		size_t maxsize = 4096;
-		unsigned maxpages = 1;
-		size_t start;
-		size_t ret __attribute__ ((unused));
-
-		ret = iov_iter_get_pages(&iter, pages, maxsize, maxpages,
-		    &start);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/iov_iter_get_pages_license || mkdir -p build/iov_iter_get_pages_license
-
-	file=build/iov_iter_get_pages_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iov_iter_get_pages_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := iov_iter_get_pages_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += iov_iter_get_pages_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
 test -d build/iov_iter_type || mkdir -p build/iov_iter_type
 cat confdefs.h - <<_ACEOF >build/iov_iter_type/iov_iter_type.c
 
@@ -36906,6 +36508,114 @@ _ACEOF
 
 	if test "xyes" = "xyes"; then :
   echo "obj-m += iov_iter_type_license/" >>build/Makefile
+fi
+
+
+fi
+
+
+
+
+test -d build/iter_is_ubuf || mkdir -p build/iter_is_ubuf
+cat confdefs.h - <<_ACEOF >build/iter_is_ubuf/iter_is_ubuf.c
+
+#include <linux/module.h>
+
+		#include <linux/uio.h>
+
+
+int
+main (void)
+{
+
+		struct iov_iter iter = { 0 };
+		bool ret __attribute__((unused));
+
+		ret = iter_is_ubuf(&iter);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE("Dual BSD/GPL");
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/iter_is_ubuf || mkdir -p build/iter_is_ubuf
+
+	file=build/iter_is_ubuf/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iter_is_ubuf
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := iter_is_ubuf.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += iter_is_ubuf/" >>build/Makefile
+fi
+
+
+	if  test -n "" ; then :
+
+
+test -d build/iter_is_ubuf_license || mkdir -p build/iter_is_ubuf_license
+cat confdefs.h - <<_ACEOF >build/iter_is_ubuf_license/iter_is_ubuf_license.c
+
+#include <linux/module.h>
+
+		#include <linux/uio.h>
+
+
+int
+main (void)
+{
+
+		struct iov_iter iter = { 0 };
+		bool ret __attribute__((unused));
+
+		ret = iter_is_ubuf(&iter);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE();
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/iter_is_ubuf_license || mkdir -p build/iter_is_ubuf_license
+
+	file=build/iter_is_ubuf_license/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iter_is_ubuf_license
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := iter_is_ubuf_license.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += iter_is_ubuf_license/" >>build/Makefile
 fi
 
 
@@ -44379,6 +44089,123 @@ fi
 
 
 
+
+
+
+test -d build/pin_user_pages_unlocked || mkdir -p build/pin_user_pages_unlocked
+cat confdefs.h - <<_ACEOF >build/pin_user_pages_unlocked/pin_user_pages_unlocked.c
+
+#include <linux/module.h>
+
+		#include <linux/mm.h>
+
+
+int
+main (void)
+{
+
+		unsigned long start = 0;
+		unsigned long nr_pages = 1;
+		struct page **pages = NULL;
+		unsigned int gup_flags = 0;
+		long ret __attribute__ ((unused));
+
+		ret = pin_user_pages_unlocked(start, nr_pages, pages,
+		    gup_flags);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE("Dual BSD/GPL");
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/pin_user_pages_unlocked || mkdir -p build/pin_user_pages_unlocked
+
+	file=build/pin_user_pages_unlocked/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/pin_user_pages_unlocked
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := pin_user_pages_unlocked.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += pin_user_pages_unlocked/" >>build/Makefile
+fi
+
+
+	if  test -n "" ; then :
+
+
+test -d build/pin_user_pages_unlocked_license || mkdir -p build/pin_user_pages_unlocked_license
+cat confdefs.h - <<_ACEOF >build/pin_user_pages_unlocked_license/pin_user_pages_unlocked_license.c
+
+#include <linux/module.h>
+
+		#include <linux/mm.h>
+
+
+int
+main (void)
+{
+
+		unsigned long start = 0;
+		unsigned long nr_pages = 1;
+		struct page **pages = NULL;
+		unsigned int gup_flags = 0;
+		long ret __attribute__ ((unused));
+
+		ret = pin_user_pages_unlocked(start, nr_pages, pages,
+		    gup_flags);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE();
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/pin_user_pages_unlocked_license || mkdir -p build/pin_user_pages_unlocked_license
+
+	file=build/pin_user_pages_unlocked_license/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/pin_user_pages_unlocked_license
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := pin_user_pages_unlocked_license.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += pin_user_pages_unlocked_license/" >>build/Makefile
+fi
+
+
+fi
+
+
 	case "$host_cpu" in
 		powerpc*)
 
@@ -44713,11 +44540,15 @@ $as_echo_n "checking for available kernel interfaces... " >&6; }
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="yes" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build >build/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -44757,11 +44588,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN="yes"
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/$name >build/$name/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -44806,11 +44641,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN="yes"
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build >build/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -47816,8 +47655,6 @@ fi
 
 
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether xattr_handler->get() wants dentry and inode and flags" >&5
 $as_echo_n "checking whether xattr_handler->get() wants dentry and inode and flags... " >&6; }
 
@@ -49883,79 +49720,6 @@ fi
 
 
 
-				{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether aops->direct_IO() uses iov_iter" >&5
-$as_echo_n "checking whether aops->direct_IO() uses iov_iter... " >&6; }
-
-	if test -d build/direct_io_iter; then :
-
-		if test -f build/direct_io_iter/direct_io_iter.ko; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-$as_echo "#define HAVE_VFS_DIRECT_IO_ITER 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-								{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether aops->direct_IO() uses offset" >&5
-$as_echo_n "checking whether aops->direct_IO() uses offset... " >&6; }
-
-	if test -d build/direct_io_iter_offset; then :
-
-		if test -f build/direct_io_iter_offset/direct_io_iter_offset.ko; then :
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-$as_echo "#define HAVE_VFS_DIRECT_IO_ITER_OFFSET 1" >>confdefs.h
-
-
-
-else
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-	as_fn_error $? "
-	*** None of the expected \"Direct I/O\" interfaces were detected.
-	*** This may be because your kernel version is newer than what is
-	*** supported, or you are using a patched custom kernel with
-	*** incompatible modifications.
-	***
-	*** ZFS Version: $ZFS_META_ALIAS
-	*** Compatible Kernels: $ZFS_META_KVER_MIN - $ZFS_META_KVER_MAX
-	" "$LINENO" 5
-
-
-fi
-
-else
-
-		as_fn_error $? "
-	*** No matching source for the \"direct_io_iter_offset\" test, check that
-	*** both the test source and result macros refer to the same name.
-		" "$LINENO" 5
-
-fi
-
-
-fi
-
-else
-
-		as_fn_error $? "
-	*** No matching source for the \"direct_io_iter\" test, check that
-	*** both the test source and result macros refer to the same name.
-		" "$LINENO" 5
-
-fi
-
-
-
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether aops->readpages exists" >&5
 $as_echo_n "checking whether aops->readpages exists... " >&6; }
 
@@ -50018,7 +49782,6 @@ fi
 
 
 
-	enable_vfs_iov_iter="yes"
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether fault_in_iov_iter_readable() is available" >&5
 $as_echo_n "checking whether fault_in_iov_iter_readable() is available... " >&6; }
@@ -50044,66 +49807,6 @@ else
 
 		as_fn_error $? "
 	*** No matching source for the \"fault_in_iov_iter_readable\" test, check that
-	*** both the test source and result macros refer to the same name.
-		" "$LINENO" 5
-
-fi
-
-
-				{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether iov_iter_get_pages2() is available" >&5
-$as_echo_n "checking whether iov_iter_get_pages2() is available... " >&6; }
-
-	if test -d build/iov_iter_get_pages2; then :
-
-		if test -f build/iov_iter_get_pages2/iov_iter_get_pages2.ko; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-$as_echo "#define HAVE_IOV_ITER_GET_PAGES2 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether iov_iter_get_pages() is available" >&5
-$as_echo_n "checking whether iov_iter_get_pages() is available... " >&6; }
-
-	if test -d build/iov_iter_get_pages; then :
-
-		if test -f build/iov_iter_get_pages/iov_iter_get_pages.ko; then :
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-$as_echo "#define HAVE_IOV_ITER_GET_PAGES 1" >>confdefs.h
-
-
-else
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-			enable_vfs_iov_iter="no"
-
-fi
-
-else
-
-		as_fn_error $? "
-	*** No matching source for the \"iov_iter_get_pages\" test, check that
-	*** both the test source and result macros refer to the same name.
-		" "$LINENO" 5
-
-fi
-
-
-fi
-
-else
-
-		as_fn_error $? "
-	*** No matching source for the \"iov_iter_get_pages2\" test, check that
 	*** both the test source and result macros refer to the same name.
 		" "$LINENO" 5
 
@@ -50140,13 +49843,35 @@ else
 fi
 
 
-							if test "x$enable_vfs_iov_iter" = "xyes"; then :
+					{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether iter_is_ubuf() is available" >&5
+$as_echo_n "checking whether iter_is_ubuf() is available... " >&6; }
+
+	if test -d build/iter_is_ubuf; then :
+
+		if test -f build/iter_is_ubuf/iter_is_ubuf.ko; then :
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_ITER_IS_UBUF 1" >>confdefs.h
 
 
-$as_echo "#define HAVE_VFS_IOV_ITER 1" >>confdefs.h
+else
 
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 
 fi
+
+else
+
+		as_fn_error $? "
+	*** No matching source for the \"iter_is_ubuf\" test, check that
+	*** both the test source and result macros refer to the same name.
+		" "$LINENO" 5
+
+fi
+
 
 							{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether iter_iov() is available" >&5
 $as_echo_n "checking whether iter_iov() is available... " >&6; }
@@ -52575,11 +52300,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -52715,11 +52444,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -52782,6 +52515,38 @@ else
 
 fi
 
+
+
+
+
+					{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pin_user_pages_unlocked() is available" >&5
+$as_echo_n "checking whether pin_user_pages_unlocked() is available... " >&6; }
+
+	if test -d build/pin_user_pages_unlocked; then :
+
+		if test -f build/pin_user_pages_unlocked/pin_user_pages_unlocked.ko; then :
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_PIN_USER_PAGES_UNLOCKED 1" >>confdefs.h
+
+
+else
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+
+else
+
+		as_fn_error $? "
+	*** No matching source for the \"pin_user_pages_unlocked\" test, check that
+	*** both the test source and result macros refer to the same name.
+		" "$LINENO" 5
+
+fi
 
 
 	case "$host_cpu" in
@@ -57326,7 +57091,7 @@ fi
 
 
 
-	for ac_func in execvpe issetugid mlockall strerror_l strlcat strlcpy gettid
+	for ac_func in execvpe issetugid mlockall strlcat strlcpy gettid
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -61769,7 +61534,7 @@ fi
 
 
 
-	for ac_func in execvpe issetugid mlockall strerror_l strlcat strlcpy gettid
+	for ac_func in execvpe issetugid mlockall strlcat strlcpy gettid
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -62852,11 +62617,15 @@ $as_echo_n "checking for kernel config option compatibility... " >&6; }
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="yes" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build >build/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -62896,11 +62665,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN="yes"
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/$name >build/$name/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -62945,11 +62718,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN="yes"
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build >build/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -63108,11 +62885,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -63208,11 +62989,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -63520,11 +63305,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -63611,11 +63400,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -63712,11 +63505,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -63825,11 +63622,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -63916,11 +63717,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -64017,11 +63822,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -64137,11 +63946,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -64237,11 +64050,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -64410,11 +64227,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -64550,11 +64371,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -79013,235 +78838,6 @@ fi
 
 
 
-test -d build/direct_io_iter || mkdir -p build/direct_io_iter
-cat confdefs.h - <<_ACEOF >build/direct_io_iter/direct_io_iter.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static ssize_t test_direct_IO(struct kiocb *kiocb,
-		    struct iov_iter *iter) { return 0; }
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.direct_IO = test_direct_IO,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/direct_io_iter || mkdir -p build/direct_io_iter
-
-	file=build/direct_io_iter/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/direct_io_iter
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := direct_io_iter.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += direct_io_iter/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/direct_io_iter_license || mkdir -p build/direct_io_iter_license
-cat confdefs.h - <<_ACEOF >build/direct_io_iter_license/direct_io_iter_license.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static ssize_t test_direct_IO(struct kiocb *kiocb,
-		    struct iov_iter *iter) { return 0; }
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.direct_IO = test_direct_IO,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/direct_io_iter_license || mkdir -p build/direct_io_iter_license
-
-	file=build/direct_io_iter_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/direct_io_iter_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := direct_io_iter_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += direct_io_iter_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
-test -d build/direct_io_iter_offset || mkdir -p build/direct_io_iter_offset
-cat confdefs.h - <<_ACEOF >build/direct_io_iter_offset/direct_io_iter_offset.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static ssize_t test_direct_IO(struct kiocb *kiocb,
-		    struct iov_iter *iter, loff_t offset) { return 0; }
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.direct_IO = test_direct_IO,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/direct_io_iter_offset || mkdir -p build/direct_io_iter_offset
-
-	file=build/direct_io_iter_offset/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/direct_io_iter_offset
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := direct_io_iter_offset.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += direct_io_iter_offset/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/direct_io_iter_offset_license || mkdir -p build/direct_io_iter_offset_license
-cat confdefs.h - <<_ACEOF >build/direct_io_iter_offset_license/direct_io_iter_offset_license.c
-
-#include <linux/module.h>
-
-		#include <linux/fs.h>
-
-		static ssize_t test_direct_IO(struct kiocb *kiocb,
-		    struct iov_iter *iter, loff_t offset) { return 0; }
-
-		static const struct address_space_operations
-		    aops __attribute__ ((unused)) = {
-			.direct_IO = test_direct_IO,
-		};
-
-
-int
-main (void)
-{
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/direct_io_iter_offset_license || mkdir -p build/direct_io_iter_offset_license
-
-	file=build/direct_io_iter_offset_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/direct_io_iter_offset_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := direct_io_iter_offset_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += direct_io_iter_offset_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
-
 test -d build/vfs_has_readpages || mkdir -p build/vfs_has_readpages
 cat confdefs.h - <<_ACEOF >build/vfs_has_readpages/vfs_has_readpages.c
 
@@ -79574,242 +79170,6 @@ fi
 
 
 
-test -d build/iov_iter_get_pages2 || mkdir -p build/iov_iter_get_pages2
-cat confdefs.h - <<_ACEOF >build/iov_iter_get_pages2/iov_iter_get_pages2.c
-
-#include <linux/module.h>
-
-		#include <linux/uio.h>
-
-
-int
-main (void)
-{
-
-		struct iov_iter iter = { 0 };
-		struct page **pages = NULL;
-		size_t maxsize = 4096;
-		unsigned maxpages = 1;
-		size_t start;
-		size_t ret __attribute__ ((unused));
-
-		ret = iov_iter_get_pages2(&iter, pages, maxsize, maxpages,
-		    &start);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/iov_iter_get_pages2 || mkdir -p build/iov_iter_get_pages2
-
-	file=build/iov_iter_get_pages2/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iov_iter_get_pages2
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := iov_iter_get_pages2.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += iov_iter_get_pages2/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/iov_iter_get_pages2_license || mkdir -p build/iov_iter_get_pages2_license
-cat confdefs.h - <<_ACEOF >build/iov_iter_get_pages2_license/iov_iter_get_pages2_license.c
-
-#include <linux/module.h>
-
-		#include <linux/uio.h>
-
-
-int
-main (void)
-{
-
-		struct iov_iter iter = { 0 };
-		struct page **pages = NULL;
-		size_t maxsize = 4096;
-		unsigned maxpages = 1;
-		size_t start;
-		size_t ret __attribute__ ((unused));
-
-		ret = iov_iter_get_pages2(&iter, pages, maxsize, maxpages,
-		    &start);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/iov_iter_get_pages2_license || mkdir -p build/iov_iter_get_pages2_license
-
-	file=build/iov_iter_get_pages2_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iov_iter_get_pages2_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := iov_iter_get_pages2_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += iov_iter_get_pages2_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
-test -d build/iov_iter_get_pages || mkdir -p build/iov_iter_get_pages
-cat confdefs.h - <<_ACEOF >build/iov_iter_get_pages/iov_iter_get_pages.c
-
-#include <linux/module.h>
-
-		#include <linux/uio.h>
-
-
-int
-main (void)
-{
-
-		struct iov_iter iter = { 0 };
-		struct page **pages = NULL;
-		size_t maxsize = 4096;
-		unsigned maxpages = 1;
-		size_t start;
-		size_t ret __attribute__ ((unused));
-
-		ret = iov_iter_get_pages(&iter, pages, maxsize, maxpages,
-		    &start);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE("Dual BSD/GPL");
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/iov_iter_get_pages || mkdir -p build/iov_iter_get_pages
-
-	file=build/iov_iter_get_pages/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iov_iter_get_pages
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := iov_iter_get_pages.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += iov_iter_get_pages/" >>build/Makefile
-fi
-
-
-	if  test -n "" ; then :
-
-
-test -d build/iov_iter_get_pages_license || mkdir -p build/iov_iter_get_pages_license
-cat confdefs.h - <<_ACEOF >build/iov_iter_get_pages_license/iov_iter_get_pages_license.c
-
-#include <linux/module.h>
-
-		#include <linux/uio.h>
-
-
-int
-main (void)
-{
-
-		struct iov_iter iter = { 0 };
-		struct page **pages = NULL;
-		size_t maxsize = 4096;
-		unsigned maxpages = 1;
-		size_t start;
-		size_t ret __attribute__ ((unused));
-
-		ret = iov_iter_get_pages(&iter, pages, maxsize, maxpages,
-		    &start);
-
-	;
-	return 0;
-}
-
-MODULE_DESCRIPTION("conftest");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
-MODULE_LICENSE();
-
-_ACEOF
-
-
-	test -d build || mkdir -p build
-	test -d build/iov_iter_get_pages_license || mkdir -p build/iov_iter_get_pages_license
-
-	file=build/iov_iter_get_pages_license/Makefile
-
-		cat - <<_ACEOF >$file
-# Example command line to manually build source
-# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iov_iter_get_pages_license
-
-ccflags-y := -Werror $FRAME_LARGER_THAN
-_ACEOF
-
-
-
-		echo "obj-m := iov_iter_get_pages_license.o" >>$file
-
-	if test "xyes" = "xyes"; then :
-  echo "obj-m += iov_iter_get_pages_license/" >>build/Makefile
-fi
-
-
-fi
-
-
-
-
 test -d build/iov_iter_type || mkdir -p build/iov_iter_type
 cat confdefs.h - <<_ACEOF >build/iov_iter_type/iov_iter_type.c
 
@@ -79908,6 +79268,114 @@ _ACEOF
 
 	if test "xyes" = "xyes"; then :
   echo "obj-m += iov_iter_type_license/" >>build/Makefile
+fi
+
+
+fi
+
+
+
+
+test -d build/iter_is_ubuf || mkdir -p build/iter_is_ubuf
+cat confdefs.h - <<_ACEOF >build/iter_is_ubuf/iter_is_ubuf.c
+
+#include <linux/module.h>
+
+		#include <linux/uio.h>
+
+
+int
+main (void)
+{
+
+		struct iov_iter iter = { 0 };
+		bool ret __attribute__((unused));
+
+		ret = iter_is_ubuf(&iter);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE("Dual BSD/GPL");
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/iter_is_ubuf || mkdir -p build/iter_is_ubuf
+
+	file=build/iter_is_ubuf/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iter_is_ubuf
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := iter_is_ubuf.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += iter_is_ubuf/" >>build/Makefile
+fi
+
+
+	if  test -n "" ; then :
+
+
+test -d build/iter_is_ubuf_license || mkdir -p build/iter_is_ubuf_license
+cat confdefs.h - <<_ACEOF >build/iter_is_ubuf_license/iter_is_ubuf_license.c
+
+#include <linux/module.h>
+
+		#include <linux/uio.h>
+
+
+int
+main (void)
+{
+
+		struct iov_iter iter = { 0 };
+		bool ret __attribute__((unused));
+
+		ret = iter_is_ubuf(&iter);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE();
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/iter_is_ubuf_license || mkdir -p build/iter_is_ubuf_license
+
+	file=build/iter_is_ubuf_license/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/iter_is_ubuf_license
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := iter_is_ubuf_license.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += iter_is_ubuf_license/" >>build/Makefile
 fi
 
 
@@ -87381,6 +86849,123 @@ fi
 
 
 
+
+
+
+test -d build/pin_user_pages_unlocked || mkdir -p build/pin_user_pages_unlocked
+cat confdefs.h - <<_ACEOF >build/pin_user_pages_unlocked/pin_user_pages_unlocked.c
+
+#include <linux/module.h>
+
+		#include <linux/mm.h>
+
+
+int
+main (void)
+{
+
+		unsigned long start = 0;
+		unsigned long nr_pages = 1;
+		struct page **pages = NULL;
+		unsigned int gup_flags = 0;
+		long ret __attribute__ ((unused));
+
+		ret = pin_user_pages_unlocked(start, nr_pages, pages,
+		    gup_flags);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE("Dual BSD/GPL");
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/pin_user_pages_unlocked || mkdir -p build/pin_user_pages_unlocked
+
+	file=build/pin_user_pages_unlocked/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/pin_user_pages_unlocked
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := pin_user_pages_unlocked.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += pin_user_pages_unlocked/" >>build/Makefile
+fi
+
+
+	if  test -n "" ; then :
+
+
+test -d build/pin_user_pages_unlocked_license || mkdir -p build/pin_user_pages_unlocked_license
+cat confdefs.h - <<_ACEOF >build/pin_user_pages_unlocked_license/pin_user_pages_unlocked_license.c
+
+#include <linux/module.h>
+
+		#include <linux/mm.h>
+
+
+int
+main (void)
+{
+
+		unsigned long start = 0;
+		unsigned long nr_pages = 1;
+		struct page **pages = NULL;
+		unsigned int gup_flags = 0;
+		long ret __attribute__ ((unused));
+
+		ret = pin_user_pages_unlocked(start, nr_pages, pages,
+		    gup_flags);
+
+	;
+	return 0;
+}
+
+MODULE_DESCRIPTION("conftest");
+MODULE_AUTHOR(ZFS_META_AUTHOR);
+MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE();
+
+_ACEOF
+
+
+	test -d build || mkdir -p build
+	test -d build/pin_user_pages_unlocked_license || mkdir -p build/pin_user_pages_unlocked_license
+
+	file=build/pin_user_pages_unlocked_license/Makefile
+
+		cat - <<_ACEOF >$file
+# Example command line to manually build source
+# make modules -C $LINUX_OBJ $ARCH_UM M=$PWD/build/pin_user_pages_unlocked_license
+
+ccflags-y := -Werror $FRAME_LARGER_THAN
+_ACEOF
+
+
+
+		echo "obj-m := pin_user_pages_unlocked_license.o" >>$file
+
+	if test "xyes" = "xyes"; then :
+  echo "obj-m += pin_user_pages_unlocked_license/" >>build/Makefile
+fi
+
+
+fi
+
+
 	case "$host_cpu" in
 		powerpc*)
 
@@ -87715,11 +87300,15 @@ $as_echo_n "checking for available kernel interfaces... " >&6; }
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="yes" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build >build/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -87759,11 +87348,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN="yes"
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/$name >build/$name/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -87808,11 +87401,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN="yes"
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build >build/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -90818,8 +90415,6 @@ fi
 
 
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether xattr_handler->get() wants dentry and inode and flags" >&5
 $as_echo_n "checking whether xattr_handler->get() wants dentry and inode and flags... " >&6; }
 
@@ -92885,79 +92480,6 @@ fi
 
 
 
-				{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether aops->direct_IO() uses iov_iter" >&5
-$as_echo_n "checking whether aops->direct_IO() uses iov_iter... " >&6; }
-
-	if test -d build/direct_io_iter; then :
-
-		if test -f build/direct_io_iter/direct_io_iter.ko; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-$as_echo "#define HAVE_VFS_DIRECT_IO_ITER 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-								{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether aops->direct_IO() uses offset" >&5
-$as_echo_n "checking whether aops->direct_IO() uses offset... " >&6; }
-
-	if test -d build/direct_io_iter_offset; then :
-
-		if test -f build/direct_io_iter_offset/direct_io_iter_offset.ko; then :
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-$as_echo "#define HAVE_VFS_DIRECT_IO_ITER_OFFSET 1" >>confdefs.h
-
-
-
-else
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-	as_fn_error $? "
-	*** None of the expected \"Direct I/O\" interfaces were detected.
-	*** This may be because your kernel version is newer than what is
-	*** supported, or you are using a patched custom kernel with
-	*** incompatible modifications.
-	***
-	*** ZFS Version: $ZFS_META_ALIAS
-	*** Compatible Kernels: $ZFS_META_KVER_MIN - $ZFS_META_KVER_MAX
-	" "$LINENO" 5
-
-
-fi
-
-else
-
-		as_fn_error $? "
-	*** No matching source for the \"direct_io_iter_offset\" test, check that
-	*** both the test source and result macros refer to the same name.
-		" "$LINENO" 5
-
-fi
-
-
-fi
-
-else
-
-		as_fn_error $? "
-	*** No matching source for the \"direct_io_iter\" test, check that
-	*** both the test source and result macros refer to the same name.
-		" "$LINENO" 5
-
-fi
-
-
-
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether aops->readpages exists" >&5
 $as_echo_n "checking whether aops->readpages exists... " >&6; }
 
@@ -93020,7 +92542,6 @@ fi
 
 
 
-	enable_vfs_iov_iter="yes"
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether fault_in_iov_iter_readable() is available" >&5
 $as_echo_n "checking whether fault_in_iov_iter_readable() is available... " >&6; }
@@ -93046,66 +92567,6 @@ else
 
 		as_fn_error $? "
 	*** No matching source for the \"fault_in_iov_iter_readable\" test, check that
-	*** both the test source and result macros refer to the same name.
-		" "$LINENO" 5
-
-fi
-
-
-				{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether iov_iter_get_pages2() is available" >&5
-$as_echo_n "checking whether iov_iter_get_pages2() is available... " >&6; }
-
-	if test -d build/iov_iter_get_pages2; then :
-
-		if test -f build/iov_iter_get_pages2/iov_iter_get_pages2.ko; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-$as_echo "#define HAVE_IOV_ITER_GET_PAGES2 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether iov_iter_get_pages() is available" >&5
-$as_echo_n "checking whether iov_iter_get_pages() is available... " >&6; }
-
-	if test -d build/iov_iter_get_pages; then :
-
-		if test -f build/iov_iter_get_pages/iov_iter_get_pages.ko; then :
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-$as_echo "#define HAVE_IOV_ITER_GET_PAGES 1" >>confdefs.h
-
-
-else
-
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-			enable_vfs_iov_iter="no"
-
-fi
-
-else
-
-		as_fn_error $? "
-	*** No matching source for the \"iov_iter_get_pages\" test, check that
-	*** both the test source and result macros refer to the same name.
-		" "$LINENO" 5
-
-fi
-
-
-fi
-
-else
-
-		as_fn_error $? "
-	*** No matching source for the \"iov_iter_get_pages2\" test, check that
 	*** both the test source and result macros refer to the same name.
 		" "$LINENO" 5
 
@@ -93142,13 +92603,35 @@ else
 fi
 
 
-							if test "x$enable_vfs_iov_iter" = "xyes"; then :
+					{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether iter_is_ubuf() is available" >&5
+$as_echo_n "checking whether iter_is_ubuf() is available... " >&6; }
+
+	if test -d build/iter_is_ubuf; then :
+
+		if test -f build/iter_is_ubuf/iter_is_ubuf.ko; then :
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_ITER_IS_UBUF 1" >>confdefs.h
 
 
-$as_echo "#define HAVE_VFS_IOV_ITER 1" >>confdefs.h
+else
 
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 
 fi
+
+else
+
+		as_fn_error $? "
+	*** No matching source for the \"iter_is_ubuf\" test, check that
+	*** both the test source and result macros refer to the same name.
+		" "$LINENO" 5
+
+fi
+
 
 							{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether iter_iov() is available" >&5
 $as_echo_n "checking whether iter_iov() is available... " >&6; }
@@ -95577,11 +95060,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -95717,11 +95204,15 @@ fi
 
 
 
+
+
 	{ ac_try='
 	    KBUILD_MODPOST_NOFINAL="" KBUILD_MODPOST_WARN=""
 	    make modules -k -j$TEST_JOBS ${KERNEL_CC:+CC=$KERNEL_CC}
 	    ${KERNEL_LD:+LD=$KERNEL_LD} ${KERNEL_LLVM:+LLVM=$KERNEL_LLVM}
 	    CONFIG_MODULES=y CFLAGS_MODULE=-DCONFIG_MODULES
+	    ${KERNEL_CROSS_COMPILE:+CROSS_COMPILE=$KERNEL_CROSS_COMPILE}
+	    ${KERNEL_ARCH:+ARCH=$KERNEL_ARCH}
 	    -C $LINUX_OBJ $ARCH_UM M=$PWD/build/conftest >build/conftest/build.log 2>&1'
   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
   (eval $ac_try) 2>&5
@@ -95784,6 +95275,38 @@ else
 
 fi
 
+
+
+
+
+					{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pin_user_pages_unlocked() is available" >&5
+$as_echo_n "checking whether pin_user_pages_unlocked() is available... " >&6; }
+
+	if test -d build/pin_user_pages_unlocked; then :
+
+		if test -f build/pin_user_pages_unlocked/pin_user_pages_unlocked.ko; then :
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_PIN_USER_PAGES_UNLOCKED 1" >>confdefs.h
+
+
+else
+
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+
+else
+
+		as_fn_error $? "
+	*** No matching source for the \"pin_user_pages_unlocked\" test, check that
+	*** both the test source and result macros refer to the same name.
+		" "$LINENO" 5
+
+fi
 
 
 	case "$host_cpu" in
@@ -96131,7 +95654,7 @@ $as_echo "no" >&6; }
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking default bash completion directory" >&5
 $as_echo_n "checking default bash completion directory... " >&6; }
 	case "$VENDOR" in
-		alpine|artix|debian|gentoo|ubuntu)
+		alpine|arch|artix|debian|gentoo|ubuntu)
 			bashcompletiondir=/usr/share/bash-completion/completions
 			;;
 		freebsd)
@@ -96244,6 +95767,8 @@ fi
 		RPM_DEFINE_KMOD=${RPM_DEFINE_KMOD}' --define "kernel_cc KERNEL_CC=$(KERNEL_CC)"'
 		RPM_DEFINE_KMOD=${RPM_DEFINE_KMOD}' --define "kernel_ld KERNEL_LD=$(KERNEL_LD)"'
 		RPM_DEFINE_KMOD=${RPM_DEFINE_KMOD}' --define "kernel_llvm KERNEL_LLVM=$(KERNEL_LLVM)"'
+		RPM_DEFINE_KMOD=${RPM_DEFINE_KMOD}' --define "kernel_cross_compile KERNEL_CROSS_COMPILE=$(KERNEL_CROSS_COMPILE)"'
+		RPM_DEFINE_KMOD=${RPM_DEFINE_KMOD}' --define "kernel_arch KERNEL_ARCH=$(KERNEL_ARCH)"'
 
 fi
 

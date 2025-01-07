@@ -623,6 +623,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-pagemap-folio_wait_bit.m4 \
 	$(top_srcdir)/config/kernel-pde-data.m4 \
 	$(top_srcdir)/config/kernel-percpu.m4 \
+	$(top_srcdir)/config/kernel-pin-user-pages.m4 \
 	$(top_srcdir)/config/kernel-proc-operations.m4 \
 	$(top_srcdir)/config/kernel-readpages.m4 \
 	$(top_srcdir)/config/kernel-reclaim_state.m4 \
@@ -647,7 +648,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-truncate-setsize.m4 \
 	$(top_srcdir)/config/kernel-types.m4 \
 	$(top_srcdir)/config/kernel-usleep_range.m4 \
-	$(top_srcdir)/config/kernel-vfs-direct_IO.m4 \
 	$(top_srcdir)/config/kernel-vfs-file_range.m4 \
 	$(top_srcdir)/config/kernel-vfs-filemap_dirty_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-fsync.m4 \
@@ -3191,7 +3191,9 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 INTLLIBS = @INTLLIBS@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 IS_SYSV_RC = @IS_SYSV_RC@
+KERNEL_ARCH = @KERNEL_ARCH@
 KERNEL_CC = @KERNEL_CC@
+KERNEL_CROSS_COMPILE = @KERNEL_CROSS_COMPILE@
 KERNEL_DEBUG_CFLAGS = @KERNEL_DEBUG_CFLAGS@
 KERNEL_DEBUG_CPPFLAGS = @KERNEL_DEBUG_CPPFLAGS@
 KERNEL_INFINITE_RECURSION = @KERNEL_INFINITE_RECURSION@
@@ -14330,7 +14332,7 @@ scripts/common.sh: scripts/common.sh.in Makefile
 		-e '/^export SCRIPT_DIR=/s|$$|$(abs_top_srcdir)/scripts|' \
 		$< >$@
 	-$(AM_V_at)echo "$$SCRIPTS_EXTRA_ENVIRONMENT" >>$@
-scripts-all-local: scripts/common.sh
+scripts-all-local: scripts/common.sh $(PROGRAMS) $(SCRIPTS) $(DATA)
 	-SCRIPT_COMMON=$< $(srcdir)/scripts/zfs-tests.sh -c
 scripts-clean-local:
 	-$(RM) -r tests/zfs-tests/bin/
