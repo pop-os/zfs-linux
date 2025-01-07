@@ -12,6 +12,21 @@ zfs-linux (2.2.4-2) unstable; urgency=medium
 
  -- Shengqi Chen <harry-chen@outlook.com>  Wed, 02 Jun 2024 15:26:37 +0800
 
+zfs-linux (2.2.2-5~exp3) experimental; urgency=medium
+
+  zfs-linux has now opted-in usr-merge. No behavioral changes should be noted.
+  
+  Some tools that do not require root privilege in zfsutils-linux have been
+  moved from sbin to bin: arc_summary, arcstat, zvol_wait, zilstat.
+  Symbolic links are added in sbin to keep compatibility. We encourage all
+  users to update the paths in their own use cases, as the links might be
+  removed in future versions.
+
+  zfsutils-linux now conflicts with nordugrid-arc-client, since they both
+  provide /usr/bin/arcstat.
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Wed, 07 Feb 2024 22:56:01 +0800
+
 zfs-linux (0.8.3-1) unstable; urgency=medium
 
   The SIMD acceleration has been fixed in this upstream release.

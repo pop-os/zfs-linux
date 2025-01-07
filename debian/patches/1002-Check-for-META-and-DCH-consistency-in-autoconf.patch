@@ -1,9 +1,7 @@
 Description: check for META and dch consistency in autoconf
 Forwarded: not-needed
-Index: zfs-linux/config/zfs-meta.m4
-===================================================================
---- zfs-linux.orig/config/zfs-meta.m4
-+++ zfs-linux/config/zfs-meta.m4
+--- a/config/zfs-meta.m4
++++ b/config/zfs-meta.m4
 @@ -1,9 +1,10 @@
  dnl #
  dnl # DESCRIPTION:
@@ -19,7 +17,7 @@ Index: zfs-linux/config/zfs-meta.m4
  dnl #
  dnl #    The META file format is as follows:
  dnl #      ^[ ]*KEY:[ \t]+VALUE$
-@@ -49,6 +50,7 @@ AC_DEFUN([ZFS_AC_META], [
+@@ -49,6 +50,7 @@
  	_zfs_ac_meta_type="none"
  	if test -f "$META"; then
  		_zfs_ac_meta_type="META file"
@@ -27,13 +25,14 @@ Index: zfs-linux/config/zfs-meta.m4
  
  		ZFS_META_NAME=_ZFS_AC_META_GETVAL([(Name|Project|Package)]);
  		if test -n "$ZFS_META_NAME"; then
-@@ -69,8 +71,29 @@ AC_DEFUN([ZFS_AC_META], [
+@@ -69,8 +71,30 @@
  			AC_SUBST([ZFS_META_VERSION])
  		fi
  
 +		if test -n "${_dpkg_parsechangelog}"; then
-+			_dpkg_version=$(echo "${_dpkg_parsechangelog}" \
-+				| $AWK '$[]1 == "Version:" { print $[]2; }' | cut -d- -f1)
++			_dpkg_full_version=$(echo "${_dpkg_parsechangelog}" \
++				| $AWK '$[]1 == "Version:" { print $[]2; }')
++			_dpkg_version=${_dpkg_full_version%-*}
 +			if test "${_dpkg_version}" != "$ZFS_META_VERSION"; then
 +				AC_MSG_ERROR([
 +	*** Version $ZFS_META_VERSION in the META file is different than
@@ -47,9 +46,9 @@ Index: zfs-linux/config/zfs-meta.m4
 -		if test ! -f ".nogitrelease" && git rev-parse --git-dir > /dev/null 2>&1; then
 +
 +		if test -n "${_dpkg_parsechangelog}"; then
-+			_dpkg_release=$(echo "${_dpkg_parsechangelog}" \
-+				| $AWK '$[]1 == "Version:" { print $[]2; }' \
-+				| cut -d- -f2-)
++			_dpkg_full_version=$(echo "${_dpkg_parsechangelog}" \
++				| $AWK '$[]1 == "Version:" { print $[]2; }')
++			_dpkg_release=${_dpkg_full_version##*-}
 +			if test -n "${_dpkg_release}"; then
 +				ZFS_META_RELEASE=${_dpkg_release}
 +				_zfs_ac_meta_type="dpkg-parsechangelog"

@@ -1,3 +1,22 @@
+zfs-linux (2.3.0~rc5-1~exp1) experimental; urgency=medium
+
+  [ Alexandre Detiste ]
+  * d/control: remove python3-distutils from Depends: alternative
+    (Closes: #1082141)
+
+  [ Shengqi Chen ]
+  * New upstream version 2.3.0~rc5
+    * Bump SONAME to libzpoollinux6
+  * d/not-installed: update list
+  * d/symbols: refresh symbol list for all libraries
+  * d/rules: run override_dh_autoreconf when building zfs-modules deb
+  * d/tests: remove call to autoreconf in binary-debs-modules script
+  * d/patches:
+    + refresh patches & disable bump-linux-maximum.patch
+    + add patch to fix pyzfs version
+
+ -- Shengqi Chen <harry@debian.org>  Tue, 07 Jan 2025 23:04:20 +0800
+
 zfs-linux (2.2.6-1) unstable; urgency=medium
 
   * New upstream version 2.2.6
@@ -78,6 +97,50 @@ zfs-linux (2.2.3-1) unstable; urgency=medium
       + enable ubuntu/zfs-mount-container-start.patch
 
  -- Shengqi Chen <harry-chen@outlook.com>  Fri, 23 Feb 2024 21:28:24 +0800
+
+zfs-linux (2.2.3-1~exp1) UNRELEASED; urgency=medium
+
+  * New upstream version 2.2.3
+    - add compatibility with Linux 6.6 (closes: #1060899)
+    - fix private mmap permission of R/O files (closes: #1052472)
+    - and many more fixes (see upstream changelog)
+  * d/patches:
+    - remove some applied / outdated patches
+    - fix a typo in 2100-zfs-load-module.patch (related: #1041857)
+    - enable ubuntu/zfs-mount-container-start.patch
+  * d/: add new symbols for libzfs4 and libzpool5
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 23 Feb 2024 15:59:29 +0800
+
+zfs-linux (2.2.2-5~exp4) UNRELEASED; urgency=medium
+
+  [ Shengqi Chen ]
+  * d/: update rule names in lintian-overrides, fix typos, lift dh-compat to 13
+  * d/not-installed: remove actually installed files
+
+  [ Aron Xu ]
+  * d/control.ubuntu: Conflicts with nordugrid-arc-client
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 23 Feb 2024 14:08:02 +0800
+
+zfs-linux (2.2.2-5~exp3) experimental; urgency=medium
+
+  * Remove more obsolete lintian overrides
+  * d/control: zfsutils-linux now conflicts with nordugrid-arc-client
+    (Closes: #1063392)
+  * d/NEWS: add notice on usr-merge and package conflict
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Wed, 07 Feb 2024 23:11:07 +0800
+
+zfs-linux (2.2.2-5~exp2) experimental; urgency=medium
+
+  * d/tests: add missing header dependency and fix zfs-test-suite
+    (Closes: #983661)
+  * d/tests: refactor kernel-smoke-test, add tests for draid[1-3]
+  * d/: install files into /usr (Closes: #1061359)
+  * d/: move some tools out of /usr/sbin and add links for compatibility
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Mon, 05 Feb 2024 22:44:24 +0800
 
 zfs-linux (2.2.2-5~exp1) experimental; urgency=medium
 

@@ -94,7 +94,6 @@ override_dh_auto_install:
 	@# Install the DKMS source.
 	@# We only want the files needed to build the modules
 	install -D -t '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/scripts' \
-		'$(CURDIR)/scripts/enum-extract.pl' \
 		'$(CURDIR)/scripts/dkms.postbuild'
 	$(foreach file,$(DKMSFILES),mv '$(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/$(file)' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)' || exit 1;)
 
@@ -154,9 +153,9 @@ override_dh_makeshlibs:
 ifeq ($(BUILD_UDEB), true)
 	dh_makeshlibs -V -plibnvpair3linux --add-udeb=libnvpair3-udeb
 	dh_makeshlibs -V -plibuutil3linux --add-udeb=libuutil3-udeb
-	dh_makeshlibs -V -plibzfs4linux --add-udeb=libzfs4-udeb
+	dh_makeshlibs -V -plibzfs5linux --add-udeb=libzfs5-udeb
 	dh_makeshlibs -V -plibzfsbootenv1linux --add-udeb=libzfsbootenv1-udeb
-	dh_makeshlibs -V -plibzpool5linux --add-udeb=libzpool5-udeb
+	dh_makeshlibs -V -plibzpool6linux --add-udeb=libzpool6-udeb
 	dh_makeshlibs -V -pzfsutils-linux --add-udeb=zfsutils-udeb
 endif
 
@@ -165,9 +164,9 @@ override_dh_strip:
 ifeq ($(BUILD_UDEB), true)
 	dh_strip -plibnvpair3-udeb
 	dh_strip -plibuutil3-udeb
-	dh_strip -plibzfs4-udeb
+	dh_strip -plibzfs5-udeb
 	dh_strip -plibzfsbootenv1-udeb
-	dh_strip -plibzpool5-udeb
+	dh_strip -plibzpool6-udeb
 	dh_strip -pzfsutils-udeb
 endif
 
@@ -219,7 +218,7 @@ override_dh_prep-deb-files:
 	< debian/control.modules.in > debian/control
 
 override_dh_configure_modules_udeb: override_dh_configure_modules_udeb_stamp
-override_dh_configure_modules_udeb_stamp:
+override_dh_configure_modules_udeb_stamp: override_dh_autoreconf
 	./configure \
 		--without-selinux \
 		--with-config=kernel \
@@ -228,7 +227,7 @@ override_dh_configure_modules_udeb_stamp:
 	touch override_dh_configure_modules_udeb_stamp
 
 override_dh_configure_modules: override_dh_configure_modules_stamp
-override_dh_configure_modules_stamp:
+override_dh_configure_modules_stamp: override_dh_autoreconf
 	./configure \
 		--with-config=kernel \
 		--with-linux=$(KSRC) \

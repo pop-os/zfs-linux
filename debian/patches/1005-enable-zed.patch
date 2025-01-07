@@ -5,11 +5,9 @@ Description: Enable zed emails
 Author: Richard Laager <rlaager@wiktel.com>
 Forwarded: not-needed
 
-Index: zfs-linux/cmd/zed/zed.d/zed.rc
-===================================================================
---- zfs-linux.orig/cmd/zed/zed.d/zed.rc
-+++ zfs-linux/cmd/zed/zed.d/zed.rc
-@@ -41,7 +41,7 @@ ZED_EMAIL_ADDR="root"
+--- a/cmd/zed/zed.d/zed.rc
++++ b/cmd/zed/zed.d/zed.rc
+@@ -41,7 +41,7 @@
  ##
  # Minimum number of seconds between notifications for a similar event.
  #

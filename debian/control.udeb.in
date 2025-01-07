@@ -28,7 +28,7 @@ Description: Solaris userland utility library for Linux (debian-installer)
  .
  This is a minimal package for use in debian-installer.
 
-Package: libzfs4-udeb
+Package: libzfs6-udeb
 Package-Type: udeb
 Section: contrib/debian-installer
 Architecture: linux-any
@@ -41,7 +41,7 @@ Description: OpenZFS library (debian-installer)
  .
  This is a minimal package for use in debian-installer.
 
-Package: libzpool5-udeb
+Package: libzpool6-udeb
 Package-Type: udeb
 Section: contrib/debian-installer
 Architecture: linux-any
@@ -61,8 +61,8 @@ Section: contrib/debian-installer
 Architecture: linux-any
 Depends: libnvpair3-udeb (= ${binary:Version}),
          libuutil3-udeb (= ${binary:Version}),
-         libzfs4-udeb (= ${binary:Version}),
-         libzpool5-udeb (= ${binary:Version}),
+         libzfs6-udeb (= ${binary:Version}),
+         libzpool6-udeb (= ${binary:Version}),
          zfs-modules,
          ${misc:Depends},
          ${shlibs:Depends}

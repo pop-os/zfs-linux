@@ -1,0 +1,18 @@
+Description: Fix pyzfs version
+ Python does not think x.y.z~rcN is a valid version. Make it happy.
+Author: Shengqi Chen <harry-chen@outlook.com>
+Forwarded: not-needed
+Last-Update: 2024-10-11
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/contrib/pyzfs/setup.py.in
++++ b/contrib/pyzfs/setup.py.in
+@@ -20,7 +20,7 @@
+ 
+ setup(
+     name="pyzfs",
+-    version="@VERSION@",
++    version="@VERSION@".replace("~", ""),
+     description="Wrapper for libzfs_core",
+     author="ClusterHQ",
+     author_email="support@clusterhq.com",

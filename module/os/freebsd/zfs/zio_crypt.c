@@ -1343,19 +1343,14 @@ zio_crypt_init_uios_zil(boolean_t encrypt, uint8_t *plainbuf,
 		 * authenticate it.
 		 */
 		if (txtype == TX_WRITE) {
-			crypt_len = sizeof (lr_write_t) -
-			    sizeof (lr_t) - sizeof (blkptr_t);
-			dst_iovecs[vec].iov_base = (char *)dlrp +
-			    sizeof (lr_t);
+			const size_t o = offsetof(lr_write_t, lr_blkptr);
+			crypt_len = o - sizeof (lr_t);
+			dst_iovecs[vec].iov_base = (char *)dlrp + sizeof (lr_t);
 			dst_iovecs[vec].iov_len = crypt_len;
 
 			/* copy the bp now since it will not be encrypted */
-			memcpy(dlrp + sizeof (lr_write_t) - sizeof (blkptr_t),
-			    slrp + sizeof (lr_write_t) - sizeof (blkptr_t),
-			    sizeof (blkptr_t));
-			memcpy(aadp,
-			    slrp + sizeof (lr_write_t) - sizeof (blkptr_t),
-			    sizeof (blkptr_t));
+			memcpy(dlrp + o, slrp + o, sizeof (blkptr_t));
+			memcpy(aadp, slrp + o, sizeof (blkptr_t));
 			aadp += sizeof (blkptr_t);
 			aad_len += sizeof (blkptr_t);
 			vec++;
@@ -1384,8 +1379,7 @@ zio_crypt_init_uios_zil(boolean_t encrypt, uint8_t *plainbuf,
 			total_len += crypt_len;
 		} else {
 			crypt_len = lr_len - sizeof (lr_t);
-			dst_iovecs[vec].iov_base = (char *)dlrp +
-			    sizeof (lr_t);
+			dst_iovecs[vec].iov_base = (char *)dlrp + sizeof (lr_t);
 			dst_iovecs[vec].iov_len = crypt_len;
 			vec++;
 			total_len += crypt_len;
@@ -1692,11 +1686,10 @@ zio_do_crypt_data(boolean_t encrypt, zio_crypt_key_t *key,
 	freebsd_crypt_session_t *tmpl = NULL;
 	uint8_t *authbuf = NULL;
 
-
+	memset(&puio_s, 0, sizeof (puio_s));
+	memset(&cuio_s, 0, sizeof (cuio_s));
 	zfs_uio_init(&puio, &puio_s);
 	zfs_uio_init(&cuio, &cuio_s);
-	memset(GET_UIO_STRUCT(&puio), 0, sizeof (struct uio));
-	memset(GET_UIO_STRUCT(&cuio), 0, sizeof (struct uio));
 
 #ifdef FCRYPTO_DEBUG
 	printf("%s(%s, %p, %p, %d, %p, %p, %u, %s, %p, %p, %p)\n",
@@ -1830,7 +1823,6 @@ error:
 }
 
 #if defined(_KERNEL) && defined(HAVE_SPL)
-/* CSTYLED */
 module_param(zfs_key_max_salt_uses, ulong, 0644);
 MODULE_PARM_DESC(zfs_key_max_salt_uses, "Max number of times a salt value "
 	"can be used for generating encryption keys before it is rotated");
