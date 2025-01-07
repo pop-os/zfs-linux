@@ -394,12 +394,6 @@
 /* iops->symlink() takes struct user_namespace* */
 #undef HAVE_IOPS_SYMLINK_USERNS
 
-/* iov_iter_get_pages() is available */
-#undef HAVE_IOV_ITER_GET_PAGES
-
-/* iov_iter_get_pages2() is available */
-#undef HAVE_IOV_ITER_GET_PAGES2
-
 /* iov_iter_type() is available */
 #undef HAVE_IOV_ITER_TYPE
 
@@ -408,6 +402,9 @@
 
 /* iter_iov() is available */
 #undef HAVE_ITER_IOV
+
+/* iter_is_ubuf() is available */
+#undef HAVE_ITER_IS_UBUF
 
 /* kernel has kernel_fpu_* functions */
 #undef HAVE_KERNEL_FPU
@@ -508,6 +505,9 @@
 /* Define if host toolchain supports PCLMULQDQ */
 #undef HAVE_PCLMULQDQ
 
+/* pin_user_pages_unlocked() is available */
+#undef HAVE_PIN_USER_PAGES_UNLOCKED
+
 /* proc_handler ctl_table arg is const */
 #undef HAVE_PROC_HANDLER_CTL_TABLE_CONST
 
@@ -598,9 +598,6 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Define to 1 if you have the `strerror_l' function. */
-#undef HAVE_STRERROR_L
-
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
@@ -670,20 +667,11 @@
 /* fops->dedupe_file_range() is available */
 #undef HAVE_VFS_DEDUPE_FILE_RANGE
 
-/* aops->direct_IO() uses iov_iter without rw */
-#undef HAVE_VFS_DIRECT_IO_ITER
-
-/* aops->direct_IO() uses iov_iter with offset */
-#undef HAVE_VFS_DIRECT_IO_ITER_OFFSET
-
 /* filemap_dirty_folio exists */
 #undef HAVE_VFS_FILEMAP_DIRTY_FOLIO
 
 /* generic_copy_file_range() is available */
 #undef HAVE_VFS_GENERIC_COPY_FILE_RANGE
-
-/* All required iov_iter interfaces are available */
-#undef HAVE_VFS_IOV_ITER
 
 /* migrate_folio exists */
 #undef HAVE_VFS_MIGRATE_FOLIO
