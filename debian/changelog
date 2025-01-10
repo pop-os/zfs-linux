@@ -1,3 +1,11 @@
+zfs-linux (2.3.0~rc5-1~exp1.1) experimental; urgency=medium
+
+  * Non-maintainer upload.
+  * Add protective diversions for concurrent package rename and aliasing
+    change of libzfs_core.so.* (DEP17 P1 M8, Closes: #1092598)
+
+ -- Helmut Grohne <helmut@subdivi.de>  Fri, 10 Jan 2025 09:03:13 +0100
+
 zfs-linux (2.3.0~rc5-1~exp1) experimental; urgency=medium
 
   [ Alexandre Detiste ]

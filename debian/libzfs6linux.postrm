@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -e
+
+if test "$1" = remove; then
+	# DEP17 P1 M8. Clean up after libzfs6linux.preinst. This code should be
+	# removed once the diversions are deleted via postinst.
+	for lib in zfs_core.so.3 zfs_core.so.3.0.0; do
+		dpkg-divert --package libzfs6linux --no-rename --divert "/lib/#DEB_HOST_MULTIARCH#/lib$lib.usr-is-merged" --remove "/lib/#DEB_HOST_MULTIARCH#/lib$lib"
+	done
+fi
+
+#DEBHELPER#
+
+exit 0

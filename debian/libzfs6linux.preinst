@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -e
+
+if test "$1" = install -o "$1" = upgrade; then
+	# DEP17 P1 M8: Divert aliased files to avoid their removal deleting the
+	# moved ones. These diversions should be removed via postinst once
+	# trixie is released.
+	for lib in zfs_core.so.3 zfs_core.so.3.0.0; do
+		dpkg-divert --package libzfs6linux --no-rename --divert "/lib/#DEB_HOST_MULTIARCH#/lib$lib.usr-is-merged" --add "/lib/#DEB_HOST_MULTIARCH#/lib$lib"
+	done
+fi
+
+#DEBHELPER#
+
+exit 0
