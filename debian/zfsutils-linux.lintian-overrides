@@ -2,7 +2,6 @@ appstream-metadata-missing-modalias-provide
 no-manual-page [usr/sbin/arc_summary]
 no-manual-page [usr/sbin/dbufstat]
 no-manual-page [usr/sbin/zilstat]
-breaks-without-version openrc
 manual-page-for-system-command
 extra-license-file [usr/share/doc/zfsutils-linux/LICENSE.gz]
 init.d-script-does-not-source-init-functions
