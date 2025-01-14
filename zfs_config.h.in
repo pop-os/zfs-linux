@@ -202,14 +202,6 @@
 /* Define if revalidate_disk() in block_device_operations */
 #undef HAVE_BLOCK_DEVICE_OPERATIONS_REVALIDATE_DISK
 
-/* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the
-   CoreFoundation framework. */
-#undef HAVE_CFLOCALECOPYCURRENT
-
-/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
-   the CoreFoundation framework. */
-#undef HAVE_CFPREFERENCESCOPYAPPVALUE
-
 /* check_disk_change() exists */
 #undef HAVE_CHECK_DISK_CHANGE
 
@@ -247,7 +239,7 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
-/* Define to 1 if you have the `execvpe' function. */
+/* Define to 1 if you have the 'execvpe' function. */
 #undef HAVE_EXECVPE
 
 /* fault_in_iov_iter_readable() is available */
@@ -289,7 +281,7 @@
 /* Define if the GNU gettext() function is already present or preinstalled. */
 #undef HAVE_GETTEXT
 
-/* Define to 1 if you have the `gettid' function. */
+/* Define to 1 if you have the 'gettid' function. */
 #undef HAVE_GETTID
 
 /* iops->get_acl() exists */
@@ -397,7 +389,7 @@
 /* iov_iter_type() is available */
 #undef HAVE_IOV_ITER_TYPE
 
-/* Define to 1 if you have the `issetugid' function. */
+/* Define to 1 if you have the 'issetugid' function. */
 #undef HAVE_ISSETUGID
 
 /* iter_iov() is available */
@@ -475,10 +467,7 @@
 /* Noting that make_request_fn() returns blk_qc_t */
 #undef HAVE_MAKE_REQUEST_FN_RET_QC
 
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
-/* Define to 1 if you have the `mlockall' function. */
+/* Define to 1 if you have the 'mlockall' function. */
 #undef HAVE_MLOCKALL
 
 /* PG_error flag is available */
@@ -595,6 +584,9 @@
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
@@ -604,10 +596,10 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if you have the `strlcat' function. */
+/* Define to 1 if you have the 'strlcat' function. */
 #undef HAVE_STRLCAT
 
-/* Define to 1 if you have the `strlcpy' function. */
+/* Define to 1 if you have the 'strlcpy' function. */
 #undef HAVE_STRLCPY
 
 /* submit_bio is member of struct block_device_operations */
@@ -646,7 +638,7 @@
 /* kernel has totalram_pages() */
 #undef HAVE_TOTALRAM_PAGES_FUNC
 
-/* Define to 1 if you have the `udev_device_get_is_initialized' function. */
+/* Define to 1 if you have the 'udev_device_get_is_initialized' function. */
 #undef HAVE_UDEV_DEVICE_GET_IS_INITIALIZED
 
 /* kernel has __kernel_fpu_* functions */
@@ -781,7 +773,9 @@
 /* pde_data() is PDE_DATA() */
 #undef SPL_PDE_DATA
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* True if ZFS is to be compiled for a FreeBSD system */
