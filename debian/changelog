@@ -1,3 +1,10 @@
+zfs-linux (2.3.0-1~exp1) experimental; urgency=medium
+
+  * New upstream version 2.3.0
+    (No functional changes since 2.3.0~rc5-1.)
+
+ -- Shengqi Chen <harry@debian.org>  Tue, 14 Jan 2025 13:29:28 +0800
+
 zfs-linux (2.3.0~rc5-1~exp1.1) experimental; urgency=medium
 
   * Non-maintainer upload.
