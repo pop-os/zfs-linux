@@ -1,3 +1,9 @@
+zfs-linux (2.3.0-1~exp1pop1) jammy; urgency=medium
+
+  * New upstream version, with Linux 6.13 build fix
+
+ -- Michael Aaron Murphy <michael@mmurphy.dev>  Mon, 20 Jan 2025 07:51:33 +0100
+
 zfs-linux (2.3.0-1~exp1) experimental; urgency=medium
 
   * New upstream version 2.3.0
