@@ -110,6 +110,14 @@ Description: OpenZFS filesystem library for Linux - general support
  .
  The OpenZFS library provides support for managing OpenZFS filesystems.
 
+Package: libzfs4linux
+Section: contrib/libs
+Architecture: linux-any
+Depends: libzfs6linux
+Description: Transitional package for libzfs6linux
+ This is a transitional package for libzfs6linux, and can be
+ safely removed after the installation is complete.
+
 Package: libzfsbootenv1linux
 Section: contrib/libs
 Architecture: linux-any
@@ -135,6 +143,14 @@ Description: OpenZFS pool library for Linux
  compression, encryption, snapshots, and more.
  .
  This zpool library provides support for managing zpools.
+
+Package: libzpool5linux
+Section: contrib/libs
+Architecture: linux-any
+Depends: libzpool6linux
+Description: Transitional package for libzpool6linux
+ This is a transitional package for libzpool6linux, and can be
+ safely removed after the installation is complete.
 
 Package: python3-pyzfs
 Section: contrib/python
