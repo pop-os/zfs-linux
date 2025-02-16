@@ -1,3 +1,17 @@
+zfs-linux (2.3.0-1) unstable; urgency=medium
+
+  [ Carles Pina i Estany ]
+  * Added po-debconf Catalan translation.
+
+  [ наб ]
+  * d/control: libzfslinux-dev Depends: libtirpc-dev, zlib1g-dev
+    (Closes: #1095855)
+
+  [ Shengqi Chen ]
+  * Upload to unstable (closes: #1093115, #1095583).
+
+ -- Shengqi Chen <harry@debian.org>  Sun, 16 Feb 2025 22:08:05 +0800
+
 zfs-linux (2.3.0-1~exp1) experimental; urgency=medium
 
   * New upstream version 2.3.0
