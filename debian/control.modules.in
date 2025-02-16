@@ -16,6 +16,7 @@ Architecture: _ARCH_
 Provides: zfs-modules
 Depends: linux-image-_KVERS_
 Recommends: zfsutils
+Breaks: zfs-fuse
 Description: OpenZFS filesystem kernel modules for Linux (kernel _KVERS_)
  An advanced integrated volume manager and filesystem that is designed for
  performance and data integrity. Snapshots, clones, checksums, deduplication,

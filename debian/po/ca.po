@@ -1,0 +1,106 @@
+# Catalan translation of zfs-linux's debconf messages
+# Copyright © 2024 Free Software Foundation, Inc.
+# This file is distributed under the same license as the zfs-linux package.
+# poc senderi <pocsenderi@protonmail.com>, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: zfs-linux\n"
+"Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
+"POT-Creation-Date: 2021-03-30 14:43+0800\n"
+"PO-Revision-Date: 2024-12-10 23:40+0100\n"
+"Last-Translator: \n"
+"Language-Team: Catalan <debian-l10n-catalan@lists.debian.org>\n"
+"Language: ca\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.4.2\n"
+
+#. Type: boolean
+#. Description
+#: ../zfs-dkms.templates:1001
+msgid "Abort building OpenZFS on a 32-bit kernel?"
+msgstr "Voleu interrompre la compilació de l'OpenZFS en un nucli de 32 bits?"
+
+#. Type: boolean
+#. Description
+#: ../zfs-dkms.templates:1001
+msgid "You are attempting to build OpenZFS against a 32-bit running kernel."
+msgstr ""
+"S'està intentant compilar l'OpenZFS en un nucli de 32 bits en execució."
+
+#. Type: boolean
+#. Description
+#. Type: boolean
+#. Description
+#: ../zfs-dkms.templates:1001 ../zfs-dkms.templates:2001
+msgid ""
+"Although possible, building in a 32-bit environment is unsupported and "
+"likely to cause instability leading to possible data corruption. You are "
+"strongly advised to use a 64-bit kernel; if you do decide to proceed with "
+"using OpenZFS on this kernel then keep in mind that it is at your own risk."
+msgstr ""
+"Tot i ser possible, compilar en un entorn de 32 bits no és compatible i és "
+"probable que causi inestabilitat que condueixi a una possible corrupció de "
+"dades. Es recomana utilitzar un nucli de 64 bits; si decidiu continuar amb "
+"l'ús d'OpenZFS en aquest nucli, tingueu en compte que ho feu sota el vostre "
+"propi risc."
+
+#. Type: boolean
+#. Description
+#: ../zfs-dkms.templates:2001
+msgid "Abort building OpenZFS on an unknown kernel?"
+msgstr "Voleu interrompre la compilació de l'OpenZFS en un nucli desconegut?"
+
+#. Type: boolean
+#. Description
+#: ../zfs-dkms.templates:2001
+msgid ""
+"You are attempting to build OpenZFS against a running kernel that could not "
+"be identified as 32-bit or 64-bit. If you are not completely sure that the "
+"running kernel is a 64-bit one, you should probably stop the build."
+msgstr ""
+"S'està intentant compilar l'OpenZFS en un nucli en execució que no s'ha "
+"pogut identificar ni com de 32 ni com de 64 bits. Si no esteu completament "
+"segur que el nucli en execució sigui de 64 bits, probablement hauríeu "
+"d'aturar la compilació."
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid "Licenses of OpenZFS and Linux are incompatible"
+msgstr "Les llicències de l'OpenZFS i del Linux són incompatibles"
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid ""
+"OpenZFS is licensed under the Common Development and Distribution License "
+"(CDDL), and the Linux kernel is licensed under the GNU General Public "
+"License Version 2 (GPL-2). While both are free open source licenses they are "
+"restrictive licenses. The combination of them causes problems because it "
+"prevents using pieces of code exclusively available under one license with "
+"pieces of code exclusively available under the other in the same binary."
+msgstr ""
+"L'OpenZFS està llicenciat sota la Common Development and Distribution "
+"License (CDDL), i el nucli de Linux està llicenciat sota la GNU General "
+"Public License Version 2 (GPL-2). Tot i que totes dues són llicències "
+"lliures de codi obert, són llicències restrictives. La combinació d'elles "
+"causa problemes perquè impedeix, en un mateix binari, l'ús de peces de codi "
+"exclusivament disponibles sota una llicència amb peces de codi exclusivament "
+"disponibles sota l'altra."
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:3001
+msgid ""
+"You are going to build OpenZFS using DKMS in such a way that they are not "
+"going to be built into one monolithic binary. Please be aware that "
+"distributing both of the binaries in the same media (disk images, virtual "
+"appliances, etc) may lead to infringing."
+msgstr ""
+"S'està a punt de compilar l'OpenZFS utilitzant DKMS de manera que no es "
+"compilarà un binari monolític. Tingueu en compte que la distribució d'ambdós "
+"binaris en un mateix mitjà (imatges de disc, aplicatius virtuals, etc.) pot "
+"constituir una infracció."

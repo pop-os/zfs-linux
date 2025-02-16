@@ -1804,8 +1804,8 @@ libzpool.so.6 libzpool6linux #MINVER#
  (arch=ppc64el)sha512_ppc_impl@Base 2.2.1
  (arch=amd64)sha512_x64_impl@Base 2.2.0
  show_pool_stats@Base 0.8.2
- simd_stat_fini@Base 2.3
- simd_stat_init@Base 2.3
+ simd_stat_fini@Base 2.2.7
+ simd_stat_init@Base 2.2.7
  sm_entry_is_debug@Base 0.8.2
  sm_entry_is_double_word@Base 0.8.2
  sm_entry_is_single_word@Base 0.8.2
@@ -2244,7 +2244,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  vdev_autotrim_stop_all@Base 0.8.2
  vdev_autotrim_stop_wait@Base 0.8.2
  vdev_best_ashift@Base 2.1.6
- vdev_check_boot_reserve@Base 2.3
+ vdev_check_boot_reserve@Base 2.2.7
  vdev_checkpoint_sm_object@Base 0.8.2
  vdev_children_are_offline@Base 0.8.2
  vdev_clear@Base 0.8.2
@@ -3033,7 +3033,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_ereport_start_checksum@Base 0.8.2
  zfs_event_create@Base 0.8.2
  zfs_file_close@Base 2.0
- zfs_file_deallocate@Base 2.3
+ zfs_file_deallocate@Base 2.2.7
  zfs_file_fsync@Base 2.0
  zfs_file_get@Base 2.0
  zfs_file_getattr@Base 2.0
@@ -3091,7 +3091,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_nicetime@Base 2.2.0
  zfs_nocacheflush@Base 0.8.2
  zfs_obj_to_path@Base 0.8.2
- zfs_obj_to_pobj@Base 2.3
+ zfs_obj_to_pobj@Base 2.2.7
  zfs_obj_to_stats@Base 0.8.2
  zfs_oldacl_byteswap@Base 0.8.2
  zfs_onexit_add_cb@Base 0.8.2
@@ -3199,13 +3199,13 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_trim_metaslab_skip@Base 0.8.2
  zfs_txg_timeout@Base 0.8.2
  zfs_userquota_prop_prefixes@Base 0.8.2
- zfs_valstr_zio_flag@Base 2.3
- zfs_valstr_zio_flag_bits@Base 2.3
- zfs_valstr_zio_flag_pairs@Base 2.3
- zfs_valstr_zio_priority@Base 2.3
- zfs_valstr_zio_stage@Base 2.3
- zfs_valstr_zio_stage_bits@Base 2.3
- zfs_valstr_zio_stage_pairs@Base 2.3
+ zfs_valstr_zio_flag@Base 2.2.7
+ zfs_valstr_zio_flag_bits@Base 2.2.7
+ zfs_valstr_zio_flag_pairs@Base 2.2.7
+ zfs_valstr_zio_priority@Base 2.2.7
+ zfs_valstr_zio_stage@Base 2.2.7
+ zfs_valstr_zio_stage_bits@Base 2.2.7
+ zfs_valstr_zio_stage_pairs@Base 2.2.7
  zfs_vdev_async_read_max_active@Base 0.8.2
  zfs_vdev_async_write_active_max_dirty_percent@Base 0.8.2
  zfs_vdev_async_write_active_min_dirty_percent@Base 0.8.2
