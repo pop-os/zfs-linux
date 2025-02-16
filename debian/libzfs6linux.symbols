@@ -462,13 +462,13 @@ libzfs.so.6 libzfs6linux #MINVER#
  zfs_userquota_prop_prefixes@Base 0.8.2
  zfs_userspace@Base 0.8.2
  zfs_valid_proplist@Base 0.8.2
- zfs_valstr_zio_flag@Base 2.3
- zfs_valstr_zio_flag_bits@Base 2.3
- zfs_valstr_zio_flag_pairs@Base 2.3
- zfs_valstr_zio_priority@Base 2.3
- zfs_valstr_zio_stage@Base 2.3
- zfs_valstr_zio_stage_bits@Base 2.3
- zfs_valstr_zio_stage_pairs@Base 2.3
+ zfs_valstr_zio_flag@Base 2.2.7
+ zfs_valstr_zio_flag_bits@Base 2.2.7
+ zfs_valstr_zio_flag_pairs@Base 2.2.7
+ zfs_valstr_zio_priority@Base 2.2.7
+ zfs_valstr_zio_stage@Base 2.2.7
+ zfs_valstr_zio_stage_bits@Base 2.2.7
+ zfs_valstr_zio_stage_pairs@Base 2.2.7
  zfs_version_kernel@Base 0.8.2
  zfs_version_nvlist@Base 2.3
  zfs_version_print@Base 0.8.2

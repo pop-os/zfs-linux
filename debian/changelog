@@ -32,6 +32,36 @@ zfs-linux (2.3.0~rc5-1~exp1) experimental; urgency=medium
 
  -- Shengqi Chen <harry@debian.org>  Tue, 07 Jan 2025 23:04:20 +0800
 
+zfs-linux (2.2.7-2) unstable; urgency=medium
+
+  * Add patch to fix simd_stat compilation on armel
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Wed, 25 Dec 2024 16:11:41 +0800
+
+zfs-linux (2.2.7-1) unstable; urgency=medium
+
+  [ Aron Xu ]
+  * d/control: Breaks zfs-fuse (Closes: #1058684)
+
+  [ Shengqi Chen ]
+  * New upstream version 2.2.7 (Closes: #1089578, #1089488, #1084964)
+  * Refresh existing patches & symbol control files
+  * d/rules: skip installing upstream removed files
+  * d/copyright: remove superfluous files
+  * d/control: add zfs-fuse version to Breaks
+
+ -- Shengqi Chen <harry-chen@outlook.com>  Fri, 13 Dec 2024 01:31:52 +0800
+
+zfs-linux (2.2.6-2) unstable; urgency=high
+
+  [ Alexandre Detiste ]
+  * d/control: remove python3-distutils from Depends: alternative (Closes: #1082141)
+
+  [ Aron Xu ]
+  * Revert "d/patches: add bump-linux-maximum.patch"
+
+ -- Aron Xu <aron@debian.org>  Sat, 12 Oct 2024 19:05:55 +0800
+
 zfs-linux (2.2.6-1) unstable; urgency=medium
 
   * New upstream version 2.2.6

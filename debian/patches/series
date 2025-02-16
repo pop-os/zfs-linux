@@ -18,5 +18,4 @@ cross-compile.patch
 ubuntu/zfs-mount-container-start.patch
 #ubuntu/4510-silently-ignore-modprobe-failure.patch
 #ubuntu/4751-suppress-types.patch
-#bump-linux-maximum.patch
 fix-pyzfs-version.patch

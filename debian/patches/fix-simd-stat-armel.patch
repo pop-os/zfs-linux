@@ -1,0 +1,19 @@
+Description: Fix simd_stat compilation on armel
+Author: Shengqi Chen <harry-chen@outlook.com>
+Forwarded: https://github.com/openzfs/zfs/pull/16871
+Last-Update: 2024-12-14
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/module/zcommon/simd_stat.c
++++ b/module/zcommon/simd_stat.c
+@@ -132,8 +132,10 @@
+ #if defined(__arm__) || defined(__aarch64__)
+ 		off += SIMD_STAT_PRINT(simd_stat_kstat_payload,
+ 		    "kernel_neon", HAVE_KERNEL_NEON);
++#if defined(CONFIG_KERNEL_MODE_NEON)
+ 		off += SIMD_STAT_PRINT(simd_stat_kstat_payload,
+ 		    "kernel_mode_neon", CONFIG_KERNEL_MODE_NEON);
++#endif /* CONFIG_KERNEL_MODE_NEON */
+ 		off += SIMD_STAT_PRINT(simd_stat_kstat_payload,
+ 		    "neon", zfs_neon_available());
+ 		off += SIMD_STAT_PRINT(simd_stat_kstat_payload,
