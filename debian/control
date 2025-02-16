@@ -80,6 +80,8 @@ Section: contrib/libdevel
 Architecture: linux-any
 Depends: libblkid-dev,
          libssl-dev | libssl1.0-dev,
+         libtirpc-dev,
+         zlib1g-dev,
          libnvpair3linux (= ${binary:Version}),
          libuutil3linux (= ${binary:Version}),
          libzfs6linux (= ${binary:Version}),
