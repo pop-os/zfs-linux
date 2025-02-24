@@ -1,4 +1,5 @@
 Tests: kernel-smoke-test, kernel-ztest
+Architecture: !i386
 Restrictions: needs-root, allow-stderr, isolation-machine
 Depends: zfs-dkms [ amd64 arm64 ppc64el s390x ],
          zfs-initramfs [ amd64 arm64 ppc64el s390x ],
@@ -6,7 +7,6 @@ Depends: zfs-dkms [ amd64 arm64 ppc64el s390x ],
          zfs-zed [ amd64 arm64 ppc64el s390x ],
          zfsutils-linux [ amd64 arm64 ppc64el s390x ],
          linux-headers-amd64 [amd64],
-         linux-headers-686 [i386],
          linux-headers-arm64 [arm64],
          linux-headers-armmp [armhf],
          linux-headers-rpi [armel],
@@ -16,6 +16,7 @@ Depends: zfs-dkms [ amd64 arm64 ppc64el s390x ],
          @recommends@
 
 Tests: zfs-test-suite-1, zfs-test-suite-2, zfs-test-suite-3, zfs-test-suite-4
+Architecture: !i386
 Restrictions: needs-root, allow-stderr, isolation-machine, breaks-testbed, flaky-and-slow
 Depends: zfs-dkms [ amd64 arm64 ppc64el s390x ],
          zfs-initramfs [ amd64 arm64 ppc64el s390x ],
@@ -23,7 +24,6 @@ Depends: zfs-dkms [ amd64 arm64 ppc64el s390x ],
          zfs-zed [ amd64 arm64 ppc64el s390x ],
          zfsutils-linux [ amd64 arm64 ppc64el s390x ],
          linux-headers-amd64 [amd64],
-         linux-headers-686 [i386],
          linux-headers-arm64 [arm64],
          linux-headers-armmp [armhf],
          linux-headers-rpi [armel],
@@ -33,10 +33,10 @@ Depends: zfs-dkms [ amd64 arm64 ppc64el s390x ],
          @recommends@
 
 Tests: binary-debs-modules, binary-debs-modules-udeb
+Architecture: !i386
 Restrictions: needs-root, allow-stderr
 Depends: fakeroot,
          linux-headers-amd64 [amd64],
-         linux-headers-686 [i386],
          linux-headers-arm64 [arm64],
          linux-headers-armmp [armhf],
          linux-headers-rpi [armel],
