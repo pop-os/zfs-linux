@@ -4,7 +4,7 @@ Origin: ubuntu
 Forwarded: no
 --- a/scripts/dkms.mkconf
 +++ b/scripts/dkms.mkconf
-@@ -51,6 +51,12 @@
+@@ -48,6 +48,12 @@ PRE_BUILD="configure
      }
    )
    \$(
