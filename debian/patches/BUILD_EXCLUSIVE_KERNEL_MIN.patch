@@ -1,0 +1,23 @@
+Author: Andreas Beckmann <anbe@debian.org>
+Description: set BUILD_EXCLUSIVE_KERNEL_MIN in dkms.conf
+
+--- a/scripts/dkms.mkconf
++++ b/scripts/dkms.mkconf
+@@ -20,6 +20,8 @@ if [ -z "${pkgname}" ] || [ -z "${pkgver
+ 	exit 1
+ fi
+ 
++linux_min=$(awk '/Linux-Minimum:/{print $2}' META)
++
+ exec cat >"${filename}" <<EOF
+ PACKAGE_NAME="${pkgname}"
+ PACKAGE_VERSION="${pkgver}"
+@@ -28,6 +30,8 @@ NO_WEAK_MODULES="yes"
+ 
+ BUILD_EXCLUSIVE_CONFIG="!CONFIG_PREEMPT_RT"
+ 
++BUILD_EXCLUSIVE_KERNEL_MIN="${linux_min}"
++
+ PRE_BUILD="configure
+   --disable-dependency-tracking
+   --prefix=/usr
