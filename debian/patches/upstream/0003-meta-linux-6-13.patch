@@ -26,4 +26,4 @@ index dc19ac37b355..161bec0ce8a7 100644
  Author:        OpenZFS
 -Linux-Maximum: 6.12
 +Linux-Maximum: 6.13
- Linux-Minimum: 4.18
+ Linux-Minimum: 4.19
