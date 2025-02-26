@@ -1,0 +1,4984 @@
+From d4a5a7e3aac9a088016de071ced14a925e3f6f29 Mon Sep 17 00:00:00 2001
+From: Ivan Volosyuk <Ivan.Volosyuk@gmail.com>
+Date: Thu, 30 Jan 2025 21:26:49 +1100
+Subject: [PATCH] Linux 6.12 compat: Rename range_tree_* to zfs_range_tree_*
+
+Linux 6.12 has conflicting range_tree_{find,destroy,clear} symbols.
+
+Signed-off-by: Ivan Volosyuk <Ivan.Volosyuk@gmail.com>
+Reviewed-by: Tony Hutter <hutter2@llnl.gov>
+Reviewed-by: Rob Norris <robn@despairlabs.com>
+Bug: https://github.com/openzfs/zfs/pull/17010
+Applied-Upstream: master
+---
+ cmd/zdb/zdb.c                 | 102 ++++----
+ include/sys/dnode.h           |   2 +-
+ include/sys/metaslab.h        |   2 +-
+ include/sys/metaslab_impl.h   |  20 +-
+ include/sys/range_tree.h      | 203 +++++++--------
+ include/sys/space_map.h       |  16 +-
+ include/sys/space_reftree.h   |   4 +-
+ include/sys/vdev_impl.h       |   7 +-
+ include/sys/vdev_rebuild.h    |   3 +-
+ include/sys/vdev_removal.h    |   4 +-
+ module/zfs/dbuf.c             |   4 +-
+ module/zfs/dnode.c            |  10 +-
+ module/zfs/dnode_sync.c       |  23 +-
+ module/zfs/dsl_pool.c         |   4 +-
+ module/zfs/dsl_scan.c         |  93 +++----
+ module/zfs/metaslab.c         | 458 ++++++++++++++++++----------------
+ module/zfs/range_tree.c       | 442 ++++++++++++++++----------------
+ module/zfs/spa.c              |   2 +-
+ module/zfs/spa_checkpoint.c   |   4 +-
+ module/zfs/spa_log_spacemap.c |  16 +-
+ module/zfs/space_map.c        |  53 ++--
+ module/zfs/space_reftree.c    |  17 +-
+ module/zfs/vdev.c             |  94 +++----
+ module/zfs/vdev_indirect.c    |   6 +-
+ module/zfs/vdev_initialize.c  |  31 +--
+ module/zfs/vdev_raidz.c       |  31 +--
+ module/zfs/vdev_rebuild.c     |  29 +--
+ module/zfs/vdev_removal.c     | 165 ++++++------
+ module/zfs/vdev_trim.c        |  83 +++---
+ 29 files changed, 994 insertions(+), 934 deletions(-)
+
+--- a/cmd/zdb/zdb.c
++++ b/cmd/zdb/zdb.c
+@@ -122,7 +122,7 @@
+ 
+ static uint64_t max_inflight_bytes = 256 * 1024 * 1024; /* 256MB */
+ static int leaked_objects = 0;
+-static range_tree_t *mos_refd_objs;
++static zfs_range_tree_t *mos_refd_objs;
+ static spa_t *spa;
+ static objset_t *os;
+ static boolean_t kernel_init_done;
+@@ -325,7 +325,7 @@
+ 	/*
+ 	 * What's currently allocated for this metaslab.
+ 	 */
+-	range_tree_t *mv_allocated;
++	zfs_range_tree_t *mv_allocated;
+ } metaslab_verify_t;
+ 
+ typedef void ll_iter_t(dsl_deadlist_t *ll, void *arg);
+@@ -417,7 +417,7 @@
+ 	uint64_t txg = sme->sme_txg;
+ 
+ 	if (sme->sme_type == SM_ALLOC) {
+-		if (range_tree_contains(mv->mv_allocated,
++		if (zfs_range_tree_contains(mv->mv_allocated,
+ 		    offset, size)) {
+ 			(void) printf("ERROR: DOUBLE ALLOC: "
+ 			    "%llu [%llx:%llx] "
+@@ -426,11 +426,11 @@
+ 			    (u_longlong_t)size, (u_longlong_t)mv->mv_vdid,
+ 			    (u_longlong_t)mv->mv_msid);
+ 		} else {
+-			range_tree_add(mv->mv_allocated,
++			zfs_range_tree_add(mv->mv_allocated,
+ 			    offset, size);
+ 		}
+ 	} else {
+-		if (!range_tree_contains(mv->mv_allocated,
++		if (!zfs_range_tree_contains(mv->mv_allocated,
+ 		    offset, size)) {
+ 			(void) printf("ERROR: DOUBLE FREE: "
+ 			    "%llu [%llx:%llx] "
+@@ -439,7 +439,7 @@
+ 			    (u_longlong_t)size, (u_longlong_t)mv->mv_vdid,
+ 			    (u_longlong_t)mv->mv_msid);
+ 		} else {
+-			range_tree_remove(mv->mv_allocated,
++			zfs_range_tree_remove(mv->mv_allocated,
+ 			    offset, size);
+ 		}
+ 	}
+@@ -614,11 +614,11 @@
+ 			    (longlong_t)vd->vdev_ms_count);
+ 
+ 			uint64_t shift, start;
+-			range_seg_type_t type =
++			zfs_range_seg_type_t type =
+ 			    metaslab_calculate_range_tree_type(vd, m,
+ 			    &start, &shift);
+ 			metaslab_verify_t mv;
+-			mv.mv_allocated = range_tree_create(NULL,
++			mv.mv_allocated = zfs_range_tree_create(NULL,
+ 			    type, NULL, start, shift);
+ 			mv.mv_vdid = vd->vdev_id;
+ 			mv.mv_msid = m->ms_id;
+@@ -633,8 +633,8 @@
+ 			spacemap_check_ms_sm(m->ms_sm, &mv);
+ 			spacemap_check_sm_log(spa, &mv);
+ 
+-			range_tree_vacate(mv.mv_allocated, NULL, NULL);
+-			range_tree_destroy(mv.mv_allocated);
++			zfs_range_tree_vacate(mv.mv_allocated, NULL, NULL);
++			zfs_range_tree_destroy(mv.mv_allocated);
+ 			zfs_btree_clear(&mv.mv_livelist_allocs);
+ 			zfs_btree_destroy(&mv.mv_livelist_allocs);
+ 		}
+@@ -1633,9 +1633,9 @@
+ dump_metaslab_stats(metaslab_t *msp)
+ {
+ 	char maxbuf[32];
+-	range_tree_t *rt = msp->ms_allocatable;
++	zfs_range_tree_t *rt = msp->ms_allocatable;
+ 	zfs_btree_t *t = &msp->ms_allocatable_by_size;
+-	int free_pct = range_tree_space(rt) * 100 / msp->ms_size;
++	int free_pct = zfs_range_tree_space(rt) * 100 / msp->ms_size;
+ 
+ 	/* max sure nicenum has enough space */
+ 	_Static_assert(sizeof (maxbuf) >= NN_NUMBUF_SZ, "maxbuf truncated");
+@@ -1668,7 +1668,7 @@
+ 	if (dump_opt['m'] > 2 && !dump_opt['L']) {
+ 		mutex_enter(&msp->ms_lock);
+ 		VERIFY0(metaslab_load(msp));
+-		range_tree_stat_verify(msp->ms_allocatable);
++		zfs_range_tree_stat_verify(msp->ms_allocatable);
+ 		dump_metaslab_stats(msp);
+ 		metaslab_unload(msp);
+ 		mutex_exit(&msp->ms_lock);
+@@ -2292,12 +2292,12 @@
+ 	    required ? "DTL-required" : "DTL-expendable");
+ 
+ 	for (int t = 0; t < DTL_TYPES; t++) {
+-		range_tree_t *rt = vd->vdev_dtl[t];
+-		if (range_tree_space(rt) == 0)
++		zfs_range_tree_t *rt = vd->vdev_dtl[t];
++		if (zfs_range_tree_space(rt) == 0)
+ 			continue;
+ 		(void) snprintf(prefix, sizeof (prefix), "\t%*s%s",
+ 		    indent + 2, "", name[t]);
+-		range_tree_walk(rt, dump_dtl_seg, prefix);
++		zfs_range_tree_walk(rt, dump_dtl_seg, prefix);
+ 		if (dump_opt['d'] > 5 && vd->vdev_children == 0)
+ 			dump_spacemap(spa->spa_meta_objset,
+ 			    vd->vdev_dtl_sm);
+@@ -6258,9 +6258,9 @@
+ 		return (0);
+ 
+ 	if (sme->sme_type == SM_ALLOC)
+-		range_tree_add(svr->svr_allocd_segs, offset, size);
++		zfs_range_tree_add(svr->svr_allocd_segs, offset, size);
+ 	else
+-		range_tree_remove(svr->svr_allocd_segs, offset, size);
++		zfs_range_tree_remove(svr->svr_allocd_segs, offset, size);
+ 
+ 	return (0);
+ }
+@@ -6314,18 +6314,20 @@
+ 	vdev_t *vd = vdev_lookup_top(spa, svr->svr_vdev_id);
+ 	vdev_indirect_mapping_t *vim = vd->vdev_indirect_mapping;
+ 
+-	ASSERT0(range_tree_space(svr->svr_allocd_segs));
++	ASSERT0(zfs_range_tree_space(svr->svr_allocd_segs));
+ 
+-	range_tree_t *allocs = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
++	zfs_range_tree_t *allocs = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64,
++	    NULL, 0, 0);
+ 	for (uint64_t msi = 0; msi < vd->vdev_ms_count; msi++) {
+ 		metaslab_t *msp = vd->vdev_ms[msi];
+ 
+-		ASSERT0(range_tree_space(allocs));
++		ASSERT0(zfs_range_tree_space(allocs));
+ 		if (msp->ms_sm != NULL)
+ 			VERIFY0(space_map_load(msp->ms_sm, allocs, SM_ALLOC));
+-		range_tree_vacate(allocs, range_tree_add, svr->svr_allocd_segs);
++		zfs_range_tree_vacate(allocs, zfs_range_tree_add,
++		    svr->svr_allocd_segs);
+ 	}
+-	range_tree_destroy(allocs);
++	zfs_range_tree_destroy(allocs);
+ 
+ 	iterate_through_spacemap_logs(spa, load_unflushed_svr_segs_cb, svr);
+ 
+@@ -6334,12 +6336,12 @@
+ 	 * because we have not allocated mappings for
+ 	 * it yet.
+ 	 */
+-	range_tree_clear(svr->svr_allocd_segs,
++	zfs_range_tree_clear(svr->svr_allocd_segs,
+ 	    vdev_indirect_mapping_max_offset(vim),
+ 	    vd->vdev_asize - vdev_indirect_mapping_max_offset(vim));
+ 
+-	zcb->zcb_removing_size += range_tree_space(svr->svr_allocd_segs);
+-	range_tree_vacate(svr->svr_allocd_segs, claim_segment_cb, vd);
++	zcb->zcb_removing_size += zfs_range_tree_space(svr->svr_allocd_segs);
++	zfs_range_tree_vacate(svr->svr_allocd_segs, claim_segment_cb, vd);
+ 
+ 	spa_config_exit(spa, SCL_CONFIG, FTAG);
+ }
+@@ -6442,7 +6444,8 @@
+ 	 * also verify that the entry is there to begin with.
+ 	 */
+ 	mutex_enter(&ms->ms_lock);
+-	range_tree_remove(ms->ms_allocatable, sme->sme_offset, sme->sme_run);
++	zfs_range_tree_remove(ms->ms_allocatable, sme->sme_offset,
++	    sme->sme_run);
+ 	mutex_exit(&ms->ms_lock);
+ 
+ 	cseea->cseea_checkpoint_size += sme->sme_run;
+@@ -6573,9 +6576,9 @@
+ 		return (0);
+ 
+ 	if (*uic_maptype == sme->sme_type)
+-		range_tree_add(ms->ms_allocatable, offset, size);
++		zfs_range_tree_add(ms->ms_allocatable, offset, size);
+ 	else
+-		range_tree_remove(ms->ms_allocatable, offset, size);
++		zfs_range_tree_remove(ms->ms_allocatable, offset, size);
+ 
+ 	return (0);
+ }
+@@ -6609,7 +6612,7 @@
+ 			    (longlong_t)vd->vdev_ms_count);
+ 
+ 			mutex_enter(&msp->ms_lock);
+-			range_tree_vacate(msp->ms_allocatable, NULL, NULL);
++			zfs_range_tree_vacate(msp->ms_allocatable, NULL, NULL);
+ 
+ 			/*
+ 			 * We don't want to spend the CPU manipulating the
+@@ -6642,7 +6645,7 @@
+ 	vdev_indirect_mapping_t *vim = vd->vdev_indirect_mapping;
+ 
+ 	mutex_enter(&msp->ms_lock);
+-	range_tree_vacate(msp->ms_allocatable, NULL, NULL);
++	zfs_range_tree_vacate(msp->ms_allocatable, NULL, NULL);
+ 
+ 	/*
+ 	 * We don't want to spend the CPU manipulating the
+@@ -6666,7 +6669,7 @@
+ 		 */
+ 		ASSERT3U(ent_offset + ent_len, <=,
+ 		    msp->ms_start + msp->ms_size);
+-		range_tree_add(msp->ms_allocatable, ent_offset, ent_len);
++		zfs_range_tree_add(msp->ms_allocatable, ent_offset, ent_len);
+ 	}
+ 
+ 	if (!msp->ms_loaded)
+@@ -6812,7 +6815,7 @@
+ 		for (uint64_t inner_offset = 0;
+ 		    inner_offset < DVA_GET_ASIZE(&vimep->vimep_dst);
+ 		    inner_offset += 1ULL << vd->vdev_ashift) {
+-			if (range_tree_contains(msp->ms_allocatable,
++			if (zfs_range_tree_contains(msp->ms_allocatable,
+ 			    offset + inner_offset, 1ULL << vd->vdev_ashift)) {
+ 				obsolete_bytes += 1ULL << vd->vdev_ashift;
+ 			}
+@@ -6895,10 +6898,10 @@
+ 			 * not referenced, which is not a bug.
+ 			 */
+ 			if (vd->vdev_ops == &vdev_indirect_ops) {
+-				range_tree_vacate(msp->ms_allocatable,
++				zfs_range_tree_vacate(msp->ms_allocatable,
+ 				    NULL, NULL);
+ 			} else {
+-				range_tree_vacate(msp->ms_allocatable,
++				zfs_range_tree_vacate(msp->ms_allocatable,
+ 				    zdb_leak, vd);
+ 			}
+ 			if (msp->ms_loaded) {
+@@ -7796,7 +7799,7 @@
+ 	 * their respective ms_allocateable trees should not contain them.
+ 	 */
+ 	mutex_enter(&ms->ms_lock);
+-	range_tree_verify_not_present(ms->ms_allocatable,
++	zfs_range_tree_verify_not_present(ms->ms_allocatable,
+ 	    sme->sme_offset, sme->sme_run);
+ 	mutex_exit(&ms->ms_lock);
+ 
+@@ -7947,8 +7950,9 @@
+ 			 * This way we ensure that none of the blocks that
+ 			 * are part of the checkpoint were freed by mistake.
+ 			 */
+-			range_tree_walk(ckpoint_msp->ms_allocatable,
+-			    (range_tree_func_t *)range_tree_verify_not_present,
++			zfs_range_tree_walk(ckpoint_msp->ms_allocatable,
++			    (zfs_range_tree_func_t *)
++			    zfs_range_tree_verify_not_present,
+ 			    current_msp->ms_allocatable);
+ 		}
+ 	}
+@@ -8088,7 +8092,7 @@
+ mos_obj_refd(uint64_t obj)
+ {
+ 	if (obj != 0 && mos_refd_objs != NULL)
+-		range_tree_add(mos_refd_objs, obj, 1);
++		zfs_range_tree_add(mos_refd_objs, obj, 1);
+ }
+ 
+ /*
+@@ -8098,8 +8102,8 @@
+ mos_obj_refd_multiple(uint64_t obj)
+ {
+ 	if (obj != 0 && mos_refd_objs != NULL &&
+-	    !range_tree_contains(mos_refd_objs, obj, 1))
+-		range_tree_add(mos_refd_objs, obj, 1);
++	    !zfs_range_tree_contains(mos_refd_objs, obj, 1))
++		zfs_range_tree_add(mos_refd_objs, obj, 1);
+ }
+ 
+ static void
+@@ -8296,8 +8300,8 @@
+ 	 */
+ 	uint64_t object = 0;
+ 	while (dmu_object_next(mos, &object, B_FALSE, 0) == 0) {
+-		if (range_tree_contains(mos_refd_objs, object, 1)) {
+-			range_tree_remove(mos_refd_objs, object, 1);
++		if (zfs_range_tree_contains(mos_refd_objs, object, 1)) {
++			zfs_range_tree_remove(mos_refd_objs, object, 1);
+ 		} else {
+ 			dmu_object_info_t doi;
+ 			const char *name;
+@@ -8315,11 +8319,11 @@
+ 			rv = 2;
+ 		}
+ 	}
+-	(void) range_tree_walk(mos_refd_objs, mos_leaks_cb, NULL);
+-	if (!range_tree_is_empty(mos_refd_objs))
++	(void) zfs_range_tree_walk(mos_refd_objs, mos_leaks_cb, NULL);
++	if (!zfs_range_tree_is_empty(mos_refd_objs))
+ 		rv = 2;
+-	range_tree_vacate(mos_refd_objs, NULL, NULL);
+-	range_tree_destroy(mos_refd_objs);
++	zfs_range_tree_vacate(mos_refd_objs, NULL, NULL);
++	zfs_range_tree_destroy(mos_refd_objs);
+ 	return (rv);
+ }
+ 
+@@ -8441,8 +8445,8 @@
+ 
+ 	if (dump_opt['d'] || dump_opt['i']) {
+ 		spa_feature_t f;
+-		mos_refd_objs = range_tree_create(NULL, RANGE_SEG64, NULL, 0,
+-		    0);
++		mos_refd_objs = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64,
++		    NULL, 0, 0);
+ 		dump_objset(dp->dp_meta_objset);
+ 
+ 		if (dump_opt['d'] >= 3) {
+--- a/include/sys/dnode.h
++++ b/include/sys/dnode.h
+@@ -335,7 +335,7 @@
+ 	/* protected by dn_mtx: */
+ 	kmutex_t dn_mtx;
+ 	list_t dn_dirty_records[TXG_SIZE];
+-	struct range_tree *dn_free_ranges[TXG_SIZE];
++	struct zfs_range_tree *dn_free_ranges[TXG_SIZE];
+ 	uint64_t dn_allocated_txg;
+ 	uint64_t dn_free_txg;
+ 	uint64_t dn_assigned_txg;
+--- a/include/sys/metaslab.h
++++ b/include/sys/metaslab.h
+@@ -139,7 +139,7 @@
+ 
+ extern int metaslab_debug_load;
+ 
+-range_seg_type_t metaslab_calculate_range_tree_type(vdev_t *vdev,
++zfs_range_seg_type_t metaslab_calculate_range_tree_type(vdev_t *vdev,
+     metaslab_t *msp, uint64_t *start, uint64_t *shift);
+ 
+ #ifdef	__cplusplus
+--- a/include/sys/metaslab_impl.h
++++ b/include/sys/metaslab_impl.h
+@@ -398,8 +398,8 @@
+ 	uint64_t	ms_size;
+ 	uint64_t	ms_fragmentation;
+ 
+-	range_tree_t	*ms_allocating[TXG_SIZE];
+-	range_tree_t	*ms_allocatable;
++	zfs_range_tree_t	*ms_allocating[TXG_SIZE];
++	zfs_range_tree_t	*ms_allocatable;
+ 	uint64_t	ms_allocated_this_txg;
+ 	uint64_t	ms_allocating_total;
+ 
+@@ -408,10 +408,12 @@
+ 	 * ms_free*tree only have entries while syncing, and are empty
+ 	 * between syncs.
+ 	 */
+-	range_tree_t	*ms_freeing;	/* to free this syncing txg */
+-	range_tree_t	*ms_freed;	/* already freed this syncing txg */
+-	range_tree_t	*ms_defer[TXG_DEFER_SIZE];
+-	range_tree_t	*ms_checkpointing; /* to add to the checkpoint */
++	zfs_range_tree_t	*ms_freeing;	/* to free this syncing txg */
++	/* already freed this syncing txg */
++	zfs_range_tree_t	*ms_freed;
++	zfs_range_tree_t	*ms_defer[TXG_DEFER_SIZE];
++	/* to add to the checkpoint */
++	zfs_range_tree_t	*ms_checkpointing;
+ 
+ 	/*
+ 	 * The ms_trim tree is the set of allocatable segments which are
+@@ -421,7 +423,7 @@
+ 	 * is unloaded.  Its purpose is to aggregate freed ranges to
+ 	 * facilitate efficient trimming.
+ 	 */
+-	range_tree_t	*ms_trim;
++	zfs_range_tree_t	*ms_trim;
+ 
+ 	boolean_t	ms_condensing;	/* condensing? */
+ 	boolean_t	ms_condense_wanted;
+@@ -542,8 +544,8 @@
+ 	 * Allocs and frees that are committed to the vdev log spacemap but
+ 	 * not yet to this metaslab's spacemap.
+ 	 */
+-	range_tree_t	*ms_unflushed_allocs;
+-	range_tree_t	*ms_unflushed_frees;
++	zfs_range_tree_t	*ms_unflushed_allocs;
++	zfs_range_tree_t	*ms_unflushed_frees;
+ 
+ 	/*
+ 	 * We have flushed entries up to but not including this TXG. In
+--- a/include/sys/range_tree.h
++++ b/include/sys/range_tree.h
+@@ -39,23 +39,23 @@
+ 
+ #define	RANGE_TREE_HISTOGRAM_SIZE	64
+ 
+-typedef struct range_tree_ops range_tree_ops_t;
++typedef struct zfs_range_tree_ops zfs_range_tree_ops_t;
+ 
+-typedef enum range_seg_type {
+-	RANGE_SEG32,
+-	RANGE_SEG64,
+-	RANGE_SEG_GAP,
+-	RANGE_SEG_NUM_TYPES,
+-} range_seg_type_t;
++typedef enum zfs_range_seg_type {
++	ZFS_RANGE_SEG32,
++	ZFS_RANGE_SEG64,
++	ZFS_RANGE_SEG_GAP,
++	ZFS_RANGE_SEG_NUM_TYPES,
++} zfs_range_seg_type_t;
+ 
+ /*
+  * Note: the range_tree may not be accessed concurrently; consumers
+  * must provide external locking if required.
+  */
+-typedef struct range_tree {
++typedef struct zfs_range_tree {
+ 	zfs_btree_t	rt_root;	/* offset-ordered segment b-tree */
+ 	uint64_t	rt_space;	/* sum of all segments in the map */
+-	range_seg_type_t rt_type;	/* type of range_seg_t in use */
++	zfs_range_seg_type_t rt_type;	/* type of zfs_range_seg_t in use */
+ 	/*
+ 	 * All data that is stored in the range tree must have a start higher
+ 	 * than or equal to rt_start, and all sizes and offsets must be
+@@ -63,7 +63,7 @@
+ 	 */
+ 	uint8_t		rt_shift;
+ 	uint64_t	rt_start;
+-	const range_tree_ops_t *rt_ops;
++	const zfs_range_tree_ops_t *rt_ops;
+ 	void		*rt_arg;
+ 	uint64_t	rt_gap;		/* allowable inter-segment gap */
+ 
+@@ -73,7 +73,7 @@
+ 	 * 2^i <= size of range in bytes < 2^(i+1)
+ 	 */
+ 	uint64_t	rt_histogram[RANGE_TREE_HISTOGRAM_SIZE];
+-} range_tree_t;
++} zfs_range_tree_t;
+ 
+ typedef struct range_seg32 {
+ 	uint32_t	rs_start;	/* starting offset of this segment */
+@@ -106,26 +106,26 @@
+  * pointer is to a range seg of some type; when we need to do the actual math,
+  * we'll figure out the real type.
+  */
+-typedef void range_seg_t;
++typedef void zfs_range_seg_t;
+ 
+-struct range_tree_ops {
+-	void    (*rtop_create)(range_tree_t *rt, void *arg);
+-	void    (*rtop_destroy)(range_tree_t *rt, void *arg);
+-	void	(*rtop_add)(range_tree_t *rt, void *rs, void *arg);
+-	void    (*rtop_remove)(range_tree_t *rt, void *rs, void *arg);
+-	void	(*rtop_vacate)(range_tree_t *rt, void *arg);
++struct zfs_range_tree_ops {
++	void    (*rtop_create)(zfs_range_tree_t *rt, void *arg);
++	void    (*rtop_destroy)(zfs_range_tree_t *rt, void *arg);
++	void	(*rtop_add)(zfs_range_tree_t *rt, void *rs, void *arg);
++	void    (*rtop_remove)(zfs_range_tree_t *rt, void *rs, void *arg);
++	void	(*rtop_vacate)(zfs_range_tree_t *rt, void *arg);
+ };
+ 
+ static inline uint64_t
+-rs_get_start_raw(const range_seg_t *rs, const range_tree_t *rt)
++zfs_rs_get_start_raw(const zfs_range_seg_t *rs, const zfs_range_tree_t *rt)
+ {
+-	ASSERT3U(rt->rt_type, <=, RANGE_SEG_NUM_TYPES);
++	ASSERT3U(rt->rt_type, <=, ZFS_RANGE_SEG_NUM_TYPES);
+ 	switch (rt->rt_type) {
+-	case RANGE_SEG32:
++	case ZFS_RANGE_SEG32:
+ 		return (((const range_seg32_t *)rs)->rs_start);
+-	case RANGE_SEG64:
++	case ZFS_RANGE_SEG64:
+ 		return (((const range_seg64_t *)rs)->rs_start);
+-	case RANGE_SEG_GAP:
++	case ZFS_RANGE_SEG_GAP:
+ 		return (((const range_seg_gap_t *)rs)->rs_start);
+ 	default:
+ 		VERIFY(0);
+@@ -134,15 +134,15 @@
+ }
+ 
+ static inline uint64_t
+-rs_get_end_raw(const range_seg_t *rs, const range_tree_t *rt)
++zfs_rs_get_end_raw(const zfs_range_seg_t *rs, const zfs_range_tree_t *rt)
+ {
+-	ASSERT3U(rt->rt_type, <=, RANGE_SEG_NUM_TYPES);
++	ASSERT3U(rt->rt_type, <=, ZFS_RANGE_SEG_NUM_TYPES);
+ 	switch (rt->rt_type) {
+-	case RANGE_SEG32:
++	case ZFS_RANGE_SEG32:
+ 		return (((const range_seg32_t *)rs)->rs_end);
+-	case RANGE_SEG64:
++	case ZFS_RANGE_SEG64:
+ 		return (((const range_seg64_t *)rs)->rs_end);
+-	case RANGE_SEG_GAP:
++	case ZFS_RANGE_SEG_GAP:
+ 		return (((const range_seg_gap_t *)rs)->rs_end);
+ 	default:
+ 		VERIFY(0);
+@@ -151,19 +151,19 @@
+ }
+ 
+ static inline uint64_t
+-rs_get_fill_raw(const range_seg_t *rs, const range_tree_t *rt)
++zfs_rs_get_fill_raw(const zfs_range_seg_t *rs, const zfs_range_tree_t *rt)
+ {
+-	ASSERT3U(rt->rt_type, <=, RANGE_SEG_NUM_TYPES);
++	ASSERT3U(rt->rt_type, <=, ZFS_RANGE_SEG_NUM_TYPES);
+ 	switch (rt->rt_type) {
+-	case RANGE_SEG32: {
++	case ZFS_RANGE_SEG32: {
+ 		const range_seg32_t *r32 = (const range_seg32_t *)rs;
+ 		return (r32->rs_end - r32->rs_start);
+ 	}
+-	case RANGE_SEG64: {
++	case ZFS_RANGE_SEG64: {
+ 		const range_seg64_t *r64 = (const range_seg64_t *)rs;
+ 		return (r64->rs_end - r64->rs_start);
+ 	}
+-	case RANGE_SEG_GAP:
++	case ZFS_RANGE_SEG_GAP:
+ 		return (((const range_seg_gap_t *)rs)->rs_fill);
+ 	default:
+ 		VERIFY(0);
+@@ -173,36 +173,36 @@
+ }
+ 
+ static inline uint64_t
+-rs_get_start(const range_seg_t *rs, const range_tree_t *rt)
++zfs_rs_get_start(const zfs_range_seg_t *rs, const zfs_range_tree_t *rt)
+ {
+-	return ((rs_get_start_raw(rs, rt) << rt->rt_shift) + rt->rt_start);
++	return ((zfs_rs_get_start_raw(rs, rt) << rt->rt_shift) + rt->rt_start);
+ }
+ 
+ static inline uint64_t
+-rs_get_end(const range_seg_t *rs, const range_tree_t *rt)
++zfs_rs_get_end(const zfs_range_seg_t *rs, const zfs_range_tree_t *rt)
+ {
+-	return ((rs_get_end_raw(rs, rt) << rt->rt_shift) + rt->rt_start);
++	return ((zfs_rs_get_end_raw(rs, rt) << rt->rt_shift) + rt->rt_start);
+ }
+ 
+ static inline uint64_t
+-rs_get_fill(const range_seg_t *rs, const range_tree_t *rt)
++zfs_rs_get_fill(const zfs_range_seg_t *rs, const zfs_range_tree_t *rt)
+ {
+-	return (rs_get_fill_raw(rs, rt) << rt->rt_shift);
++	return (zfs_rs_get_fill_raw(rs, rt) << rt->rt_shift);
+ }
+ 
+ static inline void
+-rs_set_start_raw(range_seg_t *rs, range_tree_t *rt, uint64_t start)
++zfs_rs_set_start_raw(zfs_range_seg_t *rs, zfs_range_tree_t *rt, uint64_t start)
+ {
+-	ASSERT3U(rt->rt_type, <=, RANGE_SEG_NUM_TYPES);
++	ASSERT3U(rt->rt_type, <=, ZFS_RANGE_SEG_NUM_TYPES);
+ 	switch (rt->rt_type) {
+-	case RANGE_SEG32:
++	case ZFS_RANGE_SEG32:
+ 		ASSERT3U(start, <=, UINT32_MAX);
+ 		((range_seg32_t *)rs)->rs_start = (uint32_t)start;
+ 		break;
+-	case RANGE_SEG64:
++	case ZFS_RANGE_SEG64:
+ 		((range_seg64_t *)rs)->rs_start = start;
+ 		break;
+-	case RANGE_SEG_GAP:
++	case ZFS_RANGE_SEG_GAP:
+ 		((range_seg_gap_t *)rs)->rs_start = start;
+ 		break;
+ 	default:
+@@ -211,18 +211,18 @@
+ }
+ 
+ static inline void
+-rs_set_end_raw(range_seg_t *rs, range_tree_t *rt, uint64_t end)
++zfs_rs_set_end_raw(zfs_range_seg_t *rs, zfs_range_tree_t *rt, uint64_t end)
+ {
+-	ASSERT3U(rt->rt_type, <=, RANGE_SEG_NUM_TYPES);
++	ASSERT3U(rt->rt_type, <=, ZFS_RANGE_SEG_NUM_TYPES);
+ 	switch (rt->rt_type) {
+-	case RANGE_SEG32:
++	case ZFS_RANGE_SEG32:
+ 		ASSERT3U(end, <=, UINT32_MAX);
+ 		((range_seg32_t *)rs)->rs_end = (uint32_t)end;
+ 		break;
+-	case RANGE_SEG64:
++	case ZFS_RANGE_SEG64:
+ 		((range_seg64_t *)rs)->rs_end = end;
+ 		break;
+-	case RANGE_SEG_GAP:
++	case ZFS_RANGE_SEG_GAP:
+ 		((range_seg_gap_t *)rs)->rs_end = end;
+ 		break;
+ 	default:
+@@ -231,17 +231,18 @@
+ }
+ 
+ static inline void
+-rs_set_fill_raw(range_seg_t *rs, range_tree_t *rt, uint64_t fill)
++zfs_zfs_rs_set_fill_raw(zfs_range_seg_t *rs, zfs_range_tree_t *rt,
++    uint64_t fill)
+ {
+-	ASSERT3U(rt->rt_type, <=, RANGE_SEG_NUM_TYPES);
++	ASSERT3U(rt->rt_type, <=, ZFS_RANGE_SEG_NUM_TYPES);
+ 	switch (rt->rt_type) {
+-	case RANGE_SEG32:
++	case ZFS_RANGE_SEG32:
+ 		/* fall through */
+-	case RANGE_SEG64:
+-		ASSERT3U(fill, ==, rs_get_end_raw(rs, rt) - rs_get_start_raw(rs,
+-		    rt));
++	case ZFS_RANGE_SEG64:
++		ASSERT3U(fill, ==, zfs_rs_get_end_raw(rs, rt) -
++		    zfs_rs_get_start_raw(rs, rt));
+ 		break;
+-	case RANGE_SEG_GAP:
++	case ZFS_RANGE_SEG_GAP:
+ 		((range_seg_gap_t *)rs)->rs_fill = fill;
+ 		break;
+ 	default:
+@@ -250,67 +251,73 @@
+ }
+ 
+ static inline void
+-rs_set_start(range_seg_t *rs, range_tree_t *rt, uint64_t start)
++zfs_rs_set_start(zfs_range_seg_t *rs, zfs_range_tree_t *rt, uint64_t start)
+ {
+ 	ASSERT3U(start, >=, rt->rt_start);
+ 	ASSERT(IS_P2ALIGNED(start, 1ULL << rt->rt_shift));
+-	rs_set_start_raw(rs, rt, (start - rt->rt_start) >> rt->rt_shift);
++	zfs_rs_set_start_raw(rs, rt, (start - rt->rt_start) >> rt->rt_shift);
+ }
+ 
+ static inline void
+-rs_set_end(range_seg_t *rs, range_tree_t *rt, uint64_t end)
++zfs_rs_set_end(zfs_range_seg_t *rs, zfs_range_tree_t *rt, uint64_t end)
+ {
+ 	ASSERT3U(end, >=, rt->rt_start);
+ 	ASSERT(IS_P2ALIGNED(end, 1ULL << rt->rt_shift));
+-	rs_set_end_raw(rs, rt, (end - rt->rt_start) >> rt->rt_shift);
++	zfs_rs_set_end_raw(rs, rt, (end - rt->rt_start) >> rt->rt_shift);
+ }
+ 
+ static inline void
+-rs_set_fill(range_seg_t *rs, range_tree_t *rt, uint64_t fill)
++zfs_rs_set_fill(zfs_range_seg_t *rs, zfs_range_tree_t *rt, uint64_t fill)
+ {
+ 	ASSERT(IS_P2ALIGNED(fill, 1ULL << rt->rt_shift));
+-	rs_set_fill_raw(rs, rt, fill >> rt->rt_shift);
++	zfs_zfs_rs_set_fill_raw(rs, rt, fill >> rt->rt_shift);
+ }
+ 
+-typedef void range_tree_func_t(void *arg, uint64_t start, uint64_t size);
++typedef void zfs_range_tree_func_t(void *arg, uint64_t start, uint64_t size);
+ 
+-range_tree_t *range_tree_create_gap(const range_tree_ops_t *ops,
+-    range_seg_type_t type, void *arg, uint64_t start, uint64_t shift,
++zfs_range_tree_t *zfs_range_tree_create_gap(const zfs_range_tree_ops_t *ops,
++    zfs_range_seg_type_t type, void *arg, uint64_t start, uint64_t shift,
+     uint64_t gap);
+-range_tree_t *range_tree_create(const range_tree_ops_t *ops,
+-    range_seg_type_t type, void *arg, uint64_t start, uint64_t shift);
+-void range_tree_destroy(range_tree_t *rt);
+-boolean_t range_tree_contains(range_tree_t *rt, uint64_t start, uint64_t size);
+-range_seg_t *range_tree_find(range_tree_t *rt, uint64_t start, uint64_t size);
+-boolean_t range_tree_find_in(range_tree_t *rt, uint64_t start, uint64_t size,
+-    uint64_t *ostart, uint64_t *osize);
+-void range_tree_verify_not_present(range_tree_t *rt,
++zfs_range_tree_t *zfs_range_tree_create(const zfs_range_tree_ops_t *ops,
++    zfs_range_seg_type_t type, void *arg, uint64_t start, uint64_t shift);
++void zfs_range_tree_destroy(zfs_range_tree_t *rt);
++boolean_t zfs_range_tree_contains(zfs_range_tree_t *rt, uint64_t start,
++    uint64_t size);
++zfs_range_seg_t *zfs_range_tree_find(zfs_range_tree_t *rt, uint64_t start,
++    uint64_t size);
++boolean_t zfs_range_tree_find_in(zfs_range_tree_t *rt, uint64_t start,
++    uint64_t size, uint64_t *ostart, uint64_t *osize);
++void zfs_range_tree_verify_not_present(zfs_range_tree_t *rt,
+     uint64_t start, uint64_t size);
+-void range_tree_resize_segment(range_tree_t *rt, range_seg_t *rs,
++void zfs_range_tree_resize_segment(zfs_range_tree_t *rt, zfs_range_seg_t *rs,
+     uint64_t newstart, uint64_t newsize);
+-uint64_t range_tree_space(range_tree_t *rt);
+-uint64_t range_tree_numsegs(range_tree_t *rt);
+-boolean_t range_tree_is_empty(range_tree_t *rt);
+-void range_tree_swap(range_tree_t **rtsrc, range_tree_t **rtdst);
+-void range_tree_stat_verify(range_tree_t *rt);
+-uint64_t range_tree_min(range_tree_t *rt);
+-uint64_t range_tree_max(range_tree_t *rt);
+-uint64_t range_tree_span(range_tree_t *rt);
+-
+-void range_tree_add(void *arg, uint64_t start, uint64_t size);
+-void range_tree_remove(void *arg, uint64_t start, uint64_t size);
+-void range_tree_remove_fill(range_tree_t *rt, uint64_t start, uint64_t size);
+-void range_tree_adjust_fill(range_tree_t *rt, range_seg_t *rs, int64_t delta);
+-void range_tree_clear(range_tree_t *rt, uint64_t start, uint64_t size);
+-
+-void range_tree_vacate(range_tree_t *rt, range_tree_func_t *func, void *arg);
+-void range_tree_walk(range_tree_t *rt, range_tree_func_t *func, void *arg);
+-range_seg_t *range_tree_first(range_tree_t *rt);
+-
+-void range_tree_remove_xor_add_segment(uint64_t start, uint64_t end,
+-    range_tree_t *removefrom, range_tree_t *addto);
+-void range_tree_remove_xor_add(range_tree_t *rt, range_tree_t *removefrom,
+-    range_tree_t *addto);
++uint64_t zfs_range_tree_space(zfs_range_tree_t *rt);
++uint64_t zfs_range_tree_numsegs(zfs_range_tree_t *rt);
++boolean_t zfs_range_tree_is_empty(zfs_range_tree_t *rt);
++void zfs_range_tree_swap(zfs_range_tree_t **rtsrc, zfs_range_tree_t **rtdst);
++void zfs_range_tree_stat_verify(zfs_range_tree_t *rt);
++uint64_t zfs_range_tree_min(zfs_range_tree_t *rt);
++uint64_t zfs_range_tree_max(zfs_range_tree_t *rt);
++uint64_t zfs_range_tree_span(zfs_range_tree_t *rt);
++
++void zfs_range_tree_add(void *arg, uint64_t start, uint64_t size);
++void zfs_range_tree_remove(void *arg, uint64_t start, uint64_t size);
++void zfs_range_tree_remove_fill(zfs_range_tree_t *rt, uint64_t start,
++    uint64_t size);
++void zfs_range_tree_adjust_fill(zfs_range_tree_t *rt, zfs_range_seg_t *rs,
++    int64_t delta);
++void zfs_range_tree_clear(zfs_range_tree_t *rt, uint64_t start, uint64_t size);
++
++void zfs_range_tree_vacate(zfs_range_tree_t *rt, zfs_range_tree_func_t *func,
++    void *arg);
++void zfs_range_tree_walk(zfs_range_tree_t *rt, zfs_range_tree_func_t *func,
++    void *arg);
++zfs_range_seg_t *zfs_range_tree_first(zfs_range_tree_t *rt);
++
++void zfs_range_tree_remove_xor_add_segment(uint64_t start, uint64_t end,
++    zfs_range_tree_t *removefrom, zfs_range_tree_t *addto);
++void zfs_range_tree_remove_xor_add(zfs_range_tree_t *rt,
++    zfs_range_tree_t *removefrom, zfs_range_tree_t *addto);
+ 
+ #ifdef	__cplusplus
+ }
+--- a/include/sys/space_map.h
++++ b/include/sys/space_map.h
+@@ -207,28 +207,28 @@
+ 
+ typedef int (*sm_cb_t)(space_map_entry_t *sme, void *arg);
+ 
+-int space_map_load(space_map_t *sm, range_tree_t *rt, maptype_t maptype);
+-int space_map_load_length(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
+-    uint64_t length);
++int space_map_load(space_map_t *sm, zfs_range_tree_t *rt, maptype_t maptype);
++int space_map_load_length(space_map_t *sm, zfs_range_tree_t *rt,
++    maptype_t maptype, uint64_t length);
+ int space_map_iterate(space_map_t *sm, uint64_t length,
+     sm_cb_t callback, void *arg);
+ int space_map_incremental_destroy(space_map_t *sm, sm_cb_t callback, void *arg,
+     dmu_tx_t *tx);
+ 
+-boolean_t space_map_histogram_verify(space_map_t *sm, range_tree_t *rt);
++boolean_t space_map_histogram_verify(space_map_t *sm, zfs_range_tree_t *rt);
+ void space_map_histogram_clear(space_map_t *sm);
+-void space_map_histogram_add(space_map_t *sm, range_tree_t *rt,
++void space_map_histogram_add(space_map_t *sm, zfs_range_tree_t *rt,
+     dmu_tx_t *tx);
+ 
+ uint64_t space_map_object(space_map_t *sm);
+ int64_t space_map_allocated(space_map_t *sm);
+ uint64_t space_map_length(space_map_t *sm);
+-uint64_t space_map_entries(space_map_t *sm, range_tree_t *rt);
++uint64_t space_map_entries(space_map_t *sm, zfs_range_tree_t *rt);
+ uint64_t space_map_nblocks(space_map_t *sm);
+ 
+-void space_map_write(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
++void space_map_write(space_map_t *sm, zfs_range_tree_t *rt, maptype_t maptype,
+     uint64_t vdev_id, dmu_tx_t *tx);
+-uint64_t space_map_estimate_optimal_size(space_map_t *sm, range_tree_t *rt,
++uint64_t space_map_estimate_optimal_size(space_map_t *sm, zfs_range_tree_t *rt,
+     uint64_t vdev_id);
+ void space_map_truncate(space_map_t *sm, int blocksize, dmu_tx_t *tx);
+ uint64_t space_map_alloc(objset_t *os, int blocksize, dmu_tx_t *tx);
+--- a/include/sys/space_reftree.h
++++ b/include/sys/space_reftree.h
+@@ -46,8 +46,8 @@
+ void space_reftree_destroy(avl_tree_t *t);
+ void space_reftree_add_seg(avl_tree_t *t, uint64_t start, uint64_t end,
+     int64_t refcnt);
+-void space_reftree_add_map(avl_tree_t *t, range_tree_t *rt, int64_t refcnt);
+-void space_reftree_generate_map(avl_tree_t *t, range_tree_t *rt,
++void space_reftree_add_map(avl_tree_t *t, zfs_range_tree_t *rt, int64_t refcnt);
++void space_reftree_generate_map(avl_tree_t *t, zfs_range_tree_t *rt,
+     int64_t minref);
+ 
+ #ifdef	__cplusplus
+--- a/include/sys/vdev_impl.h
++++ b/include/sys/vdev_impl.h
+@@ -299,7 +299,8 @@
+ 	kcondvar_t	vdev_initialize_cv;
+ 	uint64_t	vdev_initialize_offset[TXG_SIZE];
+ 	uint64_t	vdev_initialize_last_offset;
+-	range_tree_t	*vdev_initialize_tree;	/* valid while initializing */
++	/* valid while initializing */
++	zfs_range_tree_t	*vdev_initialize_tree;
+ 	uint64_t	vdev_initialize_bytes_est;
+ 	uint64_t	vdev_initialize_bytes_done;
+ 	uint64_t	vdev_initialize_action_time;	/* start and end time */
+@@ -375,7 +376,7 @@
+ 	 * from multiple zio threads.
+ 	 */
+ 	kmutex_t	vdev_obsolete_lock;
+-	range_tree_t	*vdev_obsolete_segments;
++	zfs_range_tree_t	*vdev_obsolete_segments;
+ 	space_map_t	*vdev_obsolete_sm;
+ 
+ 	/*
+@@ -388,7 +389,7 @@
+ 	/*
+ 	 * Leaf vdev state.
+ 	 */
+-	range_tree_t	*vdev_dtl[DTL_TYPES]; /* dirty time logs	*/
++	zfs_range_tree_t	*vdev_dtl[DTL_TYPES]; /* dirty time logs */
+ 	space_map_t	*vdev_dtl_sm;	/* dirty time log space map	*/
+ 	txg_node_t	vdev_dtl_node;	/* per-txg dirty DTL linkage	*/
+ 	uint64_t	vdev_dtl_object; /* DTL object			*/
+--- a/include/sys/vdev_rebuild.h
++++ b/include/sys/vdev_rebuild.h
+@@ -65,7 +65,8 @@
+ typedef struct vdev_rebuild {
+ 	vdev_t		*vr_top_vdev;		/* top-level vdev to rebuild */
+ 	metaslab_t	*vr_scan_msp;		/* scanning disabled metaslab */
+-	range_tree_t	*vr_scan_tree;		/* scan ranges (in metaslab) */
++	/* scan ranges (in metaslab) */
++	zfs_range_tree_t	*vr_scan_tree;
+ 	kmutex_t	vr_io_lock;		/* inflight IO lock */
+ 	kcondvar_t	vr_io_cv;		/* inflight IO cv */
+ 
+--- a/include/sys/vdev_removal.h
++++ b/include/sys/vdev_removal.h
+@@ -35,7 +35,7 @@
+ 	/* Thread performing a vdev removal. */
+ 	kthread_t	*svr_thread;
+ 	/* Segments left to copy from the current metaslab. */
+-	range_tree_t	*svr_allocd_segs;
++	zfs_range_tree_t	*svr_allocd_segs;
+ 	kmutex_t	svr_lock;
+ 	kcondvar_t	svr_cv;
+ 	boolean_t	svr_thread_exit;
+@@ -49,7 +49,7 @@
+ 	 * Ranges that were freed while a mapping was in flight.  This is
+ 	 * a subset of the ranges covered by vdev_im_new_segments.
+ 	 */
+-	range_tree_t	*svr_frees[TXG_SIZE];
++	zfs_range_tree_t	*svr_frees[TXG_SIZE];
+ 
+ 	/*
+ 	 * Number of bytes which we have finished our work for
+--- a/module/zfs/dbuf.c
++++ b/module/zfs/dbuf.c
+@@ -2193,7 +2193,7 @@
+ 	mutex_enter(&dn->dn_mtx);
+ 	int txgoff = tx->tx_txg & TXG_MASK;
+ 	if (dn->dn_free_ranges[txgoff] != NULL) {
+-		range_tree_clear(dn->dn_free_ranges[txgoff], blkid, 1);
++		zfs_range_tree_clear(dn->dn_free_ranges[txgoff], blkid, 1);
+ 	}
+ 
+ 	if (dn->dn_nlevels == 1) {
+@@ -2400,7 +2400,7 @@
+ 	    db->db_blkid != DMU_SPILL_BLKID) {
+ 		mutex_enter(&dn->dn_mtx);
+ 		if (dn->dn_free_ranges[txgoff] != NULL) {
+-			range_tree_clear(dn->dn_free_ranges[txgoff],
++			zfs_range_tree_clear(dn->dn_free_ranges[txgoff],
+ 			    db->db_blkid, 1);
+ 		}
+ 		mutex_exit(&dn->dn_mtx);
+--- a/module/zfs/dnode.c
++++ b/module/zfs/dnode.c
+@@ -2435,11 +2435,11 @@
+ 	{
+ 		int txgoff = tx->tx_txg & TXG_MASK;
+ 		if (dn->dn_free_ranges[txgoff] == NULL) {
+-			dn->dn_free_ranges[txgoff] = range_tree_create(NULL,
+-			    RANGE_SEG64, NULL, 0, 0);
++			dn->dn_free_ranges[txgoff] = zfs_range_tree_create(NULL,
++			    ZFS_RANGE_SEG64, NULL, 0, 0);
+ 		}
+-		range_tree_clear(dn->dn_free_ranges[txgoff], blkid, nblks);
+-		range_tree_add(dn->dn_free_ranges[txgoff], blkid, nblks);
++		zfs_range_tree_clear(dn->dn_free_ranges[txgoff], blkid, nblks);
++		zfs_range_tree_add(dn->dn_free_ranges[txgoff], blkid, nblks);
+ 	}
+ 	dprintf_dnode(dn, "blkid=%llu nblks=%llu txg=%llu\n",
+ 	    (u_longlong_t)blkid, (u_longlong_t)nblks,
+@@ -2482,7 +2482,7 @@
+ 	mutex_enter(&dn->dn_mtx);
+ 	for (i = 0; i < TXG_SIZE; i++) {
+ 		if (dn->dn_free_ranges[i] != NULL &&
+-		    range_tree_contains(dn->dn_free_ranges[i], blkid, 1))
++		    zfs_range_tree_contains(dn->dn_free_ranges[i], blkid, 1))
+ 			break;
+ 	}
+ 	mutex_exit(&dn->dn_mtx);
+--- a/module/zfs/dnode_sync.c
++++ b/module/zfs/dnode_sync.c
+@@ -720,7 +720,7 @@
+ 		    dn->dn_maxblkid == 0 || list_head(list) != NULL ||
+ 		    dn->dn_next_blksz[txgoff] >> SPA_MINBLOCKSHIFT ==
+ 		    dnp->dn_datablkszsec ||
+-		    !range_tree_is_empty(dn->dn_free_ranges[txgoff]));
++		    !zfs_range_tree_is_empty(dn->dn_free_ranges[txgoff]));
+ 		dnp->dn_datablkszsec =
+ 		    dn->dn_next_blksz[txgoff] >> SPA_MINBLOCKSHIFT;
+ 		dn->dn_next_blksz[txgoff] = 0;
+@@ -786,21 +786,22 @@
+ 		dsfra.dsfra_free_indirects = freeing_dnode;
+ 		mutex_enter(&dn->dn_mtx);
+ 		if (freeing_dnode) {
+-			ASSERT(range_tree_contains(dn->dn_free_ranges[txgoff],
+-			    0, dn->dn_maxblkid + 1));
++			ASSERT(zfs_range_tree_contains(
++			    dn->dn_free_ranges[txgoff], 0,
++			    dn->dn_maxblkid + 1));
+ 		}
+ 		/*
+ 		 * Because dnode_sync_free_range() must drop dn_mtx during its
+-		 * processing, using it as a callback to range_tree_vacate() is
+-		 * not safe.  No other operations (besides destroy) are allowed
+-		 * once range_tree_vacate() has begun, and dropping dn_mtx
+-		 * would leave a window open for another thread to observe that
+-		 * invalid (and unsafe) state.
++		 * processing, using it as a callback to zfs_range_tree_vacate()
++		 * is not safe. No other operations (besides destroy) are
++		 * allowed once zfs_range_tree_vacate() has begun, and dropping
++		 * dn_mtx would leave a window open for another thread to
++		 * observe that invalid (and unsafe) state.
+ 		 */
+-		range_tree_walk(dn->dn_free_ranges[txgoff],
++		zfs_range_tree_walk(dn->dn_free_ranges[txgoff],
+ 		    dnode_sync_free_range, &dsfra);
+-		range_tree_vacate(dn->dn_free_ranges[txgoff], NULL, NULL);
+-		range_tree_destroy(dn->dn_free_ranges[txgoff]);
++		zfs_range_tree_vacate(dn->dn_free_ranges[txgoff], NULL, NULL);
++		zfs_range_tree_destroy(dn->dn_free_ranges[txgoff]);
+ 		dn->dn_free_ranges[txgoff] = NULL;
+ 		mutex_exit(&dn->dn_mtx);
+ 	}
+--- a/module/zfs/dsl_pool.c
++++ b/module/zfs/dsl_pool.c
+@@ -652,8 +652,8 @@
+ 
+ 		for (ms = txg_list_head(tl, TXG_CLEAN(txg)); ms;
+ 		    ms = txg_list_next(tl, ms, TXG_CLEAN(txg))) {
+-			VERIFY(range_tree_is_empty(ms->ms_freeing));
+-			VERIFY(range_tree_is_empty(ms->ms_checkpointing));
++			VERIFY(zfs_range_tree_is_empty(ms->ms_freeing));
++			VERIFY(zfs_range_tree_is_empty(ms->ms_checkpointing));
+ 		}
+ 	}
+ 
+--- a/module/zfs/dsl_scan.c
++++ b/module/zfs/dsl_scan.c
+@@ -321,7 +321,7 @@
+ 	zio_t		*q_zio; /* scn_zio_root child for waiting on IO */
+ 
+ 	/* trees used for sorting I/Os and extents of I/Os */
+-	range_tree_t	*q_exts_by_addr;
++	zfs_range_tree_t	*q_exts_by_addr;
+ 	zfs_btree_t	q_exts_by_size;
+ 	avl_tree_t	q_sios_by_addr;
+ 	uint64_t	q_sio_memused;
+@@ -814,7 +814,8 @@
+ 			ASSERT3P(avl_first(&q->q_sios_by_addr), ==, NULL);
+ 			ASSERT3P(zfs_btree_first(&q->q_exts_by_size, NULL), ==,
+ 			    NULL);
+-			ASSERT3P(range_tree_first(q->q_exts_by_addr), ==, NULL);
++			ASSERT3P(zfs_range_tree_first(q->q_exts_by_addr), ==,
++			    NULL);
+ 			mutex_exit(&vd->vdev_scan_io_queue_lock);
+ 		}
+ 
+@@ -3277,13 +3278,14 @@
+ 
+ /*
+  * This function removes sios from an IO queue which reside within a given
+- * range_seg_t and inserts them (in offset order) into a list. Note that
++ * zfs_range_seg_t and inserts them (in offset order) into a list. Note that
+  * we only ever return a maximum of 32 sios at once. If there are more sios
+  * to process within this segment that did not make it onto the list we
+  * return B_TRUE and otherwise B_FALSE.
+  */
+ static boolean_t
+-scan_io_queue_gather(dsl_scan_io_queue_t *queue, range_seg_t *rs, list_t *list)
++scan_io_queue_gather(dsl_scan_io_queue_t *queue, zfs_range_seg_t *rs,
++    list_t *list)
+ {
+ 	scan_io_t *srch_sio, *sio, *next_sio;
+ 	avl_index_t idx;
+@@ -3295,7 +3297,7 @@
+ 
+ 	srch_sio = sio_alloc(1);
+ 	srch_sio->sio_nr_dvas = 1;
+-	SIO_SET_OFFSET(srch_sio, rs_get_start(rs, queue->q_exts_by_addr));
++	SIO_SET_OFFSET(srch_sio, zfs_rs_get_start(rs, queue->q_exts_by_addr));
+ 
+ 	/*
+ 	 * The exact start of the extent might not contain any matching zios,
+@@ -3307,11 +3309,11 @@
+ 	if (sio == NULL)
+ 		sio = avl_nearest(&queue->q_sios_by_addr, idx, AVL_AFTER);
+ 
+-	while (sio != NULL && SIO_GET_OFFSET(sio) < rs_get_end(rs,
++	while (sio != NULL && SIO_GET_OFFSET(sio) < zfs_rs_get_end(rs,
+ 	    queue->q_exts_by_addr) && num_sios <= 32) {
+-		ASSERT3U(SIO_GET_OFFSET(sio), >=, rs_get_start(rs,
++		ASSERT3U(SIO_GET_OFFSET(sio), >=, zfs_rs_get_start(rs,
+ 		    queue->q_exts_by_addr));
+-		ASSERT3U(SIO_GET_END_OFFSET(sio), <=, rs_get_end(rs,
++		ASSERT3U(SIO_GET_END_OFFSET(sio), <=, zfs_rs_get_end(rs,
+ 		    queue->q_exts_by_addr));
+ 
+ 		next_sio = AVL_NEXT(&queue->q_sios_by_addr, sio);
+@@ -3332,19 +3334,20 @@
+ 	 * in the segment we update it to reflect the work we were able to
+ 	 * complete. Otherwise, we remove it from the range tree entirely.
+ 	 */
+-	if (sio != NULL && SIO_GET_OFFSET(sio) < rs_get_end(rs,
++	if (sio != NULL && SIO_GET_OFFSET(sio) < zfs_rs_get_end(rs,
+ 	    queue->q_exts_by_addr)) {
+-		range_tree_adjust_fill(queue->q_exts_by_addr, rs,
++		zfs_range_tree_adjust_fill(queue->q_exts_by_addr, rs,
+ 		    -bytes_issued);
+-		range_tree_resize_segment(queue->q_exts_by_addr, rs,
+-		    SIO_GET_OFFSET(sio), rs_get_end(rs,
++		zfs_range_tree_resize_segment(queue->q_exts_by_addr, rs,
++		    SIO_GET_OFFSET(sio), zfs_rs_get_end(rs,
+ 		    queue->q_exts_by_addr) - SIO_GET_OFFSET(sio));
+ 		queue->q_last_ext_addr = SIO_GET_OFFSET(sio);
+ 		return (B_TRUE);
+ 	} else {
+-		uint64_t rstart = rs_get_start(rs, queue->q_exts_by_addr);
+-		uint64_t rend = rs_get_end(rs, queue->q_exts_by_addr);
+-		range_tree_remove(queue->q_exts_by_addr, rstart, rend - rstart);
++		uint64_t rstart = zfs_rs_get_start(rs, queue->q_exts_by_addr);
++		uint64_t rend = zfs_rs_get_end(rs, queue->q_exts_by_addr);
++		zfs_range_tree_remove(queue->q_exts_by_addr, rstart, rend -
++		    rstart);
+ 		queue->q_last_ext_addr = -1;
+ 		return (B_FALSE);
+ 	}
+@@ -3361,11 +3364,11 @@
+  * 	memory limit.
+  * 3) Otherwise we don't select any extents.
+  */
+-static range_seg_t *
++static zfs_range_seg_t *
+ scan_io_queue_fetch_ext(dsl_scan_io_queue_t *queue)
+ {
+ 	dsl_scan_t *scn = queue->q_scn;
+-	range_tree_t *rt = queue->q_exts_by_addr;
++	zfs_range_tree_t *rt = queue->q_exts_by_addr;
+ 
+ 	ASSERT(MUTEX_HELD(&queue->q_vd->vdev_scan_io_queue_lock));
+ 	ASSERT(scn->scn_is_sorted);
+@@ -3384,7 +3387,7 @@
+ 	 */
+ 	if ((zfs_scan_issue_strategy < 1 && scn->scn_checkpointing) ||
+ 	    zfs_scan_issue_strategy == 1)
+-		return (range_tree_first(rt));
++		return (zfs_range_tree_first(rt));
+ 
+ 	/*
+ 	 * Try to continue previous extent if it is not completed yet.  After
+@@ -3393,10 +3396,10 @@
+ 	 */
+ 	uint64_t start;
+ 	uint64_t size = 1ULL << rt->rt_shift;
+-	range_seg_t *addr_rs;
++	zfs_range_seg_t *addr_rs;
+ 	if (queue->q_last_ext_addr != -1) {
+ 		start = queue->q_last_ext_addr;
+-		addr_rs = range_tree_find(rt, start, size);
++		addr_rs = zfs_range_tree_find(rt, start, size);
+ 		if (addr_rs != NULL)
+ 			return (addr_rs);
+ 	}
+@@ -3413,10 +3416,10 @@
+ 	 * We need to get the original entry in the by_addr tree so we can
+ 	 * modify it.
+ 	 */
+-	addr_rs = range_tree_find(rt, start, size);
++	addr_rs = zfs_range_tree_find(rt, start, size);
+ 	ASSERT3P(addr_rs, !=, NULL);
+-	ASSERT3U(rs_get_start(addr_rs, rt), ==, start);
+-	ASSERT3U(rs_get_end(addr_rs, rt), >, start);
++	ASSERT3U(zfs_rs_get_start(addr_rs, rt), ==, start);
++	ASSERT3U(zfs_rs_get_end(addr_rs, rt), >, start);
+ 	return (addr_rs);
+ }
+ 
+@@ -3426,7 +3429,7 @@
+ 	dsl_scan_io_queue_t *queue = arg;
+ 	kmutex_t *q_lock = &queue->q_vd->vdev_scan_io_queue_lock;
+ 	boolean_t suspended = B_FALSE;
+-	range_seg_t *rs;
++	zfs_range_seg_t *rs;
+ 	scan_io_t *sio;
+ 	zio_t *zio;
+ 	list_t sio_list;
+@@ -4723,7 +4726,7 @@
+ 	}
+ 	avl_insert(&queue->q_sios_by_addr, sio, idx);
+ 	queue->q_sio_memused += SIO_GET_MUSED(sio);
+-	range_tree_add(queue->q_exts_by_addr, SIO_GET_OFFSET(sio),
++	zfs_range_tree_add(queue->q_exts_by_addr, SIO_GET_OFFSET(sio),
+ 	    SIO_GET_ASIZE(sio));
+ }
+ 
+@@ -4983,7 +4986,7 @@
+     ext_size_compare)
+ 
+ static void
+-ext_size_create(range_tree_t *rt, void *arg)
++ext_size_create(zfs_range_tree_t *rt, void *arg)
+ {
+ 	(void) rt;
+ 	zfs_btree_t *size_tree = arg;
+@@ -4993,7 +4996,7 @@
+ }
+ 
+ static void
+-ext_size_destroy(range_tree_t *rt, void *arg)
++ext_size_destroy(zfs_range_tree_t *rt, void *arg)
+ {
+ 	(void) rt;
+ 	zfs_btree_t *size_tree = arg;
+@@ -5003,7 +5006,7 @@
+ }
+ 
+ static uint64_t
+-ext_size_value(range_tree_t *rt, range_seg_gap_t *rsg)
++ext_size_value(zfs_range_tree_t *rt, range_seg_gap_t *rsg)
+ {
+ 	(void) rt;
+ 	uint64_t size = rsg->rs_end - rsg->rs_start;
+@@ -5014,25 +5017,25 @@
+ }
+ 
+ static void
+-ext_size_add(range_tree_t *rt, range_seg_t *rs, void *arg)
++ext_size_add(zfs_range_tree_t *rt, zfs_range_seg_t *rs, void *arg)
+ {
+ 	zfs_btree_t *size_tree = arg;
+-	ASSERT3U(rt->rt_type, ==, RANGE_SEG_GAP);
++	ASSERT3U(rt->rt_type, ==, ZFS_RANGE_SEG_GAP);
+ 	uint64_t v = ext_size_value(rt, (range_seg_gap_t *)rs);
+ 	zfs_btree_add(size_tree, &v);
+ }
+ 
+ static void
+-ext_size_remove(range_tree_t *rt, range_seg_t *rs, void *arg)
++ext_size_remove(zfs_range_tree_t *rt, zfs_range_seg_t *rs, void *arg)
+ {
+ 	zfs_btree_t *size_tree = arg;
+-	ASSERT3U(rt->rt_type, ==, RANGE_SEG_GAP);
++	ASSERT3U(rt->rt_type, ==, ZFS_RANGE_SEG_GAP);
+ 	uint64_t v = ext_size_value(rt, (range_seg_gap_t *)rs);
+ 	zfs_btree_remove(size_tree, &v);
+ }
+ 
+ static void
+-ext_size_vacate(range_tree_t *rt, void *arg)
++ext_size_vacate(zfs_range_tree_t *rt, void *arg)
+ {
+ 	zfs_btree_t *size_tree = arg;
+ 	zfs_btree_clear(size_tree);
+@@ -5041,7 +5044,7 @@
+ 	ext_size_create(rt, arg);
+ }
+ 
+-static const range_tree_ops_t ext_size_ops = {
++static const zfs_range_tree_ops_t ext_size_ops = {
+ 	.rtop_create = ext_size_create,
+ 	.rtop_destroy = ext_size_destroy,
+ 	.rtop_add = ext_size_add,
+@@ -5073,8 +5076,9 @@
+ 	q->q_sio_memused = 0;
+ 	q->q_last_ext_addr = -1;
+ 	cv_init(&q->q_zio_cv, NULL, CV_DEFAULT, NULL);
+-	q->q_exts_by_addr = range_tree_create_gap(&ext_size_ops, RANGE_SEG_GAP,
+-	    &q->q_exts_by_size, 0, vd->vdev_ashift, zfs_scan_max_ext_gap);
++	q->q_exts_by_addr = zfs_range_tree_create_gap(&ext_size_ops,
++	    ZFS_RANGE_SEG_GAP, &q->q_exts_by_size, 0, vd->vdev_ashift,
++	    zfs_scan_max_ext_gap);
+ 	avl_create(&q->q_sios_by_addr, sio_addr_compare,
+ 	    sizeof (scan_io_t), offsetof(scan_io_t, sio_nodes.sio_addr_node));
+ 
+@@ -5099,15 +5103,15 @@
+ 		atomic_add_64(&scn->scn_queues_pending, -1);
+ 	while ((sio = avl_destroy_nodes(&queue->q_sios_by_addr, &cookie)) !=
+ 	    NULL) {
+-		ASSERT(range_tree_contains(queue->q_exts_by_addr,
++		ASSERT(zfs_range_tree_contains(queue->q_exts_by_addr,
+ 		    SIO_GET_OFFSET(sio), SIO_GET_ASIZE(sio)));
+ 		queue->q_sio_memused -= SIO_GET_MUSED(sio);
+ 		sio_free(sio);
+ 	}
+ 
+ 	ASSERT0(queue->q_sio_memused);
+-	range_tree_vacate(queue->q_exts_by_addr, NULL, queue);
+-	range_tree_destroy(queue->q_exts_by_addr);
++	zfs_range_tree_vacate(queue->q_exts_by_addr, NULL, queue);
++	zfs_range_tree_destroy(queue->q_exts_by_addr);
+ 	avl_destroy(&queue->q_sios_by_addr);
+ 	cv_destroy(&queue->q_zio_cv);
+ 
+@@ -5184,10 +5188,10 @@
+ 	 * 1) Cold, just sitting in the queue of zio's to be issued at
+ 	 *	some point in the future. In this case, all we do is
+ 	 *	remove the zio from the q_sios_by_addr tree, decrement
+-	 *	its data volume from the containing range_seg_t and
++	 *	its data volume from the containing zfs_range_seg_t and
+ 	 *	resort the q_exts_by_size tree to reflect that the
+-	 *	range_seg_t has lost some of its 'fill'. We don't shorten
+-	 *	the range_seg_t - this is usually rare enough not to be
++	 *	zfs_range_seg_t has lost some of its 'fill'. We don't shorten
++	 *	the zfs_range_seg_t - this is usually rare enough not to be
+ 	 *	worth the extra hassle of trying keep track of precise
+ 	 *	extent boundaries.
+ 	 * 2) Hot, where the zio is currently in-flight in
+@@ -5211,8 +5215,9 @@
+ 			atomic_add_64(&scn->scn_queues_pending, -1);
+ 		queue->q_sio_memused -= SIO_GET_MUSED(sio);
+ 
+-		ASSERT(range_tree_contains(queue->q_exts_by_addr, start, size));
+-		range_tree_remove_fill(queue->q_exts_by_addr, start, size);
++		ASSERT(zfs_range_tree_contains(queue->q_exts_by_addr, start,
++		    size));
++		zfs_range_tree_remove_fill(queue->q_exts_by_addr, start, size);
+ 
+ 		/* count the block as though we skipped it */
+ 		sio2bp(sio, &tmpbp);
+--- a/module/zfs/metaslab.c
++++ b/module/zfs/metaslab.c
+@@ -347,7 +347,8 @@
+ static void metaslab_flush_update(metaslab_t *, dmu_tx_t *);
+ static unsigned int metaslab_idx_func(multilist_t *, void *);
+ static void metaslab_evict(metaslab_t *, uint64_t);
+-static void metaslab_rt_add(range_tree_t *rt, range_seg_t *rs, void *arg);
++static void metaslab_rt_add(zfs_range_tree_t *rt, zfs_range_seg_t *rs,
++    void *arg);
+ kmem_cache_t *metaslab_alloc_trace_cache;
+ 
+ typedef struct metaslab_stats {
+@@ -1379,7 +1380,7 @@
+ } metaslab_rt_arg_t;
+ 
+ struct mssa_arg {
+-	range_tree_t *rt;
++	zfs_range_tree_t *rt;
+ 	metaslab_rt_arg_t *mra;
+ };
+ 
+@@ -1387,16 +1388,16 @@
+ metaslab_size_sorted_add(void *arg, uint64_t start, uint64_t size)
+ {
+ 	struct mssa_arg *mssap = arg;
+-	range_tree_t *rt = mssap->rt;
++	zfs_range_tree_t *rt = mssap->rt;
+ 	metaslab_rt_arg_t *mrap = mssap->mra;
+ 	range_seg_max_t seg = {0};
+-	rs_set_start(&seg, rt, start);
+-	rs_set_end(&seg, rt, start + size);
++	zfs_rs_set_start(&seg, rt, start);
++	zfs_rs_set_end(&seg, rt, start + size);
+ 	metaslab_rt_add(rt, &seg, mrap);
+ }
+ 
+ static void
+-metaslab_size_tree_full_load(range_tree_t *rt)
++metaslab_size_tree_full_load(zfs_range_tree_t *rt)
+ {
+ 	metaslab_rt_arg_t *mrap = rt->rt_arg;
+ 	METASLABSTAT_BUMP(metaslabstat_reload_tree);
+@@ -1405,7 +1406,7 @@
+ 	struct mssa_arg arg = {0};
+ 	arg.rt = rt;
+ 	arg.mra = mrap;
+-	range_tree_walk(rt, metaslab_size_sorted_add, &arg);
++	zfs_range_tree_walk(rt, metaslab_size_sorted_add, &arg);
+ }
+ 
+ 
+@@ -1417,10 +1418,11 @@
+ 
+ /*
+  * Create any block allocator specific components. The current allocators
+- * rely on using both a size-ordered range_tree_t and an array of uint64_t's.
++ * rely on using both a size-ordered zfs_range_tree_t and an array of
++ * uint64_t's.
+  */
+ static void
+-metaslab_rt_create(range_tree_t *rt, void *arg)
++metaslab_rt_create(zfs_range_tree_t *rt, void *arg)
+ {
+ 	metaslab_rt_arg_t *mrap = arg;
+ 	zfs_btree_t *size_tree = mrap->mra_bt;
+@@ -1429,12 +1431,12 @@
+ 	int (*compare) (const void *, const void *);
+ 	bt_find_in_buf_f bt_find;
+ 	switch (rt->rt_type) {
+-	case RANGE_SEG32:
++	case ZFS_RANGE_SEG32:
+ 		size = sizeof (range_seg32_t);
+ 		compare = metaslab_rangesize32_compare;
+ 		bt_find = metaslab_rt_find_rangesize32_in_buf;
+ 		break;
+-	case RANGE_SEG64:
++	case ZFS_RANGE_SEG64:
+ 		size = sizeof (range_seg64_t);
+ 		compare = metaslab_rangesize64_compare;
+ 		bt_find = metaslab_rt_find_rangesize64_in_buf;
+@@ -1447,7 +1449,7 @@
+ }
+ 
+ static void
+-metaslab_rt_destroy(range_tree_t *rt, void *arg)
++metaslab_rt_destroy(zfs_range_tree_t *rt, void *arg)
+ {
+ 	(void) rt;
+ 	metaslab_rt_arg_t *mrap = arg;
+@@ -1458,12 +1460,12 @@
+ }
+ 
+ static void
+-metaslab_rt_add(range_tree_t *rt, range_seg_t *rs, void *arg)
++metaslab_rt_add(zfs_range_tree_t *rt, zfs_range_seg_t *rs, void *arg)
+ {
+ 	metaslab_rt_arg_t *mrap = arg;
+ 	zfs_btree_t *size_tree = mrap->mra_bt;
+ 
+-	if (rs_get_end(rs, rt) - rs_get_start(rs, rt) <
++	if (zfs_rs_get_end(rs, rt) - zfs_rs_get_start(rs, rt) <
+ 	    (1ULL << mrap->mra_floor_shift))
+ 		return;
+ 
+@@ -1471,12 +1473,12 @@
+ }
+ 
+ static void
+-metaslab_rt_remove(range_tree_t *rt, range_seg_t *rs, void *arg)
++metaslab_rt_remove(zfs_range_tree_t *rt, zfs_range_seg_t *rs, void *arg)
+ {
+ 	metaslab_rt_arg_t *mrap = arg;
+ 	zfs_btree_t *size_tree = mrap->mra_bt;
+ 
+-	if (rs_get_end(rs, rt) - rs_get_start(rs, rt) < (1ULL <<
++	if (zfs_rs_get_end(rs, rt) - zfs_rs_get_start(rs, rt) < (1ULL <<
+ 	    mrap->mra_floor_shift))
+ 		return;
+ 
+@@ -1484,7 +1486,7 @@
+ }
+ 
+ static void
+-metaslab_rt_vacate(range_tree_t *rt, void *arg)
++metaslab_rt_vacate(zfs_range_tree_t *rt, void *arg)
+ {
+ 	metaslab_rt_arg_t *mrap = arg;
+ 	zfs_btree_t *size_tree = mrap->mra_bt;
+@@ -1494,7 +1496,7 @@
+ 	metaslab_rt_create(rt, arg);
+ }
+ 
+-static const range_tree_ops_t metaslab_rt_ops = {
++static const zfs_range_tree_ops_t metaslab_rt_ops = {
+ 	.rtop_create = metaslab_rt_create,
+ 	.rtop_destroy = metaslab_rt_destroy,
+ 	.rtop_add = metaslab_rt_add,
+@@ -1515,7 +1517,7 @@
+ metaslab_largest_allocatable(metaslab_t *msp)
+ {
+ 	zfs_btree_t *t = &msp->ms_allocatable_by_size;
+-	range_seg_t *rs;
++	zfs_range_seg_t *rs;
+ 
+ 	if (t == NULL)
+ 		return (0);
+@@ -1526,7 +1528,7 @@
+ 	if (rs == NULL)
+ 		return (0);
+ 
+-	return (rs_get_end(rs, msp->ms_allocatable) - rs_get_start(rs,
++	return (zfs_rs_get_end(rs, msp->ms_allocatable) - zfs_rs_get_start(rs,
+ 	    msp->ms_allocatable));
+ }
+ 
+@@ -1544,7 +1546,7 @@
+ 
+ 	if (zfs_btree_numnodes(&msp->ms_unflushed_frees_by_size) == 0)
+ 		metaslab_size_tree_full_load(msp->ms_unflushed_frees);
+-	range_seg_t *rs = zfs_btree_last(&msp->ms_unflushed_frees_by_size,
++	zfs_range_seg_t *rs = zfs_btree_last(&msp->ms_unflushed_frees_by_size,
+ 	    NULL);
+ 	if (rs == NULL)
+ 		return (0);
+@@ -1572,13 +1574,13 @@
+ 	 * the largest segment; there may be other usable chunks in the
+ 	 * largest segment, but we ignore them.
+ 	 */
+-	uint64_t rstart = rs_get_start(rs, msp->ms_unflushed_frees);
+-	uint64_t rsize = rs_get_end(rs, msp->ms_unflushed_frees) - rstart;
++	uint64_t rstart = zfs_rs_get_start(rs, msp->ms_unflushed_frees);
++	uint64_t rsize = zfs_rs_get_end(rs, msp->ms_unflushed_frees) - rstart;
+ 	for (int t = 0; t < TXG_DEFER_SIZE; t++) {
+ 		uint64_t start = 0;
+ 		uint64_t size = 0;
+-		boolean_t found = range_tree_find_in(msp->ms_defer[t], rstart,
+-		    rsize, &start, &size);
++		boolean_t found = zfs_range_tree_find_in(msp->ms_defer[t],
++		    rstart, rsize, &start, &size);
+ 		if (found) {
+ 			if (rstart == start)
+ 				return (0);
+@@ -1588,7 +1590,7 @@
+ 
+ 	uint64_t start = 0;
+ 	uint64_t size = 0;
+-	boolean_t found = range_tree_find_in(msp->ms_freed, rstart,
++	boolean_t found = zfs_range_tree_find_in(msp->ms_freed, rstart,
+ 	    rsize, &start, &size);
+ 	if (found)
+ 		rsize = start - rstart;
+@@ -1596,15 +1598,15 @@
+ 	return (rsize);
+ }
+ 
+-static range_seg_t *
+-metaslab_block_find(zfs_btree_t *t, range_tree_t *rt, uint64_t start,
++static zfs_range_seg_t *
++metaslab_block_find(zfs_btree_t *t, zfs_range_tree_t *rt, uint64_t start,
+     uint64_t size, zfs_btree_index_t *where)
+ {
+-	range_seg_t *rs;
++	zfs_range_seg_t *rs;
+ 	range_seg_max_t rsearch;
+ 
+-	rs_set_start(&rsearch, rt, start);
+-	rs_set_end(&rsearch, rt, start + size);
++	zfs_rs_set_start(&rsearch, rt, start);
++	zfs_rs_set_end(&rsearch, rt, start + size);
+ 
+ 	rs = zfs_btree_find(t, &rsearch, where);
+ 	if (rs == NULL) {
+@@ -1620,24 +1622,25 @@
+  * for a block that matches the specified criteria.
+  */
+ static uint64_t
+-metaslab_block_picker(range_tree_t *rt, uint64_t *cursor, uint64_t size,
++metaslab_block_picker(zfs_range_tree_t *rt, uint64_t *cursor, uint64_t size,
+     uint64_t max_search)
+ {
+ 	if (*cursor == 0)
+ 		*cursor = rt->rt_start;
+ 	zfs_btree_t *bt = &rt->rt_root;
+ 	zfs_btree_index_t where;
+-	range_seg_t *rs = metaslab_block_find(bt, rt, *cursor, size, &where);
++	zfs_range_seg_t *rs = metaslab_block_find(bt, rt, *cursor, size,
++	    &where);
+ 	uint64_t first_found;
+ 	int count_searched = 0;
+ 
+ 	if (rs != NULL)
+-		first_found = rs_get_start(rs, rt);
++		first_found = zfs_rs_get_start(rs, rt);
+ 
+-	while (rs != NULL && (rs_get_start(rs, rt) - first_found <=
++	while (rs != NULL && (zfs_rs_get_start(rs, rt) - first_found <=
+ 	    max_search || count_searched < metaslab_min_search_count)) {
+-		uint64_t offset = rs_get_start(rs, rt);
+-		if (offset + size <= rs_get_end(rs, rt)) {
++		uint64_t offset = zfs_rs_get_start(rs, rt);
++		if (offset + size <= zfs_rs_get_end(rs, rt)) {
+ 			*cursor = offset + size;
+ 			return (offset);
+ 		}
+@@ -1748,8 +1751,8 @@
+ 	 */
+ 	uint64_t align = size & -size;
+ 	uint64_t *cursor = &msp->ms_lbas[highbit64(align) - 1];
+-	range_tree_t *rt = msp->ms_allocatable;
+-	uint_t free_pct = range_tree_space(rt) * 100 / msp->ms_size;
++	zfs_range_tree_t *rt = msp->ms_allocatable;
++	uint_t free_pct = zfs_range_tree_space(rt) * 100 / msp->ms_size;
+ 	uint64_t offset;
+ 
+ 	ASSERT(MUTEX_HELD(&msp->ms_lock));
+@@ -1767,7 +1770,7 @@
+ 	}
+ 
+ 	if (offset == -1) {
+-		range_seg_t *rs;
++		zfs_range_seg_t *rs;
+ 		if (zfs_btree_numnodes(&msp->ms_allocatable_by_size) == 0)
+ 			metaslab_size_tree_full_load(msp->ms_allocatable);
+ 
+@@ -1780,9 +1783,9 @@
+ 			rs = metaslab_block_find(&msp->ms_allocatable_by_size,
+ 			    rt, msp->ms_start, size, &where);
+ 		}
+-		if (rs != NULL && rs_get_start(rs, rt) + size <= rs_get_end(rs,
+-		    rt)) {
+-			offset = rs_get_start(rs, rt);
++		if (rs != NULL && zfs_rs_get_start(rs, rt) + size <=
++		    zfs_rs_get_end(rs, rt)) {
++			offset = zfs_rs_get_start(rs, rt);
+ 			*cursor = offset + size;
+ 		}
+ 	}
+@@ -1802,7 +1805,7 @@
+ static uint64_t
+ metaslab_cf_alloc(metaslab_t *msp, uint64_t size)
+ {
+-	range_tree_t *rt = msp->ms_allocatable;
++	zfs_range_tree_t *rt = msp->ms_allocatable;
+ 	zfs_btree_t *t = &msp->ms_allocatable_by_size;
+ 	uint64_t *cursor = &msp->ms_lbas[0];
+ 	uint64_t *cursor_end = &msp->ms_lbas[1];
+@@ -1813,17 +1816,17 @@
+ 	ASSERT3U(*cursor_end, >=, *cursor);
+ 
+ 	if ((*cursor + size) > *cursor_end) {
+-		range_seg_t *rs;
++		zfs_range_seg_t *rs;
+ 
+ 		if (zfs_btree_numnodes(t) == 0)
+ 			metaslab_size_tree_full_load(msp->ms_allocatable);
+ 		rs = zfs_btree_last(t, NULL);
+-		if (rs == NULL || (rs_get_end(rs, rt) - rs_get_start(rs, rt)) <
+-		    size)
++		if (rs == NULL || (zfs_rs_get_end(rs, rt) -
++		    zfs_rs_get_start(rs, rt)) < size)
+ 			return (-1ULL);
+ 
+-		*cursor = rs_get_start(rs, rt);
+-		*cursor_end = rs_get_end(rs, rt);
++		*cursor = zfs_rs_get_start(rs, rt);
++		*cursor_end = zfs_rs_get_end(rs, rt);
+ 	}
+ 
+ 	offset = *cursor;
+@@ -1851,9 +1854,9 @@
+ metaslab_ndf_alloc(metaslab_t *msp, uint64_t size)
+ {
+ 	zfs_btree_t *t = &msp->ms_allocatable->rt_root;
+-	range_tree_t *rt = msp->ms_allocatable;
++	zfs_range_tree_t *rt = msp->ms_allocatable;
+ 	zfs_btree_index_t where;
+-	range_seg_t *rs;
++	zfs_range_seg_t *rs;
+ 	range_seg_max_t rsearch;
+ 	uint64_t hbit = highbit64(size);
+ 	uint64_t *cursor = &msp->ms_lbas[hbit - 1];
+@@ -1864,15 +1867,16 @@
+ 	if (max_size < size)
+ 		return (-1ULL);
+ 
+-	rs_set_start(&rsearch, rt, *cursor);
+-	rs_set_end(&rsearch, rt, *cursor + size);
++	zfs_rs_set_start(&rsearch, rt, *cursor);
++	zfs_rs_set_end(&rsearch, rt, *cursor + size);
+ 
+ 	rs = zfs_btree_find(t, &rsearch, &where);
+-	if (rs == NULL || (rs_get_end(rs, rt) - rs_get_start(rs, rt)) < size) {
++	if (rs == NULL || (zfs_rs_get_end(rs, rt) - zfs_rs_get_start(rs, rt)) <
++	    size) {
+ 		t = &msp->ms_allocatable_by_size;
+ 
+-		rs_set_start(&rsearch, rt, 0);
+-		rs_set_end(&rsearch, rt, MIN(max_size, 1ULL << (hbit +
++		zfs_rs_set_start(&rsearch, rt, 0);
++		zfs_rs_set_end(&rsearch, rt, MIN(max_size, 1ULL << (hbit +
+ 		    metaslab_ndf_clump_shift)));
+ 
+ 		rs = zfs_btree_find(t, &rsearch, &where);
+@@ -1881,9 +1885,9 @@
+ 		ASSERT(rs != NULL);
+ 	}
+ 
+-	if ((rs_get_end(rs, rt) - rs_get_start(rs, rt)) >= size) {
+-		*cursor = rs_get_start(rs, rt) + size;
+-		return (rs_get_start(rs, rt));
++	if ((zfs_rs_get_end(rs, rt) - zfs_rs_get_start(rs, rt)) >= size) {
++		*cursor = zfs_rs_get_start(rs, rt) + size;
++		return (zfs_rs_get_start(rs, rt));
+ 	}
+ 	return (-1ULL);
+ }
+@@ -1973,12 +1977,12 @@
+ 	ASSERT3S(space_map_allocated(msp->ms_sm), >=, 0);
+ 
+ 	ASSERT3U(space_map_allocated(msp->ms_sm), >=,
+-	    range_tree_space(msp->ms_unflushed_frees));
++	    zfs_range_tree_space(msp->ms_unflushed_frees));
+ 
+ 	ASSERT3U(metaslab_allocated_space(msp), ==,
+ 	    space_map_allocated(msp->ms_sm) +
+-	    range_tree_space(msp->ms_unflushed_allocs) -
+-	    range_tree_space(msp->ms_unflushed_frees));
++	    zfs_range_tree_space(msp->ms_unflushed_allocs) -
++	    zfs_range_tree_space(msp->ms_unflushed_frees));
+ 
+ 	sm_free_space = msp->ms_size - metaslab_allocated_space(msp);
+ 
+@@ -1988,17 +1992,19 @@
+ 	 */
+ 	for (int t = 0; t < TXG_CONCURRENT_STATES; t++) {
+ 		allocating +=
+-		    range_tree_space(msp->ms_allocating[(txg + t) & TXG_MASK]);
++		    zfs_range_tree_space(msp->ms_allocating[(txg + t) &
++		    TXG_MASK]);
+ 	}
+ 	ASSERT3U(allocating + msp->ms_allocated_this_txg, ==,
+ 	    msp->ms_allocating_total);
+ 
+ 	ASSERT3U(msp->ms_deferspace, ==,
+-	    range_tree_space(msp->ms_defer[0]) +
+-	    range_tree_space(msp->ms_defer[1]));
++	    zfs_range_tree_space(msp->ms_defer[0]) +
++	    zfs_range_tree_space(msp->ms_defer[1]));
+ 
+-	msp_free_space = range_tree_space(msp->ms_allocatable) + allocating +
+-	    msp->ms_deferspace + range_tree_space(msp->ms_freed);
++	msp_free_space = zfs_range_tree_space(msp->ms_allocatable) +
++	    allocating + msp->ms_deferspace +
++	    zfs_range_tree_space(msp->ms_freed);
+ 
+ 	VERIFY3U(sm_free_space, ==, msp_free_space);
+ }
+@@ -2019,7 +2025,7 @@
+ 
+ static void
+ metaslab_aux_histogram_add(uint64_t *histogram, uint64_t shift,
+-    range_tree_t *rt)
++    zfs_range_tree_t *rt)
+ {
+ 	/*
+ 	 * This is modeled after space_map_histogram_add(), so refer to that
+@@ -2167,7 +2173,7 @@
+ 
+ 	/* some extra verification for in-core tree if you can */
+ 	if (msp->ms_loaded) {
+-		range_tree_stat_verify(msp->ms_allocatable);
++		zfs_range_tree_stat_verify(msp->ms_allocatable);
+ 		VERIFY(space_map_histogram_verify(msp->ms_sm,
+ 		    msp->ms_allocatable));
+ 	}
+@@ -2355,8 +2361,8 @@
+ 		struct mssa_arg arg = {0};
+ 		arg.rt = msp->ms_allocatable;
+ 		arg.mra = mrap;
+-		range_tree_walk(msp->ms_allocatable, metaslab_size_sorted_add,
+-		    &arg);
++		zfs_range_tree_walk(msp->ms_allocatable,
++		    metaslab_size_sorted_add, &arg);
+ 	} else {
+ 		/*
+ 		 * Add the size-sorted tree first, since we don't need to load
+@@ -2370,7 +2376,7 @@
+ 		 * all the space in the metaslab as free and add it to the
+ 		 * ms_allocatable tree.
+ 		 */
+-		range_tree_add(msp->ms_allocatable,
++		zfs_range_tree_add(msp->ms_allocatable,
+ 		    msp->ms_start, msp->ms_size);
+ 
+ 		if (msp->ms_new) {
+@@ -2381,8 +2387,10 @@
+ 			 * expect any unflushed allocs or frees from previous
+ 			 * TXGs.
+ 			 */
+-			ASSERT(range_tree_is_empty(msp->ms_unflushed_allocs));
+-			ASSERT(range_tree_is_empty(msp->ms_unflushed_frees));
++			ASSERT(zfs_range_tree_is_empty(
++			    msp->ms_unflushed_allocs));
++			ASSERT(zfs_range_tree_is_empty(
++			    msp->ms_unflushed_frees));
+ 		}
+ 	}
+ 
+@@ -2412,10 +2420,10 @@
+ 	 * away so any manipulations we do below have a clear view
+ 	 * of what is allocated and what is free.
+ 	 */
+-	range_tree_walk(msp->ms_unflushed_allocs,
+-	    range_tree_remove, msp->ms_allocatable);
+-	range_tree_walk(msp->ms_unflushed_frees,
+-	    range_tree_add, msp->ms_allocatable);
++	zfs_range_tree_walk(msp->ms_unflushed_allocs,
++	    zfs_range_tree_remove, msp->ms_allocatable);
++	zfs_range_tree_walk(msp->ms_unflushed_frees,
++	    zfs_range_tree_add, msp->ms_allocatable);
+ 
+ 	ASSERT3P(msp->ms_group, !=, NULL);
+ 	spa_t *spa = msp->ms_group->mg_vd->vdev_spa;
+@@ -2443,8 +2451,8 @@
+ 		 * correctly doesn't contain any segments that exist
+ 		 * in ms_freed [see ms_synced_length].
+ 		 */
+-		range_tree_walk(msp->ms_freed,
+-		    range_tree_remove, msp->ms_allocatable);
++		zfs_range_tree_walk(msp->ms_freed,
++		    zfs_range_tree_remove, msp->ms_allocatable);
+ 	}
+ 
+ 	/*
+@@ -2462,8 +2470,8 @@
+ 	 * code path.
+ 	 */
+ 	for (int t = 0; t < TXG_DEFER_SIZE; t++) {
+-		range_tree_walk(msp->ms_defer[t],
+-		    range_tree_remove, msp->ms_allocatable);
++		zfs_range_tree_walk(msp->ms_defer[t],
++		    zfs_range_tree_remove, msp->ms_allocatable);
+ 	}
+ 
+ 	/*
+@@ -2498,11 +2506,11 @@
+ 	    (u_longlong_t)msp->ms_group->mg_vd->vdev_id,
+ 	    (u_longlong_t)msp->ms_id,
+ 	    (u_longlong_t)space_map_length(msp->ms_sm),
+-	    (u_longlong_t)range_tree_space(msp->ms_unflushed_allocs),
+-	    (u_longlong_t)range_tree_space(msp->ms_unflushed_frees),
+-	    (u_longlong_t)range_tree_space(msp->ms_freed),
+-	    (u_longlong_t)range_tree_space(msp->ms_defer[0]),
+-	    (u_longlong_t)range_tree_space(msp->ms_defer[1]),
++	    (u_longlong_t)zfs_range_tree_space(msp->ms_unflushed_allocs),
++	    (u_longlong_t)zfs_range_tree_space(msp->ms_unflushed_frees),
++	    (u_longlong_t)zfs_range_tree_space(msp->ms_freed),
++	    (u_longlong_t)zfs_range_tree_space(msp->ms_defer[0]),
++	    (u_longlong_t)zfs_range_tree_space(msp->ms_defer[1]),
+ 	    (longlong_t)((load_start - msp->ms_unload_time) / 1000000),
+ 	    (longlong_t)((load_end - load_start) / 1000000),
+ 	    (u_longlong_t)msp->ms_max_size,
+@@ -2584,7 +2592,7 @@
+ 	if (!msp->ms_loaded)
+ 		return;
+ 
+-	range_tree_vacate(msp->ms_allocatable, NULL, NULL);
++	zfs_range_tree_vacate(msp->ms_allocatable, NULL, NULL);
+ 	msp->ms_loaded = B_FALSE;
+ 	msp->ms_unload_time = gethrtime();
+ 
+@@ -2640,7 +2648,7 @@
+  * the vdev_ms_shift - the vdev_ashift is less than 32, we can store
+  * the ranges using two uint32_ts, rather than two uint64_ts.
+  */
+-range_seg_type_t
++zfs_range_seg_type_t
+ metaslab_calculate_range_tree_type(vdev_t *vdev, metaslab_t *msp,
+     uint64_t *start, uint64_t *shift)
+ {
+@@ -2648,11 +2656,11 @@
+ 	    !zfs_metaslab_force_large_segs) {
+ 		*shift = vdev->vdev_ashift;
+ 		*start = msp->ms_start;
+-		return (RANGE_SEG32);
++		return (ZFS_RANGE_SEG32);
+ 	} else {
+ 		*shift = 0;
+ 		*start = 0;
+-		return (RANGE_SEG64);
++		return (ZFS_RANGE_SEG64);
+ 	}
+ }
+ 
+@@ -2738,32 +2746,33 @@
+ 	}
+ 
+ 	uint64_t shift, start;
+-	range_seg_type_t type =
++	zfs_range_seg_type_t type =
+ 	    metaslab_calculate_range_tree_type(vd, ms, &start, &shift);
+ 
+-	ms->ms_allocatable = range_tree_create(NULL, type, NULL, start, shift);
++	ms->ms_allocatable = zfs_range_tree_create(NULL, type, NULL, start,
++	    shift);
+ 	for (int t = 0; t < TXG_SIZE; t++) {
+-		ms->ms_allocating[t] = range_tree_create(NULL, type,
++		ms->ms_allocating[t] = zfs_range_tree_create(NULL, type,
+ 		    NULL, start, shift);
+ 	}
+-	ms->ms_freeing = range_tree_create(NULL, type, NULL, start, shift);
+-	ms->ms_freed = range_tree_create(NULL, type, NULL, start, shift);
++	ms->ms_freeing = zfs_range_tree_create(NULL, type, NULL, start, shift);
++	ms->ms_freed = zfs_range_tree_create(NULL, type, NULL, start, shift);
+ 	for (int t = 0; t < TXG_DEFER_SIZE; t++) {
+-		ms->ms_defer[t] = range_tree_create(NULL, type, NULL,
++		ms->ms_defer[t] = zfs_range_tree_create(NULL, type, NULL,
+ 		    start, shift);
+ 	}
+ 	ms->ms_checkpointing =
+-	    range_tree_create(NULL, type, NULL, start, shift);
++	    zfs_range_tree_create(NULL, type, NULL, start, shift);
+ 	ms->ms_unflushed_allocs =
+-	    range_tree_create(NULL, type, NULL, start, shift);
++	    zfs_range_tree_create(NULL, type, NULL, start, shift);
+ 
+ 	metaslab_rt_arg_t *mrap = kmem_zalloc(sizeof (*mrap), KM_SLEEP);
+ 	mrap->mra_bt = &ms->ms_unflushed_frees_by_size;
+ 	mrap->mra_floor_shift = metaslab_by_size_min_shift;
+-	ms->ms_unflushed_frees = range_tree_create(&metaslab_rt_ops,
++	ms->ms_unflushed_frees = zfs_range_tree_create(&metaslab_rt_ops,
+ 	    type, mrap, start, shift);
+ 
+-	ms->ms_trim = range_tree_create(NULL, type, NULL, start, shift);
++	ms->ms_trim = zfs_range_tree_create(NULL, type, NULL, start, shift);
+ 
+ 	metaslab_group_add(mg, ms);
+ 	metaslab_set_fragmentation(ms, B_FALSE);
+@@ -2817,8 +2826,8 @@
+ uint64_t
+ metaslab_unflushed_changes_memused(metaslab_t *ms)
+ {
+-	return ((range_tree_numsegs(ms->ms_unflushed_allocs) +
+-	    range_tree_numsegs(ms->ms_unflushed_frees)) *
++	return ((zfs_range_tree_numsegs(ms->ms_unflushed_allocs) +
++	    zfs_range_tree_numsegs(ms->ms_unflushed_frees)) *
+ 	    ms->ms_unflushed_allocs->rt_root.bt_elem_size);
+ }
+ 
+@@ -2851,33 +2860,33 @@
+ 
+ 	metaslab_unload(msp);
+ 
+-	range_tree_destroy(msp->ms_allocatable);
+-	range_tree_destroy(msp->ms_freeing);
+-	range_tree_destroy(msp->ms_freed);
++	zfs_range_tree_destroy(msp->ms_allocatable);
++	zfs_range_tree_destroy(msp->ms_freeing);
++	zfs_range_tree_destroy(msp->ms_freed);
+ 
+ 	ASSERT3U(spa->spa_unflushed_stats.sus_memused, >=,
+ 	    metaslab_unflushed_changes_memused(msp));
+ 	spa->spa_unflushed_stats.sus_memused -=
+ 	    metaslab_unflushed_changes_memused(msp);
+-	range_tree_vacate(msp->ms_unflushed_allocs, NULL, NULL);
+-	range_tree_destroy(msp->ms_unflushed_allocs);
+-	range_tree_destroy(msp->ms_checkpointing);
+-	range_tree_vacate(msp->ms_unflushed_frees, NULL, NULL);
+-	range_tree_destroy(msp->ms_unflushed_frees);
++	zfs_range_tree_vacate(msp->ms_unflushed_allocs, NULL, NULL);
++	zfs_range_tree_destroy(msp->ms_unflushed_allocs);
++	zfs_range_tree_destroy(msp->ms_checkpointing);
++	zfs_range_tree_vacate(msp->ms_unflushed_frees, NULL, NULL);
++	zfs_range_tree_destroy(msp->ms_unflushed_frees);
+ 
+ 	for (int t = 0; t < TXG_SIZE; t++) {
+-		range_tree_destroy(msp->ms_allocating[t]);
++		zfs_range_tree_destroy(msp->ms_allocating[t]);
+ 	}
+ 	for (int t = 0; t < TXG_DEFER_SIZE; t++) {
+-		range_tree_destroy(msp->ms_defer[t]);
++		zfs_range_tree_destroy(msp->ms_defer[t]);
+ 	}
+ 	ASSERT0(msp->ms_deferspace);
+ 
+ 	for (int t = 0; t < TXG_SIZE; t++)
+ 		ASSERT(!txg_list_member(&vd->vdev_ms_list, msp, t));
+ 
+-	range_tree_vacate(msp->ms_trim, NULL, NULL);
+-	range_tree_destroy(msp->ms_trim);
++	zfs_range_tree_vacate(msp->ms_trim, NULL, NULL);
++	zfs_range_tree_destroy(msp->ms_trim);
+ 
+ 	mutex_exit(&msp->ms_lock);
+ 	cv_destroy(&msp->ms_load_cv);
+@@ -3440,7 +3449,7 @@
+ 	 * lock.
+ 	 */
+ 	if (msp->ms_weight == 0) {
+-		ASSERT0(range_tree_space(msp->ms_allocatable));
++		ASSERT0(zfs_range_tree_space(msp->ms_allocatable));
+ 		return (SET_ERROR(ENOSPC));
+ 	}
+ 
+@@ -3499,7 +3508,7 @@
+ 	 */
+ 	ASSERT(!WEIGHT_IS_SPACEBASED(msp->ms_weight) ||
+ 	    size >= SPA_MINBLOCKSIZE ||
+-	    range_tree_space(msp->ms_allocatable) == 0);
++	    zfs_range_tree_space(msp->ms_allocatable) == 0);
+ 	ASSERT0(weight & METASLAB_ACTIVE_MASK);
+ 
+ 	ASSERT(msp->ms_activation_weight != 0);
+@@ -3630,7 +3639,7 @@
+ 	 * We always condense metaslabs that are empty and metaslabs for
+ 	 * which a condense request has been made.
+ 	 */
+-	if (range_tree_numsegs(msp->ms_allocatable) == 0 ||
++	if (zfs_range_tree_numsegs(msp->ms_allocatable) == 0 ||
+ 	    msp->ms_condense_wanted)
+ 		return (B_TRUE);
+ 
+@@ -3654,7 +3663,7 @@
+ static void
+ metaslab_condense(metaslab_t *msp, dmu_tx_t *tx)
+ {
+-	range_tree_t *condense_tree;
++	zfs_range_tree_t *condense_tree;
+ 	space_map_t *sm = msp->ms_sm;
+ 	uint64_t txg = dmu_tx_get_txg(tx);
+ 	spa_t *spa = msp->ms_group->mg_vd->vdev_spa;
+@@ -3706,41 +3715,41 @@
+ 	 *    metaslab_flush_update().
+ 	 */
+ 	ASSERT3U(spa_sync_pass(spa), ==, 1);
+-	ASSERT(range_tree_is_empty(msp->ms_freed)); /* since it is pass 1 */
++	ASSERT(zfs_range_tree_is_empty(msp->ms_freed)); /* since it is pass 1 */
+ 
+ 	zfs_dbgmsg("condensing: txg %llu, msp[%llu] %px, vdev id %llu, "
+ 	    "spa %s, smp size %llu, segments %llu, forcing condense=%s",
+ 	    (u_longlong_t)txg, (u_longlong_t)msp->ms_id, msp,
+ 	    (u_longlong_t)msp->ms_group->mg_vd->vdev_id,
+ 	    spa->spa_name, (u_longlong_t)space_map_length(msp->ms_sm),
+-	    (u_longlong_t)range_tree_numsegs(msp->ms_allocatable),
++	    (u_longlong_t)zfs_range_tree_numsegs(msp->ms_allocatable),
+ 	    msp->ms_condense_wanted ? "TRUE" : "FALSE");
+ 
+ 	msp->ms_condense_wanted = B_FALSE;
+ 
+-	range_seg_type_t type;
++	zfs_range_seg_type_t type;
+ 	uint64_t shift, start;
+ 	type = metaslab_calculate_range_tree_type(msp->ms_group->mg_vd, msp,
+ 	    &start, &shift);
+ 
+-	condense_tree = range_tree_create(NULL, type, NULL, start, shift);
++	condense_tree = zfs_range_tree_create(NULL, type, NULL, start, shift);
+ 
+ 	for (int t = 0; t < TXG_DEFER_SIZE; t++) {
+-		range_tree_walk(msp->ms_defer[t],
+-		    range_tree_add, condense_tree);
++		zfs_range_tree_walk(msp->ms_defer[t],
++		    zfs_range_tree_add, condense_tree);
+ 	}
+ 
+ 	for (int t = 0; t < TXG_CONCURRENT_STATES; t++) {
+-		range_tree_walk(msp->ms_allocating[(txg + t) & TXG_MASK],
+-		    range_tree_add, condense_tree);
++		zfs_range_tree_walk(msp->ms_allocating[(txg + t) & TXG_MASK],
++		    zfs_range_tree_add, condense_tree);
+ 	}
+ 
+ 	ASSERT3U(spa->spa_unflushed_stats.sus_memused, >=,
+ 	    metaslab_unflushed_changes_memused(msp));
+ 	spa->spa_unflushed_stats.sus_memused -=
+ 	    metaslab_unflushed_changes_memused(msp);
+-	range_tree_vacate(msp->ms_unflushed_allocs, NULL, NULL);
+-	range_tree_vacate(msp->ms_unflushed_frees, NULL, NULL);
++	zfs_range_tree_vacate(msp->ms_unflushed_allocs, NULL, NULL);
++	zfs_range_tree_vacate(msp->ms_unflushed_frees, NULL, NULL);
+ 
+ 	/*
+ 	 * We're about to drop the metaslab's lock thus allowing other
+@@ -3780,17 +3789,17 @@
+ 	 * followed by FREES (due to space_map_write() in metaslab_sync()) for
+ 	 * sync pass 1.
+ 	 */
+-	range_tree_t *tmp_tree = range_tree_create(NULL, type, NULL, start,
+-	    shift);
+-	range_tree_add(tmp_tree, msp->ms_start, msp->ms_size);
++	zfs_range_tree_t *tmp_tree = zfs_range_tree_create(NULL, type, NULL,
++	    start, shift);
++	zfs_range_tree_add(tmp_tree, msp->ms_start, msp->ms_size);
+ 	space_map_write(sm, tmp_tree, SM_ALLOC, SM_NO_VDEVID, tx);
+ 	space_map_write(sm, msp->ms_allocatable, SM_FREE, SM_NO_VDEVID, tx);
+ 	space_map_write(sm, condense_tree, SM_FREE, SM_NO_VDEVID, tx);
+ 
+-	range_tree_vacate(condense_tree, NULL, NULL);
+-	range_tree_destroy(condense_tree);
+-	range_tree_vacate(tmp_tree, NULL, NULL);
+-	range_tree_destroy(tmp_tree);
++	zfs_range_tree_vacate(condense_tree, NULL, NULL);
++	zfs_range_tree_destroy(condense_tree);
++	zfs_range_tree_vacate(tmp_tree, NULL, NULL);
++	zfs_range_tree_destroy(tmp_tree);
+ 	mutex_enter(&msp->ms_lock);
+ 
+ 	msp->ms_condensing = B_FALSE;
+@@ -3803,8 +3812,8 @@
+ 	spa_t *spa = msp->ms_group->mg_vd->vdev_spa;
+ 	ASSERT(spa_syncing_log_sm(spa) != NULL);
+ 	ASSERT(msp->ms_sm != NULL);
+-	ASSERT(range_tree_is_empty(msp->ms_unflushed_allocs));
+-	ASSERT(range_tree_is_empty(msp->ms_unflushed_frees));
++	ASSERT(zfs_range_tree_is_empty(msp->ms_unflushed_allocs));
++	ASSERT(zfs_range_tree_is_empty(msp->ms_unflushed_frees));
+ 
+ 	mutex_enter(&spa->spa_flushed_ms_lock);
+ 	metaslab_set_unflushed_txg(msp, spa_syncing_txg(spa), tx);
+@@ -3824,8 +3833,8 @@
+ 	ASSERT(msp->ms_sm != NULL);
+ 	ASSERT(metaslab_unflushed_txg(msp) != 0);
+ 	ASSERT3P(avl_find(&spa->spa_metaslabs_by_flushed, msp, NULL), ==, msp);
+-	ASSERT(range_tree_is_empty(msp->ms_unflushed_allocs));
+-	ASSERT(range_tree_is_empty(msp->ms_unflushed_frees));
++	ASSERT(zfs_range_tree_is_empty(msp->ms_unflushed_allocs));
++	ASSERT(zfs_range_tree_is_empty(msp->ms_unflushed_frees));
+ 
+ 	VERIFY3U(tx->tx_txg, <=, spa_final_dirty_txg(spa));
+ 
+@@ -3945,7 +3954,7 @@
+ 
+ 		space_map_histogram_clear(msp->ms_sm);
+ 		space_map_histogram_add(msp->ms_sm, msp->ms_allocatable, tx);
+-		ASSERT(range_tree_is_empty(msp->ms_freed));
++		ASSERT(zfs_range_tree_is_empty(msp->ms_freed));
+ 		for (int t = 0; t < TXG_DEFER_SIZE; t++) {
+ 			space_map_histogram_add(msp->ms_sm,
+ 			    msp->ms_defer[t], tx);
+@@ -3987,8 +3996,10 @@
+ 		    spa_name(spa),
+ 		    (u_longlong_t)msp->ms_group->mg_vd->vdev_id,
+ 		    (u_longlong_t)msp->ms_id,
+-		    (u_longlong_t)range_tree_space(msp->ms_unflushed_allocs),
+-		    (u_longlong_t)range_tree_space(msp->ms_unflushed_frees),
++		    (u_longlong_t)zfs_range_tree_space(
++		    msp->ms_unflushed_allocs),
++		    (u_longlong_t)zfs_range_tree_space(
++		    msp->ms_unflushed_frees),
+ 		    (u_longlong_t)(sm_len_after - sm_len_before));
+ 	}
+ 
+@@ -3996,8 +4007,8 @@
+ 	    metaslab_unflushed_changes_memused(msp));
+ 	spa->spa_unflushed_stats.sus_memused -=
+ 	    metaslab_unflushed_changes_memused(msp);
+-	range_tree_vacate(msp->ms_unflushed_allocs, NULL, NULL);
+-	range_tree_vacate(msp->ms_unflushed_frees, NULL, NULL);
++	zfs_range_tree_vacate(msp->ms_unflushed_allocs, NULL, NULL);
++	zfs_range_tree_vacate(msp->ms_unflushed_frees, NULL, NULL);
+ 
+ 	metaslab_verify_space(msp, dmu_tx_get_txg(tx));
+ 	metaslab_verify_weight_and_frag(msp);
+@@ -4022,7 +4033,7 @@
+ 	vdev_t *vd = mg->mg_vd;
+ 	spa_t *spa = vd->vdev_spa;
+ 	objset_t *mos = spa_meta_objset(spa);
+-	range_tree_t *alloctree = msp->ms_allocating[txg & TXG_MASK];
++	zfs_range_tree_t *alloctree = msp->ms_allocating[txg & TXG_MASK];
+ 	dmu_tx_t *tx;
+ 
+ 	ASSERT(!vd->vdev_ishole);
+@@ -4031,11 +4042,11 @@
+ 	 * This metaslab has just been added so there's no work to do now.
+ 	 */
+ 	if (msp->ms_new) {
+-		ASSERT0(range_tree_space(alloctree));
+-		ASSERT0(range_tree_space(msp->ms_freeing));
+-		ASSERT0(range_tree_space(msp->ms_freed));
+-		ASSERT0(range_tree_space(msp->ms_checkpointing));
+-		ASSERT0(range_tree_space(msp->ms_trim));
++		ASSERT0(zfs_range_tree_space(alloctree));
++		ASSERT0(zfs_range_tree_space(msp->ms_freeing));
++		ASSERT0(zfs_range_tree_space(msp->ms_freed));
++		ASSERT0(zfs_range_tree_space(msp->ms_checkpointing));
++		ASSERT0(zfs_range_tree_space(msp->ms_trim));
+ 		return;
+ 	}
+ 
+@@ -4050,9 +4061,9 @@
+ 	 * we preserve the utility of the VERIFY statements in all other
+ 	 * cases.
+ 	 */
+-	if (range_tree_is_empty(alloctree) &&
+-	    range_tree_is_empty(msp->ms_freeing) &&
+-	    range_tree_is_empty(msp->ms_checkpointing) &&
++	if (zfs_range_tree_is_empty(alloctree) &&
++	    zfs_range_tree_is_empty(msp->ms_freeing) &&
++	    zfs_range_tree_is_empty(msp->ms_checkpointing) &&
+ 	    !(msp->ms_loaded && msp->ms_condense_wanted &&
+ 	    txg <= spa_final_dirty_txg(spa)))
+ 		return;
+@@ -4094,12 +4105,12 @@
+ 		    msp->ms_start, msp->ms_size, vd->vdev_ashift));
+ 		ASSERT(msp->ms_sm != NULL);
+ 
+-		ASSERT(range_tree_is_empty(msp->ms_unflushed_allocs));
+-		ASSERT(range_tree_is_empty(msp->ms_unflushed_frees));
++		ASSERT(zfs_range_tree_is_empty(msp->ms_unflushed_allocs));
++		ASSERT(zfs_range_tree_is_empty(msp->ms_unflushed_frees));
+ 		ASSERT0(metaslab_allocated_space(msp));
+ 	}
+ 
+-	if (!range_tree_is_empty(msp->ms_checkpointing) &&
++	if (!zfs_range_tree_is_empty(msp->ms_checkpointing) &&
+ 	    vd->vdev_checkpoint_sm == NULL) {
+ 		ASSERT(spa_has_checkpoint(spa));
+ 
+@@ -4161,9 +4172,9 @@
+ 		    metaslab_unflushed_changes_memused(msp));
+ 		spa->spa_unflushed_stats.sus_memused -=
+ 		    metaslab_unflushed_changes_memused(msp);
+-		range_tree_remove_xor_add(alloctree,
++		zfs_range_tree_remove_xor_add(alloctree,
+ 		    msp->ms_unflushed_frees, msp->ms_unflushed_allocs);
+-		range_tree_remove_xor_add(msp->ms_freeing,
++		zfs_range_tree_remove_xor_add(msp->ms_freeing,
+ 		    msp->ms_unflushed_allocs, msp->ms_unflushed_frees);
+ 		spa->spa_unflushed_stats.sus_memused +=
+ 		    metaslab_unflushed_changes_memused(msp);
+@@ -4177,12 +4188,12 @@
+ 		mutex_enter(&msp->ms_lock);
+ 	}
+ 
+-	msp->ms_allocated_space += range_tree_space(alloctree);
++	msp->ms_allocated_space += zfs_range_tree_space(alloctree);
+ 	ASSERT3U(msp->ms_allocated_space, >=,
+-	    range_tree_space(msp->ms_freeing));
+-	msp->ms_allocated_space -= range_tree_space(msp->ms_freeing);
++	    zfs_range_tree_space(msp->ms_freeing));
++	msp->ms_allocated_space -= zfs_range_tree_space(msp->ms_freeing);
+ 
+-	if (!range_tree_is_empty(msp->ms_checkpointing)) {
++	if (!zfs_range_tree_is_empty(msp->ms_checkpointing)) {
+ 		ASSERT(spa_has_checkpoint(spa));
+ 		ASSERT3P(vd->vdev_checkpoint_sm, !=, NULL);
+ 
+@@ -4198,13 +4209,13 @@
+ 		mutex_enter(&msp->ms_lock);
+ 
+ 		spa->spa_checkpoint_info.sci_dspace +=
+-		    range_tree_space(msp->ms_checkpointing);
++		    zfs_range_tree_space(msp->ms_checkpointing);
+ 		vd->vdev_stat.vs_checkpoint_space +=
+-		    range_tree_space(msp->ms_checkpointing);
++		    zfs_range_tree_space(msp->ms_checkpointing);
+ 		ASSERT3U(vd->vdev_stat.vs_checkpoint_space, ==,
+ 		    -space_map_allocated(vd->vdev_checkpoint_sm));
+ 
+-		range_tree_vacate(msp->ms_checkpointing, NULL, NULL);
++		zfs_range_tree_vacate(msp->ms_checkpointing, NULL, NULL);
+ 	}
+ 
+ 	if (msp->ms_loaded) {
+@@ -4264,20 +4275,20 @@
+ 	 * get appended to the ms_sm) so their ranges can be reused as usual.
+ 	 */
+ 	if (spa_sync_pass(spa) == 1) {
+-		range_tree_swap(&msp->ms_freeing, &msp->ms_freed);
++		zfs_range_tree_swap(&msp->ms_freeing, &msp->ms_freed);
+ 		ASSERT0(msp->ms_allocated_this_txg);
+ 	} else {
+-		range_tree_vacate(msp->ms_freeing,
+-		    range_tree_add, msp->ms_freed);
++		zfs_range_tree_vacate(msp->ms_freeing,
++		    zfs_range_tree_add, msp->ms_freed);
+ 	}
+-	msp->ms_allocated_this_txg += range_tree_space(alloctree);
+-	range_tree_vacate(alloctree, NULL, NULL);
++	msp->ms_allocated_this_txg += zfs_range_tree_space(alloctree);
++	zfs_range_tree_vacate(alloctree, NULL, NULL);
+ 
+-	ASSERT0(range_tree_space(msp->ms_allocating[txg & TXG_MASK]));
+-	ASSERT0(range_tree_space(msp->ms_allocating[TXG_CLEAN(txg)
++	ASSERT0(zfs_range_tree_space(msp->ms_allocating[txg & TXG_MASK]));
++	ASSERT0(zfs_range_tree_space(msp->ms_allocating[TXG_CLEAN(txg)
+ 	    & TXG_MASK]));
+-	ASSERT0(range_tree_space(msp->ms_freeing));
+-	ASSERT0(range_tree_space(msp->ms_checkpointing));
++	ASSERT0(zfs_range_tree_space(msp->ms_freeing));
++	ASSERT0(zfs_range_tree_space(msp->ms_checkpointing));
+ 
+ 	mutex_exit(&msp->ms_lock);
+ 
+@@ -4301,7 +4312,7 @@
+ 		return;
+ 
+ 	for (int t = 1; t < TXG_CONCURRENT_STATES; t++) {
+-		VERIFY0(range_tree_space(
++		VERIFY0(zfs_range_tree_space(
+ 		    msp->ms_allocating[(txg + t) & TXG_MASK]));
+ 	}
+ 	if (msp->ms_allocator != -1)
+@@ -4321,7 +4332,7 @@
+ 	metaslab_group_t *mg = msp->ms_group;
+ 	vdev_t *vd = mg->mg_vd;
+ 	spa_t *spa = vd->vdev_spa;
+-	range_tree_t **defer_tree;
++	zfs_range_tree_t **defer_tree;
+ 	int64_t alloc_delta, defer_delta;
+ 	boolean_t defer_allowed = B_TRUE;
+ 
+@@ -4335,11 +4346,11 @@
+ 
+ 		/* there should be no allocations nor frees at this point */
+ 		VERIFY0(msp->ms_allocated_this_txg);
+-		VERIFY0(range_tree_space(msp->ms_freed));
++		VERIFY0(zfs_range_tree_space(msp->ms_freed));
+ 	}
+ 
+-	ASSERT0(range_tree_space(msp->ms_freeing));
+-	ASSERT0(range_tree_space(msp->ms_checkpointing));
++	ASSERT0(zfs_range_tree_space(msp->ms_freeing));
++	ASSERT0(zfs_range_tree_space(msp->ms_checkpointing));
+ 
+ 	defer_tree = &msp->ms_defer[txg % TXG_DEFER_SIZE];
+ 
+@@ -4352,13 +4363,13 @@
+ 
+ 	defer_delta = 0;
+ 	alloc_delta = msp->ms_allocated_this_txg -
+-	    range_tree_space(msp->ms_freed);
++	    zfs_range_tree_space(msp->ms_freed);
+ 
+ 	if (defer_allowed) {
+-		defer_delta = range_tree_space(msp->ms_freed) -
+-		    range_tree_space(*defer_tree);
++		defer_delta = zfs_range_tree_space(msp->ms_freed) -
++		    zfs_range_tree_space(*defer_tree);
+ 	} else {
+-		defer_delta -= range_tree_space(*defer_tree);
++		defer_delta -= zfs_range_tree_space(*defer_tree);
+ 	}
+ 	metaslab_space_update(vd, mg->mg_class, alloc_delta + defer_delta,
+ 	    defer_delta, 0);
+@@ -4385,13 +4396,14 @@
+ 	 * frees not being trimmed.
+ 	 */
+ 	if (spa_get_autotrim(spa) == SPA_AUTOTRIM_ON) {
+-		range_tree_walk(*defer_tree, range_tree_add, msp->ms_trim);
++		zfs_range_tree_walk(*defer_tree, zfs_range_tree_add,
++		    msp->ms_trim);
+ 		if (!defer_allowed) {
+-			range_tree_walk(msp->ms_freed, range_tree_add,
++			zfs_range_tree_walk(msp->ms_freed, zfs_range_tree_add,
+ 			    msp->ms_trim);
+ 		}
+ 	} else {
+-		range_tree_vacate(msp->ms_trim, NULL, NULL);
++		zfs_range_tree_vacate(msp->ms_trim, NULL, NULL);
+ 	}
+ 
+ 	/*
+@@ -4400,13 +4412,13 @@
+ 	 * the defer_tree -- this is safe to do because we've
+ 	 * just emptied out the defer_tree.
+ 	 */
+-	range_tree_vacate(*defer_tree,
+-	    msp->ms_loaded ? range_tree_add : NULL, msp->ms_allocatable);
++	zfs_range_tree_vacate(*defer_tree,
++	    msp->ms_loaded ? zfs_range_tree_add : NULL, msp->ms_allocatable);
+ 	if (defer_allowed) {
+-		range_tree_swap(&msp->ms_freed, defer_tree);
++		zfs_range_tree_swap(&msp->ms_freed, defer_tree);
+ 	} else {
+-		range_tree_vacate(msp->ms_freed,
+-		    msp->ms_loaded ? range_tree_add : NULL,
++		zfs_range_tree_vacate(msp->ms_freed,
++		    msp->ms_loaded ? zfs_range_tree_add : NULL,
+ 		    msp->ms_allocatable);
+ 	}
+ 
+@@ -4437,10 +4449,10 @@
+ 	 */
+ 	metaslab_recalculate_weight_and_sort(msp);
+ 
+-	ASSERT0(range_tree_space(msp->ms_allocating[txg & TXG_MASK]));
+-	ASSERT0(range_tree_space(msp->ms_freeing));
+-	ASSERT0(range_tree_space(msp->ms_freed));
+-	ASSERT0(range_tree_space(msp->ms_checkpointing));
++	ASSERT0(zfs_range_tree_space(msp->ms_allocating[txg & TXG_MASK]));
++	ASSERT0(zfs_range_tree_space(msp->ms_freeing));
++	ASSERT0(zfs_range_tree_space(msp->ms_freed));
++	ASSERT0(zfs_range_tree_space(msp->ms_checkpointing));
+ 	msp->ms_allocating_total -= msp->ms_allocated_this_txg;
+ 	msp->ms_allocated_this_txg = 0;
+ 	mutex_exit(&msp->ms_lock);
+@@ -4648,7 +4660,7 @@
+ metaslab_block_alloc(metaslab_t *msp, uint64_t size, uint64_t txg)
+ {
+ 	uint64_t start;
+-	range_tree_t *rt = msp->ms_allocatable;
++	zfs_range_tree_t *rt = msp->ms_allocatable;
+ 	metaslab_class_t *mc = msp->ms_group->mg_class;
+ 
+ 	ASSERT(MUTEX_HELD(&msp->ms_lock));
+@@ -4663,14 +4675,15 @@
+ 
+ 		VERIFY0(P2PHASE(start, 1ULL << vd->vdev_ashift));
+ 		VERIFY0(P2PHASE(size, 1ULL << vd->vdev_ashift));
+-		VERIFY3U(range_tree_space(rt) - size, <=, msp->ms_size);
+-		range_tree_remove(rt, start, size);
+-		range_tree_clear(msp->ms_trim, start, size);
++		VERIFY3U(zfs_range_tree_space(rt) - size, <=, msp->ms_size);
++		zfs_range_tree_remove(rt, start, size);
++		zfs_range_tree_clear(msp->ms_trim, start, size);
+ 
+-		if (range_tree_is_empty(msp->ms_allocating[txg & TXG_MASK]))
++		if (zfs_range_tree_is_empty(msp->ms_allocating[txg & TXG_MASK]))
+ 			vdev_dirty(mg->mg_vd, VDD_METASLAB, msp, txg);
+ 
+-		range_tree_add(msp->ms_allocating[txg & TXG_MASK], start, size);
++		zfs_range_tree_add(msp->ms_allocating[txg & TXG_MASK], start,
++		    size);
+ 		msp->ms_allocating_total += size;
+ 
+ 		/* Track the last successful allocation */
+@@ -5390,16 +5403,16 @@
+ 	metaslab_check_free_impl(vd, offset, asize);
+ 
+ 	mutex_enter(&msp->ms_lock);
+-	if (range_tree_is_empty(msp->ms_freeing) &&
+-	    range_tree_is_empty(msp->ms_checkpointing)) {
++	if (zfs_range_tree_is_empty(msp->ms_freeing) &&
++	    zfs_range_tree_is_empty(msp->ms_checkpointing)) {
+ 		vdev_dirty(vd, VDD_METASLAB, msp, spa_syncing_txg(spa));
+ 	}
+ 
+ 	if (checkpoint) {
+ 		ASSERT(spa_has_checkpoint(spa));
+-		range_tree_add(msp->ms_checkpointing, offset, asize);
++		zfs_range_tree_add(msp->ms_checkpointing, offset, asize);
+ 	} else {
+-		range_tree_add(msp->ms_freeing, offset, asize);
++		zfs_range_tree_add(msp->ms_freeing, offset, asize);
+ 	}
+ 	mutex_exit(&msp->ms_lock);
+ }
+@@ -5623,18 +5636,18 @@
+ 	msp = vd->vdev_ms[offset >> vd->vdev_ms_shift];
+ 
+ 	mutex_enter(&msp->ms_lock);
+-	range_tree_remove(msp->ms_allocating[txg & TXG_MASK],
++	zfs_range_tree_remove(msp->ms_allocating[txg & TXG_MASK],
+ 	    offset, size);
+ 	msp->ms_allocating_total -= size;
+ 
+ 	VERIFY(!msp->ms_condensing);
+ 	VERIFY3U(offset, >=, msp->ms_start);
+ 	VERIFY3U(offset + size, <=, msp->ms_start + msp->ms_size);
+-	VERIFY3U(range_tree_space(msp->ms_allocatable) + size, <=,
++	VERIFY3U(zfs_range_tree_space(msp->ms_allocatable) + size, <=,
+ 	    msp->ms_size);
+ 	VERIFY0(P2PHASE(offset, 1ULL << vd->vdev_ashift));
+ 	VERIFY0(P2PHASE(size, 1ULL << vd->vdev_ashift));
+-	range_tree_add(msp->ms_allocatable, offset, size);
++	zfs_range_tree_add(msp->ms_allocatable, offset, size);
+ 	mutex_exit(&msp->ms_lock);
+ }
+ 
+@@ -5730,7 +5743,7 @@
+ 	}
+ 
+ 	if (error == 0 &&
+-	    !range_tree_contains(msp->ms_allocatable, offset, size))
++	    !zfs_range_tree_contains(msp->ms_allocatable, offset, size))
+ 		error = SET_ERROR(ENOENT);
+ 
+ 	if (error || txg == 0) {	/* txg == 0 indicates dry run */
+@@ -5741,10 +5754,10 @@
+ 	VERIFY(!msp->ms_condensing);
+ 	VERIFY0(P2PHASE(offset, 1ULL << vd->vdev_ashift));
+ 	VERIFY0(P2PHASE(size, 1ULL << vd->vdev_ashift));
+-	VERIFY3U(range_tree_space(msp->ms_allocatable) - size, <=,
++	VERIFY3U(zfs_range_tree_space(msp->ms_allocatable) - size, <=,
+ 	    msp->ms_size);
+-	range_tree_remove(msp->ms_allocatable, offset, size);
+-	range_tree_clear(msp->ms_trim, offset, size);
++	zfs_range_tree_remove(msp->ms_allocatable, offset, size);
++	zfs_range_tree_clear(msp->ms_trim, offset, size);
+ 
+ 	if (spa_writeable(spa)) {	/* don't dirty if we're zdb(8) */
+ 		metaslab_class_t *mc = msp->ms_group->mg_class;
+@@ -5756,9 +5769,9 @@
+ 		}
+ 		multilist_sublist_unlock(mls);
+ 
+-		if (range_tree_is_empty(msp->ms_allocating[txg & TXG_MASK]))
++		if (zfs_range_tree_is_empty(msp->ms_allocating[txg & TXG_MASK]))
+ 			vdev_dirty(vd, VDD_METASLAB, msp, txg);
+-		range_tree_add(msp->ms_allocating[txg & TXG_MASK],
++		zfs_range_tree_add(msp->ms_allocating[txg & TXG_MASK],
+ 		    offset, size);
+ 		msp->ms_allocating_total += size;
+ 	}
+@@ -6015,7 +6028,7 @@
+ 
+ 	mutex_enter(&msp->ms_lock);
+ 	if (msp->ms_loaded) {
+-		range_tree_verify_not_present(msp->ms_allocatable,
++		zfs_range_tree_verify_not_present(msp->ms_allocatable,
+ 		    offset, size);
+ 	}
+ 
+@@ -6027,15 +6040,16 @@
+ 	 * allocated and freed in the same sync pass within the same txg.
+ 	 * Unfortunately there are places (e.g. the ZIL) where we allocate a
+ 	 * segment but then we free part of it within the same txg
+-	 * [see zil_sync()]. Thus, we don't call range_tree_verify() in the
++	 * [see zil_sync()]. Thus, we don't call zfs_range_tree_verify() in the
+ 	 * current allocating tree.
+ 	 */
+-	range_tree_verify_not_present(msp->ms_freeing, offset, size);
+-	range_tree_verify_not_present(msp->ms_checkpointing, offset, size);
+-	range_tree_verify_not_present(msp->ms_freed, offset, size);
++	zfs_range_tree_verify_not_present(msp->ms_freeing, offset, size);
++	zfs_range_tree_verify_not_present(msp->ms_checkpointing, offset, size);
++	zfs_range_tree_verify_not_present(msp->ms_freed, offset, size);
+ 	for (int j = 0; j < TXG_DEFER_SIZE; j++)
+-		range_tree_verify_not_present(msp->ms_defer[j], offset, size);
+-	range_tree_verify_not_present(msp->ms_trim, offset, size);
++		zfs_range_tree_verify_not_present(msp->ms_defer[j], offset,
++		    size);
++	zfs_range_tree_verify_not_present(msp->ms_trim, offset, size);
+ 	mutex_exit(&msp->ms_lock);
+ }
+ 
+--- a/module/zfs/range_tree.c
++++ b/module/zfs/range_tree.c
+@@ -42,11 +42,11 @@
+  * splitting in response to range add/remove requests.
+  *
+  * A range tree starts out completely empty, with no segments in it.
+- * Adding an allocation via range_tree_add to the range tree can either:
++ * Adding an allocation via zfs_range_tree_add to the range tree can either:
+  * 1) create a new extent
+  * 2) extend an adjacent extent
+  * 3) merge two adjacent extents
+- * Conversely, removing an allocation via range_tree_remove can:
++ * Conversely, removing an allocation via zfs_range_tree_remove can:
+  * 1) completely remove an extent
+  * 2) shorten an extent (if the allocation was near one of its ends)
+  * 3) split an extent into two extents, in effect punching a hole
+@@ -54,16 +54,16 @@
+  * A range tree is also capable of 'bridging' gaps when adding
+  * allocations. This is useful for cases when close proximity of
+  * allocations is an important detail that needs to be represented
+- * in the range tree. See range_tree_set_gap(). The default behavior
++ * in the range tree. See zfs_range_tree_set_gap(). The default behavior
+  * is not to bridge gaps (i.e. the maximum allowed gap size is 0).
+  *
+- * In order to traverse a range tree, use either the range_tree_walk()
+- * or range_tree_vacate() functions.
++ * In order to traverse a range tree, use either the zfs_range_tree_walk()
++ * or zfs_range_tree_vacate() functions.
+  *
+  * To obtain more accurate information on individual segment
+  * operations that the range tree performs "under the hood", you can
+- * specify a set of callbacks by passing a range_tree_ops_t structure
+- * to the range_tree_create function. Any callbacks that are non-NULL
++ * specify a set of callbacks by passing a zfs_range_tree_ops_t structure
++ * to the zfs_range_tree_create function. Any callbacks that are non-NULL
+  * are then called at the appropriate times.
+  *
+  * The range tree code also supports a special variant of range trees
+@@ -76,18 +76,18 @@
+  */
+ 
+ static inline void
+-rs_copy(range_seg_t *src, range_seg_t *dest, range_tree_t *rt)
++zfs_rs_copy(zfs_range_seg_t *src, zfs_range_seg_t *dest, zfs_range_tree_t *rt)
+ {
+-	ASSERT3U(rt->rt_type, <, RANGE_SEG_NUM_TYPES);
++	ASSERT3U(rt->rt_type, <, ZFS_RANGE_SEG_NUM_TYPES);
+ 	size_t size = 0;
+ 	switch (rt->rt_type) {
+-	case RANGE_SEG32:
++	case ZFS_RANGE_SEG32:
+ 		size = sizeof (range_seg32_t);
+ 		break;
+-	case RANGE_SEG64:
++	case ZFS_RANGE_SEG64:
+ 		size = sizeof (range_seg64_t);
+ 		break;
+-	case RANGE_SEG_GAP:
++	case ZFS_RANGE_SEG_GAP:
+ 		size = sizeof (range_seg_gap_t);
+ 		break;
+ 	default:
+@@ -97,16 +97,17 @@
+ }
+ 
+ void
+-range_tree_stat_verify(range_tree_t *rt)
++zfs_range_tree_stat_verify(zfs_range_tree_t *rt)
+ {
+-	range_seg_t *rs;
++	zfs_range_seg_t *rs;
+ 	zfs_btree_index_t where;
+ 	uint64_t hist[RANGE_TREE_HISTOGRAM_SIZE] = { 0 };
+ 	int i;
+ 
+ 	for (rs = zfs_btree_first(&rt->rt_root, &where); rs != NULL;
+ 	    rs = zfs_btree_next(&rt->rt_root, &where, &where)) {
+-		uint64_t size = rs_get_end(rs, rt) - rs_get_start(rs, rt);
++		uint64_t size = zfs_rs_get_end(rs, rt) -
++		    zfs_rs_get_start(rs, rt);
+ 		int idx	= highbit64(size) - 1;
+ 
+ 		hist[idx]++;
+@@ -124,9 +125,9 @@
+ }
+ 
+ static void
+-range_tree_stat_incr(range_tree_t *rt, range_seg_t *rs)
++zfs_range_tree_stat_incr(zfs_range_tree_t *rt, zfs_range_seg_t *rs)
+ {
+-	uint64_t size = rs_get_end(rs, rt) - rs_get_start(rs, rt);
++	uint64_t size = zfs_rs_get_end(rs, rt) - zfs_rs_get_start(rs, rt);
+ 	int idx = highbit64(size) - 1;
+ 
+ 	ASSERT(size != 0);
+@@ -138,9 +139,9 @@
+ }
+ 
+ static void
+-range_tree_stat_decr(range_tree_t *rt, range_seg_t *rs)
++zfs_range_tree_stat_decr(zfs_range_tree_t *rt, zfs_range_seg_t *rs)
+ {
+-	uint64_t size = rs_get_end(rs, rt) - rs_get_start(rs, rt);
++	uint64_t size = zfs_rs_get_end(rs, rt) - zfs_rs_get_start(rs, rt);
+ 	int idx = highbit64(size) - 1;
+ 
+ 	ASSERT(size != 0);
+@@ -153,7 +154,7 @@
+ 
+ __attribute__((always_inline)) inline
+ static int
+-range_tree_seg32_compare(const void *x1, const void *x2)
++zfs_range_tree_seg32_compare(const void *x1, const void *x2)
+ {
+ 	const range_seg32_t *r1 = x1;
+ 	const range_seg32_t *r2 = x2;
+@@ -166,7 +167,7 @@
+ 
+ __attribute__((always_inline)) inline
+ static int
+-range_tree_seg64_compare(const void *x1, const void *x2)
++zfs_range_tree_seg64_compare(const void *x1, const void *x2)
+ {
+ 	const range_seg64_t *r1 = x1;
+ 	const range_seg64_t *r2 = x2;
+@@ -179,7 +180,7 @@
+ 
+ __attribute__((always_inline)) inline
+ static int
+-range_tree_seg_gap_compare(const void *x1, const void *x2)
++zfs_range_tree_seg_gap_compare(const void *x1, const void *x2)
+ {
+ 	const range_seg_gap_t *r1 = x1;
+ 	const range_seg_gap_t *r2 = x2;
+@@ -190,41 +191,42 @@
+ 	return ((r1->rs_start >= r2->rs_end) - (r1->rs_end <= r2->rs_start));
+ }
+ 
+-ZFS_BTREE_FIND_IN_BUF_FUNC(range_tree_seg32_find_in_buf, range_seg32_t,
+-    range_tree_seg32_compare)
++ZFS_BTREE_FIND_IN_BUF_FUNC(zfs_range_tree_seg32_find_in_buf, range_seg32_t,
++    zfs_range_tree_seg32_compare)
+ 
+-ZFS_BTREE_FIND_IN_BUF_FUNC(range_tree_seg64_find_in_buf, range_seg64_t,
+-    range_tree_seg64_compare)
++ZFS_BTREE_FIND_IN_BUF_FUNC(zfs_range_tree_seg64_find_in_buf, range_seg64_t,
++    zfs_range_tree_seg64_compare)
+ 
+-ZFS_BTREE_FIND_IN_BUF_FUNC(range_tree_seg_gap_find_in_buf, range_seg_gap_t,
+-    range_tree_seg_gap_compare)
++ZFS_BTREE_FIND_IN_BUF_FUNC(zfs_range_tree_seg_gap_find_in_buf, range_seg_gap_t,
++    zfs_range_tree_seg_gap_compare)
+ 
+-range_tree_t *
+-range_tree_create_gap(const range_tree_ops_t *ops, range_seg_type_t type,
+-    void *arg, uint64_t start, uint64_t shift, uint64_t gap)
++zfs_range_tree_t *
++zfs_range_tree_create_gap(const zfs_range_tree_ops_t *ops,
++    zfs_range_seg_type_t type, void *arg, uint64_t start, uint64_t shift,
++    uint64_t gap)
+ {
+-	range_tree_t *rt = kmem_zalloc(sizeof (range_tree_t), KM_SLEEP);
++	zfs_range_tree_t *rt = kmem_zalloc(sizeof (zfs_range_tree_t), KM_SLEEP);
+ 
+ 	ASSERT3U(shift, <, 64);
+-	ASSERT3U(type, <=, RANGE_SEG_NUM_TYPES);
++	ASSERT3U(type, <=, ZFS_RANGE_SEG_NUM_TYPES);
+ 	size_t size;
+ 	int (*compare) (const void *, const void *);
+ 	bt_find_in_buf_f bt_find;
+ 	switch (type) {
+-	case RANGE_SEG32:
++	case ZFS_RANGE_SEG32:
+ 		size = sizeof (range_seg32_t);
+-		compare = range_tree_seg32_compare;
+-		bt_find = range_tree_seg32_find_in_buf;
++		compare = zfs_range_tree_seg32_compare;
++		bt_find = zfs_range_tree_seg32_find_in_buf;
+ 		break;
+-	case RANGE_SEG64:
++	case ZFS_RANGE_SEG64:
+ 		size = sizeof (range_seg64_t);
+-		compare = range_tree_seg64_compare;
+-		bt_find = range_tree_seg64_find_in_buf;
++		compare = zfs_range_tree_seg64_compare;
++		bt_find = zfs_range_tree_seg64_find_in_buf;
+ 		break;
+-	case RANGE_SEG_GAP:
++	case ZFS_RANGE_SEG_GAP:
+ 		size = sizeof (range_seg_gap_t);
+-		compare = range_tree_seg_gap_compare;
+-		bt_find = range_tree_seg_gap_find_in_buf;
++		compare = zfs_range_tree_seg_gap_compare;
++		bt_find = zfs_range_tree_seg_gap_find_in_buf;
+ 		break;
+ 	default:
+ 		panic("Invalid range seg type %d", type);
+@@ -244,15 +246,15 @@
+ 	return (rt);
+ }
+ 
+-range_tree_t *
+-range_tree_create(const range_tree_ops_t *ops, range_seg_type_t type,
+-    void *arg, uint64_t start, uint64_t shift)
++zfs_range_tree_t *
++zfs_range_tree_create(const zfs_range_tree_ops_t *ops,
++    zfs_range_seg_type_t type, void *arg, uint64_t start, uint64_t shift)
+ {
+-	return (range_tree_create_gap(ops, type, arg, start, shift, 0));
++	return (zfs_range_tree_create_gap(ops, type, arg, start, shift, 0));
+ }
+ 
+ void
+-range_tree_destroy(range_tree_t *rt)
++zfs_range_tree_destroy(zfs_range_tree_t *rt)
+ {
+ 	VERIFY0(rt->rt_space);
+ 
+@@ -264,35 +266,36 @@
+ }
+ 
+ void
+-range_tree_adjust_fill(range_tree_t *rt, range_seg_t *rs, int64_t delta)
++zfs_range_tree_adjust_fill(zfs_range_tree_t *rt, zfs_range_seg_t *rs,
++    int64_t delta)
+ {
+-	if (delta < 0 && delta * -1 >= rs_get_fill(rs, rt)) {
++	if (delta < 0 && delta * -1 >= zfs_rs_get_fill(rs, rt)) {
+ 		zfs_panic_recover("zfs: attempting to decrease fill to or "
+ 		    "below 0; probable double remove in segment [%llx:%llx]",
+-		    (longlong_t)rs_get_start(rs, rt),
+-		    (longlong_t)rs_get_end(rs, rt));
++		    (longlong_t)zfs_rs_get_start(rs, rt),
++		    (longlong_t)zfs_rs_get_end(rs, rt));
+ 	}
+-	if (rs_get_fill(rs, rt) + delta > rs_get_end(rs, rt) -
+-	    rs_get_start(rs, rt)) {
++	if (zfs_rs_get_fill(rs, rt) + delta > zfs_rs_get_end(rs, rt) -
++	    zfs_rs_get_start(rs, rt)) {
+ 		zfs_panic_recover("zfs: attempting to increase fill beyond "
+ 		    "max; probable double add in segment [%llx:%llx]",
+-		    (longlong_t)rs_get_start(rs, rt),
+-		    (longlong_t)rs_get_end(rs, rt));
++		    (longlong_t)zfs_rs_get_start(rs, rt),
++		    (longlong_t)zfs_rs_get_end(rs, rt));
+ 	}
+ 
+ 	if (rt->rt_ops != NULL && rt->rt_ops->rtop_remove != NULL)
+ 		rt->rt_ops->rtop_remove(rt, rs, rt->rt_arg);
+-	rs_set_fill(rs, rt, rs_get_fill(rs, rt) + delta);
++	zfs_rs_set_fill(rs, rt, zfs_rs_get_fill(rs, rt) + delta);
+ 	if (rt->rt_ops != NULL && rt->rt_ops->rtop_add != NULL)
+ 		rt->rt_ops->rtop_add(rt, rs, rt->rt_arg);
+ }
+ 
+ static void
+-range_tree_add_impl(void *arg, uint64_t start, uint64_t size, uint64_t fill)
++zfs_range_tree_add_impl(void *arg, uint64_t start, uint64_t size, uint64_t fill)
+ {
+-	range_tree_t *rt = arg;
++	zfs_range_tree_t *rt = arg;
+ 	zfs_btree_index_t where;
+-	range_seg_t *rs_before, *rs_after, *rs;
++	zfs_range_seg_t *rs_before, *rs_after, *rs;
+ 	range_seg_max_t tmp, rsearch;
+ 	uint64_t end = start + size, gap = rt->rt_gap;
+ 	uint64_t bridge_size = 0;
+@@ -302,8 +305,8 @@
+ 	ASSERT3U(fill, <=, size);
+ 	ASSERT3U(start + size, >, start);
+ 
+-	rs_set_start(&rsearch, rt, start);
+-	rs_set_end(&rsearch, rt, end);
++	zfs_rs_set_start(&rsearch, rt, start);
++	zfs_rs_set_end(&rsearch, rt, end);
+ 	rs = zfs_btree_find(&rt->rt_root, &rsearch, &where);
+ 
+ 	/*
+@@ -321,26 +324,26 @@
+ 			    (longlong_t)start, (longlong_t)size);
+ 			return;
+ 		}
+-		uint64_t rstart = rs_get_start(rs, rt);
+-		uint64_t rend = rs_get_end(rs, rt);
++		uint64_t rstart = zfs_rs_get_start(rs, rt);
++		uint64_t rend = zfs_rs_get_end(rs, rt);
+ 		if (rstart <= start && rend >= end) {
+-			range_tree_adjust_fill(rt, rs, fill);
++			zfs_range_tree_adjust_fill(rt, rs, fill);
+ 			return;
+ 		}
+ 
+ 		if (rt->rt_ops != NULL && rt->rt_ops->rtop_remove != NULL)
+ 			rt->rt_ops->rtop_remove(rt, rs, rt->rt_arg);
+ 
+-		range_tree_stat_decr(rt, rs);
++		zfs_range_tree_stat_decr(rt, rs);
+ 		rt->rt_space -= rend - rstart;
+ 
+-		fill += rs_get_fill(rs, rt);
++		fill += zfs_rs_get_fill(rs, rt);
+ 		start = MIN(start, rstart);
+ 		end = MAX(end, rend);
+ 		size = end - start;
+ 
+ 		zfs_btree_remove(&rt->rt_root, rs);
+-		range_tree_add_impl(rt, start, size, fill);
++		zfs_range_tree_add_impl(rt, start, size, fill);
+ 		return;
+ 	}
+ 
+@@ -355,15 +358,15 @@
+ 	rs_before = zfs_btree_prev(&rt->rt_root, &where, &where_before);
+ 	rs_after = zfs_btree_next(&rt->rt_root, &where, &where_after);
+ 
+-	merge_before = (rs_before != NULL && rs_get_end(rs_before, rt) >=
++	merge_before = (rs_before != NULL && zfs_rs_get_end(rs_before, rt) >=
+ 	    start - gap);
+-	merge_after = (rs_after != NULL && rs_get_start(rs_after, rt) <= end +
+-	    gap);
++	merge_after = (rs_after != NULL && zfs_rs_get_start(rs_after, rt) <=
++	    end + gap);
+ 
+ 	if (merge_before && gap != 0)
+-		bridge_size += start - rs_get_end(rs_before, rt);
++		bridge_size += start - zfs_rs_get_end(rs_before, rt);
+ 	if (merge_after && gap != 0)
+-		bridge_size += rs_get_start(rs_after, rt) - end;
++		bridge_size += zfs_rs_get_start(rs_after, rt) - end;
+ 
+ 	if (merge_before && merge_after) {
+ 		if (rt->rt_ops != NULL && rt->rt_ops->rtop_remove != NULL) {
+@@ -371,13 +374,13 @@
+ 			rt->rt_ops->rtop_remove(rt, rs_after, rt->rt_arg);
+ 		}
+ 
+-		range_tree_stat_decr(rt, rs_before);
+-		range_tree_stat_decr(rt, rs_after);
++		zfs_range_tree_stat_decr(rt, rs_before);
++		zfs_range_tree_stat_decr(rt, rs_after);
+ 
+-		rs_copy(rs_after, &tmp, rt);
+-		uint64_t before_start = rs_get_start_raw(rs_before, rt);
+-		uint64_t before_fill = rs_get_fill(rs_before, rt);
+-		uint64_t after_fill = rs_get_fill(rs_after, rt);
++		zfs_rs_copy(rs_after, &tmp, rt);
++		uint64_t before_start = zfs_rs_get_start_raw(rs_before, rt);
++		uint64_t before_fill = zfs_rs_get_fill(rs_before, rt);
++		uint64_t after_fill = zfs_rs_get_fill(rs_after, rt);
+ 		zfs_btree_remove_idx(&rt->rt_root, &where_before);
+ 
+ 		/*
+@@ -386,76 +389,76 @@
+ 		 */
+ 		rs_after = zfs_btree_find(&rt->rt_root, &tmp, &where_after);
+ 		ASSERT3P(rs_after, !=, NULL);
+-		rs_set_start_raw(rs_after, rt, before_start);
+-		rs_set_fill(rs_after, rt, after_fill + before_fill + fill);
++		zfs_rs_set_start_raw(rs_after, rt, before_start);
++		zfs_rs_set_fill(rs_after, rt, after_fill + before_fill + fill);
+ 		rs = rs_after;
+ 	} else if (merge_before) {
+ 		if (rt->rt_ops != NULL && rt->rt_ops->rtop_remove != NULL)
+ 			rt->rt_ops->rtop_remove(rt, rs_before, rt->rt_arg);
+ 
+-		range_tree_stat_decr(rt, rs_before);
++		zfs_range_tree_stat_decr(rt, rs_before);
+ 
+-		uint64_t before_fill = rs_get_fill(rs_before, rt);
+-		rs_set_end(rs_before, rt, end);
+-		rs_set_fill(rs_before, rt, before_fill + fill);
++		uint64_t before_fill = zfs_rs_get_fill(rs_before, rt);
++		zfs_rs_set_end(rs_before, rt, end);
++		zfs_rs_set_fill(rs_before, rt, before_fill + fill);
+ 		rs = rs_before;
+ 	} else if (merge_after) {
+ 		if (rt->rt_ops != NULL && rt->rt_ops->rtop_remove != NULL)
+ 			rt->rt_ops->rtop_remove(rt, rs_after, rt->rt_arg);
+ 
+-		range_tree_stat_decr(rt, rs_after);
++		zfs_range_tree_stat_decr(rt, rs_after);
+ 
+-		uint64_t after_fill = rs_get_fill(rs_after, rt);
+-		rs_set_start(rs_after, rt, start);
+-		rs_set_fill(rs_after, rt, after_fill + fill);
++		uint64_t after_fill = zfs_rs_get_fill(rs_after, rt);
++		zfs_rs_set_start(rs_after, rt, start);
++		zfs_rs_set_fill(rs_after, rt, after_fill + fill);
+ 		rs = rs_after;
+ 	} else {
+ 		rs = &tmp;
+ 
+-		rs_set_start(rs, rt, start);
+-		rs_set_end(rs, rt, end);
+-		rs_set_fill(rs, rt, fill);
++		zfs_rs_set_start(rs, rt, start);
++		zfs_rs_set_end(rs, rt, end);
++		zfs_rs_set_fill(rs, rt, fill);
+ 		zfs_btree_add_idx(&rt->rt_root, rs, &where);
+ 	}
+ 
+ 	if (gap != 0) {
+-		ASSERT3U(rs_get_fill(rs, rt), <=, rs_get_end(rs, rt) -
+-		    rs_get_start(rs, rt));
++		ASSERT3U(zfs_rs_get_fill(rs, rt), <=, zfs_rs_get_end(rs, rt) -
++		    zfs_rs_get_start(rs, rt));
+ 	} else {
+-		ASSERT3U(rs_get_fill(rs, rt), ==, rs_get_end(rs, rt) -
+-		    rs_get_start(rs, rt));
++		ASSERT3U(zfs_rs_get_fill(rs, rt), ==, zfs_rs_get_end(rs, rt) -
++		    zfs_rs_get_start(rs, rt));
+ 	}
+ 
+ 	if (rt->rt_ops != NULL && rt->rt_ops->rtop_add != NULL)
+ 		rt->rt_ops->rtop_add(rt, rs, rt->rt_arg);
+ 
+-	range_tree_stat_incr(rt, rs);
++	zfs_range_tree_stat_incr(rt, rs);
+ 	rt->rt_space += size + bridge_size;
+ }
+ 
+ void
+-range_tree_add(void *arg, uint64_t start, uint64_t size)
++zfs_range_tree_add(void *arg, uint64_t start, uint64_t size)
+ {
+-	range_tree_add_impl(arg, start, size, size);
++	zfs_range_tree_add_impl(arg, start, size, size);
+ }
+ 
+ static void
+-range_tree_remove_impl(range_tree_t *rt, uint64_t start, uint64_t size,
++zfs_range_tree_remove_impl(zfs_range_tree_t *rt, uint64_t start, uint64_t size,
+     boolean_t do_fill)
+ {
+ 	zfs_btree_index_t where;
+-	range_seg_t *rs;
++	zfs_range_seg_t *rs;
+ 	range_seg_max_t rsearch, rs_tmp;
+ 	uint64_t end = start + size;
+ 	boolean_t left_over, right_over;
+ 
+ 	VERIFY3U(size, !=, 0);
+ 	VERIFY3U(size, <=, rt->rt_space);
+-	if (rt->rt_type == RANGE_SEG64)
++	if (rt->rt_type == ZFS_RANGE_SEG64)
+ 		ASSERT3U(start + size, >, start);
+ 
+-	rs_set_start(&rsearch, rt, start);
+-	rs_set_end(&rsearch, rt, end);
++	zfs_rs_set_start(&rsearch, rt, start);
++	zfs_rs_set_end(&rsearch, rt, end);
+ 	rs = zfs_btree_find(&rt->rt_root, &rsearch, &where);
+ 
+ 	/* Make sure we completely overlap with someone */
+@@ -474,49 +477,49 @@
+ 	 */
+ 	if (rt->rt_gap != 0) {
+ 		if (do_fill) {
+-			if (rs_get_fill(rs, rt) == size) {
+-				start = rs_get_start(rs, rt);
+-				end = rs_get_end(rs, rt);
++			if (zfs_rs_get_fill(rs, rt) == size) {
++				start = zfs_rs_get_start(rs, rt);
++				end = zfs_rs_get_end(rs, rt);
+ 				size = end - start;
+ 			} else {
+-				range_tree_adjust_fill(rt, rs, -size);
++				zfs_range_tree_adjust_fill(rt, rs, -size);
+ 				return;
+ 			}
+-		} else if (rs_get_start(rs, rt) != start ||
+-		    rs_get_end(rs, rt) != end) {
++		} else if (zfs_rs_get_start(rs, rt) != start ||
++		    zfs_rs_get_end(rs, rt) != end) {
+ 			zfs_panic_recover("zfs: freeing partial segment of "
+ 			    "gap tree (offset=%llx size=%llx) of "
+ 			    "(offset=%llx size=%llx)",
+ 			    (longlong_t)start, (longlong_t)size,
+-			    (longlong_t)rs_get_start(rs, rt),
+-			    (longlong_t)rs_get_end(rs, rt) - rs_get_start(rs,
+-			    rt));
++			    (longlong_t)zfs_rs_get_start(rs, rt),
++			    (longlong_t)zfs_rs_get_end(rs, rt) -
++			    zfs_rs_get_start(rs, rt));
+ 			return;
+ 		}
+ 	}
+ 
+-	VERIFY3U(rs_get_start(rs, rt), <=, start);
+-	VERIFY3U(rs_get_end(rs, rt), >=, end);
++	VERIFY3U(zfs_rs_get_start(rs, rt), <=, start);
++	VERIFY3U(zfs_rs_get_end(rs, rt), >=, end);
+ 
+-	left_over = (rs_get_start(rs, rt) != start);
+-	right_over = (rs_get_end(rs, rt) != end);
++	left_over = (zfs_rs_get_start(rs, rt) != start);
++	right_over = (zfs_rs_get_end(rs, rt) != end);
+ 
+-	range_tree_stat_decr(rt, rs);
++	zfs_range_tree_stat_decr(rt, rs);
+ 
+ 	if (rt->rt_ops != NULL && rt->rt_ops->rtop_remove != NULL)
+ 		rt->rt_ops->rtop_remove(rt, rs, rt->rt_arg);
+ 
+ 	if (left_over && right_over) {
+ 		range_seg_max_t newseg;
+-		rs_set_start(&newseg, rt, end);
+-		rs_set_end_raw(&newseg, rt, rs_get_end_raw(rs, rt));
+-		rs_set_fill(&newseg, rt, rs_get_end(rs, rt) - end);
+-		range_tree_stat_incr(rt, &newseg);
++		zfs_rs_set_start(&newseg, rt, end);
++		zfs_rs_set_end_raw(&newseg, rt, zfs_rs_get_end_raw(rs, rt));
++		zfs_rs_set_fill(&newseg, rt, zfs_rs_get_end(rs, rt) - end);
++		zfs_range_tree_stat_incr(rt, &newseg);
+ 
+ 		// This modifies the buffer already inside the range tree
+-		rs_set_end(rs, rt, start);
++		zfs_rs_set_end(rs, rt, start);
+ 
+-		rs_copy(rs, &rs_tmp, rt);
++		zfs_rs_copy(rs, &rs_tmp, rt);
+ 		if (zfs_btree_next(&rt->rt_root, &where, &where) != NULL)
+ 			zfs_btree_add_idx(&rt->rt_root, &newseg, &where);
+ 		else
+@@ -526,12 +529,12 @@
+ 			rt->rt_ops->rtop_add(rt, &newseg, rt->rt_arg);
+ 	} else if (left_over) {
+ 		// This modifies the buffer already inside the range tree
+-		rs_set_end(rs, rt, start);
+-		rs_copy(rs, &rs_tmp, rt);
++		zfs_rs_set_end(rs, rt, start);
++		zfs_rs_copy(rs, &rs_tmp, rt);
+ 	} else if (right_over) {
+ 		// This modifies the buffer already inside the range tree
+-		rs_set_start(rs, rt, end);
+-		rs_copy(rs, &rs_tmp, rt);
++		zfs_rs_set_start(rs, rt, end);
++		zfs_rs_copy(rs, &rs_tmp, rt);
+ 	} else {
+ 		zfs_btree_remove_idx(&rt->rt_root, &where);
+ 		rs = NULL;
+@@ -543,9 +546,9 @@
+ 		 * the size, since we do not support removing partial segments
+ 		 * of range trees with gaps.
+ 		 */
+-		rs_set_fill_raw(rs, rt, rs_get_end_raw(rs, rt) -
+-		    rs_get_start_raw(rs, rt));
+-		range_tree_stat_incr(rt, &rs_tmp);
++		zfs_zfs_rs_set_fill_raw(rs, rt, zfs_rs_get_end_raw(rs, rt) -
++		    zfs_rs_get_start_raw(rs, rt));
++		zfs_range_tree_stat_incr(rt, &rs_tmp);
+ 
+ 		if (rt->rt_ops != NULL && rt->rt_ops->rtop_add != NULL)
+ 			rt->rt_ops->rtop_add(rt, &rs_tmp, rt->rt_arg);
+@@ -555,76 +558,78 @@
+ }
+ 
+ void
+-range_tree_remove(void *arg, uint64_t start, uint64_t size)
++zfs_range_tree_remove(void *arg, uint64_t start, uint64_t size)
+ {
+-	range_tree_remove_impl(arg, start, size, B_FALSE);
++	zfs_range_tree_remove_impl(arg, start, size, B_FALSE);
+ }
+ 
+ void
+-range_tree_remove_fill(range_tree_t *rt, uint64_t start, uint64_t size)
++zfs_range_tree_remove_fill(zfs_range_tree_t *rt, uint64_t start, uint64_t size)
+ {
+-	range_tree_remove_impl(rt, start, size, B_TRUE);
++	zfs_range_tree_remove_impl(rt, start, size, B_TRUE);
+ }
+ 
+ void
+-range_tree_resize_segment(range_tree_t *rt, range_seg_t *rs,
++zfs_range_tree_resize_segment(zfs_range_tree_t *rt, zfs_range_seg_t *rs,
+     uint64_t newstart, uint64_t newsize)
+ {
+-	int64_t delta = newsize - (rs_get_end(rs, rt) - rs_get_start(rs, rt));
++	int64_t delta = newsize - (zfs_rs_get_end(rs, rt) -
++	    zfs_rs_get_start(rs, rt));
+ 
+-	range_tree_stat_decr(rt, rs);
++	zfs_range_tree_stat_decr(rt, rs);
+ 	if (rt->rt_ops != NULL && rt->rt_ops->rtop_remove != NULL)
+ 		rt->rt_ops->rtop_remove(rt, rs, rt->rt_arg);
+ 
+-	rs_set_start(rs, rt, newstart);
+-	rs_set_end(rs, rt, newstart + newsize);
++	zfs_rs_set_start(rs, rt, newstart);
++	zfs_rs_set_end(rs, rt, newstart + newsize);
+ 
+-	range_tree_stat_incr(rt, rs);
++	zfs_range_tree_stat_incr(rt, rs);
+ 	if (rt->rt_ops != NULL && rt->rt_ops->rtop_add != NULL)
+ 		rt->rt_ops->rtop_add(rt, rs, rt->rt_arg);
+ 
+ 	rt->rt_space += delta;
+ }
+ 
+-static range_seg_t *
+-range_tree_find_impl(range_tree_t *rt, uint64_t start, uint64_t size)
++static zfs_range_seg_t *
++zfs_range_tree_find_impl(zfs_range_tree_t *rt, uint64_t start, uint64_t size)
+ {
+ 	range_seg_max_t rsearch;
+ 	uint64_t end = start + size;
+ 
+ 	VERIFY(size != 0);
+ 
+-	rs_set_start(&rsearch, rt, start);
+-	rs_set_end(&rsearch, rt, end);
++	zfs_rs_set_start(&rsearch, rt, start);
++	zfs_rs_set_end(&rsearch, rt, end);
+ 	return (zfs_btree_find(&rt->rt_root, &rsearch, NULL));
+ }
+ 
+-range_seg_t *
+-range_tree_find(range_tree_t *rt, uint64_t start, uint64_t size)
++zfs_range_seg_t *
++zfs_range_tree_find(zfs_range_tree_t *rt, uint64_t start, uint64_t size)
+ {
+-	if (rt->rt_type == RANGE_SEG64)
++	if (rt->rt_type == ZFS_RANGE_SEG64)
+ 		ASSERT3U(start + size, >, start);
+ 
+-	range_seg_t *rs = range_tree_find_impl(rt, start, size);
+-	if (rs != NULL && rs_get_start(rs, rt) <= start &&
+-	    rs_get_end(rs, rt) >= start + size) {
++	zfs_range_seg_t *rs = zfs_range_tree_find_impl(rt, start, size);
++	if (rs != NULL && zfs_rs_get_start(rs, rt) <= start &&
++	    zfs_rs_get_end(rs, rt) >= start + size) {
+ 		return (rs);
+ 	}
+ 	return (NULL);
+ }
+ 
+ void
+-range_tree_verify_not_present(range_tree_t *rt, uint64_t off, uint64_t size)
++zfs_range_tree_verify_not_present(zfs_range_tree_t *rt, uint64_t off,
++    uint64_t size)
+ {
+-	range_seg_t *rs = range_tree_find(rt, off, size);
++	zfs_range_seg_t *rs = zfs_range_tree_find(rt, off, size);
+ 	if (rs != NULL)
+ 		panic("segment already in tree; rs=%p", (void *)rs);
+ }
+ 
+ boolean_t
+-range_tree_contains(range_tree_t *rt, uint64_t start, uint64_t size)
++zfs_range_tree_contains(zfs_range_tree_t *rt, uint64_t start, uint64_t size)
+ {
+-	return (range_tree_find(rt, start, size) != NULL);
++	return (zfs_range_tree_find(rt, start, size) != NULL);
+ }
+ 
+ /*
+@@ -633,31 +638,32 @@
+  * isn't.
+  */
+ boolean_t
+-range_tree_find_in(range_tree_t *rt, uint64_t start, uint64_t size,
++zfs_range_tree_find_in(zfs_range_tree_t *rt, uint64_t start, uint64_t size,
+     uint64_t *ostart, uint64_t *osize)
+ {
+-	if (rt->rt_type == RANGE_SEG64)
++	if (rt->rt_type == ZFS_RANGE_SEG64)
+ 		ASSERT3U(start + size, >, start);
+ 
+ 	range_seg_max_t rsearch;
+-	rs_set_start(&rsearch, rt, start);
+-	rs_set_end_raw(&rsearch, rt, rs_get_start_raw(&rsearch, rt) + 1);
++	zfs_rs_set_start(&rsearch, rt, start);
++	zfs_rs_set_end_raw(&rsearch, rt, zfs_rs_get_start_raw(&rsearch, rt) +
++	    1);
+ 
+ 	zfs_btree_index_t where;
+-	range_seg_t *rs = zfs_btree_find(&rt->rt_root, &rsearch, &where);
++	zfs_range_seg_t *rs = zfs_btree_find(&rt->rt_root, &rsearch, &where);
+ 	if (rs != NULL) {
+ 		*ostart = start;
+-		*osize = MIN(size, rs_get_end(rs, rt) - start);
++		*osize = MIN(size, zfs_rs_get_end(rs, rt) - start);
+ 		return (B_TRUE);
+ 	}
+ 
+ 	rs = zfs_btree_next(&rt->rt_root, &where, &where);
+-	if (rs == NULL || rs_get_start(rs, rt) > start + size)
++	if (rs == NULL || zfs_rs_get_start(rs, rt) > start + size)
+ 		return (B_FALSE);
+ 
+-	*ostart = rs_get_start(rs, rt);
+-	*osize = MIN(start + size, rs_get_end(rs, rt)) -
+-	    rs_get_start(rs, rt);
++	*ostart = zfs_rs_get_start(rs, rt);
++	*osize = MIN(start + size, zfs_rs_get_end(rs, rt)) -
++	    zfs_rs_get_start(rs, rt);
+ 	return (B_TRUE);
+ }
+ 
+@@ -666,29 +672,29 @@
+  * it is currently in the tree.
+  */
+ void
+-range_tree_clear(range_tree_t *rt, uint64_t start, uint64_t size)
++zfs_range_tree_clear(zfs_range_tree_t *rt, uint64_t start, uint64_t size)
+ {
+-	range_seg_t *rs;
++	zfs_range_seg_t *rs;
+ 
+ 	if (size == 0)
+ 		return;
+ 
+-	if (rt->rt_type == RANGE_SEG64)
++	if (rt->rt_type == ZFS_RANGE_SEG64)
+ 		ASSERT3U(start + size, >, start);
+ 
+-	while ((rs = range_tree_find_impl(rt, start, size)) != NULL) {
+-		uint64_t free_start = MAX(rs_get_start(rs, rt), start);
+-		uint64_t free_end = MIN(rs_get_end(rs, rt), start + size);
+-		range_tree_remove(rt, free_start, free_end - free_start);
++	while ((rs = zfs_range_tree_find_impl(rt, start, size)) != NULL) {
++		uint64_t free_start = MAX(zfs_rs_get_start(rs, rt), start);
++		uint64_t free_end = MIN(zfs_rs_get_end(rs, rt), start + size);
++		zfs_range_tree_remove(rt, free_start, free_end - free_start);
+ 	}
+ }
+ 
+ void
+-range_tree_swap(range_tree_t **rtsrc, range_tree_t **rtdst)
++zfs_range_tree_swap(zfs_range_tree_t **rtsrc, zfs_range_tree_t **rtdst)
+ {
+-	range_tree_t *rt;
++	zfs_range_tree_t *rt;
+ 
+-	ASSERT0(range_tree_space(*rtdst));
++	ASSERT0(zfs_range_tree_space(*rtdst));
+ 	ASSERT0(zfs_btree_numnodes(&(*rtdst)->rt_root));
+ 
+ 	rt = *rtsrc;
+@@ -697,19 +703,20 @@
+ }
+ 
+ void
+-range_tree_vacate(range_tree_t *rt, range_tree_func_t *func, void *arg)
++zfs_range_tree_vacate(zfs_range_tree_t *rt, zfs_range_tree_func_t *func,
++    void *arg)
+ {
+ 	if (rt->rt_ops != NULL && rt->rt_ops->rtop_vacate != NULL)
+ 		rt->rt_ops->rtop_vacate(rt, rt->rt_arg);
+ 
+ 	if (func != NULL) {
+-		range_seg_t *rs;
++		zfs_range_seg_t *rs;
+ 		zfs_btree_index_t *cookie = NULL;
+ 
+ 		while ((rs = zfs_btree_destroy_nodes(&rt->rt_root, &cookie)) !=
+ 		    NULL) {
+-			func(arg, rs_get_start(rs, rt), rs_get_end(rs, rt) -
+-			    rs_get_start(rs, rt));
++			func(arg, zfs_rs_get_start(rs, rt),
++			    zfs_rs_get_end(rs, rt) - zfs_rs_get_start(rs, rt));
+ 		}
+ 	} else {
+ 		zfs_btree_clear(&rt->rt_root);
+@@ -720,39 +727,40 @@
+ }
+ 
+ void
+-range_tree_walk(range_tree_t *rt, range_tree_func_t *func, void *arg)
++zfs_range_tree_walk(zfs_range_tree_t *rt, zfs_range_tree_func_t *func,
++    void *arg)
+ {
+ 	zfs_btree_index_t where;
+-	for (range_seg_t *rs = zfs_btree_first(&rt->rt_root, &where);
++	for (zfs_range_seg_t *rs = zfs_btree_first(&rt->rt_root, &where);
+ 	    rs != NULL; rs = zfs_btree_next(&rt->rt_root, &where, &where)) {
+-		func(arg, rs_get_start(rs, rt), rs_get_end(rs, rt) -
+-		    rs_get_start(rs, rt));
++		func(arg, zfs_rs_get_start(rs, rt), zfs_rs_get_end(rs, rt) -
++		    zfs_rs_get_start(rs, rt));
+ 	}
+ }
+ 
+-range_seg_t *
+-range_tree_first(range_tree_t *rt)
++zfs_range_seg_t *
++zfs_range_tree_first(zfs_range_tree_t *rt)
+ {
+ 	return (zfs_btree_first(&rt->rt_root, NULL));
+ }
+ 
+ uint64_t
+-range_tree_space(range_tree_t *rt)
++zfs_range_tree_space(zfs_range_tree_t *rt)
+ {
+ 	return (rt->rt_space);
+ }
+ 
+ uint64_t
+-range_tree_numsegs(range_tree_t *rt)
++zfs_range_tree_numsegs(zfs_range_tree_t *rt)
+ {
+ 	return ((rt == NULL) ? 0 : zfs_btree_numnodes(&rt->rt_root));
+ }
+ 
+ boolean_t
+-range_tree_is_empty(range_tree_t *rt)
++zfs_range_tree_is_empty(zfs_range_tree_t *rt)
+ {
+ 	ASSERT(rt != NULL);
+-	return (range_tree_space(rt) == 0);
++	return (zfs_range_tree_space(rt) == 0);
+ }
+ 
+ /*
+@@ -760,46 +768,46 @@
+  * from removefrom. Add non-overlapping leftovers to addto.
+  */
+ void
+-range_tree_remove_xor_add_segment(uint64_t start, uint64_t end,
+-    range_tree_t *removefrom, range_tree_t *addto)
++zfs_range_tree_remove_xor_add_segment(uint64_t start, uint64_t end,
++    zfs_range_tree_t *removefrom, zfs_range_tree_t *addto)
+ {
+ 	zfs_btree_index_t where;
+ 	range_seg_max_t starting_rs;
+-	rs_set_start(&starting_rs, removefrom, start);
+-	rs_set_end_raw(&starting_rs, removefrom, rs_get_start_raw(&starting_rs,
+-	    removefrom) + 1);
++	zfs_rs_set_start(&starting_rs, removefrom, start);
++	zfs_rs_set_end_raw(&starting_rs, removefrom,
++	    zfs_rs_get_start_raw(&starting_rs, removefrom) + 1);
+ 
+-	range_seg_t *curr = zfs_btree_find(&removefrom->rt_root,
++	zfs_range_seg_t *curr = zfs_btree_find(&removefrom->rt_root,
+ 	    &starting_rs, &where);
+ 
+ 	if (curr == NULL)
+ 		curr = zfs_btree_next(&removefrom->rt_root, &where, &where);
+ 
+-	range_seg_t *next;
++	zfs_range_seg_t *next;
+ 	for (; curr != NULL; curr = next) {
+ 		if (start == end)
+ 			return;
+ 		VERIFY3U(start, <, end);
+ 
+ 		/* there is no overlap */
+-		if (end <= rs_get_start(curr, removefrom)) {
+-			range_tree_add(addto, start, end - start);
++		if (end <= zfs_rs_get_start(curr, removefrom)) {
++			zfs_range_tree_add(addto, start, end - start);
+ 			return;
+ 		}
+ 
+-		uint64_t overlap_start = MAX(rs_get_start(curr, removefrom),
++		uint64_t overlap_start = MAX(zfs_rs_get_start(curr, removefrom),
+ 		    start);
+-		uint64_t overlap_end = MIN(rs_get_end(curr, removefrom),
++		uint64_t overlap_end = MIN(zfs_rs_get_end(curr, removefrom),
+ 		    end);
+ 		uint64_t overlap_size = overlap_end - overlap_start;
+ 		ASSERT3S(overlap_size, >, 0);
+ 		range_seg_max_t rs;
+-		rs_copy(curr, &rs, removefrom);
++		zfs_rs_copy(curr, &rs, removefrom);
+ 
+-		range_tree_remove(removefrom, overlap_start, overlap_size);
++		zfs_range_tree_remove(removefrom, overlap_start, overlap_size);
+ 
+ 		if (start < overlap_start)
+-			range_tree_add(addto, start, overlap_start - start);
++			zfs_range_tree_add(addto, start, overlap_start - start);
+ 
+ 		start = overlap_end;
+ 		next = zfs_btree_find(&removefrom->rt_root, &rs, &where);
+@@ -814,7 +822,7 @@
+ 		 * area to process.
+ 		 */
+ 		if (next != NULL) {
+-			ASSERT(start == end || start == rs_get_end(&rs,
++			ASSERT(start == end || start == zfs_rs_get_end(&rs,
+ 			    removefrom));
+ 		}
+ 
+@@ -824,7 +832,7 @@
+ 
+ 	if (start != end) {
+ 		VERIFY3U(start, <, end);
+-		range_tree_add(addto, start, end - start);
++		zfs_range_tree_add(addto, start, end - start);
+ 	} else {
+ 		VERIFY3U(start, ==, end);
+ 	}
+@@ -835,33 +843,33 @@
+  * from removefrom. Otherwise, add it to addto.
+  */
+ void
+-range_tree_remove_xor_add(range_tree_t *rt, range_tree_t *removefrom,
+-    range_tree_t *addto)
++zfs_range_tree_remove_xor_add(zfs_range_tree_t *rt,
++    zfs_range_tree_t *removefrom, zfs_range_tree_t *addto)
+ {
+ 	zfs_btree_index_t where;
+-	for (range_seg_t *rs = zfs_btree_first(&rt->rt_root, &where); rs;
++	for (zfs_range_seg_t *rs = zfs_btree_first(&rt->rt_root, &where); rs;
+ 	    rs = zfs_btree_next(&rt->rt_root, &where, &where)) {
+-		range_tree_remove_xor_add_segment(rs_get_start(rs, rt),
+-		    rs_get_end(rs, rt), removefrom, addto);
++		zfs_range_tree_remove_xor_add_segment(zfs_rs_get_start(rs, rt),
++		    zfs_rs_get_end(rs, rt), removefrom, addto);
+ 	}
+ }
+ 
+ uint64_t
+-range_tree_min(range_tree_t *rt)
++zfs_range_tree_min(zfs_range_tree_t *rt)
+ {
+-	range_seg_t *rs = zfs_btree_first(&rt->rt_root, NULL);
+-	return (rs != NULL ? rs_get_start(rs, rt) : 0);
++	zfs_range_seg_t *rs = zfs_btree_first(&rt->rt_root, NULL);
++	return (rs != NULL ? zfs_rs_get_start(rs, rt) : 0);
+ }
+ 
+ uint64_t
+-range_tree_max(range_tree_t *rt)
++zfs_range_tree_max(zfs_range_tree_t *rt)
+ {
+-	range_seg_t *rs = zfs_btree_last(&rt->rt_root, NULL);
+-	return (rs != NULL ? rs_get_end(rs, rt) : 0);
++	zfs_range_seg_t *rs = zfs_btree_last(&rt->rt_root, NULL);
++	return (rs != NULL ? zfs_rs_get_end(rs, rt) : 0);
+ }
+ 
+ uint64_t
+-range_tree_span(range_tree_t *rt)
++zfs_range_tree_span(zfs_range_tree_t *rt)
+ {
+-	return (range_tree_max(rt) - range_tree_min(rt));
++	return (zfs_range_tree_max(rt) - zfs_range_tree_min(rt));
+ }
+--- a/module/zfs/spa.c
++++ b/module/zfs/spa.c
+@@ -9861,7 +9861,7 @@
+ 	 * happen in syncing context, the obsolete segments
+ 	 * tree must be empty when we start syncing.
+ 	 */
+-	ASSERT0(range_tree_space(vd->vdev_obsolete_segments));
++	ASSERT0(zfs_range_tree_space(vd->vdev_obsolete_segments));
+ }
+ 
+ /*
+--- a/module/zfs/spa_checkpoint.c
++++ b/module/zfs/spa_checkpoint.c
+@@ -235,9 +235,9 @@
+ 	 * potentially save ourselves from future headaches.
+ 	 */
+ 	mutex_enter(&ms->ms_lock);
+-	if (range_tree_is_empty(ms->ms_freeing))
++	if (zfs_range_tree_is_empty(ms->ms_freeing))
+ 		vdev_dirty(vd, VDD_METASLAB, ms, sdc->sdc_txg);
+-	range_tree_add(ms->ms_freeing, sme->sme_offset, sme->sme_run);
++	zfs_range_tree_add(ms->ms_freeing, sme->sme_offset, sme->sme_run);
+ 	mutex_exit(&ms->ms_lock);
+ 
+ 	ASSERT3U(vd->vdev_spa->spa_checkpoint_info.sci_dspace, >=,
+--- a/module/zfs/spa_log_spacemap.c
++++ b/module/zfs/spa_log_spacemap.c
+@@ -1108,11 +1108,11 @@
+ 
+ 	switch (sme->sme_type) {
+ 	case SM_ALLOC:
+-		range_tree_remove_xor_add_segment(offset, offset + size,
++		zfs_range_tree_remove_xor_add_segment(offset, offset + size,
+ 		    ms->ms_unflushed_frees, ms->ms_unflushed_allocs);
+ 		break;
+ 	case SM_FREE:
+-		range_tree_remove_xor_add_segment(offset, offset + size,
++		zfs_range_tree_remove_xor_add_segment(offset, offset + size,
+ 		    ms->ms_unflushed_allocs, ms->ms_unflushed_frees);
+ 		break;
+ 	default:
+@@ -1251,14 +1251,14 @@
+ 	    m != NULL; m = AVL_NEXT(&spa->spa_metaslabs_by_flushed, m)) {
+ 		mutex_enter(&m->ms_lock);
+ 		m->ms_allocated_space = space_map_allocated(m->ms_sm) +
+-		    range_tree_space(m->ms_unflushed_allocs) -
+-		    range_tree_space(m->ms_unflushed_frees);
++		    zfs_range_tree_space(m->ms_unflushed_allocs) -
++		    zfs_range_tree_space(m->ms_unflushed_frees);
+ 
+ 		vdev_t *vd = m->ms_group->mg_vd;
+ 		metaslab_space_update(vd, m->ms_group->mg_class,
+-		    range_tree_space(m->ms_unflushed_allocs), 0, 0);
++		    zfs_range_tree_space(m->ms_unflushed_allocs), 0, 0);
+ 		metaslab_space_update(vd, m->ms_group->mg_class,
+-		    -range_tree_space(m->ms_unflushed_frees), 0, 0);
++		    -zfs_range_tree_space(m->ms_unflushed_frees), 0, 0);
+ 
+ 		ASSERT0(m->ms_weight & METASLAB_ACTIVE_MASK);
+ 		metaslab_recalculate_weight_and_sort(m);
+@@ -1317,8 +1317,8 @@
+ 
+ 		ms->ms_unflushed_txg = entry.msp_unflushed_txg;
+ 		ms->ms_unflushed_dirty = B_FALSE;
+-		ASSERT(range_tree_is_empty(ms->ms_unflushed_allocs));
+-		ASSERT(range_tree_is_empty(ms->ms_unflushed_frees));
++		ASSERT(zfs_range_tree_is_empty(ms->ms_unflushed_allocs));
++		ASSERT(zfs_range_tree_is_empty(ms->ms_unflushed_frees));
+ 		if (ms->ms_unflushed_txg != 0) {
+ 			mutex_enter(&spa->spa_flushed_ms_lock);
+ 			avl_add(&spa->spa_metaslabs_by_flushed, ms);
+--- a/module/zfs/space_map.c
++++ b/module/zfs/space_map.c
+@@ -393,7 +393,7 @@
+ 
+ typedef struct space_map_load_arg {
+ 	space_map_t	*smla_sm;
+-	range_tree_t	*smla_rt;
++	zfs_range_tree_t	*smla_rt;
+ 	maptype_t	smla_type;
+ } space_map_load_arg_t;
+ 
+@@ -402,11 +402,13 @@
+ {
+ 	space_map_load_arg_t *smla = arg;
+ 	if (sme->sme_type == smla->smla_type) {
+-		VERIFY3U(range_tree_space(smla->smla_rt) + sme->sme_run, <=,
++		VERIFY3U(zfs_range_tree_space(smla->smla_rt) + sme->sme_run, <=,
+ 		    smla->smla_sm->sm_size);
+-		range_tree_add(smla->smla_rt, sme->sme_offset, sme->sme_run);
++		zfs_range_tree_add(smla->smla_rt, sme->sme_offset,
++		    sme->sme_run);
+ 	} else {
+-		range_tree_remove(smla->smla_rt, sme->sme_offset, sme->sme_run);
++		zfs_range_tree_remove(smla->smla_rt, sme->sme_offset,
++		    sme->sme_run);
+ 	}
+ 
+ 	return (0);
+@@ -417,15 +419,15 @@
+  * read the first 'length' bytes of the spacemap.
+  */
+ int
+-space_map_load_length(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
++space_map_load_length(space_map_t *sm, zfs_range_tree_t *rt, maptype_t maptype,
+     uint64_t length)
+ {
+ 	space_map_load_arg_t smla;
+ 
+-	VERIFY0(range_tree_space(rt));
++	VERIFY0(zfs_range_tree_space(rt));
+ 
+ 	if (maptype == SM_FREE)
+-		range_tree_add(rt, sm->sm_start, sm->sm_size);
++		zfs_range_tree_add(rt, sm->sm_start, sm->sm_size);
+ 
+ 	smla.smla_rt = rt;
+ 	smla.smla_sm = sm;
+@@ -434,7 +436,7 @@
+ 	    space_map_load_callback, &smla);
+ 
+ 	if (err != 0)
+-		range_tree_vacate(rt, NULL, NULL);
++		zfs_range_tree_vacate(rt, NULL, NULL);
+ 
+ 	return (err);
+ }
+@@ -444,7 +446,7 @@
+  * are added to the range tree, other segment types are removed.
+  */
+ int
+-space_map_load(space_map_t *sm, range_tree_t *rt, maptype_t maptype)
++space_map_load(space_map_t *sm, zfs_range_tree_t *rt, maptype_t maptype)
+ {
+ 	return (space_map_load_length(sm, rt, maptype, space_map_length(sm)));
+ }
+@@ -460,7 +462,7 @@
+ }
+ 
+ boolean_t
+-space_map_histogram_verify(space_map_t *sm, range_tree_t *rt)
++space_map_histogram_verify(space_map_t *sm, zfs_range_tree_t *rt)
+ {
+ 	/*
+ 	 * Verify that the in-core range tree does not have any
+@@ -474,7 +476,7 @@
+ }
+ 
+ void
+-space_map_histogram_add(space_map_t *sm, range_tree_t *rt, dmu_tx_t *tx)
++space_map_histogram_add(space_map_t *sm, zfs_range_tree_t *rt, dmu_tx_t *tx)
+ {
+ 	int idx = 0;
+ 
+@@ -667,7 +669,7 @@
+  * take effect.
+  */
+ static void
+-space_map_write_impl(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
++space_map_write_impl(space_map_t *sm, zfs_range_tree_t *rt, maptype_t maptype,
+     uint64_t vdev_id, dmu_tx_t *tx)
+ {
+ 	spa_t *spa = tx->tx_pool->dp_spa;
+@@ -700,12 +702,12 @@
+ 
+ 	zfs_btree_t *t = &rt->rt_root;
+ 	zfs_btree_index_t where;
+-	for (range_seg_t *rs = zfs_btree_first(t, &where); rs != NULL;
++	for (zfs_range_seg_t *rs = zfs_btree_first(t, &where); rs != NULL;
+ 	    rs = zfs_btree_next(t, &where, &where)) {
+-		uint64_t offset = (rs_get_start(rs, rt) - sm->sm_start) >>
+-		    sm->sm_shift;
+-		uint64_t length = (rs_get_end(rs, rt) - rs_get_start(rs, rt)) >>
++		uint64_t offset = (zfs_rs_get_start(rs, rt) - sm->sm_start) >>
+ 		    sm->sm_shift;
++		uint64_t length = (zfs_rs_get_end(rs, rt) -
++		    zfs_rs_get_start(rs, rt)) >> sm->sm_shift;
+ 		uint8_t words = 1;
+ 
+ 		/*
+@@ -730,8 +732,9 @@
+ 		    random_in_range(100) == 0)))
+ 			words = 2;
+ 
+-		space_map_write_seg(sm, rs_get_start(rs, rt), rs_get_end(rs,
+-		    rt), maptype, vdev_id, words, &db, FTAG, tx);
++		space_map_write_seg(sm, zfs_rs_get_start(rs, rt),
++		    zfs_rs_get_end(rs, rt), maptype, vdev_id, words, &db,
++		    FTAG, tx);
+ 	}
+ 
+ 	dmu_buf_rele(db, FTAG);
+@@ -753,7 +756,7 @@
+  * for synchronizing writes to the space map.
+  */
+ void
+-space_map_write(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
++space_map_write(space_map_t *sm, zfs_range_tree_t *rt, maptype_t maptype,
+     uint64_t vdev_id, dmu_tx_t *tx)
+ {
+ 	ASSERT(dsl_pool_sync_context(dmu_objset_pool(sm->sm_os)));
+@@ -768,18 +771,18 @@
+ 	 */
+ 	sm->sm_phys->smp_object = sm->sm_object;
+ 
+-	if (range_tree_is_empty(rt)) {
++	if (zfs_range_tree_is_empty(rt)) {
+ 		VERIFY3U(sm->sm_object, ==, sm->sm_phys->smp_object);
+ 		return;
+ 	}
+ 
+ 	if (maptype == SM_ALLOC)
+-		sm->sm_phys->smp_alloc += range_tree_space(rt);
++		sm->sm_phys->smp_alloc += zfs_range_tree_space(rt);
+ 	else
+-		sm->sm_phys->smp_alloc -= range_tree_space(rt);
++		sm->sm_phys->smp_alloc -= zfs_range_tree_space(rt);
+ 
+ 	uint64_t nodes = zfs_btree_numnodes(&rt->rt_root);
+-	uint64_t rt_space = range_tree_space(rt);
++	uint64_t rt_space = zfs_range_tree_space(rt);
+ 
+ 	space_map_write_impl(sm, rt, maptype, vdev_id, tx);
+ 
+@@ -788,7 +791,7 @@
+ 	 * while we were in the middle of writing it out.
+ 	 */
+ 	VERIFY3U(nodes, ==, zfs_btree_numnodes(&rt->rt_root));
+-	VERIFY3U(range_tree_space(rt), ==, rt_space);
++	VERIFY3U(zfs_range_tree_space(rt), ==, rt_space);
+ }
+ 
+ static int
+@@ -960,7 +963,7 @@
+  * the given space map.
+  */
+ uint64_t
+-space_map_estimate_optimal_size(space_map_t *sm, range_tree_t *rt,
++space_map_estimate_optimal_size(space_map_t *sm, zfs_range_tree_t *rt,
+     uint64_t vdev_id)
+ {
+ 	spa_t *spa = dmu_objset_spa(sm->sm_os);
+--- a/module/zfs/space_reftree.c
++++ b/module/zfs/space_reftree.c
+@@ -107,14 +107,14 @@
+  * Convert (or add) a range tree into a reference tree.
+  */
+ void
+-space_reftree_add_map(avl_tree_t *t, range_tree_t *rt, int64_t refcnt)
++space_reftree_add_map(avl_tree_t *t, zfs_range_tree_t *rt, int64_t refcnt)
+ {
+ 	zfs_btree_index_t where;
+ 
+-	for (range_seg_t *rs = zfs_btree_first(&rt->rt_root, &where); rs; rs =
+-	    zfs_btree_next(&rt->rt_root, &where, &where)) {
+-		space_reftree_add_seg(t, rs_get_start(rs, rt), rs_get_end(rs,
+-		    rt),  refcnt);
++	for (zfs_range_seg_t *rs = zfs_btree_first(&rt->rt_root, &where); rs;
++	    rs = zfs_btree_next(&rt->rt_root, &where, &where)) {
++		space_reftree_add_seg(t, zfs_rs_get_start(rs, rt),
++		    zfs_rs_get_end(rs, rt),  refcnt);
+ 	}
+ }
+ 
+@@ -123,13 +123,13 @@
+  * all members of the reference tree for which refcnt >= minref.
+  */
+ void
+-space_reftree_generate_map(avl_tree_t *t, range_tree_t *rt, int64_t minref)
++space_reftree_generate_map(avl_tree_t *t, zfs_range_tree_t *rt, int64_t minref)
+ {
+ 	uint64_t start = -1ULL;
+ 	int64_t refcnt = 0;
+ 	space_ref_t *sr;
+ 
+-	range_tree_vacate(rt, NULL, NULL);
++	zfs_range_tree_vacate(rt, NULL, NULL);
+ 
+ 	for (sr = avl_first(t); sr != NULL; sr = AVL_NEXT(t, sr)) {
+ 		refcnt += sr->sr_refcnt;
+@@ -142,7 +142,8 @@
+ 				uint64_t end = sr->sr_offset;
+ 				ASSERT(start <= end);
+ 				if (end > start)
+-					range_tree_add(rt, start, end - start);
++					zfs_range_tree_add(rt, start, end -
++					    start);
+ 				start = -1ULL;
+ 			}
+ 		}
+--- a/module/zfs/vdev.c
++++ b/module/zfs/vdev.c
+@@ -677,8 +677,8 @@
+ 
+ 	rw_init(&vd->vdev_indirect_rwlock, NULL, RW_DEFAULT, NULL);
+ 	mutex_init(&vd->vdev_obsolete_lock, NULL, MUTEX_DEFAULT, NULL);
+-	vd->vdev_obsolete_segments = range_tree_create(NULL, RANGE_SEG64, NULL,
+-	    0, 0);
++	vd->vdev_obsolete_segments = zfs_range_tree_create(NULL,
++	    ZFS_RANGE_SEG64, NULL, 0, 0);
+ 
+ 	/*
+ 	 * Initialize rate limit structs for events.  We rate limit ZIO delay
+@@ -732,8 +732,8 @@
+ 	cv_init(&vd->vdev_rebuild_cv, NULL, CV_DEFAULT, NULL);
+ 
+ 	for (int t = 0; t < DTL_TYPES; t++) {
+-		vd->vdev_dtl[t] = range_tree_create(NULL, RANGE_SEG64, NULL, 0,
+-		    0);
++		vd->vdev_dtl[t] = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64,
++		    NULL, 0, 0);
+ 	}
+ 
+ 	txg_list_create(&vd->vdev_ms_list, spa,
+@@ -1155,8 +1155,8 @@
+ 	mutex_enter(&vd->vdev_dtl_lock);
+ 	space_map_close(vd->vdev_dtl_sm);
+ 	for (int t = 0; t < DTL_TYPES; t++) {
+-		range_tree_vacate(vd->vdev_dtl[t], NULL, NULL);
+-		range_tree_destroy(vd->vdev_dtl[t]);
++		zfs_range_tree_vacate(vd->vdev_dtl[t], NULL, NULL);
++		zfs_range_tree_destroy(vd->vdev_dtl[t]);
+ 	}
+ 	mutex_exit(&vd->vdev_dtl_lock);
+ 
+@@ -1173,7 +1173,7 @@
+ 		space_map_close(vd->vdev_obsolete_sm);
+ 		vd->vdev_obsolete_sm = NULL;
+ 	}
+-	range_tree_destroy(vd->vdev_obsolete_segments);
++	zfs_range_tree_destroy(vd->vdev_obsolete_segments);
+ 	rw_destroy(&vd->vdev_indirect_rwlock);
+ 	mutex_destroy(&vd->vdev_obsolete_lock);
+ 
+@@ -1283,7 +1283,7 @@
+ 	tvd->vdev_indirect_config = svd->vdev_indirect_config;
+ 	tvd->vdev_indirect_mapping = svd->vdev_indirect_mapping;
+ 	tvd->vdev_indirect_births = svd->vdev_indirect_births;
+-	range_tree_swap(&svd->vdev_obsolete_segments,
++	zfs_range_tree_swap(&svd->vdev_obsolete_segments,
+ 	    &tvd->vdev_obsolete_segments);
+ 	tvd->vdev_obsolete_sm = svd->vdev_obsolete_sm;
+ 	svd->vdev_indirect_config.vic_mapping_object = 0;
+@@ -2969,22 +2969,22 @@
+ void
+ vdev_dtl_dirty(vdev_t *vd, vdev_dtl_type_t t, uint64_t txg, uint64_t size)
+ {
+-	range_tree_t *rt = vd->vdev_dtl[t];
++	zfs_range_tree_t *rt = vd->vdev_dtl[t];
+ 
+ 	ASSERT(t < DTL_TYPES);
+ 	ASSERT(vd != vd->vdev_spa->spa_root_vdev);
+ 	ASSERT(spa_writeable(vd->vdev_spa));
+ 
+ 	mutex_enter(&vd->vdev_dtl_lock);
+-	if (!range_tree_contains(rt, txg, size))
+-		range_tree_add(rt, txg, size);
++	if (!zfs_range_tree_contains(rt, txg, size))
++		zfs_range_tree_add(rt, txg, size);
+ 	mutex_exit(&vd->vdev_dtl_lock);
+ }
+ 
+ boolean_t
+ vdev_dtl_contains(vdev_t *vd, vdev_dtl_type_t t, uint64_t txg, uint64_t size)
+ {
+-	range_tree_t *rt = vd->vdev_dtl[t];
++	zfs_range_tree_t *rt = vd->vdev_dtl[t];
+ 	boolean_t dirty = B_FALSE;
+ 
+ 	ASSERT(t < DTL_TYPES);
+@@ -2999,8 +2999,8 @@
+ 	 * always checksummed.
+ 	 */
+ 	mutex_enter(&vd->vdev_dtl_lock);
+-	if (!range_tree_is_empty(rt))
+-		dirty = range_tree_contains(rt, txg, size);
++	if (!zfs_range_tree_is_empty(rt))
++		dirty = zfs_range_tree_contains(rt, txg, size);
+ 	mutex_exit(&vd->vdev_dtl_lock);
+ 
+ 	return (dirty);
+@@ -3009,11 +3009,11 @@
+ boolean_t
+ vdev_dtl_empty(vdev_t *vd, vdev_dtl_type_t t)
+ {
+-	range_tree_t *rt = vd->vdev_dtl[t];
++	zfs_range_tree_t *rt = vd->vdev_dtl[t];
+ 	boolean_t empty;
+ 
+ 	mutex_enter(&vd->vdev_dtl_lock);
+-	empty = range_tree_is_empty(rt);
++	empty = zfs_range_tree_is_empty(rt);
+ 	mutex_exit(&vd->vdev_dtl_lock);
+ 
+ 	return (empty);
+@@ -3060,10 +3060,10 @@
+ vdev_dtl_min(vdev_t *vd)
+ {
+ 	ASSERT(MUTEX_HELD(&vd->vdev_dtl_lock));
+-	ASSERT3U(range_tree_space(vd->vdev_dtl[DTL_MISSING]), !=, 0);
++	ASSERT3U(zfs_range_tree_space(vd->vdev_dtl[DTL_MISSING]), !=, 0);
+ 	ASSERT0(vd->vdev_children);
+ 
+-	return (range_tree_min(vd->vdev_dtl[DTL_MISSING]) - 1);
++	return (zfs_range_tree_min(vd->vdev_dtl[DTL_MISSING]) - 1);
+ }
+ 
+ /*
+@@ -3073,10 +3073,10 @@
+ vdev_dtl_max(vdev_t *vd)
+ {
+ 	ASSERT(MUTEX_HELD(&vd->vdev_dtl_lock));
+-	ASSERT3U(range_tree_space(vd->vdev_dtl[DTL_MISSING]), !=, 0);
++	ASSERT3U(zfs_range_tree_space(vd->vdev_dtl[DTL_MISSING]), !=, 0);
+ 	ASSERT0(vd->vdev_children);
+ 
+-	return (range_tree_max(vd->vdev_dtl[DTL_MISSING]));
++	return (zfs_range_tree_max(vd->vdev_dtl[DTL_MISSING]));
+ }
+ 
+ /*
+@@ -3098,7 +3098,7 @@
+ 	if (vd->vdev_resilver_deferred)
+ 		return (B_FALSE);
+ 
+-	if (range_tree_is_empty(vd->vdev_dtl[DTL_MISSING]))
++	if (zfs_range_tree_is_empty(vd->vdev_dtl[DTL_MISSING]))
+ 		return (B_TRUE);
+ 
+ 	if (rebuild_done) {
+@@ -3187,7 +3187,7 @@
+ 		}
+ 
+ 		if (scrub_txg != 0 &&
+-		    !range_tree_is_empty(vd->vdev_dtl[DTL_MISSING])) {
++		    !zfs_range_tree_is_empty(vd->vdev_dtl[DTL_MISSING])) {
+ 			wasempty = B_FALSE;
+ 			zfs_dbgmsg("guid:%llu txg:%llu scrub:%llu started:%d "
+ 			    "dtl:%llu/%llu errors:%llu",
+@@ -3243,7 +3243,8 @@
+ 			    vd->vdev_dtl[DTL_MISSING], 1);
+ 			space_reftree_destroy(&reftree);
+ 
+-			if (!range_tree_is_empty(vd->vdev_dtl[DTL_MISSING])) {
++			if (!zfs_range_tree_is_empty(
++			    vd->vdev_dtl[DTL_MISSING])) {
+ 				zfs_dbgmsg("update DTL_MISSING:%llu/%llu",
+ 				    (u_longlong_t)vdev_dtl_min(vd),
+ 				    (u_longlong_t)vdev_dtl_max(vd));
+@@ -3251,12 +3252,13 @@
+ 				zfs_dbgmsg("DTL_MISSING is now empty");
+ 			}
+ 		}
+-		range_tree_vacate(vd->vdev_dtl[DTL_PARTIAL], NULL, NULL);
+-		range_tree_walk(vd->vdev_dtl[DTL_MISSING],
+-		    range_tree_add, vd->vdev_dtl[DTL_PARTIAL]);
++		zfs_range_tree_vacate(vd->vdev_dtl[DTL_PARTIAL], NULL, NULL);
++		zfs_range_tree_walk(vd->vdev_dtl[DTL_MISSING],
++		    zfs_range_tree_add, vd->vdev_dtl[DTL_PARTIAL]);
+ 		if (scrub_done)
+-			range_tree_vacate(vd->vdev_dtl[DTL_SCRUB], NULL, NULL);
+-		range_tree_vacate(vd->vdev_dtl[DTL_OUTAGE], NULL, NULL);
++			zfs_range_tree_vacate(vd->vdev_dtl[DTL_SCRUB], NULL,
++			    NULL);
++		zfs_range_tree_vacate(vd->vdev_dtl[DTL_OUTAGE], NULL, NULL);
+ 
+ 		/*
+ 		 * For the faulting case, treat members of a replacing vdev
+@@ -3267,10 +3269,10 @@
+ 		if (!vdev_readable(vd) ||
+ 		    (faulting && vd->vdev_parent != NULL &&
+ 		    vd->vdev_parent->vdev_ops == &vdev_replacing_ops)) {
+-			range_tree_add(vd->vdev_dtl[DTL_OUTAGE], 0, -1ULL);
++			zfs_range_tree_add(vd->vdev_dtl[DTL_OUTAGE], 0, -1ULL);
+ 		} else {
+-			range_tree_walk(vd->vdev_dtl[DTL_MISSING],
+-			    range_tree_add, vd->vdev_dtl[DTL_OUTAGE]);
++			zfs_range_tree_walk(vd->vdev_dtl[DTL_MISSING],
++			    zfs_range_tree_add, vd->vdev_dtl[DTL_OUTAGE]);
+ 		}
+ 
+ 		/*
+@@ -3279,8 +3281,8 @@
+ 		 * the top level so that we persist the change.
+ 		 */
+ 		if (txg != 0 &&
+-		    range_tree_is_empty(vd->vdev_dtl[DTL_MISSING]) &&
+-		    range_tree_is_empty(vd->vdev_dtl[DTL_OUTAGE])) {
++		    zfs_range_tree_is_empty(vd->vdev_dtl[DTL_MISSING]) &&
++		    zfs_range_tree_is_empty(vd->vdev_dtl[DTL_OUTAGE])) {
+ 			if (vd->vdev_rebuild_txg != 0) {
+ 				vd->vdev_rebuild_txg = 0;
+ 				vdev_config_dirty(vd->vdev_top);
+@@ -3374,7 +3376,7 @@
+ {
+ 	spa_t *spa = vd->vdev_spa;
+ 	objset_t *mos = spa->spa_meta_objset;
+-	range_tree_t *rt;
++	zfs_range_tree_t *rt;
+ 	int error = 0;
+ 
+ 	if (vd->vdev_ops->vdev_op_leaf && vd->vdev_dtl_object != 0) {
+@@ -3392,17 +3394,17 @@
+ 			return (error);
+ 		ASSERT(vd->vdev_dtl_sm != NULL);
+ 
+-		rt = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
++		rt = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64, NULL, 0, 0);
+ 		error = space_map_load(vd->vdev_dtl_sm, rt, SM_ALLOC);
+ 		if (error == 0) {
+ 			mutex_enter(&vd->vdev_dtl_lock);
+-			range_tree_walk(rt, range_tree_add,
++			zfs_range_tree_walk(rt, zfs_range_tree_add,
+ 			    vd->vdev_dtl[DTL_MISSING]);
+ 			mutex_exit(&vd->vdev_dtl_lock);
+ 		}
+ 
+-		range_tree_vacate(rt, NULL, NULL);
+-		range_tree_destroy(rt);
++		zfs_range_tree_vacate(rt, NULL, NULL);
++		zfs_range_tree_destroy(rt);
+ 
+ 		return (error);
+ 	}
+@@ -3496,9 +3498,9 @@
+ vdev_dtl_sync(vdev_t *vd, uint64_t txg)
+ {
+ 	spa_t *spa = vd->vdev_spa;
+-	range_tree_t *rt = vd->vdev_dtl[DTL_MISSING];
++	zfs_range_tree_t *rt = vd->vdev_dtl[DTL_MISSING];
+ 	objset_t *mos = spa->spa_meta_objset;
+-	range_tree_t *rtsync;
++	zfs_range_tree_t *rtsync;
+ 	dmu_tx_t *tx;
+ 	uint64_t object = space_map_object(vd->vdev_dtl_sm);
+ 
+@@ -3540,17 +3542,17 @@
+ 		ASSERT(vd->vdev_dtl_sm != NULL);
+ 	}
+ 
+-	rtsync = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
++	rtsync = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64, NULL, 0, 0);
+ 
+ 	mutex_enter(&vd->vdev_dtl_lock);
+-	range_tree_walk(rt, range_tree_add, rtsync);
++	zfs_range_tree_walk(rt, zfs_range_tree_add, rtsync);
+ 	mutex_exit(&vd->vdev_dtl_lock);
+ 
+ 	space_map_truncate(vd->vdev_dtl_sm, zfs_vdev_dtl_sm_blksz, tx);
+ 	space_map_write(vd->vdev_dtl_sm, rtsync, SM_ALLOC, SM_NO_VDEVID, tx);
+-	range_tree_vacate(rtsync, NULL, NULL);
++	zfs_range_tree_vacate(rtsync, NULL, NULL);
+ 
+-	range_tree_destroy(rtsync);
++	zfs_range_tree_destroy(rtsync);
+ 
+ 	/*
+ 	 * If the object for the space map has changed then dirty
+@@ -3620,7 +3622,7 @@
+ 
+ 	if (vd->vdev_children == 0) {
+ 		mutex_enter(&vd->vdev_dtl_lock);
+-		if (!range_tree_is_empty(vd->vdev_dtl[DTL_MISSING]) &&
++		if (!zfs_range_tree_is_empty(vd->vdev_dtl[DTL_MISSING]) &&
+ 		    vdev_writeable(vd)) {
+ 
+ 			thismin = vdev_dtl_min(vd);
+@@ -4064,7 +4066,7 @@
+ 
+ 	ASSERT3U(txg, ==, spa->spa_syncing_txg);
+ 	dmu_tx_t *tx = dmu_tx_create_assigned(spa->spa_dsl_pool, txg);
+-	if (range_tree_space(vd->vdev_obsolete_segments) > 0) {
++	if (zfs_range_tree_space(vd->vdev_obsolete_segments) > 0) {
+ 		ASSERT(vd->vdev_removing ||
+ 		    vd->vdev_ops == &vdev_indirect_ops);
+ 
+--- a/module/zfs/vdev_indirect.c
++++ b/module/zfs/vdev_indirect.c
+@@ -333,7 +333,7 @@
+ 
+ 	if (spa_feature_is_enabled(spa, SPA_FEATURE_OBSOLETE_COUNTS)) {
+ 		mutex_enter(&vd->vdev_obsolete_lock);
+-		range_tree_add(vd->vdev_obsolete_segments, offset, size);
++		zfs_range_tree_add(vd->vdev_obsolete_segments, offset, size);
+ 		mutex_exit(&vd->vdev_obsolete_lock);
+ 		vdev_dirty(vd, 0, NULL, spa_syncing_txg(spa));
+ 	}
+@@ -816,7 +816,7 @@
+ 	vdev_indirect_config_t *vic __maybe_unused = &vd->vdev_indirect_config;
+ 
+ 	ASSERT3U(vic->vic_mapping_object, !=, 0);
+-	ASSERT(range_tree_space(vd->vdev_obsolete_segments) > 0);
++	ASSERT(zfs_range_tree_space(vd->vdev_obsolete_segments) > 0);
+ 	ASSERT(vd->vdev_removing || vd->vdev_ops == &vdev_indirect_ops);
+ 	ASSERT(spa_feature_is_enabled(spa, SPA_FEATURE_OBSOLETE_COUNTS));
+ 
+@@ -845,7 +845,7 @@
+ 
+ 	space_map_write(vd->vdev_obsolete_sm,
+ 	    vd->vdev_obsolete_segments, SM_ALLOC, SM_NO_VDEVID, tx);
+-	range_tree_vacate(vd->vdev_obsolete_segments, NULL, NULL);
++	zfs_range_tree_vacate(vd->vdev_obsolete_segments, NULL, NULL);
+ }
+ 
+ int
+--- a/module/zfs/vdev_initialize.c
++++ b/module/zfs/vdev_initialize.c
+@@ -330,13 +330,14 @@
+ static int
+ vdev_initialize_ranges(vdev_t *vd, abd_t *data)
+ {
+-	range_tree_t *rt = vd->vdev_initialize_tree;
++	zfs_range_tree_t *rt = vd->vdev_initialize_tree;
+ 	zfs_btree_t *bt = &rt->rt_root;
+ 	zfs_btree_index_t where;
+ 
+-	for (range_seg_t *rs = zfs_btree_first(bt, &where); rs != NULL;
++	for (zfs_range_seg_t *rs = zfs_btree_first(bt, &where); rs != NULL;
+ 	    rs = zfs_btree_next(bt, &where, &where)) {
+-		uint64_t size = rs_get_end(rs, rt) - rs_get_start(rs, rt);
++		uint64_t size = zfs_rs_get_end(rs, rt) -
++		    zfs_rs_get_start(rs, rt);
+ 
+ 		/* Split range into legally-sized physical chunks */
+ 		uint64_t writes_required =
+@@ -346,7 +347,7 @@
+ 			int error;
+ 
+ 			error = vdev_initialize_write(vd,
+-			    VDEV_LABEL_START_SIZE + rs_get_start(rs, rt) +
++			    VDEV_LABEL_START_SIZE + zfs_rs_get_start(rs, rt) +
+ 			    (w * zfs_initialize_chunk_size),
+ 			    MIN(size - (w * zfs_initialize_chunk_size),
+ 			    zfs_initialize_chunk_size), data);
+@@ -440,13 +441,13 @@
+ 		VERIFY0(metaslab_load(msp));
+ 
+ 		zfs_btree_index_t where;
+-		range_tree_t *rt = msp->ms_allocatable;
+-		for (range_seg_t *rs =
++		zfs_range_tree_t *rt = msp->ms_allocatable;
++		for (zfs_range_seg_t *rs =
+ 		    zfs_btree_first(&rt->rt_root, &where); rs;
+ 		    rs = zfs_btree_next(&rt->rt_root, &where,
+ 		    &where)) {
+-			logical_rs.rs_start = rs_get_start(rs, rt);
+-			logical_rs.rs_end = rs_get_end(rs, rt);
++			logical_rs.rs_start = zfs_rs_get_start(rs, rt);
++			logical_rs.rs_end = zfs_rs_get_end(rs, rt);
+ 
+ 			vdev_xlate_walk(vd, &logical_rs,
+ 			    vdev_initialize_xlate_progress, vd);
+@@ -503,7 +504,7 @@
+ 
+ 	ASSERT3U(physical_rs->rs_end, >, physical_rs->rs_start);
+ 
+-	range_tree_add(vd->vdev_initialize_tree, physical_rs->rs_start,
++	zfs_range_tree_add(vd->vdev_initialize_tree, physical_rs->rs_start,
+ 	    physical_rs->rs_end - physical_rs->rs_start);
+ }
+ 
+@@ -539,8 +540,8 @@
+ 
+ 	abd_t *deadbeef = vdev_initialize_block_alloc();
+ 
+-	vd->vdev_initialize_tree = range_tree_create(NULL, RANGE_SEG64, NULL,
+-	    0, 0);
++	vd->vdev_initialize_tree = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64,
++	    NULL, 0, 0);
+ 
+ 	for (uint64_t i = 0; !vd->vdev_detached &&
+ 	    i < vd->vdev_top->vdev_ms_count; i++) {
+@@ -563,15 +564,15 @@
+ 			unload_when_done = B_TRUE;
+ 		VERIFY0(metaslab_load(msp));
+ 
+-		range_tree_walk(msp->ms_allocatable, vdev_initialize_range_add,
+-		    vd);
++		zfs_range_tree_walk(msp->ms_allocatable,
++		    vdev_initialize_range_add, vd);
+ 		mutex_exit(&msp->ms_lock);
+ 
+ 		error = vdev_initialize_ranges(vd, deadbeef);
+ 		metaslab_enable(msp, B_TRUE, unload_when_done);
+ 		spa_config_enter(spa, SCL_CONFIG, FTAG, RW_READER);
+ 
+-		range_tree_vacate(vd->vdev_initialize_tree, NULL, NULL);
++		zfs_range_tree_vacate(vd->vdev_initialize_tree, NULL, NULL);
+ 		if (error != 0)
+ 			break;
+ 	}
+@@ -584,7 +585,7 @@
+ 	}
+ 	mutex_exit(&vd->vdev_initialize_io_lock);
+ 
+-	range_tree_destroy(vd->vdev_initialize_tree);
++	zfs_range_tree_destroy(vd->vdev_initialize_tree);
+ 	vdev_initialize_block_free(deadbeef);
+ 	vd->vdev_initialize_tree = NULL;
+ 
+--- a/module/zfs/vdev_raidz.c
++++ b/module/zfs/vdev_raidz.c
+@@ -3953,18 +3953,18 @@
+ }
+ 
+ static boolean_t
+-raidz_reflow_impl(vdev_t *vd, vdev_raidz_expand_t *vre, range_tree_t *rt,
++raidz_reflow_impl(vdev_t *vd, vdev_raidz_expand_t *vre, zfs_range_tree_t *rt,
+     dmu_tx_t *tx)
+ {
+ 	spa_t *spa = vd->vdev_spa;
+ 	uint_t ashift = vd->vdev_top->vdev_ashift;
+ 
+-	range_seg_t *rs = range_tree_first(rt);
++	zfs_range_seg_t *rs = zfs_range_tree_first(rt);
+ 	if (rt == NULL)
+ 		return (B_FALSE);
+-	uint64_t offset = rs_get_start(rs, rt);
++	uint64_t offset = zfs_rs_get_start(rs, rt);
+ 	ASSERT(IS_P2ALIGNED(offset, 1 << ashift));
+-	uint64_t size = rs_get_end(rs, rt) - offset;
++	uint64_t size = zfs_rs_get_end(rs, rt) - offset;
+ 	ASSERT3U(size, >=, 1 << ashift);
+ 	ASSERT(IS_P2ALIGNED(size, 1 << ashift));
+ 
+@@ -4001,7 +4001,7 @@
+ 	uint_t blocks = MIN(size >> ashift, next_overwrite_blkid - blkid);
+ 	size = (uint64_t)blocks << ashift;
+ 
+-	range_tree_remove(rt, offset, size);
++	zfs_range_tree_remove(rt, offset, size);
+ 
+ 	uint_t reads = MIN(blocks, old_children);
+ 	uint_t writes = MIN(blocks, vd->vdev_children);
+@@ -4553,12 +4553,13 @@
+ 		 * space (e.g. in ms_defer), and it's fine to copy that too.
+ 		 */
+ 		uint64_t shift, start;
+-		range_seg_type_t type = metaslab_calculate_range_tree_type(
++		zfs_range_seg_type_t type = metaslab_calculate_range_tree_type(
+ 		    raidvd, msp, &start, &shift);
+-		range_tree_t *rt = range_tree_create(NULL, type, NULL,
++		zfs_range_tree_t *rt = zfs_range_tree_create(NULL, type, NULL,
+ 		    start, shift);
+-		range_tree_add(rt, msp->ms_start, msp->ms_size);
+-		range_tree_walk(msp->ms_allocatable, range_tree_remove, rt);
++		zfs_range_tree_add(rt, msp->ms_start, msp->ms_size);
++		zfs_range_tree_walk(msp->ms_allocatable, zfs_range_tree_remove,
++		    rt);
+ 		mutex_exit(&msp->ms_lock);
+ 
+ 		/*
+@@ -4572,8 +4573,8 @@
+ 		int sectorsz = 1 << raidvd->vdev_ashift;
+ 		uint64_t ms_last_offset = msp->ms_start +
+ 		    msp->ms_size - sectorsz;
+-		if (!range_tree_contains(rt, ms_last_offset, sectorsz)) {
+-			range_tree_add(rt, ms_last_offset, sectorsz);
++		if (!zfs_range_tree_contains(rt, ms_last_offset, sectorsz)) {
++			zfs_range_tree_add(rt, ms_last_offset, sectorsz);
+ 		}
+ 
+ 		/*
+@@ -4582,12 +4583,12 @@
+ 		 * discard any state that we have already processed.
+ 		 */
+ 		if (vre->vre_offset > msp->ms_start) {
+-			range_tree_clear(rt, msp->ms_start,
++			zfs_range_tree_clear(rt, msp->ms_start,
+ 			    vre->vre_offset - msp->ms_start);
+ 		}
+ 
+ 		while (!zthr_iscancelled(zthr) &&
+-		    !range_tree_is_empty(rt) &&
++		    !zfs_range_tree_is_empty(rt) &&
+ 		    vre->vre_failed_offset == UINT64_MAX) {
+ 
+ 			/*
+@@ -4649,8 +4650,8 @@
+ 		spa_config_exit(spa, SCL_CONFIG, FTAG);
+ 
+ 		metaslab_enable(msp, B_FALSE, B_FALSE);
+-		range_tree_vacate(rt, NULL, NULL);
+-		range_tree_destroy(rt);
++		zfs_range_tree_vacate(rt, NULL, NULL);
++		zfs_range_tree_destroy(rt);
+ 
+ 		spa_config_enter(spa, SCL_CONFIG, FTAG, RW_READER);
+ 		raidvd = vdev_lookup_top(spa, vre->vre_vdev_id);
+--- a/module/zfs/vdev_rebuild.c
++++ b/module/zfs/vdev_rebuild.c
+@@ -641,10 +641,10 @@
+ 	zfs_btree_index_t idx;
+ 	int error;
+ 
+-	for (range_seg_t *rs = zfs_btree_first(t, &idx); rs != NULL;
++	for (zfs_range_seg_t *rs = zfs_btree_first(t, &idx); rs != NULL;
+ 	    rs = zfs_btree_next(t, &idx, &idx)) {
+-		uint64_t start = rs_get_start(rs, vr->vr_scan_tree);
+-		uint64_t size = rs_get_end(rs, vr->vr_scan_tree) - start;
++		uint64_t start = zfs_rs_get_start(rs, vr->vr_scan_tree);
++		uint64_t size = zfs_rs_get_end(rs, vr->vr_scan_tree) - start;
+ 
+ 		/*
+ 		 * zfs_scan_suspend_progress can be set to disable rebuild
+@@ -786,7 +786,8 @@
+ 	vdev_rebuild_phys_t *vrp = &vr->vr_rebuild_phys;
+ 	vr->vr_top_vdev = vd;
+ 	vr->vr_scan_msp = NULL;
+-	vr->vr_scan_tree = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
++	vr->vr_scan_tree = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64, NULL,
++	    0, 0);
+ 	mutex_init(&vr->vr_io_lock, NULL, MUTEX_DEFAULT, NULL);
+ 	cv_init(&vr->vr_io_cv, NULL, CV_DEFAULT, NULL);
+ 
+@@ -833,7 +834,7 @@
+ 			break;
+ 		}
+ 
+-		ASSERT0(range_tree_space(vr->vr_scan_tree));
++		ASSERT0(zfs_range_tree_space(vr->vr_scan_tree));
+ 
+ 		/* Disable any new allocations to this metaslab */
+ 		spa_config_exit(spa, SCL_CONFIG, FTAG);
+@@ -848,7 +849,7 @@
+ 		 * on disk and therefore will be rebuilt.
+ 		 */
+ 		for (int j = 0; j < TXG_SIZE; j++) {
+-			if (range_tree_space(msp->ms_allocating[j])) {
++			if (zfs_range_tree_space(msp->ms_allocating[j])) {
+ 				mutex_exit(&msp->ms_lock);
+ 				mutex_exit(&msp->ms_sync_lock);
+ 				txg_wait_synced(dsl, 0);
+@@ -869,21 +870,21 @@
+ 			    vr->vr_scan_tree, SM_ALLOC));
+ 
+ 			for (int i = 0; i < TXG_SIZE; i++) {
+-				ASSERT0(range_tree_space(
++				ASSERT0(zfs_range_tree_space(
+ 				    msp->ms_allocating[i]));
+ 			}
+ 
+-			range_tree_walk(msp->ms_unflushed_allocs,
+-			    range_tree_add, vr->vr_scan_tree);
+-			range_tree_walk(msp->ms_unflushed_frees,
+-			    range_tree_remove, vr->vr_scan_tree);
++			zfs_range_tree_walk(msp->ms_unflushed_allocs,
++			    zfs_range_tree_add, vr->vr_scan_tree);
++			zfs_range_tree_walk(msp->ms_unflushed_frees,
++			    zfs_range_tree_remove, vr->vr_scan_tree);
+ 
+ 			/*
+ 			 * Remove ranges which have already been rebuilt based
+ 			 * on the last offset.  This can happen when restarting
+ 			 * a scan after exporting and re-importing the pool.
+ 			 */
+-			range_tree_clear(vr->vr_scan_tree, 0,
++			zfs_range_tree_clear(vr->vr_scan_tree, 0,
+ 			    vrp->vrp_last_offset);
+ 		}
+ 
+@@ -904,7 +905,7 @@
+ 		 * Walk the allocated space map and issue the rebuild I/O.
+ 		 */
+ 		error = vdev_rebuild_ranges(vr);
+-		range_tree_vacate(vr->vr_scan_tree, NULL, NULL);
++		zfs_range_tree_vacate(vr->vr_scan_tree, NULL, NULL);
+ 
+ 		spa_config_enter(spa, SCL_CONFIG, FTAG, RW_READER);
+ 		metaslab_enable(msp, B_FALSE, B_FALSE);
+@@ -913,7 +914,7 @@
+ 			break;
+ 	}
+ 
+-	range_tree_destroy(vr->vr_scan_tree);
++	zfs_range_tree_destroy(vr->vr_scan_tree);
+ 	spa_config_exit(spa, SCL_CONFIG, FTAG);
+ 
+ 	/* Wait for any remaining rebuild I/O to complete */
+--- a/module/zfs/vdev_removal.c
++++ b/module/zfs/vdev_removal.c
+@@ -369,12 +369,13 @@
+ 	spa_vdev_removal_t *svr = kmem_zalloc(sizeof (*svr), KM_SLEEP);
+ 	mutex_init(&svr->svr_lock, NULL, MUTEX_DEFAULT, NULL);
+ 	cv_init(&svr->svr_cv, NULL, CV_DEFAULT, NULL);
+-	svr->svr_allocd_segs = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
++	svr->svr_allocd_segs = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64,
++	    NULL, 0, 0);
+ 	svr->svr_vdev_id = vd->vdev_id;
+ 
+ 	for (int i = 0; i < TXG_SIZE; i++) {
+-		svr->svr_frees[i] = range_tree_create(NULL, RANGE_SEG64, NULL,
+-		    0, 0);
++		svr->svr_frees[i] = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64,
++		    NULL, 0, 0);
+ 		list_create(&svr->svr_new_segments[i],
+ 		    sizeof (vdev_indirect_mapping_entry_t),
+ 		    offsetof(vdev_indirect_mapping_entry_t, vime_node));
+@@ -389,11 +390,11 @@
+ 	for (int i = 0; i < TXG_SIZE; i++) {
+ 		ASSERT0(svr->svr_bytes_done[i]);
+ 		ASSERT0(svr->svr_max_offset_to_sync[i]);
+-		range_tree_destroy(svr->svr_frees[i]);
++		zfs_range_tree_destroy(svr->svr_frees[i]);
+ 		list_destroy(&svr->svr_new_segments[i]);
+ 	}
+ 
+-	range_tree_destroy(svr->svr_allocd_segs);
++	zfs_range_tree_destroy(svr->svr_allocd_segs);
+ 	mutex_destroy(&svr->svr_lock);
+ 	cv_destroy(&svr->svr_cv);
+ 	kmem_free(svr, sizeof (*svr));
+@@ -475,11 +476,11 @@
+ 		 * be copied.
+ 		 */
+ 		spa->spa_removing_phys.sr_to_copy -=
+-		    range_tree_space(ms->ms_freeing);
++		    zfs_range_tree_space(ms->ms_freeing);
+ 
+-		ASSERT0(range_tree_space(ms->ms_freed));
++		ASSERT0(zfs_range_tree_space(ms->ms_freed));
+ 		for (int t = 0; t < TXG_SIZE; t++)
+-			ASSERT0(range_tree_space(ms->ms_allocating[t]));
++			ASSERT0(zfs_range_tree_space(ms->ms_allocating[t]));
+ 	}
+ 
+ 	/*
+@@ -770,7 +771,7 @@
+ 			 * completed the copy and synced the mapping (see
+ 			 * vdev_mapping_sync).
+ 			 */
+-			range_tree_add(svr->svr_frees[txgoff],
++			zfs_range_tree_add(svr->svr_frees[txgoff],
+ 			    offset, inflight_size);
+ 			size -= inflight_size;
+ 			offset += inflight_size;
+@@ -806,7 +807,8 @@
+ 		    uint64_t, size);
+ 
+ 		if (svr->svr_allocd_segs != NULL)
+-			range_tree_clear(svr->svr_allocd_segs, offset, size);
++			zfs_range_tree_clear(svr->svr_allocd_segs, offset,
++			    size);
+ 
+ 		/*
+ 		 * Since we now do not need to copy this data, for
+@@ -915,7 +917,7 @@
+ 	 * mapping entries were in flight.
+ 	 */
+ 	mutex_enter(&svr->svr_lock);
+-	range_tree_vacate(svr->svr_frees[txg & TXG_MASK],
++	zfs_range_tree_vacate(svr->svr_frees[txg & TXG_MASK],
+ 	    free_mapped_segment_cb, vd);
+ 	ASSERT3U(svr->svr_max_offset_to_sync[txg & TXG_MASK], >=,
+ 	    vdev_indirect_mapping_max_offset(vim));
+@@ -929,7 +931,7 @@
+ 	spa_t *vcsa_spa;
+ 	dva_t *vcsa_dest_dva;
+ 	uint64_t vcsa_txg;
+-	range_tree_t *vcsa_obsolete_segs;
++	zfs_range_tree_t *vcsa_obsolete_segs;
+ } vdev_copy_segment_arg_t;
+ 
+ static void
+@@ -966,9 +968,9 @@
+ {
+ 	vdev_copy_segment_arg_t *vcsa = zio->io_private;
+ 
+-	range_tree_vacate(vcsa->vcsa_obsolete_segs,
++	zfs_range_tree_vacate(vcsa->vcsa_obsolete_segs,
+ 	    unalloc_seg, vcsa);
+-	range_tree_destroy(vcsa->vcsa_obsolete_segs);
++	zfs_range_tree_destroy(vcsa->vcsa_obsolete_segs);
+ 	kmem_free(vcsa, sizeof (*vcsa));
+ 
+ 	spa_config_exit(zio->io_spa, SCL_STATE, zio->io_spa);
+@@ -1119,7 +1121,7 @@
+  * read from the old location and write to the new location.
+  */
+ static int
+-spa_vdev_copy_segment(vdev_t *vd, range_tree_t *segs,
++spa_vdev_copy_segment(vdev_t *vd, zfs_range_tree_t *segs,
+     uint64_t maxalloc, uint64_t txg,
+     vdev_copy_arg_t *vca, zio_alloc_list_t *zal)
+ {
+@@ -1128,14 +1130,14 @@
+ 	spa_vdev_removal_t *svr = spa->spa_vdev_removal;
+ 	vdev_indirect_mapping_entry_t *entry;
+ 	dva_t dst = {{ 0 }};
+-	uint64_t start = range_tree_min(segs);
++	uint64_t start = zfs_range_tree_min(segs);
+ 	ASSERT0(P2PHASE(start, 1 << spa->spa_min_ashift));
+ 
+ 	ASSERT3U(maxalloc, <=, SPA_MAXBLOCKSIZE);
+ 	ASSERT0(P2PHASE(maxalloc, 1 << spa->spa_min_ashift));
+ 
+-	uint64_t size = range_tree_span(segs);
+-	if (range_tree_span(segs) > maxalloc) {
++	uint64_t size = zfs_range_tree_span(segs);
++	if (zfs_range_tree_span(segs) > maxalloc) {
+ 		/*
+ 		 * We can't allocate all the segments.  Prefer to end
+ 		 * the allocation at the end of a segment, thus avoiding
+@@ -1143,13 +1145,13 @@
+ 		 */
+ 		range_seg_max_t search;
+ 		zfs_btree_index_t where;
+-		rs_set_start(&search, segs, start + maxalloc);
+-		rs_set_end(&search, segs, start + maxalloc);
++		zfs_rs_set_start(&search, segs, start + maxalloc);
++		zfs_rs_set_end(&search, segs, start + maxalloc);
+ 		(void) zfs_btree_find(&segs->rt_root, &search, &where);
+-		range_seg_t *rs = zfs_btree_prev(&segs->rt_root, &where,
++		zfs_range_seg_t *rs = zfs_btree_prev(&segs->rt_root, &where,
+ 		    &where);
+ 		if (rs != NULL) {
+-			size = rs_get_end(rs, segs) - start;
++			size = zfs_rs_get_end(rs, segs) - start;
+ 		} else {
+ 			/*
+ 			 * There are no segments that end before maxalloc.
+@@ -1182,27 +1184,27 @@
+ 	 * relative to the start of the range to be copied (i.e. relative to the
+ 	 * local variable "start").
+ 	 */
+-	range_tree_t *obsolete_segs = range_tree_create(NULL, RANGE_SEG64, NULL,
+-	    0, 0);
++	zfs_range_tree_t *obsolete_segs = zfs_range_tree_create(NULL,
++	    ZFS_RANGE_SEG64, NULL, 0, 0);
+ 
+ 	zfs_btree_index_t where;
+-	range_seg_t *rs = zfs_btree_first(&segs->rt_root, &where);
+-	ASSERT3U(rs_get_start(rs, segs), ==, start);
+-	uint64_t prev_seg_end = rs_get_end(rs, segs);
++	zfs_range_seg_t *rs = zfs_btree_first(&segs->rt_root, &where);
++	ASSERT3U(zfs_rs_get_start(rs, segs), ==, start);
++	uint64_t prev_seg_end = zfs_rs_get_end(rs, segs);
+ 	while ((rs = zfs_btree_next(&segs->rt_root, &where, &where)) != NULL) {
+-		if (rs_get_start(rs, segs) >= start + size) {
++		if (zfs_rs_get_start(rs, segs) >= start + size) {
+ 			break;
+ 		} else {
+-			range_tree_add(obsolete_segs,
++			zfs_range_tree_add(obsolete_segs,
+ 			    prev_seg_end - start,
+-			    rs_get_start(rs, segs) - prev_seg_end);
++			    zfs_rs_get_start(rs, segs) - prev_seg_end);
+ 		}
+-		prev_seg_end = rs_get_end(rs, segs);
++		prev_seg_end = zfs_rs_get_end(rs, segs);
+ 	}
+ 	/* We don't end in the middle of an obsolete range */
+ 	ASSERT3U(start + size, <=, prev_seg_end);
+ 
+-	range_tree_clear(segs, start, size);
++	zfs_range_tree_clear(segs, start, size);
+ 
+ 	/*
+ 	 * We can't have any padding of the allocated size, otherwise we will
+@@ -1216,7 +1218,8 @@
+ 	DVA_MAPPING_SET_SRC_OFFSET(&entry->vime_mapping, start);
+ 	entry->vime_mapping.vimep_dst = dst;
+ 	if (spa_feature_is_enabled(spa, SPA_FEATURE_OBSOLETE_COUNTS)) {
+-		entry->vime_obsolete_count = range_tree_space(obsolete_segs);
++		entry->vime_obsolete_count =
++		    zfs_range_tree_space(obsolete_segs);
+ 	}
+ 
+ 	vdev_copy_segment_arg_t *vcsa = kmem_zalloc(sizeof (*vcsa), KM_SLEEP);
+@@ -1455,30 +1458,31 @@
+ 	 * allocated segments that we are copying.  We may also be copying
+ 	 * free segments (of up to vdev_removal_max_span bytes).
+ 	 */
+-	range_tree_t *segs = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
++	zfs_range_tree_t *segs = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64,
++	    NULL, 0, 0);
+ 	for (;;) {
+-		range_tree_t *rt = svr->svr_allocd_segs;
+-		range_seg_t *rs = range_tree_first(rt);
++		zfs_range_tree_t *rt = svr->svr_allocd_segs;
++		zfs_range_seg_t *rs = zfs_range_tree_first(rt);
+ 
+ 		if (rs == NULL)
+ 			break;
+ 
+ 		uint64_t seg_length;
+ 
+-		if (range_tree_is_empty(segs)) {
++		if (zfs_range_tree_is_empty(segs)) {
+ 			/* need to truncate the first seg based on max_alloc */
+-			seg_length = MIN(rs_get_end(rs, rt) - rs_get_start(rs,
+-			    rt), *max_alloc);
++			seg_length = MIN(zfs_rs_get_end(rs, rt) -
++			    zfs_rs_get_start(rs, rt), *max_alloc);
+ 		} else {
+-			if (rs_get_start(rs, rt) - range_tree_max(segs) >
+-			    vdev_removal_max_span) {
++			if (zfs_rs_get_start(rs, rt) - zfs_range_tree_max(segs)
++			    > vdev_removal_max_span) {
+ 				/*
+ 				 * Including this segment would cause us to
+ 				 * copy a larger unneeded chunk than is allowed.
+ 				 */
+ 				break;
+-			} else if (rs_get_end(rs, rt) - range_tree_min(segs) >
+-			    *max_alloc) {
++			} else if (zfs_rs_get_end(rs, rt) -
++			    zfs_range_tree_min(segs) > *max_alloc) {
+ 				/*
+ 				 * This additional segment would extend past
+ 				 * max_alloc. Rather than splitting this
+@@ -1486,19 +1490,19 @@
+ 				 */
+ 				break;
+ 			} else {
+-				seg_length = rs_get_end(rs, rt) -
+-				    rs_get_start(rs, rt);
++				seg_length = zfs_rs_get_end(rs, rt) -
++				    zfs_rs_get_start(rs, rt);
+ 			}
+ 		}
+ 
+-		range_tree_add(segs, rs_get_start(rs, rt), seg_length);
+-		range_tree_remove(svr->svr_allocd_segs,
+-		    rs_get_start(rs, rt), seg_length);
++		zfs_range_tree_add(segs, zfs_rs_get_start(rs, rt), seg_length);
++		zfs_range_tree_remove(svr->svr_allocd_segs,
++		    zfs_rs_get_start(rs, rt), seg_length);
+ 	}
+ 
+-	if (range_tree_is_empty(segs)) {
++	if (zfs_range_tree_is_empty(segs)) {
+ 		mutex_exit(&svr->svr_lock);
+-		range_tree_destroy(segs);
++		zfs_range_tree_destroy(segs);
+ 		return;
+ 	}
+ 
+@@ -1507,20 +1511,20 @@
+ 		    svr, tx);
+ 	}
+ 
+-	svr->svr_max_offset_to_sync[txg & TXG_MASK] = range_tree_max(segs);
++	svr->svr_max_offset_to_sync[txg & TXG_MASK] = zfs_range_tree_max(segs);
+ 
+ 	/*
+ 	 * Note: this is the amount of *allocated* space
+ 	 * that we are taking care of each txg.
+ 	 */
+-	svr->svr_bytes_done[txg & TXG_MASK] += range_tree_space(segs);
++	svr->svr_bytes_done[txg & TXG_MASK] += zfs_range_tree_space(segs);
+ 
+ 	mutex_exit(&svr->svr_lock);
+ 
+ 	zio_alloc_list_t zal;
+ 	metaslab_trace_init(&zal);
+ 	uint64_t thismax = SPA_MAXBLOCKSIZE;
+-	while (!range_tree_is_empty(segs)) {
++	while (!zfs_range_tree_is_empty(segs)) {
+ 		int error = spa_vdev_copy_segment(vd,
+ 		    segs, thismax, txg, vca, &zal);
+ 
+@@ -1537,7 +1541,7 @@
+ 			ASSERT3U(spa->spa_max_ashift, >=, SPA_MINBLOCKSHIFT);
+ 			ASSERT3U(spa->spa_max_ashift, ==, spa->spa_min_ashift);
+ 			uint64_t attempted =
+-			    MIN(range_tree_span(segs), thismax);
++			    MIN(zfs_range_tree_span(segs), thismax);
+ 			thismax = P2ROUNDUP(attempted / 2,
+ 			    1 << spa->spa_max_ashift);
+ 			/*
+@@ -1557,7 +1561,7 @@
+ 		}
+ 	}
+ 	metaslab_trace_fini(&zal);
+-	range_tree_destroy(segs);
++	zfs_range_tree_destroy(segs);
+ }
+ 
+ /*
+@@ -1628,7 +1632,7 @@
+ 		metaslab_t *msp = vd->vdev_ms[msi];
+ 		ASSERT3U(msi, <=, vd->vdev_ms_count);
+ 
+-		ASSERT0(range_tree_space(svr->svr_allocd_segs));
++		ASSERT0(zfs_range_tree_space(svr->svr_allocd_segs));
+ 
+ 		mutex_enter(&msp->ms_sync_lock);
+ 		mutex_enter(&msp->ms_lock);
+@@ -1637,7 +1641,7 @@
+ 		 * Assert nothing in flight -- ms_*tree is empty.
+ 		 */
+ 		for (int i = 0; i < TXG_SIZE; i++) {
+-			ASSERT0(range_tree_space(msp->ms_allocating[i]));
++			ASSERT0(zfs_range_tree_space(msp->ms_allocating[i]));
+ 		}
+ 
+ 		/*
+@@ -1653,19 +1657,20 @@
+ 			VERIFY0(space_map_load(msp->ms_sm,
+ 			    svr->svr_allocd_segs, SM_ALLOC));
+ 
+-			range_tree_walk(msp->ms_unflushed_allocs,
+-			    range_tree_add, svr->svr_allocd_segs);
+-			range_tree_walk(msp->ms_unflushed_frees,
+-			    range_tree_remove, svr->svr_allocd_segs);
+-			range_tree_walk(msp->ms_freeing,
+-			    range_tree_remove, svr->svr_allocd_segs);
++			zfs_range_tree_walk(msp->ms_unflushed_allocs,
++			    zfs_range_tree_add, svr->svr_allocd_segs);
++			zfs_range_tree_walk(msp->ms_unflushed_frees,
++			    zfs_range_tree_remove, svr->svr_allocd_segs);
++			zfs_range_tree_walk(msp->ms_freeing,
++			    zfs_range_tree_remove, svr->svr_allocd_segs);
+ 
+ 			/*
+ 			 * When we are resuming from a paused removal (i.e.
+ 			 * when importing a pool with a removal in progress),
+ 			 * discard any state that we have already processed.
+ 			 */
+-			range_tree_clear(svr->svr_allocd_segs, 0, start_offset);
++			zfs_range_tree_clear(svr->svr_allocd_segs, 0,
++			    start_offset);
+ 		}
+ 		mutex_exit(&msp->ms_lock);
+ 		mutex_exit(&msp->ms_sync_lock);
+@@ -1677,7 +1682,7 @@
+ 		    (u_longlong_t)msp->ms_id);
+ 
+ 		while (!svr->svr_thread_exit &&
+-		    !range_tree_is_empty(svr->svr_allocd_segs)) {
++		    !zfs_range_tree_is_empty(svr->svr_allocd_segs)) {
+ 
+ 			mutex_exit(&svr->svr_lock);
+ 
+@@ -1756,7 +1761,7 @@
+ 
+ 	if (svr->svr_thread_exit) {
+ 		mutex_enter(&svr->svr_lock);
+-		range_tree_vacate(svr->svr_allocd_segs, NULL, NULL);
++		zfs_range_tree_vacate(svr->svr_allocd_segs, NULL, NULL);
+ 		svr->svr_thread = NULL;
+ 		cv_broadcast(&svr->svr_cv);
+ 		mutex_exit(&svr->svr_lock);
+@@ -1776,7 +1781,7 @@
+ 			spa_vdev_remove_cancel_impl(spa);
+ 		}
+ 	} else {
+-		ASSERT0(range_tree_space(svr->svr_allocd_segs));
++		ASSERT0(zfs_range_tree_space(svr->svr_allocd_segs));
+ 		vdev_remove_complete(spa);
+ 	}
+ 
+@@ -1885,7 +1890,7 @@
+ 		if (msp->ms_start >= vdev_indirect_mapping_max_offset(vim))
+ 			break;
+ 
+-		ASSERT0(range_tree_space(svr->svr_allocd_segs));
++		ASSERT0(zfs_range_tree_space(svr->svr_allocd_segs));
+ 
+ 		mutex_enter(&msp->ms_lock);
+ 
+@@ -1893,22 +1898,22 @@
+ 		 * Assert nothing in flight -- ms_*tree is empty.
+ 		 */
+ 		for (int i = 0; i < TXG_SIZE; i++)
+-			ASSERT0(range_tree_space(msp->ms_allocating[i]));
++			ASSERT0(zfs_range_tree_space(msp->ms_allocating[i]));
+ 		for (int i = 0; i < TXG_DEFER_SIZE; i++)
+-			ASSERT0(range_tree_space(msp->ms_defer[i]));
+-		ASSERT0(range_tree_space(msp->ms_freed));
++			ASSERT0(zfs_range_tree_space(msp->ms_defer[i]));
++		ASSERT0(zfs_range_tree_space(msp->ms_freed));
+ 
+ 		if (msp->ms_sm != NULL) {
+ 			mutex_enter(&svr->svr_lock);
+ 			VERIFY0(space_map_load(msp->ms_sm,
+ 			    svr->svr_allocd_segs, SM_ALLOC));
+ 
+-			range_tree_walk(msp->ms_unflushed_allocs,
+-			    range_tree_add, svr->svr_allocd_segs);
+-			range_tree_walk(msp->ms_unflushed_frees,
+-			    range_tree_remove, svr->svr_allocd_segs);
+-			range_tree_walk(msp->ms_freeing,
+-			    range_tree_remove, svr->svr_allocd_segs);
++			zfs_range_tree_walk(msp->ms_unflushed_allocs,
++			    zfs_range_tree_add, svr->svr_allocd_segs);
++			zfs_range_tree_walk(msp->ms_unflushed_frees,
++			    zfs_range_tree_remove, svr->svr_allocd_segs);
++			zfs_range_tree_walk(msp->ms_freeing,
++			    zfs_range_tree_remove, svr->svr_allocd_segs);
+ 
+ 			/*
+ 			 * Clear everything past what has been synced,
+@@ -1918,7 +1923,7 @@
+ 			uint64_t sm_end = msp->ms_sm->sm_start +
+ 			    msp->ms_sm->sm_size;
+ 			if (sm_end > syncd)
+-				range_tree_clear(svr->svr_allocd_segs,
++				zfs_range_tree_clear(svr->svr_allocd_segs,
+ 				    syncd, sm_end - syncd);
+ 
+ 			mutex_exit(&svr->svr_lock);
+@@ -1926,7 +1931,7 @@
+ 		mutex_exit(&msp->ms_lock);
+ 
+ 		mutex_enter(&svr->svr_lock);
+-		range_tree_vacate(svr->svr_allocd_segs,
++		zfs_range_tree_vacate(svr->svr_allocd_segs,
+ 		    free_mapped_segment_cb, vd);
+ 		mutex_exit(&svr->svr_lock);
+ 	}
+@@ -1935,7 +1940,7 @@
+ 	 * Note: this must happen after we invoke free_mapped_segment_cb,
+ 	 * because it adds to the obsolete_segments.
+ 	 */
+-	range_tree_vacate(vd->vdev_obsolete_segments, NULL, NULL);
++	zfs_range_tree_vacate(vd->vdev_obsolete_segments, NULL, NULL);
+ 
+ 	ASSERT3U(vic->vic_mapping_object, ==,
+ 	    vdev_indirect_mapping_object(vd->vdev_indirect_mapping));
+--- a/module/zfs/vdev_trim.c
++++ b/module/zfs/vdev_trim.c
+@@ -149,7 +149,7 @@
+ 	 */
+ 	vdev_t		*trim_vdev;		/* Leaf vdev to TRIM */
+ 	metaslab_t	*trim_msp;		/* Disabled metaslab */
+-	range_tree_t	*trim_tree;		/* TRIM ranges (in metaslab) */
++	zfs_range_tree_t	*trim_tree;	/* TRIM ranges (in metaslab) */
+ 	trim_type_t	trim_type;		/* Manual or auto TRIM */
+ 	uint64_t	trim_extent_bytes_max;	/* Maximum TRIM I/O size */
+ 	uint64_t	trim_extent_bytes_min;	/* Minimum TRIM I/O size */
+@@ -601,10 +601,10 @@
+ 	ta->trim_start_time = gethrtime();
+ 	ta->trim_bytes_done = 0;
+ 
+-	for (range_seg_t *rs = zfs_btree_first(t, &idx); rs != NULL;
++	for (zfs_range_seg_t *rs = zfs_btree_first(t, &idx); rs != NULL;
+ 	    rs = zfs_btree_next(t, &idx, &idx)) {
+-		uint64_t size = rs_get_end(rs, ta->trim_tree) - rs_get_start(rs,
+-		    ta->trim_tree);
++		uint64_t size = zfs_rs_get_end(rs, ta->trim_tree) -
++		    zfs_rs_get_start(rs, ta->trim_tree);
+ 
+ 		if (extent_bytes_min && size < extent_bytes_min) {
+ 			spa_iostats_trim_add(spa, ta->trim_type,
+@@ -617,7 +617,7 @@
+ 
+ 		for (uint64_t w = 0; w < writes_required; w++) {
+ 			error = vdev_trim_range(ta, VDEV_LABEL_START_SIZE +
+-			    rs_get_start(rs, ta->trim_tree) +
++			    zfs_rs_get_start(rs, ta->trim_tree) +
+ 			    (w *extent_bytes_max), MIN(size -
+ 			    (w * extent_bytes_max), extent_bytes_max));
+ 			if (error != 0) {
+@@ -729,13 +729,13 @@
+ 		 */
+ 		VERIFY0(metaslab_load(msp));
+ 
+-		range_tree_t *rt = msp->ms_allocatable;
++		zfs_range_tree_t *rt = msp->ms_allocatable;
+ 		zfs_btree_t *bt = &rt->rt_root;
+ 		zfs_btree_index_t idx;
+-		for (range_seg_t *rs = zfs_btree_first(bt, &idx);
++		for (zfs_range_seg_t *rs = zfs_btree_first(bt, &idx);
+ 		    rs != NULL; rs = zfs_btree_next(bt, &idx, &idx)) {
+-			logical_rs.rs_start = rs_get_start(rs, rt);
+-			logical_rs.rs_end = rs_get_end(rs, rt);
++			logical_rs.rs_start = zfs_rs_get_start(rs, rt);
++			logical_rs.rs_end = zfs_rs_get_end(rs, rt);
+ 
+ 			vdev_xlate_walk(vd, &logical_rs,
+ 			    vdev_trim_xlate_progress, vd);
+@@ -832,7 +832,7 @@
+ 
+ 	ASSERT3U(physical_rs->rs_end, >, physical_rs->rs_start);
+ 
+-	range_tree_add(ta->trim_tree, physical_rs->rs_start,
++	zfs_range_tree_add(ta->trim_tree, physical_rs->rs_start,
+ 	    physical_rs->rs_end - physical_rs->rs_start);
+ }
+ 
+@@ -858,7 +858,8 @@
+ 		metaslab_t *msp = ta->trim_msp;
+ 		VERIFY0(metaslab_load(msp));
+ 		VERIFY3B(msp->ms_loaded, ==, B_TRUE);
+-		VERIFY(range_tree_contains(msp->ms_allocatable, start, size));
++		VERIFY(zfs_range_tree_contains(msp->ms_allocatable, start,
++		    size));
+ 	}
+ 
+ 	ASSERT(vd->vdev_ops->vdev_op_leaf);
+@@ -900,7 +901,7 @@
+ 	ta.trim_vdev = vd;
+ 	ta.trim_extent_bytes_max = zfs_trim_extent_bytes_max;
+ 	ta.trim_extent_bytes_min = zfs_trim_extent_bytes_min;
+-	ta.trim_tree = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
++	ta.trim_tree = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64, NULL, 0, 0);
+ 	ta.trim_type = TRIM_TYPE_MANUAL;
+ 	ta.trim_flags = 0;
+ 
+@@ -946,22 +947,23 @@
+ 		}
+ 
+ 		ta.trim_msp = msp;
+-		range_tree_walk(msp->ms_allocatable, vdev_trim_range_add, &ta);
+-		range_tree_vacate(msp->ms_trim, NULL, NULL);
++		zfs_range_tree_walk(msp->ms_allocatable, vdev_trim_range_add,
++		    &ta);
++		zfs_range_tree_vacate(msp->ms_trim, NULL, NULL);
+ 		mutex_exit(&msp->ms_lock);
+ 
+ 		error = vdev_trim_ranges(&ta);
+ 		metaslab_enable(msp, B_TRUE, B_FALSE);
+ 		spa_config_enter(spa, SCL_CONFIG, FTAG, RW_READER);
+ 
+-		range_tree_vacate(ta.trim_tree, NULL, NULL);
++		zfs_range_tree_vacate(ta.trim_tree, NULL, NULL);
+ 		if (error != 0)
+ 			break;
+ 	}
+ 
+ 	spa_config_exit(spa, SCL_CONFIG, FTAG);
+ 
+-	range_tree_destroy(ta.trim_tree);
++	zfs_range_tree_destroy(ta.trim_tree);
+ 
+ 	mutex_enter(&vd->vdev_trim_lock);
+ 	if (!vd->vdev_trim_exit_wanted) {
+@@ -1204,7 +1206,7 @@
+ 
+ 	VERIFY3B(msp->ms_loaded, ==, B_TRUE);
+ 	VERIFY3U(msp->ms_disabled, >, 0);
+-	VERIFY(range_tree_contains(msp->ms_allocatable, start, size));
++	VERIFY(zfs_range_tree_contains(msp->ms_allocatable, start, size));
+ }
+ 
+ /*
+@@ -1261,7 +1263,7 @@
+ 		for (uint64_t i = shift % txgs_per_trim; i < vd->vdev_ms_count;
+ 		    i += txgs_per_trim) {
+ 			metaslab_t *msp = vd->vdev_ms[i];
+-			range_tree_t *trim_tree;
++			zfs_range_tree_t *trim_tree;
+ 			boolean_t issued_trim = B_FALSE;
+ 			boolean_t wait_aborted = B_FALSE;
+ 
+@@ -1276,7 +1278,7 @@
+ 			 * or when there are no recent frees to trim.
+ 			 */
+ 			if (msp->ms_sm == NULL ||
+-			    range_tree_is_empty(msp->ms_trim)) {
++			    zfs_range_tree_is_empty(msp->ms_trim)) {
+ 				mutex_exit(&msp->ms_lock);
+ 				metaslab_enable(msp, B_FALSE, B_FALSE);
+ 				continue;
+@@ -1302,10 +1304,10 @@
+ 			 * Allocate an empty range tree which is swapped in
+ 			 * for the existing ms_trim tree while it is processed.
+ 			 */
+-			trim_tree = range_tree_create(NULL, RANGE_SEG64, NULL,
+-			    0, 0);
+-			range_tree_swap(&msp->ms_trim, &trim_tree);
+-			ASSERT(range_tree_is_empty(msp->ms_trim));
++			trim_tree = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64,
++			    NULL, 0, 0);
++			zfs_range_tree_swap(&msp->ms_trim, &trim_tree);
++			ASSERT(zfs_range_tree_is_empty(msp->ms_trim));
+ 
+ 			/*
+ 			 * There are two cases when constructing the per-vdev
+@@ -1357,9 +1359,9 @@
+ 				if (!cvd->vdev_ops->vdev_op_leaf)
+ 					continue;
+ 
+-				ta->trim_tree = range_tree_create(NULL,
+-				    RANGE_SEG64, NULL, 0, 0);
+-				range_tree_walk(trim_tree,
++				ta->trim_tree = zfs_range_tree_create(NULL,
++				    ZFS_RANGE_SEG64, NULL, 0, 0);
++				zfs_range_tree_walk(trim_tree,
+ 				    vdev_trim_range_add, ta);
+ 			}
+ 
+@@ -1406,13 +1408,13 @@
+ 				mutex_enter(&msp->ms_lock);
+ 				VERIFY0(metaslab_load(msp));
+ 				VERIFY3P(tap[0].trim_msp, ==, msp);
+-				range_tree_walk(trim_tree,
++				zfs_range_tree_walk(trim_tree,
+ 				    vdev_trim_range_verify, &tap[0]);
+ 				mutex_exit(&msp->ms_lock);
+ 			}
+ 
+-			range_tree_vacate(trim_tree, NULL, NULL);
+-			range_tree_destroy(trim_tree);
++			zfs_range_tree_vacate(trim_tree, NULL, NULL);
++			zfs_range_tree_destroy(trim_tree);
+ 
+ 			/*
+ 			 * Wait for couples of kicks, to ensure the trim io is
+@@ -1434,8 +1436,9 @@
+ 				if (ta->trim_tree == NULL)
+ 					continue;
+ 
+-				range_tree_vacate(ta->trim_tree, NULL, NULL);
+-				range_tree_destroy(ta->trim_tree);
++				zfs_range_tree_vacate(ta->trim_tree, NULL,
++				    NULL);
++				zfs_range_tree_destroy(ta->trim_tree);
+ 			}
+ 
+ 			kmem_free(tap, sizeof (trim_args_t) * children);
+@@ -1474,7 +1477,7 @@
+ 			metaslab_t *msp = vd->vdev_ms[i];
+ 
+ 			mutex_enter(&msp->ms_lock);
+-			range_tree_vacate(msp->ms_trim, NULL, NULL);
++			zfs_range_tree_vacate(msp->ms_trim, NULL, NULL);
+ 			mutex_exit(&msp->ms_lock);
+ 		}
+ 	}
+@@ -1596,7 +1599,7 @@
+ 	vd->vdev_trim_secure = 0;
+ 
+ 	ta.trim_vdev = vd;
+-	ta.trim_tree = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
++	ta.trim_tree = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64, NULL, 0, 0);
+ 	ta.trim_type = TRIM_TYPE_MANUAL;
+ 	ta.trim_extent_bytes_max = zfs_trim_extent_bytes_max;
+ 	ta.trim_extent_bytes_min = SPA_MINBLOCKSIZE;
+@@ -1606,7 +1609,7 @@
+ 	physical_rs.rs_end = vd->vdev_trim_bytes_est =
+ 	    vdev_get_min_asize(vd);
+ 
+-	range_tree_add(ta.trim_tree, physical_rs.rs_start,
++	zfs_range_tree_add(ta.trim_tree, physical_rs.rs_start,
+ 	    physical_rs.rs_end - physical_rs.rs_start);
+ 
+ 	mutex_enter(&vd->vdev_trim_lock);
+@@ -1622,8 +1625,8 @@
+ 	}
+ 	mutex_exit(&vd->vdev_trim_io_lock);
+ 
+-	range_tree_vacate(ta.trim_tree, NULL, NULL);
+-	range_tree_destroy(ta.trim_tree);
++	zfs_range_tree_vacate(ta.trim_tree, NULL, NULL);
++	zfs_range_tree_destroy(ta.trim_tree);
+ 
+ 	mutex_enter(&vd->vdev_trim_lock);
+ 	if (!vd->vdev_trim_exit_wanted && vdev_writeable(vd)) {
+@@ -1731,7 +1734,7 @@
+ 	ASSERT(!vd->vdev_top->vdev_rz_expanding);
+ 
+ 	ta.trim_vdev = vd;
+-	ta.trim_tree = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
++	ta.trim_tree = zfs_range_tree_create(NULL, ZFS_RANGE_SEG64, NULL, 0, 0);
+ 	ta.trim_type = TRIM_TYPE_SIMPLE;
+ 	ta.trim_extent_bytes_max = zfs_trim_extent_bytes_max;
+ 	ta.trim_extent_bytes_min = SPA_MINBLOCKSIZE;
+@@ -1740,7 +1743,7 @@
+ 	ASSERT3U(physical_rs.rs_end, >=, physical_rs.rs_start);
+ 
+ 	if (physical_rs.rs_end > physical_rs.rs_start) {
+-		range_tree_add(ta.trim_tree, physical_rs.rs_start,
++		zfs_range_tree_add(ta.trim_tree, physical_rs.rs_start,
+ 		    physical_rs.rs_end - physical_rs.rs_start);
+ 	} else {
+ 		ASSERT3U(physical_rs.rs_end, ==, physical_rs.rs_start);
+@@ -1754,8 +1757,8 @@
+ 	}
+ 	mutex_exit(&vd->vdev_trim_io_lock);
+ 
+-	range_tree_vacate(ta.trim_tree, NULL, NULL);
+-	range_tree_destroy(ta.trim_tree);
++	zfs_range_tree_vacate(ta.trim_tree, NULL, NULL);
++	zfs_range_tree_destroy(ta.trim_tree);
+ 
+ 	return (error);
+ }

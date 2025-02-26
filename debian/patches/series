@@ -19,3 +19,6 @@ ubuntu/zfs-mount-container-start.patch
 #ubuntu/4510-silently-ignore-modprobe-failure.patch
 #ubuntu/4751-suppress-types.patch
 fix-pyzfs-version.patch
+upstream/0001-linux-6.12-rename-range-tree-symbols-1.patch
+upstream/0002-linux-6.12-rename-range-tree-symbols-2.patch
+upstream/0003-meta-linux-6-13.patch
