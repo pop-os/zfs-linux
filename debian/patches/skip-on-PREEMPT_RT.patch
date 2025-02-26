@@ -6,16 +6,13 @@ Last-Update: 2024-08-08
 
 --- a/scripts/dkms.mkconf
 +++ b/scripts/dkms.mkconf
-@@ -25,6 +25,12 @@
+@@ -25,6 +25,9 @@ PACKAGE_NAME="${pkgname}"
  PACKAGE_VERSION="${pkgver}"
  PACKAGE_CONFIG="${pkgcfg}"
  NO_WEAK_MODULES="yes"
-+if [ -f \$kernel_source_dir/.config ]; then
-+    . \$kernel_source_dir/.config
-+    if [ "\$CONFIG_PREEMPT_RT" = "y" ]; then
-+        BUILD_EXCLUSIVE_KERNEL="NOT ON PREEMPT_RT"
-+    fi
-+fi
++
++BUILD_EXCLUSIVE_CONFIG="!CONFIG_PREEMPT_RT"
++
  PRE_BUILD="configure
    --disable-dependency-tracking
    --prefix=/usr
