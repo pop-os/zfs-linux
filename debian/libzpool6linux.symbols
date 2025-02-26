@@ -1685,32 +1685,32 @@ libzpool.so.6 libzpool6linux #MINVER#
  random_get_pseudo_bytes@Base 0.8.2
  random_init@Base 0.8.2
  random_path@Base 0.8.2
- range_tree_add@Base 0.8.2
- range_tree_adjust_fill@Base 0.8.2
- range_tree_clear@Base 0.8.2
- range_tree_contains@Base 0.8.2
- range_tree_create@Base 0.8.2
- range_tree_create_gap@Base 2.1.6
- range_tree_destroy@Base 0.8.2
- range_tree_find@Base 0.8.2
- range_tree_find_in@Base 2.0
- range_tree_first@Base 0.8.2
- range_tree_is_empty@Base 0.8.2
- range_tree_max@Base 0.8.2
- range_tree_min@Base 0.8.2
- range_tree_numsegs@Base 2.0
- range_tree_remove@Base 0.8.2
- range_tree_remove_fill@Base 0.8.2
- range_tree_remove_xor_add@Base 2.0
- range_tree_remove_xor_add_segment@Base 2.0
- range_tree_resize_segment@Base 0.8.2
- range_tree_space@Base 0.8.2
- range_tree_span@Base 0.8.2
- range_tree_stat_verify@Base 0.8.2
- range_tree_swap@Base 0.8.2
- range_tree_vacate@Base 0.8.2
- range_tree_verify_not_present@Base 0.8.2
- range_tree_walk@Base 0.8.2
+ zfs_range_tree_add@Base 0.8.2
+ zfs_range_tree_adjust_fill@Base 0.8.2
+ zfs_range_tree_clear@Base 0.8.2
+ zfs_range_tree_contains@Base 0.8.2
+ zfs_range_tree_create@Base 0.8.2
+ zfs_range_tree_create_gap@Base 2.1.6
+ zfs_range_tree_destroy@Base 0.8.2
+ zfs_range_tree_find@Base 0.8.2
+ zfs_range_tree_find_in@Base 2.0
+ zfs_range_tree_first@Base 0.8.2
+ zfs_range_tree_is_empty@Base 0.8.2
+ zfs_range_tree_max@Base 0.8.2
+ zfs_range_tree_min@Base 0.8.2
+ zfs_range_tree_numsegs@Base 2.0
+ zfs_range_tree_remove@Base 0.8.2
+ zfs_range_tree_remove_fill@Base 0.8.2
+ zfs_range_tree_remove_xor_add@Base 2.0
+ zfs_range_tree_remove_xor_add_segment@Base 2.0
+ zfs_range_tree_resize_segment@Base 0.8.2
+ zfs_range_tree_space@Base 0.8.2
+ zfs_range_tree_span@Base 0.8.2
+ zfs_range_tree_stat_verify@Base 0.8.2
+ zfs_range_tree_swap@Base 0.8.2
+ zfs_range_tree_vacate@Base 0.8.2
+ zfs_range_tree_verify_not_present@Base 0.8.2
+ zfs_range_tree_walk@Base 0.8.2
  recv_clone_name@Base 0.8.2
  reference_tracking_enable@Base 0.8.2
  (arch=amd64)rijndael_key_setup_dec_amd64@Base 0.8.2
