@@ -1,15 +1,14 @@
 From d4a5a7e3aac9a088016de071ced14a925e3f6f29 Mon Sep 17 00:00:00 2001
 From: Ivan Volosyuk <Ivan.Volosyuk@gmail.com>
 Date: Thu, 30 Jan 2025 21:26:49 +1100
-Subject: [PATCH] Linux 6.12 compat: Rename range_tree_* to zfs_range_tree_*
+Subject: [PATCH 31/53] Linux 6.12 compat: Rename range_tree_* to
+ zfs_range_tree_*
 
 Linux 6.12 has conflicting range_tree_{find,destroy,clear} symbols.
 
 Signed-off-by: Ivan Volosyuk <Ivan.Volosyuk@gmail.com>
 Reviewed-by: Tony Hutter <hutter2@llnl.gov>
 Reviewed-by: Rob Norris <robn@despairlabs.com>
-Bug: https://github.com/openzfs/zfs/pull/17010
-Applied-Upstream: master
 ---
  cmd/zdb/zdb.c                 | 102 ++++----
  include/sys/dnode.h           |   2 +-
@@ -42,9 +41,11 @@ Applied-Upstream: master
  module/zfs/vdev_trim.c        |  83 +++---
  29 files changed, 994 insertions(+), 934 deletions(-)
 
+diff --git a/cmd/zdb/zdb.c b/cmd/zdb/zdb.c
+index aba99fabb..dd521257c 100644
 --- a/cmd/zdb/zdb.c
 +++ b/cmd/zdb/zdb.c
-@@ -122,7 +122,7 @@
+@@ -122,7 +122,7 @@ static int flagbits[256];
  
  static uint64_t max_inflight_bytes = 256 * 1024 * 1024; /* 256MB */
  static int leaked_objects = 0;
@@ -53,7 +54,7 @@ Applied-Upstream: master
  static spa_t *spa;
  static objset_t *os;
  static boolean_t kernel_init_done;
-@@ -325,7 +325,7 @@
+@@ -325,7 +325,7 @@ typedef struct metaslab_verify {
  	/*
  	 * What's currently allocated for this metaslab.
  	 */
@@ -62,7 +63,7 @@ Applied-Upstream: master
  } metaslab_verify_t;
  
  typedef void ll_iter_t(dsl_deadlist_t *ll, void *arg);
-@@ -417,7 +417,7 @@
+@@ -417,7 +417,7 @@ metaslab_spacemap_validation_cb(space_map_entry_t *sme, void *arg)
  	uint64_t txg = sme->sme_txg;
  
  	if (sme->sme_type == SM_ALLOC) {
@@ -71,7 +72,7 @@ Applied-Upstream: master
  		    offset, size)) {
  			(void) printf("ERROR: DOUBLE ALLOC: "
  			    "%llu [%llx:%llx] "
-@@ -426,11 +426,11 @@
+@@ -426,11 +426,11 @@ metaslab_spacemap_validation_cb(space_map_entry_t *sme, void *arg)
  			    (u_longlong_t)size, (u_longlong_t)mv->mv_vdid,
  			    (u_longlong_t)mv->mv_msid);
  		} else {
@@ -85,7 +86,7 @@ Applied-Upstream: master
  		    offset, size)) {
  			(void) printf("ERROR: DOUBLE FREE: "
  			    "%llu [%llx:%llx] "
-@@ -439,7 +439,7 @@
+@@ -439,7 +439,7 @@ metaslab_spacemap_validation_cb(space_map_entry_t *sme, void *arg)
  			    (u_longlong_t)size, (u_longlong_t)mv->mv_vdid,
  			    (u_longlong_t)mv->mv_msid);
  		} else {
@@ -94,7 +95,7 @@ Applied-Upstream: master
  			    offset, size);
  		}
  	}
-@@ -614,11 +614,11 @@
+@@ -614,11 +614,11 @@ livelist_metaslab_validate(spa_t *spa)
  			    (longlong_t)vd->vdev_ms_count);
  
  			uint64_t shift, start;
@@ -108,7 +109,7 @@ Applied-Upstream: master
  			    type, NULL, start, shift);
  			mv.mv_vdid = vd->vdev_id;
  			mv.mv_msid = m->ms_id;
-@@ -633,8 +633,8 @@
+@@ -633,8 +633,8 @@ livelist_metaslab_validate(spa_t *spa)
  			spacemap_check_ms_sm(m->ms_sm, &mv);
  			spacemap_check_sm_log(spa, &mv);
  
@@ -119,7 +120,7 @@ Applied-Upstream: master
  			zfs_btree_clear(&mv.mv_livelist_allocs);
  			zfs_btree_destroy(&mv.mv_livelist_allocs);
  		}
-@@ -1633,9 +1633,9 @@
+@@ -1633,9 +1633,9 @@ static void
  dump_metaslab_stats(metaslab_t *msp)
  {
  	char maxbuf[32];
@@ -131,7 +132,7 @@ Applied-Upstream: master
  
  	/* max sure nicenum has enough space */
  	_Static_assert(sizeof (maxbuf) >= NN_NUMBUF_SZ, "maxbuf truncated");
-@@ -1668,7 +1668,7 @@
+@@ -1668,7 +1668,7 @@ dump_metaslab(metaslab_t *msp)
  	if (dump_opt['m'] > 2 && !dump_opt['L']) {
  		mutex_enter(&msp->ms_lock);
  		VERIFY0(metaslab_load(msp));
@@ -140,7 +141,7 @@ Applied-Upstream: master
  		dump_metaslab_stats(msp);
  		metaslab_unload(msp);
  		mutex_exit(&msp->ms_lock);
-@@ -2292,12 +2292,12 @@
+@@ -2292,12 +2292,12 @@ dump_dtl(vdev_t *vd, int indent)
  	    required ? "DTL-required" : "DTL-expendable");
  
  	for (int t = 0; t < DTL_TYPES; t++) {
@@ -156,7 +157,7 @@ Applied-Upstream: master
  		if (dump_opt['d'] > 5 && vd->vdev_children == 0)
  			dump_spacemap(spa->spa_meta_objset,
  			    vd->vdev_dtl_sm);
-@@ -6258,9 +6258,9 @@
+@@ -6258,9 +6258,9 @@ load_unflushed_svr_segs_cb(spa_t *spa, space_map_entry_t *sme,
  		return (0);
  
  	if (sme->sme_type == SM_ALLOC)
@@ -168,7 +169,7 @@ Applied-Upstream: master
  
  	return (0);
  }
-@@ -6314,18 +6314,20 @@
+@@ -6314,18 +6314,20 @@ zdb_claim_removing(spa_t *spa, zdb_cb_t *zcb)
  	vdev_t *vd = vdev_lookup_top(spa, svr->svr_vdev_id);
  	vdev_indirect_mapping_t *vim = vd->vdev_indirect_mapping;
  
@@ -194,7 +195,7 @@ Applied-Upstream: master
  
  	iterate_through_spacemap_logs(spa, load_unflushed_svr_segs_cb, svr);
  
-@@ -6334,12 +6336,12 @@
+@@ -6334,12 +6336,12 @@ zdb_claim_removing(spa_t *spa, zdb_cb_t *zcb)
  	 * because we have not allocated mappings for
  	 * it yet.
  	 */
@@ -210,7 +211,7 @@ Applied-Upstream: master
  
  	spa_config_exit(spa, SCL_CONFIG, FTAG);
  }
-@@ -6442,7 +6444,8 @@
+@@ -6442,7 +6444,8 @@ checkpoint_sm_exclude_entry_cb(space_map_entry_t *sme, void *arg)
  	 * also verify that the entry is there to begin with.
  	 */
  	mutex_enter(&ms->ms_lock);
@@ -220,7 +221,7 @@ Applied-Upstream: master
  	mutex_exit(&ms->ms_lock);
  
  	cseea->cseea_checkpoint_size += sme->sme_run;
-@@ -6573,9 +6576,9 @@
+@@ -6573,9 +6576,9 @@ load_unflushed_cb(spa_t *spa, space_map_entry_t *sme, uint64_t txg, void *arg)
  		return (0);
  
  	if (*uic_maptype == sme->sme_type)
@@ -232,7 +233,7 @@ Applied-Upstream: master
  
  	return (0);
  }
-@@ -6609,7 +6612,7 @@
+@@ -6609,7 +6612,7 @@ load_concrete_ms_allocatable_trees(spa_t *spa, maptype_t maptype)
  			    (longlong_t)vd->vdev_ms_count);
  
  			mutex_enter(&msp->ms_lock);
@@ -241,7 +242,7 @@ Applied-Upstream: master
  
  			/*
  			 * We don't want to spend the CPU manipulating the
-@@ -6642,7 +6645,7 @@
+@@ -6642,7 +6645,7 @@ load_indirect_ms_allocatable_tree(vdev_t *vd, metaslab_t *msp,
  	vdev_indirect_mapping_t *vim = vd->vdev_indirect_mapping;
  
  	mutex_enter(&msp->ms_lock);
@@ -250,7 +251,7 @@ Applied-Upstream: master
  
  	/*
  	 * We don't want to spend the CPU manipulating the
-@@ -6666,7 +6669,7 @@
+@@ -6666,7 +6669,7 @@ load_indirect_ms_allocatable_tree(vdev_t *vd, metaslab_t *msp,
  		 */
  		ASSERT3U(ent_offset + ent_len, <=,
  		    msp->ms_start + msp->ms_size);
@@ -259,7 +260,7 @@ Applied-Upstream: master
  	}
  
  	if (!msp->ms_loaded)
-@@ -6812,7 +6815,7 @@
+@@ -6812,7 +6815,7 @@ zdb_check_for_obsolete_leaks(vdev_t *vd, zdb_cb_t *zcb)
  		for (uint64_t inner_offset = 0;
  		    inner_offset < DVA_GET_ASIZE(&vimep->vimep_dst);
  		    inner_offset += 1ULL << vd->vdev_ashift) {
@@ -268,7 +269,7 @@ Applied-Upstream: master
  			    offset + inner_offset, 1ULL << vd->vdev_ashift)) {
  				obsolete_bytes += 1ULL << vd->vdev_ashift;
  			}
-@@ -6895,10 +6898,10 @@
+@@ -6895,10 +6898,10 @@ zdb_leak_fini(spa_t *spa, zdb_cb_t *zcb)
  			 * not referenced, which is not a bug.
  			 */
  			if (vd->vdev_ops == &vdev_indirect_ops) {
@@ -281,7 +282,7 @@ Applied-Upstream: master
  				    zdb_leak, vd);
  			}
  			if (msp->ms_loaded) {
-@@ -7796,7 +7799,7 @@
+@@ -7796,7 +7799,7 @@ verify_checkpoint_sm_entry_cb(space_map_entry_t *sme, void *arg)
  	 * their respective ms_allocateable trees should not contain them.
  	 */
  	mutex_enter(&ms->ms_lock);
@@ -290,7 +291,7 @@ Applied-Upstream: master
  	    sme->sme_offset, sme->sme_run);
  	mutex_exit(&ms->ms_lock);
  
-@@ -7947,8 +7950,9 @@
+@@ -7947,8 +7950,9 @@ verify_checkpoint_ms_spacemaps(spa_t *checkpoint, spa_t *current)
  			 * This way we ensure that none of the blocks that
  			 * are part of the checkpoint were freed by mistake.
  			 */
@@ -302,7 +303,7 @@ Applied-Upstream: master
  			    current_msp->ms_allocatable);
  		}
  	}
-@@ -8088,7 +8092,7 @@
+@@ -8088,7 +8092,7 @@ static void
  mos_obj_refd(uint64_t obj)
  {
  	if (obj != 0 && mos_refd_objs != NULL)
@@ -311,7 +312,7 @@ Applied-Upstream: master
  }
  
  /*
-@@ -8098,8 +8102,8 @@
+@@ -8098,8 +8102,8 @@ static void
  mos_obj_refd_multiple(uint64_t obj)
  {
  	if (obj != 0 && mos_refd_objs != NULL &&
@@ -322,7 +323,7 @@ Applied-Upstream: master
  }
  
  static void
-@@ -8296,8 +8300,8 @@
+@@ -8296,8 +8300,8 @@ dump_mos_leaks(spa_t *spa)
  	 */
  	uint64_t object = 0;
  	while (dmu_object_next(mos, &object, B_FALSE, 0) == 0) {
@@ -333,7 +334,7 @@ Applied-Upstream: master
  		} else {
  			dmu_object_info_t doi;
  			const char *name;
-@@ -8315,11 +8319,11 @@
+@@ -8315,11 +8319,11 @@ dump_mos_leaks(spa_t *spa)
  			rv = 2;
  		}
  	}
@@ -349,7 +350,7 @@ Applied-Upstream: master
  	return (rv);
  }
  
-@@ -8441,8 +8445,8 @@
+@@ -8441,8 +8445,8 @@ dump_zpool(spa_t *spa)
  
  	if (dump_opt['d'] || dump_opt['i']) {
  		spa_feature_t f;
@@ -360,9 +361,11 @@ Applied-Upstream: master
  		dump_objset(dp->dp_meta_objset);
  
  		if (dump_opt['d'] >= 3) {
+diff --git a/include/sys/dnode.h b/include/sys/dnode.h
+index 5d0f0fb26..b6d3e2c91 100644
 --- a/include/sys/dnode.h
 +++ b/include/sys/dnode.h
-@@ -335,7 +335,7 @@
+@@ -335,7 +335,7 @@ struct dnode {
  	/* protected by dn_mtx: */
  	kmutex_t dn_mtx;
  	list_t dn_dirty_records[TXG_SIZE];
@@ -371,9 +374,11 @@ Applied-Upstream: master
  	uint64_t dn_allocated_txg;
  	uint64_t dn_free_txg;
  	uint64_t dn_assigned_txg;
+diff --git a/include/sys/metaslab.h b/include/sys/metaslab.h
+index 815b5d0c9..0171cd0fe 100644
 --- a/include/sys/metaslab.h
 +++ b/include/sys/metaslab.h
-@@ -139,7 +139,7 @@
+@@ -139,7 +139,7 @@ void metaslab_set_selected_txg(metaslab_t *, uint64_t);
  
  extern int metaslab_debug_load;
  
@@ -382,9 +387,11 @@ Applied-Upstream: master
      metaslab_t *msp, uint64_t *start, uint64_t *shift);
  
  #ifdef	__cplusplus
+diff --git a/include/sys/metaslab_impl.h b/include/sys/metaslab_impl.h
+index 4f434291d..eae543731 100644
 --- a/include/sys/metaslab_impl.h
 +++ b/include/sys/metaslab_impl.h
-@@ -398,8 +398,8 @@
+@@ -398,8 +398,8 @@ struct metaslab {
  	uint64_t	ms_size;
  	uint64_t	ms_fragmentation;
  
@@ -395,7 +402,7 @@ Applied-Upstream: master
  	uint64_t	ms_allocated_this_txg;
  	uint64_t	ms_allocating_total;
  
-@@ -408,10 +408,12 @@
+@@ -408,10 +408,12 @@ struct metaslab {
  	 * ms_free*tree only have entries while syncing, and are empty
  	 * between syncs.
  	 */
@@ -412,7 +419,7 @@ Applied-Upstream: master
  
  	/*
  	 * The ms_trim tree is the set of allocatable segments which are
-@@ -421,7 +423,7 @@
+@@ -421,7 +423,7 @@ struct metaslab {
  	 * is unloaded.  Its purpose is to aggregate freed ranges to
  	 * facilitate efficient trimming.
  	 */
@@ -421,7 +428,7 @@ Applied-Upstream: master
  
  	boolean_t	ms_condensing;	/* condensing? */
  	boolean_t	ms_condense_wanted;
-@@ -542,8 +544,8 @@
+@@ -542,8 +544,8 @@ struct metaslab {
  	 * Allocs and frees that are committed to the vdev log spacemap but
  	 * not yet to this metaslab's spacemap.
  	 */
@@ -432,9 +439,11 @@ Applied-Upstream: master
  
  	/*
  	 * We have flushed entries up to but not including this TXG. In
+diff --git a/include/sys/range_tree.h b/include/sys/range_tree.h
+index d6f60e795..4b0a3f2bf 100644
 --- a/include/sys/range_tree.h
 +++ b/include/sys/range_tree.h
-@@ -39,23 +39,23 @@
+@@ -39,23 +39,23 @@ extern "C" {
  
  #define	RANGE_TREE_HISTOGRAM_SIZE	64
  
@@ -467,7 +476,7 @@ Applied-Upstream: master
  	/*
  	 * All data that is stored in the range tree must have a start higher
  	 * than or equal to rt_start, and all sizes and offsets must be
-@@ -63,7 +63,7 @@
+@@ -63,7 +63,7 @@ typedef struct range_tree {
  	 */
  	uint8_t		rt_shift;
  	uint64_t	rt_start;
@@ -476,7 +485,7 @@ Applied-Upstream: master
  	void		*rt_arg;
  	uint64_t	rt_gap;		/* allowable inter-segment gap */
  
-@@ -73,7 +73,7 @@
+@@ -73,7 +73,7 @@ typedef struct range_tree {
  	 * 2^i <= size of range in bytes < 2^(i+1)
  	 */
  	uint64_t	rt_histogram[RANGE_TREE_HISTOGRAM_SIZE];
@@ -485,19 +494,20 @@ Applied-Upstream: master
  
  typedef struct range_seg32 {
  	uint32_t	rs_start;	/* starting offset of this segment */
-@@ -106,26 +106,26 @@
+@@ -106,26 +106,26 @@ typedef range_seg_gap_t range_seg_max_t;
   * pointer is to a range seg of some type; when we need to do the actual math,
   * we'll figure out the real type.
   */
 -typedef void range_seg_t;
-+typedef void zfs_range_seg_t;
- 
+-
 -struct range_tree_ops {
 -	void    (*rtop_create)(range_tree_t *rt, void *arg);
 -	void    (*rtop_destroy)(range_tree_t *rt, void *arg);
 -	void	(*rtop_add)(range_tree_t *rt, void *rs, void *arg);
 -	void    (*rtop_remove)(range_tree_t *rt, void *rs, void *arg);
 -	void	(*rtop_vacate)(range_tree_t *rt, void *arg);
++typedef void zfs_range_seg_t;
++
 +struct zfs_range_tree_ops {
 +	void    (*rtop_create)(zfs_range_tree_t *rt, void *arg);
 +	void    (*rtop_destroy)(zfs_range_tree_t *rt, void *arg);
@@ -524,7 +534,7 @@ Applied-Upstream: master
  		return (((const range_seg_gap_t *)rs)->rs_start);
  	default:
  		VERIFY(0);
-@@ -134,15 +134,15 @@
+@@ -134,15 +134,15 @@ rs_get_start_raw(const range_seg_t *rs, const range_tree_t *rt)
  }
  
  static inline uint64_t
@@ -545,7 +555,7 @@ Applied-Upstream: master
  		return (((const range_seg_gap_t *)rs)->rs_end);
  	default:
  		VERIFY(0);
-@@ -151,19 +151,19 @@
+@@ -151,19 +151,19 @@ rs_get_end_raw(const range_seg_t *rs, const range_tree_t *rt)
  }
  
  static inline uint64_t
@@ -570,7 +580,7 @@ Applied-Upstream: master
  		return (((const range_seg_gap_t *)rs)->rs_fill);
  	default:
  		VERIFY(0);
-@@ -173,36 +173,36 @@
+@@ -173,36 +173,36 @@ rs_get_fill_raw(const range_seg_t *rs, const range_tree_t *rt)
  }
  
  static inline uint64_t
@@ -618,7 +628,7 @@ Applied-Upstream: master
  		((range_seg_gap_t *)rs)->rs_start = start;
  		break;
  	default:
-@@ -211,18 +211,18 @@
+@@ -211,18 +211,18 @@ rs_set_start_raw(range_seg_t *rs, range_tree_t *rt, uint64_t start)
  }
  
  static inline void
@@ -642,7 +652,7 @@ Applied-Upstream: master
  		((range_seg_gap_t *)rs)->rs_end = end;
  		break;
  	default:
-@@ -231,17 +231,18 @@
+@@ -231,17 +231,18 @@ rs_set_end_raw(range_seg_t *rs, range_tree_t *rt, uint64_t end)
  }
  
  static inline void
@@ -668,7 +678,7 @@ Applied-Upstream: master
  		((range_seg_gap_t *)rs)->rs_fill = fill;
  		break;
  	default:
-@@ -250,67 +251,73 @@
+@@ -250,67 +251,73 @@ rs_set_fill_raw(range_seg_t *rs, range_tree_t *rt, uint64_t fill)
  }
  
  static inline void
@@ -783,9 +793,11 @@ Applied-Upstream: master
  
  #ifdef	__cplusplus
  }
+diff --git a/include/sys/space_map.h b/include/sys/space_map.h
+index 14c5becce..2861b25e4 100644
 --- a/include/sys/space_map.h
 +++ b/include/sys/space_map.h
-@@ -207,28 +207,28 @@
+@@ -207,28 +207,28 @@ boolean_t sm_entry_is_double_word(uint64_t e);
  
  typedef int (*sm_cb_t)(space_map_entry_t *sme, void *arg);
  
@@ -822,9 +834,11 @@ Applied-Upstream: master
      uint64_t vdev_id);
  void space_map_truncate(space_map_t *sm, int blocksize, dmu_tx_t *tx);
  uint64_t space_map_alloc(objset_t *os, int blocksize, dmu_tx_t *tx);
+diff --git a/include/sys/space_reftree.h b/include/sys/space_reftree.h
+index b7a846aec..e9a44ecf4 100644
 --- a/include/sys/space_reftree.h
 +++ b/include/sys/space_reftree.h
-@@ -46,8 +46,8 @@
+@@ -46,8 +46,8 @@ void space_reftree_create(avl_tree_t *t);
  void space_reftree_destroy(avl_tree_t *t);
  void space_reftree_add_seg(avl_tree_t *t, uint64_t start, uint64_t end,
      int64_t refcnt);
@@ -835,9 +849,11 @@ Applied-Upstream: master
      int64_t minref);
  
  #ifdef	__cplusplus
+diff --git a/include/sys/vdev_impl.h b/include/sys/vdev_impl.h
+index d45a5913d..6840ee789 100644
 --- a/include/sys/vdev_impl.h
 +++ b/include/sys/vdev_impl.h
-@@ -299,7 +299,8 @@
+@@ -299,7 +299,8 @@ struct vdev {
  	kcondvar_t	vdev_initialize_cv;
  	uint64_t	vdev_initialize_offset[TXG_SIZE];
  	uint64_t	vdev_initialize_last_offset;
@@ -847,7 +863,7 @@ Applied-Upstream: master
  	uint64_t	vdev_initialize_bytes_est;
  	uint64_t	vdev_initialize_bytes_done;
  	uint64_t	vdev_initialize_action_time;	/* start and end time */
-@@ -375,7 +376,7 @@
+@@ -375,7 +376,7 @@ struct vdev {
  	 * from multiple zio threads.
  	 */
  	kmutex_t	vdev_obsolete_lock;
@@ -856,7 +872,7 @@ Applied-Upstream: master
  	space_map_t	*vdev_obsolete_sm;
  
  	/*
-@@ -388,7 +389,7 @@
+@@ -388,7 +389,7 @@ struct vdev {
  	/*
  	 * Leaf vdev state.
  	 */
@@ -865,9 +881,11 @@ Applied-Upstream: master
  	space_map_t	*vdev_dtl_sm;	/* dirty time log space map	*/
  	txg_node_t	vdev_dtl_node;	/* per-txg dirty DTL linkage	*/
  	uint64_t	vdev_dtl_object; /* DTL object			*/
+diff --git a/include/sys/vdev_rebuild.h b/include/sys/vdev_rebuild.h
+index 55ec6c570..b7664a822 100644
 --- a/include/sys/vdev_rebuild.h
 +++ b/include/sys/vdev_rebuild.h
-@@ -65,7 +65,8 @@
+@@ -65,7 +65,8 @@ typedef struct vdev_rebuild_phys {
  typedef struct vdev_rebuild {
  	vdev_t		*vr_top_vdev;		/* top-level vdev to rebuild */
  	metaslab_t	*vr_scan_msp;		/* scanning disabled metaslab */
@@ -877,9 +895,11 @@ Applied-Upstream: master
  	kmutex_t	vr_io_lock;		/* inflight IO lock */
  	kcondvar_t	vr_io_cv;		/* inflight IO cv */
  
+diff --git a/include/sys/vdev_removal.h b/include/sys/vdev_removal.h
+index 70b743f4e..8e6005a94 100644
 --- a/include/sys/vdev_removal.h
 +++ b/include/sys/vdev_removal.h
-@@ -35,7 +35,7 @@
+@@ -35,7 +35,7 @@ typedef struct spa_vdev_removal {
  	/* Thread performing a vdev removal. */
  	kthread_t	*svr_thread;
  	/* Segments left to copy from the current metaslab. */
@@ -888,7 +908,7 @@ Applied-Upstream: master
  	kmutex_t	svr_lock;
  	kcondvar_t	svr_cv;
  	boolean_t	svr_thread_exit;
-@@ -49,7 +49,7 @@
+@@ -49,7 +49,7 @@ typedef struct spa_vdev_removal {
  	 * Ranges that were freed while a mapping was in flight.  This is
  	 * a subset of the ranges covered by vdev_im_new_segments.
  	 */
@@ -897,9 +917,11 @@ Applied-Upstream: master
  
  	/*
  	 * Number of bytes which we have finished our work for
+diff --git a/module/zfs/dbuf.c b/module/zfs/dbuf.c
+index 90395cad6..5212751f9 100644
 --- a/module/zfs/dbuf.c
 +++ b/module/zfs/dbuf.c
-@@ -2193,7 +2193,7 @@
+@@ -2193,7 +2193,7 @@ dbuf_dirty_lightweight(dnode_t *dn, uint64_t blkid, dmu_tx_t *tx)
  	mutex_enter(&dn->dn_mtx);
  	int txgoff = tx->tx_txg & TXG_MASK;
  	if (dn->dn_free_ranges[txgoff] != NULL) {
@@ -908,7 +930,7 @@ Applied-Upstream: master
  	}
  
  	if (dn->dn_nlevels == 1) {
-@@ -2400,7 +2400,7 @@
+@@ -2400,7 +2400,7 @@ dbuf_dirty(dmu_buf_impl_t *db, dmu_tx_t *tx)
  	    db->db_blkid != DMU_SPILL_BLKID) {
  		mutex_enter(&dn->dn_mtx);
  		if (dn->dn_free_ranges[txgoff] != NULL) {
@@ -917,9 +939,11 @@ Applied-Upstream: master
  			    db->db_blkid, 1);
  		}
  		mutex_exit(&dn->dn_mtx);
+diff --git a/module/zfs/dnode.c b/module/zfs/dnode.c
+index ecc6761f8..ce2c79dbf 100644
 --- a/module/zfs/dnode.c
 +++ b/module/zfs/dnode.c
-@@ -2435,11 +2435,11 @@
+@@ -2435,11 +2435,11 @@ done:
  	{
  		int txgoff = tx->tx_txg & TXG_MASK;
  		if (dn->dn_free_ranges[txgoff] == NULL) {
@@ -935,7 +959,7 @@ Applied-Upstream: master
  	}
  	dprintf_dnode(dn, "blkid=%llu nblks=%llu txg=%llu\n",
  	    (u_longlong_t)blkid, (u_longlong_t)nblks,
-@@ -2482,7 +2482,7 @@
+@@ -2482,7 +2482,7 @@ dnode_block_freed(dnode_t *dn, uint64_t blkid)
  	mutex_enter(&dn->dn_mtx);
  	for (i = 0; i < TXG_SIZE; i++) {
  		if (dn->dn_free_ranges[i] != NULL &&
@@ -944,9 +968,11 @@ Applied-Upstream: master
  			break;
  	}
  	mutex_exit(&dn->dn_mtx);
+diff --git a/module/zfs/dnode_sync.c b/module/zfs/dnode_sync.c
+index 122d7d0d1..c82f45145 100644
 --- a/module/zfs/dnode_sync.c
 +++ b/module/zfs/dnode_sync.c
-@@ -720,7 +720,7 @@
+@@ -720,7 +720,7 @@ dnode_sync(dnode_t *dn, dmu_tx_t *tx)
  		    dn->dn_maxblkid == 0 || list_head(list) != NULL ||
  		    dn->dn_next_blksz[txgoff] >> SPA_MINBLOCKSHIFT ==
  		    dnp->dn_datablkszsec ||
@@ -955,7 +981,7 @@ Applied-Upstream: master
  		dnp->dn_datablkszsec =
  		    dn->dn_next_blksz[txgoff] >> SPA_MINBLOCKSHIFT;
  		dn->dn_next_blksz[txgoff] = 0;
-@@ -786,21 +786,22 @@
+@@ -786,21 +786,22 @@ dnode_sync(dnode_t *dn, dmu_tx_t *tx)
  		dsfra.dsfra_free_indirects = freeing_dnode;
  		mutex_enter(&dn->dn_mtx);
  		if (freeing_dnode) {
@@ -988,9 +1014,11 @@ Applied-Upstream: master
  		dn->dn_free_ranges[txgoff] = NULL;
  		mutex_exit(&dn->dn_mtx);
  	}
+diff --git a/module/zfs/dsl_pool.c b/module/zfs/dsl_pool.c
+index 39f97d754..b98ff6919 100644
 --- a/module/zfs/dsl_pool.c
 +++ b/module/zfs/dsl_pool.c
-@@ -652,8 +652,8 @@
+@@ -660,8 +660,8 @@ dsl_early_sync_task_verify(dsl_pool_t *dp, uint64_t txg)
  
  		for (ms = txg_list_head(tl, TXG_CLEAN(txg)); ms;
  		    ms = txg_list_next(tl, ms, TXG_CLEAN(txg))) {
@@ -1001,9 +1029,11 @@ Applied-Upstream: master
  		}
  	}
  
+diff --git a/module/zfs/dsl_scan.c b/module/zfs/dsl_scan.c
+index 3eba4cb35..bc5c3cb9a 100644
 --- a/module/zfs/dsl_scan.c
 +++ b/module/zfs/dsl_scan.c
-@@ -321,7 +321,7 @@
+@@ -321,7 +321,7 @@ struct dsl_scan_io_queue {
  	zio_t		*q_zio; /* scn_zio_root child for waiting on IO */
  
  	/* trees used for sorting I/Os and extents of I/Os */
@@ -1012,7 +1042,7 @@ Applied-Upstream: master
  	zfs_btree_t	q_exts_by_size;
  	avl_tree_t	q_sios_by_addr;
  	uint64_t	q_sio_memused;
-@@ -814,7 +814,8 @@
+@@ -814,7 +814,8 @@ dsl_scan_sync_state(dsl_scan_t *scn, dmu_tx_t *tx, state_sync_type_t sync_type)
  			ASSERT3P(avl_first(&q->q_sios_by_addr), ==, NULL);
  			ASSERT3P(zfs_btree_first(&q->q_exts_by_size, NULL), ==,
  			    NULL);
@@ -1022,7 +1052,7 @@ Applied-Upstream: master
  			mutex_exit(&vd->vdev_scan_io_queue_lock);
  		}
  
-@@ -3277,13 +3278,14 @@
+@@ -3277,13 +3278,14 @@ scan_io_queue_issue(dsl_scan_io_queue_t *queue, list_t *io_list)
  
  /*
   * This function removes sios from an IO queue which reside within a given
@@ -1039,7 +1069,7 @@ Applied-Upstream: master
  {
  	scan_io_t *srch_sio, *sio, *next_sio;
  	avl_index_t idx;
-@@ -3295,7 +3297,7 @@
+@@ -3295,7 +3297,7 @@ scan_io_queue_gather(dsl_scan_io_queue_t *queue, range_seg_t *rs, list_t *list)
  
  	srch_sio = sio_alloc(1);
  	srch_sio->sio_nr_dvas = 1;
@@ -1048,7 +1078,7 @@ Applied-Upstream: master
  
  	/*
  	 * The exact start of the extent might not contain any matching zios,
-@@ -3307,11 +3309,11 @@
+@@ -3307,11 +3309,11 @@ scan_io_queue_gather(dsl_scan_io_queue_t *queue, range_seg_t *rs, list_t *list)
  	if (sio == NULL)
  		sio = avl_nearest(&queue->q_sios_by_addr, idx, AVL_AFTER);
  
@@ -1063,7 +1093,7 @@ Applied-Upstream: master
  		    queue->q_exts_by_addr));
  
  		next_sio = AVL_NEXT(&queue->q_sios_by_addr, sio);
-@@ -3332,19 +3334,20 @@
+@@ -3332,19 +3334,20 @@ scan_io_queue_gather(dsl_scan_io_queue_t *queue, range_seg_t *rs, list_t *list)
  	 * in the segment we update it to reflect the work we were able to
  	 * complete. Otherwise, we remove it from the range tree entirely.
  	 */
@@ -1091,7 +1121,7 @@ Applied-Upstream: master
  		queue->q_last_ext_addr = -1;
  		return (B_FALSE);
  	}
-@@ -3361,11 +3364,11 @@
+@@ -3361,11 +3364,11 @@ scan_io_queue_gather(dsl_scan_io_queue_t *queue, range_seg_t *rs, list_t *list)
   * 	memory limit.
   * 3) Otherwise we don't select any extents.
   */
@@ -1105,7 +1135,7 @@ Applied-Upstream: master
  
  	ASSERT(MUTEX_HELD(&queue->q_vd->vdev_scan_io_queue_lock));
  	ASSERT(scn->scn_is_sorted);
-@@ -3384,7 +3387,7 @@
+@@ -3384,7 +3387,7 @@ scan_io_queue_fetch_ext(dsl_scan_io_queue_t *queue)
  	 */
  	if ((zfs_scan_issue_strategy < 1 && scn->scn_checkpointing) ||
  	    zfs_scan_issue_strategy == 1)
@@ -1114,7 +1144,7 @@ Applied-Upstream: master
  
  	/*
  	 * Try to continue previous extent if it is not completed yet.  After
-@@ -3393,10 +3396,10 @@
+@@ -3393,10 +3396,10 @@ scan_io_queue_fetch_ext(dsl_scan_io_queue_t *queue)
  	 */
  	uint64_t start;
  	uint64_t size = 1ULL << rt->rt_shift;
@@ -1127,7 +1157,7 @@ Applied-Upstream: master
  		if (addr_rs != NULL)
  			return (addr_rs);
  	}
-@@ -3413,10 +3416,10 @@
+@@ -3413,10 +3416,10 @@ scan_io_queue_fetch_ext(dsl_scan_io_queue_t *queue)
  	 * We need to get the original entry in the by_addr tree so we can
  	 * modify it.
  	 */
@@ -1141,7 +1171,7 @@ Applied-Upstream: master
  	return (addr_rs);
  }
  
-@@ -3426,7 +3429,7 @@
+@@ -3426,7 +3429,7 @@ scan_io_queues_run_one(void *arg)
  	dsl_scan_io_queue_t *queue = arg;
  	kmutex_t *q_lock = &queue->q_vd->vdev_scan_io_queue_lock;
  	boolean_t suspended = B_FALSE;
@@ -1150,7 +1180,7 @@ Applied-Upstream: master
  	scan_io_t *sio;
  	zio_t *zio;
  	list_t sio_list;
-@@ -4723,7 +4726,7 @@
+@@ -4723,7 +4726,7 @@ scan_io_queue_insert_impl(dsl_scan_io_queue_t *queue, scan_io_t *sio)
  	}
  	avl_insert(&queue->q_sios_by_addr, sio, idx);
  	queue->q_sio_memused += SIO_GET_MUSED(sio);
@@ -1159,7 +1189,7 @@ Applied-Upstream: master
  	    SIO_GET_ASIZE(sio));
  }
  
-@@ -4983,7 +4986,7 @@
+@@ -4983,7 +4986,7 @@ ZFS_BTREE_FIND_IN_BUF_FUNC(ext_size_find_in_buf, uint64_t,
      ext_size_compare)
  
  static void
@@ -1168,7 +1198,7 @@ Applied-Upstream: master
  {
  	(void) rt;
  	zfs_btree_t *size_tree = arg;
-@@ -4993,7 +4996,7 @@
+@@ -4993,7 +4996,7 @@ ext_size_create(range_tree_t *rt, void *arg)
  }
  
  static void
@@ -1177,7 +1207,7 @@ Applied-Upstream: master
  {
  	(void) rt;
  	zfs_btree_t *size_tree = arg;
-@@ -5003,7 +5006,7 @@
+@@ -5003,7 +5006,7 @@ ext_size_destroy(range_tree_t *rt, void *arg)
  }
  
  static uint64_t
@@ -1186,7 +1216,7 @@ Applied-Upstream: master
  {
  	(void) rt;
  	uint64_t size = rsg->rs_end - rsg->rs_start;
-@@ -5014,25 +5017,25 @@
+@@ -5014,25 +5017,25 @@ ext_size_value(range_tree_t *rt, range_seg_gap_t *rsg)
  }
  
  static void
@@ -1217,7 +1247,7 @@ Applied-Upstream: master
  {
  	zfs_btree_t *size_tree = arg;
  	zfs_btree_clear(size_tree);
-@@ -5041,7 +5044,7 @@
+@@ -5041,7 +5044,7 @@ ext_size_vacate(range_tree_t *rt, void *arg)
  	ext_size_create(rt, arg);
  }
  
@@ -1226,7 +1256,7 @@ Applied-Upstream: master
  	.rtop_create = ext_size_create,
  	.rtop_destroy = ext_size_destroy,
  	.rtop_add = ext_size_add,
-@@ -5073,8 +5076,9 @@
+@@ -5073,8 +5076,9 @@ scan_io_queue_create(vdev_t *vd)
  	q->q_sio_memused = 0;
  	q->q_last_ext_addr = -1;
  	cv_init(&q->q_zio_cv, NULL, CV_DEFAULT, NULL);
@@ -1238,7 +1268,7 @@ Applied-Upstream: master
  	avl_create(&q->q_sios_by_addr, sio_addr_compare,
  	    sizeof (scan_io_t), offsetof(scan_io_t, sio_nodes.sio_addr_node));
  
-@@ -5099,15 +5103,15 @@
+@@ -5099,15 +5103,15 @@ dsl_scan_io_queue_destroy(dsl_scan_io_queue_t *queue)
  		atomic_add_64(&scn->scn_queues_pending, -1);
  	while ((sio = avl_destroy_nodes(&queue->q_sios_by_addr, &cookie)) !=
  	    NULL) {
@@ -1257,7 +1287,7 @@ Applied-Upstream: master
  	avl_destroy(&queue->q_sios_by_addr);
  	cv_destroy(&queue->q_zio_cv);
  
-@@ -5184,10 +5188,10 @@
+@@ -5184,10 +5188,10 @@ dsl_scan_freed_dva(spa_t *spa, const blkptr_t *bp, int dva_i)
  	 * 1) Cold, just sitting in the queue of zio's to be issued at
  	 *	some point in the future. In this case, all we do is
  	 *	remove the zio from the q_sios_by_addr tree, decrement
@@ -1271,7 +1301,7 @@ Applied-Upstream: master
  	 *	worth the extra hassle of trying keep track of precise
  	 *	extent boundaries.
  	 * 2) Hot, where the zio is currently in-flight in
-@@ -5211,8 +5215,9 @@
+@@ -5211,8 +5215,9 @@ dsl_scan_freed_dva(spa_t *spa, const blkptr_t *bp, int dva_i)
  			atomic_add_64(&scn->scn_queues_pending, -1);
  		queue->q_sio_memused -= SIO_GET_MUSED(sio);
  
@@ -1283,9 +1313,11 @@ Applied-Upstream: master
  
  		/* count the block as though we skipped it */
  		sio2bp(sio, &tmpbp);
+diff --git a/module/zfs/metaslab.c b/module/zfs/metaslab.c
+index 353a99605..105467988 100644
 --- a/module/zfs/metaslab.c
 +++ b/module/zfs/metaslab.c
-@@ -347,7 +347,8 @@
+@@ -347,7 +347,8 @@ static uint64_t metaslab_weight_from_range_tree(metaslab_t *msp);
  static void metaslab_flush_update(metaslab_t *, dmu_tx_t *);
  static unsigned int metaslab_idx_func(multilist_t *, void *);
  static void metaslab_evict(metaslab_t *, uint64_t);
@@ -1295,7 +1327,7 @@ Applied-Upstream: master
  kmem_cache_t *metaslab_alloc_trace_cache;
  
  typedef struct metaslab_stats {
-@@ -1379,7 +1380,7 @@
+@@ -1379,7 +1380,7 @@ typedef struct metaslab_rt_arg {
  } metaslab_rt_arg_t;
  
  struct mssa_arg {
@@ -1304,7 +1336,7 @@ Applied-Upstream: master
  	metaslab_rt_arg_t *mra;
  };
  
-@@ -1387,16 +1388,16 @@
+@@ -1387,16 +1388,16 @@ static void
  metaslab_size_sorted_add(void *arg, uint64_t start, uint64_t size)
  {
  	struct mssa_arg *mssap = arg;
@@ -1325,7 +1357,7 @@ Applied-Upstream: master
  {
  	metaslab_rt_arg_t *mrap = rt->rt_arg;
  	METASLABSTAT_BUMP(metaslabstat_reload_tree);
-@@ -1405,7 +1406,7 @@
+@@ -1405,7 +1406,7 @@ metaslab_size_tree_full_load(range_tree_t *rt)
  	struct mssa_arg arg = {0};
  	arg.rt = rt;
  	arg.mra = mrap;
@@ -1334,7 +1366,7 @@ Applied-Upstream: master
  }
  
  
-@@ -1417,10 +1418,11 @@
+@@ -1417,10 +1418,11 @@ ZFS_BTREE_FIND_IN_BUF_FUNC(metaslab_rt_find_rangesize64_in_buf,
  
  /*
   * Create any block allocator specific components. The current allocators
@@ -1348,7 +1380,7 @@ Applied-Upstream: master
  {
  	metaslab_rt_arg_t *mrap = arg;
  	zfs_btree_t *size_tree = mrap->mra_bt;
-@@ -1429,12 +1431,12 @@
+@@ -1429,12 +1431,12 @@ metaslab_rt_create(range_tree_t *rt, void *arg)
  	int (*compare) (const void *, const void *);
  	bt_find_in_buf_f bt_find;
  	switch (rt->rt_type) {
@@ -1363,7 +1395,7 @@ Applied-Upstream: master
  		size = sizeof (range_seg64_t);
  		compare = metaslab_rangesize64_compare;
  		bt_find = metaslab_rt_find_rangesize64_in_buf;
-@@ -1447,7 +1449,7 @@
+@@ -1447,7 +1449,7 @@ metaslab_rt_create(range_tree_t *rt, void *arg)
  }
  
  static void
@@ -1372,7 +1404,7 @@ Applied-Upstream: master
  {
  	(void) rt;
  	metaslab_rt_arg_t *mrap = arg;
-@@ -1458,12 +1460,12 @@
+@@ -1458,12 +1460,12 @@ metaslab_rt_destroy(range_tree_t *rt, void *arg)
  }
  
  static void
@@ -1387,7 +1419,7 @@ Applied-Upstream: master
  	    (1ULL << mrap->mra_floor_shift))
  		return;
  
-@@ -1471,12 +1473,12 @@
+@@ -1471,12 +1473,12 @@ metaslab_rt_add(range_tree_t *rt, range_seg_t *rs, void *arg)
  }
  
  static void
@@ -1402,7 +1434,7 @@ Applied-Upstream: master
  	    mrap->mra_floor_shift))
  		return;
  
-@@ -1484,7 +1486,7 @@
+@@ -1484,7 +1486,7 @@ metaslab_rt_remove(range_tree_t *rt, range_seg_t *rs, void *arg)
  }
  
  static void
@@ -1411,7 +1443,7 @@ Applied-Upstream: master
  {
  	metaslab_rt_arg_t *mrap = arg;
  	zfs_btree_t *size_tree = mrap->mra_bt;
-@@ -1494,7 +1496,7 @@
+@@ -1494,7 +1496,7 @@ metaslab_rt_vacate(range_tree_t *rt, void *arg)
  	metaslab_rt_create(rt, arg);
  }
  
@@ -1420,7 +1452,7 @@ Applied-Upstream: master
  	.rtop_create = metaslab_rt_create,
  	.rtop_destroy = metaslab_rt_destroy,
  	.rtop_add = metaslab_rt_add,
-@@ -1515,7 +1517,7 @@
+@@ -1515,7 +1517,7 @@ uint64_t
  metaslab_largest_allocatable(metaslab_t *msp)
  {
  	zfs_btree_t *t = &msp->ms_allocatable_by_size;
@@ -1429,7 +1461,7 @@ Applied-Upstream: master
  
  	if (t == NULL)
  		return (0);
-@@ -1526,7 +1528,7 @@
+@@ -1526,7 +1528,7 @@ metaslab_largest_allocatable(metaslab_t *msp)
  	if (rs == NULL)
  		return (0);
  
@@ -1438,7 +1470,7 @@ Applied-Upstream: master
  	    msp->ms_allocatable));
  }
  
-@@ -1544,7 +1546,7 @@
+@@ -1544,7 +1546,7 @@ metaslab_largest_unflushed_free(metaslab_t *msp)
  
  	if (zfs_btree_numnodes(&msp->ms_unflushed_frees_by_size) == 0)
  		metaslab_size_tree_full_load(msp->ms_unflushed_frees);
@@ -1447,7 +1479,7 @@ Applied-Upstream: master
  	    NULL);
  	if (rs == NULL)
  		return (0);
-@@ -1572,13 +1574,13 @@
+@@ -1572,13 +1574,13 @@ metaslab_largest_unflushed_free(metaslab_t *msp)
  	 * the largest segment; there may be other usable chunks in the
  	 * largest segment, but we ignore them.
  	 */
@@ -1465,7 +1497,7 @@ Applied-Upstream: master
  		if (found) {
  			if (rstart == start)
  				return (0);
-@@ -1588,7 +1590,7 @@
+@@ -1588,7 +1590,7 @@ metaslab_largest_unflushed_free(metaslab_t *msp)
  
  	uint64_t start = 0;
  	uint64_t size = 0;
@@ -1474,7 +1506,7 @@ Applied-Upstream: master
  	    rsize, &start, &size);
  	if (found)
  		rsize = start - rstart;
-@@ -1596,15 +1598,15 @@
+@@ -1596,15 +1598,15 @@ metaslab_largest_unflushed_free(metaslab_t *msp)
  	return (rsize);
  }
  
@@ -1495,7 +1527,7 @@ Applied-Upstream: master
  
  	rs = zfs_btree_find(t, &rsearch, where);
  	if (rs == NULL) {
-@@ -1620,24 +1622,25 @@
+@@ -1620,24 +1622,25 @@ metaslab_block_find(zfs_btree_t *t, range_tree_t *rt, uint64_t start,
   * for a block that matches the specified criteria.
   */
  static uint64_t
@@ -1527,7 +1559,7 @@ Applied-Upstream: master
  			*cursor = offset + size;
  			return (offset);
  		}
-@@ -1748,8 +1751,8 @@
+@@ -1748,8 +1751,8 @@ metaslab_df_alloc(metaslab_t *msp, uint64_t size)
  	 */
  	uint64_t align = size & -size;
  	uint64_t *cursor = &msp->ms_lbas[highbit64(align) - 1];
@@ -1538,7 +1570,7 @@ Applied-Upstream: master
  	uint64_t offset;
  
  	ASSERT(MUTEX_HELD(&msp->ms_lock));
-@@ -1767,7 +1770,7 @@
+@@ -1767,7 +1770,7 @@ metaslab_df_alloc(metaslab_t *msp, uint64_t size)
  	}
  
  	if (offset == -1) {
@@ -1547,7 +1579,7 @@ Applied-Upstream: master
  		if (zfs_btree_numnodes(&msp->ms_allocatable_by_size) == 0)
  			metaslab_size_tree_full_load(msp->ms_allocatable);
  
-@@ -1780,9 +1783,9 @@
+@@ -1780,9 +1783,9 @@ metaslab_df_alloc(metaslab_t *msp, uint64_t size)
  			rs = metaslab_block_find(&msp->ms_allocatable_by_size,
  			    rt, msp->ms_start, size, &where);
  		}
@@ -1560,7 +1592,7 @@ Applied-Upstream: master
  			*cursor = offset + size;
  		}
  	}
-@@ -1802,7 +1805,7 @@
+@@ -1802,7 +1805,7 @@ metaslab_df_alloc(metaslab_t *msp, uint64_t size)
  static uint64_t
  metaslab_cf_alloc(metaslab_t *msp, uint64_t size)
  {
@@ -1569,7 +1601,7 @@ Applied-Upstream: master
  	zfs_btree_t *t = &msp->ms_allocatable_by_size;
  	uint64_t *cursor = &msp->ms_lbas[0];
  	uint64_t *cursor_end = &msp->ms_lbas[1];
-@@ -1813,17 +1816,17 @@
+@@ -1813,17 +1816,17 @@ metaslab_cf_alloc(metaslab_t *msp, uint64_t size)
  	ASSERT3U(*cursor_end, >=, *cursor);
  
  	if ((*cursor + size) > *cursor_end) {
@@ -1592,7 +1624,7 @@ Applied-Upstream: master
  	}
  
  	offset = *cursor;
-@@ -1851,9 +1854,9 @@
+@@ -1851,9 +1854,9 @@ static uint64_t
  metaslab_ndf_alloc(metaslab_t *msp, uint64_t size)
  {
  	zfs_btree_t *t = &msp->ms_allocatable->rt_root;
@@ -1604,7 +1636,7 @@ Applied-Upstream: master
  	range_seg_max_t rsearch;
  	uint64_t hbit = highbit64(size);
  	uint64_t *cursor = &msp->ms_lbas[hbit - 1];
-@@ -1864,15 +1867,16 @@
+@@ -1864,15 +1867,16 @@ metaslab_ndf_alloc(metaslab_t *msp, uint64_t size)
  	if (max_size < size)
  		return (-1ULL);
  
@@ -1626,7 +1658,7 @@ Applied-Upstream: master
  		    metaslab_ndf_clump_shift)));
  
  		rs = zfs_btree_find(t, &rsearch, &where);
-@@ -1881,9 +1885,9 @@
+@@ -1881,9 +1885,9 @@ metaslab_ndf_alloc(metaslab_t *msp, uint64_t size)
  		ASSERT(rs != NULL);
  	}
  
@@ -1639,7 +1671,7 @@ Applied-Upstream: master
  	}
  	return (-1ULL);
  }
-@@ -1973,12 +1977,12 @@
+@@ -1973,12 +1977,12 @@ metaslab_verify_space(metaslab_t *msp, uint64_t txg)
  	ASSERT3S(space_map_allocated(msp->ms_sm), >=, 0);
  
  	ASSERT3U(space_map_allocated(msp->ms_sm), >=,
@@ -1655,7 +1687,7 @@ Applied-Upstream: master
  
  	sm_free_space = msp->ms_size - metaslab_allocated_space(msp);
  
-@@ -1988,17 +1992,19 @@
+@@ -1988,17 +1992,19 @@ metaslab_verify_space(metaslab_t *msp, uint64_t txg)
  	 */
  	for (int t = 0; t < TXG_CONCURRENT_STATES; t++) {
  		allocating +=
@@ -1680,7 +1712,7 @@ Applied-Upstream: master
  
  	VERIFY3U(sm_free_space, ==, msp_free_space);
  }
-@@ -2019,7 +2025,7 @@
+@@ -2019,7 +2025,7 @@ metaslab_aux_histograms_clear(metaslab_t *msp)
  
  static void
  metaslab_aux_histogram_add(uint64_t *histogram, uint64_t shift,
@@ -1689,7 +1721,7 @@ Applied-Upstream: master
  {
  	/*
  	 * This is modeled after space_map_histogram_add(), so refer to that
-@@ -2167,7 +2173,7 @@
+@@ -2167,7 +2173,7 @@ metaslab_verify_weight_and_frag(metaslab_t *msp)
  
  	/* some extra verification for in-core tree if you can */
  	if (msp->ms_loaded) {
@@ -1698,7 +1730,7 @@ Applied-Upstream: master
  		VERIFY(space_map_histogram_verify(msp->ms_sm,
  		    msp->ms_allocatable));
  	}
-@@ -2355,8 +2361,8 @@
+@@ -2355,8 +2361,8 @@ metaslab_load_impl(metaslab_t *msp)
  		struct mssa_arg arg = {0};
  		arg.rt = msp->ms_allocatable;
  		arg.mra = mrap;
@@ -1709,7 +1741,7 @@ Applied-Upstream: master
  	} else {
  		/*
  		 * Add the size-sorted tree first, since we don't need to load
-@@ -2370,7 +2376,7 @@
+@@ -2370,7 +2376,7 @@ metaslab_load_impl(metaslab_t *msp)
  		 * all the space in the metaslab as free and add it to the
  		 * ms_allocatable tree.
  		 */
@@ -1718,7 +1750,7 @@ Applied-Upstream: master
  		    msp->ms_start, msp->ms_size);
  
  		if (msp->ms_new) {
-@@ -2381,8 +2387,10 @@
+@@ -2381,8 +2387,10 @@ metaslab_load_impl(metaslab_t *msp)
  			 * expect any unflushed allocs or frees from previous
  			 * TXGs.
  			 */
@@ -1731,7 +1763,7 @@ Applied-Upstream: master
  		}
  	}
  
-@@ -2412,10 +2420,10 @@
+@@ -2412,10 +2420,10 @@ metaslab_load_impl(metaslab_t *msp)
  	 * away so any manipulations we do below have a clear view
  	 * of what is allocated and what is free.
  	 */
@@ -1746,7 +1778,7 @@ Applied-Upstream: master
  
  	ASSERT3P(msp->ms_group, !=, NULL);
  	spa_t *spa = msp->ms_group->mg_vd->vdev_spa;
-@@ -2443,8 +2451,8 @@
+@@ -2443,8 +2451,8 @@ metaslab_load_impl(metaslab_t *msp)
  		 * correctly doesn't contain any segments that exist
  		 * in ms_freed [see ms_synced_length].
  		 */
@@ -1757,7 +1789,7 @@ Applied-Upstream: master
  	}
  
  	/*
-@@ -2462,8 +2470,8 @@
+@@ -2462,8 +2470,8 @@ metaslab_load_impl(metaslab_t *msp)
  	 * code path.
  	 */
  	for (int t = 0; t < TXG_DEFER_SIZE; t++) {
@@ -1768,7 +1800,7 @@ Applied-Upstream: master
  	}
  
  	/*
-@@ -2498,11 +2506,11 @@
+@@ -2498,11 +2506,11 @@ metaslab_load_impl(metaslab_t *msp)
  	    (u_longlong_t)msp->ms_group->mg_vd->vdev_id,
  	    (u_longlong_t)msp->ms_id,
  	    (u_longlong_t)space_map_length(msp->ms_sm),
@@ -1785,7 +1817,7 @@ Applied-Upstream: master
  	    (longlong_t)((load_start - msp->ms_unload_time) / 1000000),
  	    (longlong_t)((load_end - load_start) / 1000000),
  	    (u_longlong_t)msp->ms_max_size,
-@@ -2584,7 +2592,7 @@
+@@ -2584,7 +2592,7 @@ metaslab_unload(metaslab_t *msp)
  	if (!msp->ms_loaded)
  		return;
  
@@ -1794,7 +1826,7 @@ Applied-Upstream: master
  	msp->ms_loaded = B_FALSE;
  	msp->ms_unload_time = gethrtime();
  
-@@ -2640,7 +2648,7 @@
+@@ -2640,7 +2648,7 @@ metaslab_unload(metaslab_t *msp)
   * the vdev_ms_shift - the vdev_ashift is less than 32, we can store
   * the ranges using two uint32_ts, rather than two uint64_ts.
   */
@@ -1803,7 +1835,7 @@ Applied-Upstream: master
  metaslab_calculate_range_tree_type(vdev_t *vdev, metaslab_t *msp,
      uint64_t *start, uint64_t *shift)
  {
-@@ -2648,11 +2656,11 @@
+@@ -2648,11 +2656,11 @@ metaslab_calculate_range_tree_type(vdev_t *vdev, metaslab_t *msp,
  	    !zfs_metaslab_force_large_segs) {
  		*shift = vdev->vdev_ashift;
  		*start = msp->ms_start;
@@ -1817,7 +1849,7 @@ Applied-Upstream: master
  	}
  }
  
-@@ -2738,32 +2746,33 @@
+@@ -2738,32 +2746,33 @@ metaslab_init(metaslab_group_t *mg, uint64_t id, uint64_t object,
  	}
  
  	uint64_t shift, start;
@@ -1861,7 +1893,7 @@ Applied-Upstream: master
  
  	metaslab_group_add(mg, ms);
  	metaslab_set_fragmentation(ms, B_FALSE);
-@@ -2817,8 +2826,8 @@
+@@ -2817,8 +2826,8 @@ metaslab_fini_flush_data(metaslab_t *msp)
  uint64_t
  metaslab_unflushed_changes_memused(metaslab_t *ms)
  {
@@ -1872,7 +1904,7 @@ Applied-Upstream: master
  	    ms->ms_unflushed_allocs->rt_root.bt_elem_size);
  }
  
-@@ -2851,33 +2860,33 @@
+@@ -2851,33 +2860,33 @@ metaslab_fini(metaslab_t *msp)
  
  	metaslab_unload(msp);
  
@@ -1918,7 +1950,7 @@ Applied-Upstream: master
  
  	mutex_exit(&msp->ms_lock);
  	cv_destroy(&msp->ms_load_cv);
-@@ -3440,7 +3449,7 @@
+@@ -3445,7 +3454,7 @@ metaslab_activate(metaslab_t *msp, int allocator, uint64_t activation_weight)
  	 * lock.
  	 */
  	if (msp->ms_weight == 0) {
@@ -1927,7 +1959,7 @@ Applied-Upstream: master
  		return (SET_ERROR(ENOSPC));
  	}
  
-@@ -3499,7 +3508,7 @@
+@@ -3504,7 +3513,7 @@ metaslab_passivate(metaslab_t *msp, uint64_t weight)
  	 */
  	ASSERT(!WEIGHT_IS_SPACEBASED(msp->ms_weight) ||
  	    size >= SPA_MINBLOCKSIZE ||
@@ -1936,7 +1968,7 @@ Applied-Upstream: master
  	ASSERT0(weight & METASLAB_ACTIVE_MASK);
  
  	ASSERT(msp->ms_activation_weight != 0);
-@@ -3630,7 +3639,7 @@
+@@ -3635,7 +3644,7 @@ metaslab_should_condense(metaslab_t *msp)
  	 * We always condense metaslabs that are empty and metaslabs for
  	 * which a condense request has been made.
  	 */
@@ -1945,7 +1977,7 @@ Applied-Upstream: master
  	    msp->ms_condense_wanted)
  		return (B_TRUE);
  
-@@ -3654,7 +3663,7 @@
+@@ -3659,7 +3668,7 @@ metaslab_should_condense(metaslab_t *msp)
  static void
  metaslab_condense(metaslab_t *msp, dmu_tx_t *tx)
  {
@@ -1954,7 +1986,7 @@ Applied-Upstream: master
  	space_map_t *sm = msp->ms_sm;
  	uint64_t txg = dmu_tx_get_txg(tx);
  	spa_t *spa = msp->ms_group->mg_vd->vdev_spa;
-@@ -3706,41 +3715,41 @@
+@@ -3711,41 +3720,41 @@ metaslab_condense(metaslab_t *msp, dmu_tx_t *tx)
  	 *    metaslab_flush_update().
  	 */
  	ASSERT3U(spa_sync_pass(spa), ==, 1);
@@ -2006,7 +2038,7 @@ Applied-Upstream: master
  
  	/*
  	 * We're about to drop the metaslab's lock thus allowing other
-@@ -3780,17 +3789,17 @@
+@@ -3785,17 +3794,17 @@ metaslab_condense(metaslab_t *msp, dmu_tx_t *tx)
  	 * followed by FREES (due to space_map_write() in metaslab_sync()) for
  	 * sync pass 1.
  	 */
@@ -2031,7 +2063,7 @@ Applied-Upstream: master
  	mutex_enter(&msp->ms_lock);
  
  	msp->ms_condensing = B_FALSE;
-@@ -3803,8 +3812,8 @@
+@@ -3808,8 +3817,8 @@ metaslab_unflushed_add(metaslab_t *msp, dmu_tx_t *tx)
  	spa_t *spa = msp->ms_group->mg_vd->vdev_spa;
  	ASSERT(spa_syncing_log_sm(spa) != NULL);
  	ASSERT(msp->ms_sm != NULL);
@@ -2042,7 +2074,7 @@ Applied-Upstream: master
  
  	mutex_enter(&spa->spa_flushed_ms_lock);
  	metaslab_set_unflushed_txg(msp, spa_syncing_txg(spa), tx);
-@@ -3824,8 +3833,8 @@
+@@ -3829,8 +3838,8 @@ metaslab_unflushed_bump(metaslab_t *msp, dmu_tx_t *tx, boolean_t dirty)
  	ASSERT(msp->ms_sm != NULL);
  	ASSERT(metaslab_unflushed_txg(msp) != 0);
  	ASSERT3P(avl_find(&spa->spa_metaslabs_by_flushed, msp, NULL), ==, msp);
@@ -2053,7 +2085,7 @@ Applied-Upstream: master
  
  	VERIFY3U(tx->tx_txg, <=, spa_final_dirty_txg(spa));
  
-@@ -3945,7 +3954,7 @@
+@@ -3950,7 +3959,7 @@ metaslab_flush(metaslab_t *msp, dmu_tx_t *tx)
  
  		space_map_histogram_clear(msp->ms_sm);
  		space_map_histogram_add(msp->ms_sm, msp->ms_allocatable, tx);
@@ -2062,7 +2094,7 @@ Applied-Upstream: master
  		for (int t = 0; t < TXG_DEFER_SIZE; t++) {
  			space_map_histogram_add(msp->ms_sm,
  			    msp->ms_defer[t], tx);
-@@ -3987,8 +3996,10 @@
+@@ -3992,8 +4001,10 @@ metaslab_flush(metaslab_t *msp, dmu_tx_t *tx)
  		    spa_name(spa),
  		    (u_longlong_t)msp->ms_group->mg_vd->vdev_id,
  		    (u_longlong_t)msp->ms_id,
@@ -2075,7 +2107,7 @@ Applied-Upstream: master
  		    (u_longlong_t)(sm_len_after - sm_len_before));
  	}
  
-@@ -3996,8 +4007,8 @@
+@@ -4001,8 +4012,8 @@ metaslab_flush(metaslab_t *msp, dmu_tx_t *tx)
  	    metaslab_unflushed_changes_memused(msp));
  	spa->spa_unflushed_stats.sus_memused -=
  	    metaslab_unflushed_changes_memused(msp);
@@ -2086,7 +2118,7 @@ Applied-Upstream: master
  
  	metaslab_verify_space(msp, dmu_tx_get_txg(tx));
  	metaslab_verify_weight_and_frag(msp);
-@@ -4022,7 +4033,7 @@
+@@ -4027,7 +4038,7 @@ metaslab_sync(metaslab_t *msp, uint64_t txg)
  	vdev_t *vd = mg->mg_vd;
  	spa_t *spa = vd->vdev_spa;
  	objset_t *mos = spa_meta_objset(spa);
@@ -2095,7 +2127,7 @@ Applied-Upstream: master
  	dmu_tx_t *tx;
  
  	ASSERT(!vd->vdev_ishole);
-@@ -4031,11 +4042,11 @@
+@@ -4036,11 +4047,11 @@ metaslab_sync(metaslab_t *msp, uint64_t txg)
  	 * This metaslab has just been added so there's no work to do now.
  	 */
  	if (msp->ms_new) {
@@ -2112,7 +2144,7 @@ Applied-Upstream: master
  		return;
  	}
  
-@@ -4050,9 +4061,9 @@
+@@ -4055,9 +4066,9 @@ metaslab_sync(metaslab_t *msp, uint64_t txg)
  	 * we preserve the utility of the VERIFY statements in all other
  	 * cases.
  	 */
@@ -2125,7 +2157,7 @@ Applied-Upstream: master
  	    !(msp->ms_loaded && msp->ms_condense_wanted &&
  	    txg <= spa_final_dirty_txg(spa)))
  		return;
-@@ -4094,12 +4105,12 @@
+@@ -4099,12 +4110,12 @@ metaslab_sync(metaslab_t *msp, uint64_t txg)
  		    msp->ms_start, msp->ms_size, vd->vdev_ashift));
  		ASSERT(msp->ms_sm != NULL);
  
@@ -2141,7 +2173,7 @@ Applied-Upstream: master
  	    vd->vdev_checkpoint_sm == NULL) {
  		ASSERT(spa_has_checkpoint(spa));
  
-@@ -4161,9 +4172,9 @@
+@@ -4166,9 +4177,9 @@ metaslab_sync(metaslab_t *msp, uint64_t txg)
  		    metaslab_unflushed_changes_memused(msp));
  		spa->spa_unflushed_stats.sus_memused -=
  		    metaslab_unflushed_changes_memused(msp);
@@ -2153,7 +2185,7 @@ Applied-Upstream: master
  		    msp->ms_unflushed_allocs, msp->ms_unflushed_frees);
  		spa->spa_unflushed_stats.sus_memused +=
  		    metaslab_unflushed_changes_memused(msp);
-@@ -4177,12 +4188,12 @@
+@@ -4182,12 +4193,12 @@ metaslab_sync(metaslab_t *msp, uint64_t txg)
  		mutex_enter(&msp->ms_lock);
  	}
  
@@ -2170,7 +2202,7 @@ Applied-Upstream: master
  		ASSERT(spa_has_checkpoint(spa));
  		ASSERT3P(vd->vdev_checkpoint_sm, !=, NULL);
  
-@@ -4198,13 +4209,13 @@
+@@ -4203,13 +4214,13 @@ metaslab_sync(metaslab_t *msp, uint64_t txg)
  		mutex_enter(&msp->ms_lock);
  
  		spa->spa_checkpoint_info.sci_dspace +=
@@ -2187,7 +2219,7 @@ Applied-Upstream: master
  	}
  
  	if (msp->ms_loaded) {
-@@ -4264,20 +4275,20 @@
+@@ -4269,20 +4280,20 @@ metaslab_sync(metaslab_t *msp, uint64_t txg)
  	 * get appended to the ms_sm) so their ranges can be reused as usual.
  	 */
  	if (spa_sync_pass(spa) == 1) {
@@ -2217,7 +2249,7 @@ Applied-Upstream: master
  
  	mutex_exit(&msp->ms_lock);
  
-@@ -4301,7 +4312,7 @@
+@@ -4306,7 +4317,7 @@ metaslab_evict(metaslab_t *msp, uint64_t txg)
  		return;
  
  	for (int t = 1; t < TXG_CONCURRENT_STATES; t++) {
@@ -2226,7 +2258,7 @@ Applied-Upstream: master
  		    msp->ms_allocating[(txg + t) & TXG_MASK]));
  	}
  	if (msp->ms_allocator != -1)
-@@ -4321,7 +4332,7 @@
+@@ -4326,7 +4337,7 @@ metaslab_sync_done(metaslab_t *msp, uint64_t txg)
  	metaslab_group_t *mg = msp->ms_group;
  	vdev_t *vd = mg->mg_vd;
  	spa_t *spa = vd->vdev_spa;
@@ -2235,7 +2267,7 @@ Applied-Upstream: master
  	int64_t alloc_delta, defer_delta;
  	boolean_t defer_allowed = B_TRUE;
  
-@@ -4335,11 +4346,11 @@
+@@ -4340,11 +4351,11 @@ metaslab_sync_done(metaslab_t *msp, uint64_t txg)
  
  		/* there should be no allocations nor frees at this point */
  		VERIFY0(msp->ms_allocated_this_txg);
@@ -2250,7 +2282,7 @@ Applied-Upstream: master
  
  	defer_tree = &msp->ms_defer[txg % TXG_DEFER_SIZE];
  
-@@ -4352,13 +4363,13 @@
+@@ -4357,13 +4368,13 @@ metaslab_sync_done(metaslab_t *msp, uint64_t txg)
  
  	defer_delta = 0;
  	alloc_delta = msp->ms_allocated_this_txg -
@@ -2268,7 +2300,7 @@ Applied-Upstream: master
  	}
  	metaslab_space_update(vd, mg->mg_class, alloc_delta + defer_delta,
  	    defer_delta, 0);
-@@ -4385,13 +4396,14 @@
+@@ -4390,13 +4401,14 @@ metaslab_sync_done(metaslab_t *msp, uint64_t txg)
  	 * frees not being trimmed.
  	 */
  	if (spa_get_autotrim(spa) == SPA_AUTOTRIM_ON) {
@@ -2286,7 +2318,7 @@ Applied-Upstream: master
  	}
  
  	/*
-@@ -4400,13 +4412,13 @@
+@@ -4405,13 +4417,13 @@ metaslab_sync_done(metaslab_t *msp, uint64_t txg)
  	 * the defer_tree -- this is safe to do because we've
  	 * just emptied out the defer_tree.
  	 */
@@ -2305,7 +2337,7 @@ Applied-Upstream: master
  		    msp->ms_allocatable);
  	}
  
-@@ -4437,10 +4449,10 @@
+@@ -4442,10 +4454,10 @@ metaslab_sync_done(metaslab_t *msp, uint64_t txg)
  	 */
  	metaslab_recalculate_weight_and_sort(msp);
  
@@ -2320,7 +2352,7 @@ Applied-Upstream: master
  	msp->ms_allocating_total -= msp->ms_allocated_this_txg;
  	msp->ms_allocated_this_txg = 0;
  	mutex_exit(&msp->ms_lock);
-@@ -4648,7 +4660,7 @@
+@@ -4653,7 +4665,7 @@ static uint64_t
  metaslab_block_alloc(metaslab_t *msp, uint64_t size, uint64_t txg)
  {
  	uint64_t start;
@@ -2329,7 +2361,7 @@ Applied-Upstream: master
  	metaslab_class_t *mc = msp->ms_group->mg_class;
  
  	ASSERT(MUTEX_HELD(&msp->ms_lock));
-@@ -4663,14 +4675,15 @@
+@@ -4668,14 +4680,15 @@ metaslab_block_alloc(metaslab_t *msp, uint64_t size, uint64_t txg)
  
  		VERIFY0(P2PHASE(start, 1ULL << vd->vdev_ashift));
  		VERIFY0(P2PHASE(size, 1ULL << vd->vdev_ashift));
@@ -2350,7 +2382,7 @@ Applied-Upstream: master
  		msp->ms_allocating_total += size;
  
  		/* Track the last successful allocation */
-@@ -5390,16 +5403,16 @@
+@@ -5395,16 +5408,16 @@ metaslab_free_concrete(vdev_t *vd, uint64_t offset, uint64_t asize,
  	metaslab_check_free_impl(vd, offset, asize);
  
  	mutex_enter(&msp->ms_lock);
@@ -2371,7 +2403,7 @@ Applied-Upstream: master
  	}
  	mutex_exit(&msp->ms_lock);
  }
-@@ -5623,18 +5636,18 @@
+@@ -5628,18 +5641,18 @@ metaslab_unalloc_dva(spa_t *spa, const dva_t *dva, uint64_t txg)
  	msp = vd->vdev_ms[offset >> vd->vdev_ms_shift];
  
  	mutex_enter(&msp->ms_lock);
@@ -2393,7 +2425,7 @@ Applied-Upstream: master
  	mutex_exit(&msp->ms_lock);
  }
  
-@@ -5730,7 +5743,7 @@
+@@ -5735,7 +5748,7 @@ metaslab_claim_concrete(vdev_t *vd, uint64_t offset, uint64_t size,
  	}
  
  	if (error == 0 &&
@@ -2402,7 +2434,7 @@ Applied-Upstream: master
  		error = SET_ERROR(ENOENT);
  
  	if (error || txg == 0) {	/* txg == 0 indicates dry run */
-@@ -5741,10 +5754,10 @@
+@@ -5746,10 +5759,10 @@ metaslab_claim_concrete(vdev_t *vd, uint64_t offset, uint64_t size,
  	VERIFY(!msp->ms_condensing);
  	VERIFY0(P2PHASE(offset, 1ULL << vd->vdev_ashift));
  	VERIFY0(P2PHASE(size, 1ULL << vd->vdev_ashift));
@@ -2416,7 +2448,7 @@ Applied-Upstream: master
  
  	if (spa_writeable(spa)) {	/* don't dirty if we're zdb(8) */
  		metaslab_class_t *mc = msp->ms_group->mg_class;
-@@ -5756,9 +5769,9 @@
+@@ -5761,9 +5774,9 @@ metaslab_claim_concrete(vdev_t *vd, uint64_t offset, uint64_t size,
  		}
  		multilist_sublist_unlock(mls);
  
@@ -2428,7 +2460,7 @@ Applied-Upstream: master
  		    offset, size);
  		msp->ms_allocating_total += size;
  	}
-@@ -6015,7 +6028,7 @@
+@@ -6020,7 +6033,7 @@ metaslab_check_free_impl(vdev_t *vd, uint64_t offset, uint64_t size)
  
  	mutex_enter(&msp->ms_lock);
  	if (msp->ms_loaded) {
@@ -2437,7 +2469,7 @@ Applied-Upstream: master
  		    offset, size);
  	}
  
-@@ -6027,15 +6040,16 @@
+@@ -6032,15 +6045,16 @@ metaslab_check_free_impl(vdev_t *vd, uint64_t offset, uint64_t size)
  	 * allocated and freed in the same sync pass within the same txg.
  	 * Unfortunately there are places (e.g. the ZIL) where we allocate a
  	 * segment but then we free part of it within the same txg
@@ -2460,6 +2492,8 @@ Applied-Upstream: master
  	mutex_exit(&msp->ms_lock);
  }
  
+diff --git a/module/zfs/range_tree.c b/module/zfs/range_tree.c
+index 5174e2c46..3cbd5712e 100644
 --- a/module/zfs/range_tree.c
 +++ b/module/zfs/range_tree.c
 @@ -42,11 +42,11 @@
@@ -2522,7 +2556,7 @@ Applied-Upstream: master
  		size = sizeof (range_seg_gap_t);
  		break;
  	default:
-@@ -97,16 +97,17 @@
+@@ -97,16 +97,17 @@ rs_copy(range_seg_t *src, range_seg_t *dest, range_tree_t *rt)
  }
  
  void
@@ -2543,7 +2577,7 @@ Applied-Upstream: master
  		int idx	= highbit64(size) - 1;
  
  		hist[idx]++;
-@@ -124,9 +125,9 @@
+@@ -124,9 +125,9 @@ range_tree_stat_verify(range_tree_t *rt)
  }
  
  static void
@@ -2555,7 +2589,7 @@ Applied-Upstream: master
  	int idx = highbit64(size) - 1;
  
  	ASSERT(size != 0);
-@@ -138,9 +139,9 @@
+@@ -138,9 +139,9 @@ range_tree_stat_incr(range_tree_t *rt, range_seg_t *rs)
  }
  
  static void
@@ -2567,7 +2601,7 @@ Applied-Upstream: master
  	int idx = highbit64(size) - 1;
  
  	ASSERT(size != 0);
-@@ -153,7 +154,7 @@
+@@ -153,7 +154,7 @@ range_tree_stat_decr(range_tree_t *rt, range_seg_t *rs)
  
  __attribute__((always_inline)) inline
  static int
@@ -2576,7 +2610,7 @@ Applied-Upstream: master
  {
  	const range_seg32_t *r1 = x1;
  	const range_seg32_t *r2 = x2;
-@@ -166,7 +167,7 @@
+@@ -166,7 +167,7 @@ range_tree_seg32_compare(const void *x1, const void *x2)
  
  __attribute__((always_inline)) inline
  static int
@@ -2585,7 +2619,7 @@ Applied-Upstream: master
  {
  	const range_seg64_t *r1 = x1;
  	const range_seg64_t *r2 = x2;
-@@ -179,7 +180,7 @@
+@@ -179,7 +180,7 @@ range_tree_seg64_compare(const void *x1, const void *x2)
  
  __attribute__((always_inline)) inline
  static int
@@ -2594,7 +2628,7 @@ Applied-Upstream: master
  {
  	const range_seg_gap_t *r1 = x1;
  	const range_seg_gap_t *r2 = x2;
-@@ -190,41 +191,42 @@
+@@ -190,41 +191,42 @@ range_tree_seg_gap_compare(const void *x1, const void *x2)
  	return ((r1->rs_start >= r2->rs_end) - (r1->rs_end <= r2->rs_start));
  }
  
@@ -2657,7 +2691,7 @@ Applied-Upstream: master
  		break;
  	default:
  		panic("Invalid range seg type %d", type);
-@@ -244,15 +246,15 @@
+@@ -244,15 +246,15 @@ range_tree_create_gap(const range_tree_ops_t *ops, range_seg_type_t type,
  	return (rt);
  }
  
@@ -2678,7 +2712,7 @@ Applied-Upstream: master
  {
  	VERIFY0(rt->rt_space);
  
-@@ -264,35 +266,36 @@
+@@ -264,35 +266,36 @@ range_tree_destroy(range_tree_t *rt)
  }
  
  void
@@ -2727,7 +2761,7 @@ Applied-Upstream: master
  	range_seg_max_t tmp, rsearch;
  	uint64_t end = start + size, gap = rt->rt_gap;
  	uint64_t bridge_size = 0;
-@@ -302,8 +305,8 @@
+@@ -302,8 +305,8 @@ range_tree_add_impl(void *arg, uint64_t start, uint64_t size, uint64_t fill)
  	ASSERT3U(fill, <=, size);
  	ASSERT3U(start + size, >, start);
  
@@ -2738,7 +2772,7 @@ Applied-Upstream: master
  	rs = zfs_btree_find(&rt->rt_root, &rsearch, &where);
  
  	/*
-@@ -321,26 +324,26 @@
+@@ -321,26 +324,26 @@ range_tree_add_impl(void *arg, uint64_t start, uint64_t size, uint64_t fill)
  			    (longlong_t)start, (longlong_t)size);
  			return;
  		}
@@ -2771,7 +2805,7 @@ Applied-Upstream: master
  		return;
  	}
  
-@@ -355,15 +358,15 @@
+@@ -355,15 +358,15 @@ range_tree_add_impl(void *arg, uint64_t start, uint64_t size, uint64_t fill)
  	rs_before = zfs_btree_prev(&rt->rt_root, &where, &where_before);
  	rs_after = zfs_btree_next(&rt->rt_root, &where, &where_after);
  
@@ -2792,7 +2826,7 @@ Applied-Upstream: master
  
  	if (merge_before && merge_after) {
  		if (rt->rt_ops != NULL && rt->rt_ops->rtop_remove != NULL) {
-@@ -371,13 +374,13 @@
+@@ -371,13 +374,13 @@ range_tree_add_impl(void *arg, uint64_t start, uint64_t size, uint64_t fill)
  			rt->rt_ops->rtop_remove(rt, rs_after, rt->rt_arg);
  		}
  
@@ -2812,7 +2846,7 @@ Applied-Upstream: master
  		zfs_btree_remove_idx(&rt->rt_root, &where_before);
  
  		/*
-@@ -386,76 +389,76 @@
+@@ -386,76 +389,76 @@ range_tree_add_impl(void *arg, uint64_t start, uint64_t size, uint64_t fill)
  		 */
  		rs_after = zfs_btree_find(&rt->rt_root, &tmp, &where_after);
  		ASSERT3P(rs_after, !=, NULL);
@@ -2914,7 +2948,7 @@ Applied-Upstream: master
  	rs = zfs_btree_find(&rt->rt_root, &rsearch, &where);
  
  	/* Make sure we completely overlap with someone */
-@@ -474,49 +477,49 @@
+@@ -474,49 +477,49 @@ range_tree_remove_impl(range_tree_t *rt, uint64_t start, uint64_t size,
  	 */
  	if (rt->rt_gap != 0) {
  		if (do_fill) {
@@ -2984,7 +3018,7 @@ Applied-Upstream: master
  		if (zfs_btree_next(&rt->rt_root, &where, &where) != NULL)
  			zfs_btree_add_idx(&rt->rt_root, &newseg, &where);
  		else
-@@ -526,12 +529,12 @@
+@@ -526,12 +529,12 @@ range_tree_remove_impl(range_tree_t *rt, uint64_t start, uint64_t size,
  			rt->rt_ops->rtop_add(rt, &newseg, rt->rt_arg);
  	} else if (left_over) {
  		// This modifies the buffer already inside the range tree
@@ -3001,7 +3035,7 @@ Applied-Upstream: master
  	} else {
  		zfs_btree_remove_idx(&rt->rt_root, &where);
  		rs = NULL;
-@@ -543,9 +546,9 @@
+@@ -543,9 +546,9 @@ range_tree_remove_impl(range_tree_t *rt, uint64_t start, uint64_t size,
  		 * the size, since we do not support removing partial segments
  		 * of range trees with gaps.
  		 */
@@ -3014,7 +3048,7 @@ Applied-Upstream: master
  
  		if (rt->rt_ops != NULL && rt->rt_ops->rtop_add != NULL)
  			rt->rt_ops->rtop_add(rt, &rs_tmp, rt->rt_arg);
-@@ -555,76 +558,78 @@
+@@ -555,76 +558,78 @@ range_tree_remove_impl(range_tree_t *rt, uint64_t start, uint64_t size,
  }
  
  void
@@ -3117,7 +3151,7 @@ Applied-Upstream: master
  }
  
  /*
-@@ -633,31 +638,32 @@
+@@ -633,31 +638,32 @@ range_tree_contains(range_tree_t *rt, uint64_t start, uint64_t size)
   * isn't.
   */
  boolean_t
@@ -3160,7 +3194,7 @@ Applied-Upstream: master
  	return (B_TRUE);
  }
  
-@@ -666,29 +672,29 @@
+@@ -666,29 +672,29 @@ range_tree_find_in(range_tree_t *rt, uint64_t start, uint64_t size,
   * it is currently in the tree.
   */
  void
@@ -3200,7 +3234,7 @@ Applied-Upstream: master
  	ASSERT0(zfs_btree_numnodes(&(*rtdst)->rt_root));
  
  	rt = *rtsrc;
-@@ -697,19 +703,20 @@
+@@ -697,19 +703,20 @@ range_tree_swap(range_tree_t **rtsrc, range_tree_t **rtdst)
  }
  
  void
@@ -3225,7 +3259,7 @@ Applied-Upstream: master
  		}
  	} else {
  		zfs_btree_clear(&rt->rt_root);
-@@ -720,39 +727,40 @@
+@@ -720,39 +727,40 @@ range_tree_vacate(range_tree_t *rt, range_tree_func_t *func, void *arg)
  }
  
  void
@@ -3276,7 +3310,7 @@ Applied-Upstream: master
  }
  
  /*
-@@ -760,46 +768,46 @@
+@@ -760,46 +768,46 @@ range_tree_is_empty(range_tree_t *rt)
   * from removefrom. Add non-overlapping leftovers to addto.
   */
  void
@@ -3337,7 +3371,7 @@ Applied-Upstream: master
  
  		start = overlap_end;
  		next = zfs_btree_find(&removefrom->rt_root, &rs, &where);
-@@ -814,7 +822,7 @@
+@@ -814,7 +822,7 @@ range_tree_remove_xor_add_segment(uint64_t start, uint64_t end,
  		 * area to process.
  		 */
  		if (next != NULL) {
@@ -3346,7 +3380,7 @@ Applied-Upstream: master
  			    removefrom));
  		}
  
-@@ -824,7 +832,7 @@
+@@ -824,7 +832,7 @@ range_tree_remove_xor_add_segment(uint64_t start, uint64_t end,
  
  	if (start != end) {
  		VERIFY3U(start, <, end);
@@ -3355,7 +3389,7 @@ Applied-Upstream: master
  	} else {
  		VERIFY3U(start, ==, end);
  	}
-@@ -835,33 +843,33 @@
+@@ -835,33 +843,33 @@ range_tree_remove_xor_add_segment(uint64_t start, uint64_t end,
   * from removefrom. Otherwise, add it to addto.
   */
  void
@@ -3402,9 +3436,11 @@ Applied-Upstream: master
 -	return (range_tree_max(rt) - range_tree_min(rt));
 +	return (zfs_range_tree_max(rt) - zfs_range_tree_min(rt));
  }
+diff --git a/module/zfs/spa.c b/module/zfs/spa.c
+index 956bae46e..bdeef0959 100644
 --- a/module/zfs/spa.c
 +++ b/module/zfs/spa.c
-@@ -9861,7 +9861,7 @@
+@@ -9869,7 +9869,7 @@ vdev_indirect_state_sync_verify(vdev_t *vd)
  	 * happen in syncing context, the obsolete segments
  	 * tree must be empty when we start syncing.
  	 */
@@ -3413,9 +3449,11 @@ Applied-Upstream: master
  }
  
  /*
+diff --git a/module/zfs/spa_checkpoint.c b/module/zfs/spa_checkpoint.c
+index 4c3721c15..5fbf474b0 100644
 --- a/module/zfs/spa_checkpoint.c
 +++ b/module/zfs/spa_checkpoint.c
-@@ -235,9 +235,9 @@
+@@ -235,9 +235,9 @@ spa_checkpoint_discard_sync_callback(space_map_entry_t *sme, void *arg)
  	 * potentially save ourselves from future headaches.
  	 */
  	mutex_enter(&ms->ms_lock);
@@ -3427,9 +3465,11 @@ Applied-Upstream: master
  	mutex_exit(&ms->ms_lock);
  
  	ASSERT3U(vd->vdev_spa->spa_checkpoint_info.sci_dspace, >=,
+diff --git a/module/zfs/spa_log_spacemap.c b/module/zfs/spa_log_spacemap.c
+index a95152608..5eb4d043b 100644
 --- a/module/zfs/spa_log_spacemap.c
 +++ b/module/zfs/spa_log_spacemap.c
-@@ -1108,11 +1108,11 @@
+@@ -1108,11 +1108,11 @@ spa_ld_log_sm_cb(space_map_entry_t *sme, void *arg)
  
  	switch (sme->sme_type) {
  	case SM_ALLOC:
@@ -3443,7 +3483,7 @@ Applied-Upstream: master
  		    ms->ms_unflushed_allocs, ms->ms_unflushed_frees);
  		break;
  	default:
-@@ -1251,14 +1251,14 @@
+@@ -1251,14 +1251,14 @@ out:
  	    m != NULL; m = AVL_NEXT(&spa->spa_metaslabs_by_flushed, m)) {
  		mutex_enter(&m->ms_lock);
  		m->ms_allocated_space = space_map_allocated(m->ms_sm) +
@@ -3462,7 +3502,7 @@ Applied-Upstream: master
  
  		ASSERT0(m->ms_weight & METASLAB_ACTIVE_MASK);
  		metaslab_recalculate_weight_and_sort(m);
-@@ -1317,8 +1317,8 @@
+@@ -1317,8 +1317,8 @@ spa_ld_unflushed_txgs(vdev_t *vd)
  
  		ms->ms_unflushed_txg = entry.msp_unflushed_txg;
  		ms->ms_unflushed_dirty = B_FALSE;
@@ -3473,9 +3513,11 @@ Applied-Upstream: master
  		if (ms->ms_unflushed_txg != 0) {
  			mutex_enter(&spa->spa_flushed_ms_lock);
  			avl_add(&spa->spa_metaslabs_by_flushed, ms);
+diff --git a/module/zfs/space_map.c b/module/zfs/space_map.c
+index a336ff41e..e9e03e05c 100644
 --- a/module/zfs/space_map.c
 +++ b/module/zfs/space_map.c
-@@ -393,7 +393,7 @@
+@@ -393,7 +393,7 @@ space_map_incremental_destroy(space_map_t *sm, sm_cb_t callback, void *arg,
  
  typedef struct space_map_load_arg {
  	space_map_t	*smla_sm;
@@ -3484,7 +3526,7 @@ Applied-Upstream: master
  	maptype_t	smla_type;
  } space_map_load_arg_t;
  
-@@ -402,11 +402,13 @@
+@@ -402,11 +402,13 @@ space_map_load_callback(space_map_entry_t *sme, void *arg)
  {
  	space_map_load_arg_t *smla = arg;
  	if (sme->sme_type == smla->smla_type) {
@@ -3501,7 +3543,7 @@ Applied-Upstream: master
  	}
  
  	return (0);
-@@ -417,15 +419,15 @@
+@@ -417,15 +419,15 @@ space_map_load_callback(space_map_entry_t *sme, void *arg)
   * read the first 'length' bytes of the spacemap.
   */
  int
@@ -3520,7 +3562,7 @@ Applied-Upstream: master
  
  	smla.smla_rt = rt;
  	smla.smla_sm = sm;
-@@ -434,7 +436,7 @@
+@@ -434,7 +436,7 @@ space_map_load_length(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
  	    space_map_load_callback, &smla);
  
  	if (err != 0)
@@ -3529,7 +3571,7 @@ Applied-Upstream: master
  
  	return (err);
  }
-@@ -444,7 +446,7 @@
+@@ -444,7 +446,7 @@ space_map_load_length(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
   * are added to the range tree, other segment types are removed.
   */
  int
@@ -3538,7 +3580,7 @@ Applied-Upstream: master
  {
  	return (space_map_load_length(sm, rt, maptype, space_map_length(sm)));
  }
-@@ -460,7 +462,7 @@
+@@ -460,7 +462,7 @@ space_map_histogram_clear(space_map_t *sm)
  }
  
  boolean_t
@@ -3547,7 +3589,7 @@ Applied-Upstream: master
  {
  	/*
  	 * Verify that the in-core range tree does not have any
-@@ -474,7 +476,7 @@
+@@ -474,7 +476,7 @@ space_map_histogram_verify(space_map_t *sm, range_tree_t *rt)
  }
  
  void
@@ -3556,7 +3598,7 @@ Applied-Upstream: master
  {
  	int idx = 0;
  
-@@ -667,7 +669,7 @@
+@@ -667,7 +669,7 @@ space_map_write_seg(space_map_t *sm, uint64_t rstart, uint64_t rend,
   * take effect.
   */
  static void
@@ -3565,7 +3607,7 @@ Applied-Upstream: master
      uint64_t vdev_id, dmu_tx_t *tx)
  {
  	spa_t *spa = tx->tx_pool->dp_spa;
-@@ -700,12 +702,12 @@
+@@ -700,12 +702,12 @@ space_map_write_impl(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
  
  	zfs_btree_t *t = &rt->rt_root;
  	zfs_btree_index_t where;
@@ -3582,7 +3624,7 @@ Applied-Upstream: master
  		uint8_t words = 1;
  
  		/*
-@@ -730,8 +732,9 @@
+@@ -730,8 +732,9 @@ space_map_write_impl(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
  		    random_in_range(100) == 0)))
  			words = 2;
  
@@ -3594,7 +3636,7 @@ Applied-Upstream: master
  	}
  
  	dmu_buf_rele(db, FTAG);
-@@ -753,7 +756,7 @@
+@@ -753,7 +756,7 @@ space_map_write_impl(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
   * for synchronizing writes to the space map.
   */
  void
@@ -3603,7 +3645,7 @@ Applied-Upstream: master
      uint64_t vdev_id, dmu_tx_t *tx)
  {
  	ASSERT(dsl_pool_sync_context(dmu_objset_pool(sm->sm_os)));
-@@ -768,18 +771,18 @@
+@@ -768,18 +771,18 @@ space_map_write(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
  	 */
  	sm->sm_phys->smp_object = sm->sm_object;
  
@@ -3626,7 +3668,7 @@ Applied-Upstream: master
  
  	space_map_write_impl(sm, rt, maptype, vdev_id, tx);
  
-@@ -788,7 +791,7 @@
+@@ -788,7 +791,7 @@ space_map_write(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
  	 * while we were in the middle of writing it out.
  	 */
  	VERIFY3U(nodes, ==, zfs_btree_numnodes(&rt->rt_root));
@@ -3635,7 +3677,7 @@ Applied-Upstream: master
  }
  
  static int
-@@ -960,7 +963,7 @@
+@@ -960,7 +963,7 @@ space_map_free(space_map_t *sm, dmu_tx_t *tx)
   * the given space map.
   */
  uint64_t
@@ -3644,9 +3686,11 @@ Applied-Upstream: master
      uint64_t vdev_id)
  {
  	spa_t *spa = dmu_objset_spa(sm->sm_os);
+diff --git a/module/zfs/space_reftree.c b/module/zfs/space_reftree.c
+index ee11e162d..baa741395 100644
 --- a/module/zfs/space_reftree.c
 +++ b/module/zfs/space_reftree.c
-@@ -107,14 +107,14 @@
+@@ -107,14 +107,14 @@ space_reftree_add_seg(avl_tree_t *t, uint64_t start, uint64_t end,
   * Convert (or add) a range tree into a reference tree.
   */
  void
@@ -3666,7 +3710,7 @@ Applied-Upstream: master
  	}
  }
  
-@@ -123,13 +123,13 @@
+@@ -123,13 +123,13 @@ space_reftree_add_map(avl_tree_t *t, range_tree_t *rt, int64_t refcnt)
   * all members of the reference tree for which refcnt >= minref.
   */
  void
@@ -3682,7 +3726,7 @@ Applied-Upstream: master
  
  	for (sr = avl_first(t); sr != NULL; sr = AVL_NEXT(t, sr)) {
  		refcnt += sr->sr_refcnt;
-@@ -142,7 +142,8 @@
+@@ -142,7 +142,8 @@ space_reftree_generate_map(avl_tree_t *t, range_tree_t *rt, int64_t minref)
  				uint64_t end = sr->sr_offset;
  				ASSERT(start <= end);
  				if (end > start)
@@ -3692,9 +3736,11 @@ Applied-Upstream: master
  				start = -1ULL;
  			}
  		}
+diff --git a/module/zfs/vdev.c b/module/zfs/vdev.c
+index 96621b2bd..40fd75b83 100644
 --- a/module/zfs/vdev.c
 +++ b/module/zfs/vdev.c
-@@ -677,8 +677,8 @@
+@@ -677,8 +677,8 @@ vdev_alloc_common(spa_t *spa, uint_t id, uint64_t guid, vdev_ops_t *ops)
  
  	rw_init(&vd->vdev_indirect_rwlock, NULL, RW_DEFAULT, NULL);
  	mutex_init(&vd->vdev_obsolete_lock, NULL, MUTEX_DEFAULT, NULL);
@@ -3705,7 +3751,7 @@ Applied-Upstream: master
  
  	/*
  	 * Initialize rate limit structs for events.  We rate limit ZIO delay
-@@ -732,8 +732,8 @@
+@@ -732,8 +732,8 @@ vdev_alloc_common(spa_t *spa, uint_t id, uint64_t guid, vdev_ops_t *ops)
  	cv_init(&vd->vdev_rebuild_cv, NULL, CV_DEFAULT, NULL);
  
  	for (int t = 0; t < DTL_TYPES; t++) {
@@ -3716,7 +3762,7 @@ Applied-Upstream: master
  	}
  
  	txg_list_create(&vd->vdev_ms_list, spa,
-@@ -1155,8 +1155,8 @@
+@@ -1155,8 +1155,8 @@ vdev_free(vdev_t *vd)
  	mutex_enter(&vd->vdev_dtl_lock);
  	space_map_close(vd->vdev_dtl_sm);
  	for (int t = 0; t < DTL_TYPES; t++) {
@@ -3727,7 +3773,7 @@ Applied-Upstream: master
  	}
  	mutex_exit(&vd->vdev_dtl_lock);
  
-@@ -1173,7 +1173,7 @@
+@@ -1173,7 +1173,7 @@ vdev_free(vdev_t *vd)
  		space_map_close(vd->vdev_obsolete_sm);
  		vd->vdev_obsolete_sm = NULL;
  	}
@@ -3736,7 +3782,7 @@ Applied-Upstream: master
  	rw_destroy(&vd->vdev_indirect_rwlock);
  	mutex_destroy(&vd->vdev_obsolete_lock);
  
-@@ -1283,7 +1283,7 @@
+@@ -1283,7 +1283,7 @@ vdev_top_transfer(vdev_t *svd, vdev_t *tvd)
  	tvd->vdev_indirect_config = svd->vdev_indirect_config;
  	tvd->vdev_indirect_mapping = svd->vdev_indirect_mapping;
  	tvd->vdev_indirect_births = svd->vdev_indirect_births;
@@ -3745,7 +3791,7 @@ Applied-Upstream: master
  	    &tvd->vdev_obsolete_segments);
  	tvd->vdev_obsolete_sm = svd->vdev_obsolete_sm;
  	svd->vdev_indirect_config.vic_mapping_object = 0;
-@@ -2969,22 +2969,22 @@
+@@ -2969,22 +2969,22 @@ vdev_dirty_leaves(vdev_t *vd, int flags, uint64_t txg)
  void
  vdev_dtl_dirty(vdev_t *vd, vdev_dtl_type_t t, uint64_t txg, uint64_t size)
  {
@@ -3772,7 +3818,7 @@ Applied-Upstream: master
  	boolean_t dirty = B_FALSE;
  
  	ASSERT(t < DTL_TYPES);
-@@ -2999,8 +2999,8 @@
+@@ -2999,8 +2999,8 @@ vdev_dtl_contains(vdev_t *vd, vdev_dtl_type_t t, uint64_t txg, uint64_t size)
  	 * always checksummed.
  	 */
  	mutex_enter(&vd->vdev_dtl_lock);
@@ -3783,7 +3829,7 @@ Applied-Upstream: master
  	mutex_exit(&vd->vdev_dtl_lock);
  
  	return (dirty);
-@@ -3009,11 +3009,11 @@
+@@ -3009,11 +3009,11 @@ vdev_dtl_contains(vdev_t *vd, vdev_dtl_type_t t, uint64_t txg, uint64_t size)
  boolean_t
  vdev_dtl_empty(vdev_t *vd, vdev_dtl_type_t t)
  {
@@ -3797,7 +3843,7 @@ Applied-Upstream: master
  	mutex_exit(&vd->vdev_dtl_lock);
  
  	return (empty);
-@@ -3060,10 +3060,10 @@
+@@ -3060,10 +3060,10 @@ static uint64_t
  vdev_dtl_min(vdev_t *vd)
  {
  	ASSERT(MUTEX_HELD(&vd->vdev_dtl_lock));
@@ -3810,7 +3856,7 @@ Applied-Upstream: master
  }
  
  /*
-@@ -3073,10 +3073,10 @@
+@@ -3073,10 +3073,10 @@ static uint64_t
  vdev_dtl_max(vdev_t *vd)
  {
  	ASSERT(MUTEX_HELD(&vd->vdev_dtl_lock));
@@ -3823,7 +3869,7 @@ Applied-Upstream: master
  }
  
  /*
-@@ -3098,7 +3098,7 @@
+@@ -3098,7 +3098,7 @@ vdev_dtl_should_excise(vdev_t *vd, boolean_t rebuild_done)
  	if (vd->vdev_resilver_deferred)
  		return (B_FALSE);
  
@@ -3832,7 +3878,7 @@ Applied-Upstream: master
  		return (B_TRUE);
  
  	if (rebuild_done) {
-@@ -3187,7 +3187,7 @@
+@@ -3187,7 +3187,7 @@ vdev_dtl_reassess_impl(vdev_t *vd, uint64_t txg, uint64_t scrub_txg,
  		}
  
  		if (scrub_txg != 0 &&
@@ -3841,7 +3887,7 @@ Applied-Upstream: master
  			wasempty = B_FALSE;
  			zfs_dbgmsg("guid:%llu txg:%llu scrub:%llu started:%d "
  			    "dtl:%llu/%llu errors:%llu",
-@@ -3243,7 +3243,8 @@
+@@ -3243,7 +3243,8 @@ vdev_dtl_reassess_impl(vdev_t *vd, uint64_t txg, uint64_t scrub_txg,
  			    vd->vdev_dtl[DTL_MISSING], 1);
  			space_reftree_destroy(&reftree);
  
@@ -3851,7 +3897,7 @@ Applied-Upstream: master
  				zfs_dbgmsg("update DTL_MISSING:%llu/%llu",
  				    (u_longlong_t)vdev_dtl_min(vd),
  				    (u_longlong_t)vdev_dtl_max(vd));
-@@ -3251,12 +3252,13 @@
+@@ -3251,12 +3252,13 @@ vdev_dtl_reassess_impl(vdev_t *vd, uint64_t txg, uint64_t scrub_txg,
  				zfs_dbgmsg("DTL_MISSING is now empty");
  			}
  		}
@@ -3870,7 +3916,7 @@ Applied-Upstream: master
  
  		/*
  		 * For the faulting case, treat members of a replacing vdev
-@@ -3267,10 +3269,10 @@
+@@ -3267,10 +3269,10 @@ vdev_dtl_reassess_impl(vdev_t *vd, uint64_t txg, uint64_t scrub_txg,
  		if (!vdev_readable(vd) ||
  		    (faulting && vd->vdev_parent != NULL &&
  		    vd->vdev_parent->vdev_ops == &vdev_replacing_ops)) {
@@ -3884,7 +3930,7 @@ Applied-Upstream: master
  		}
  
  		/*
-@@ -3279,8 +3281,8 @@
+@@ -3279,8 +3281,8 @@ vdev_dtl_reassess_impl(vdev_t *vd, uint64_t txg, uint64_t scrub_txg,
  		 * the top level so that we persist the change.
  		 */
  		if (txg != 0 &&
@@ -3895,7 +3941,7 @@ Applied-Upstream: master
  			if (vd->vdev_rebuild_txg != 0) {
  				vd->vdev_rebuild_txg = 0;
  				vdev_config_dirty(vd->vdev_top);
-@@ -3374,7 +3376,7 @@
+@@ -3374,7 +3376,7 @@ vdev_dtl_load(vdev_t *vd)
  {
  	spa_t *spa = vd->vdev_spa;
  	objset_t *mos = spa->spa_meta_objset;
@@ -3904,7 +3950,7 @@ Applied-Upstream: master
  	int error = 0;
  
  	if (vd->vdev_ops->vdev_op_leaf && vd->vdev_dtl_object != 0) {
-@@ -3392,17 +3394,17 @@
+@@ -3392,17 +3394,17 @@ vdev_dtl_load(vdev_t *vd)
  			return (error);
  		ASSERT(vd->vdev_dtl_sm != NULL);
  
@@ -3926,7 +3972,7 @@ Applied-Upstream: master
  
  		return (error);
  	}
-@@ -3496,9 +3498,9 @@
+@@ -3496,9 +3498,9 @@ static void
  vdev_dtl_sync(vdev_t *vd, uint64_t txg)
  {
  	spa_t *spa = vd->vdev_spa;
@@ -3938,7 +3984,7 @@ Applied-Upstream: master
  	dmu_tx_t *tx;
  	uint64_t object = space_map_object(vd->vdev_dtl_sm);
  
-@@ -3540,17 +3542,17 @@
+@@ -3540,17 +3542,17 @@ vdev_dtl_sync(vdev_t *vd, uint64_t txg)
  		ASSERT(vd->vdev_dtl_sm != NULL);
  	}
  
@@ -3960,7 +4006,7 @@ Applied-Upstream: master
  
  	/*
  	 * If the object for the space map has changed then dirty
-@@ -3620,7 +3622,7 @@
+@@ -3620,7 +3622,7 @@ vdev_resilver_needed(vdev_t *vd, uint64_t *minp, uint64_t *maxp)
  
  	if (vd->vdev_children == 0) {
  		mutex_enter(&vd->vdev_dtl_lock);
@@ -3969,7 +4015,7 @@ Applied-Upstream: master
  		    vdev_writeable(vd)) {
  
  			thismin = vdev_dtl_min(vd);
-@@ -4064,7 +4066,7 @@
+@@ -4064,7 +4066,7 @@ vdev_sync(vdev_t *vd, uint64_t txg)
  
  	ASSERT3U(txg, ==, spa->spa_syncing_txg);
  	dmu_tx_t *tx = dmu_tx_create_assigned(spa->spa_dsl_pool, txg);
@@ -3978,9 +4024,11 @@ Applied-Upstream: master
  		ASSERT(vd->vdev_removing ||
  		    vd->vdev_ops == &vdev_indirect_ops);
  
+diff --git a/module/zfs/vdev_indirect.c b/module/zfs/vdev_indirect.c
+index cd24f97ae..46c1fed6d 100644
 --- a/module/zfs/vdev_indirect.c
 +++ b/module/zfs/vdev_indirect.c
-@@ -333,7 +333,7 @@
+@@ -333,7 +333,7 @@ vdev_indirect_mark_obsolete(vdev_t *vd, uint64_t offset, uint64_t size)
  
  	if (spa_feature_is_enabled(spa, SPA_FEATURE_OBSOLETE_COUNTS)) {
  		mutex_enter(&vd->vdev_obsolete_lock);
@@ -3989,7 +4037,7 @@ Applied-Upstream: master
  		mutex_exit(&vd->vdev_obsolete_lock);
  		vdev_dirty(vd, 0, NULL, spa_syncing_txg(spa));
  	}
-@@ -816,7 +816,7 @@
+@@ -816,7 +816,7 @@ vdev_indirect_sync_obsolete(vdev_t *vd, dmu_tx_t *tx)
  	vdev_indirect_config_t *vic __maybe_unused = &vd->vdev_indirect_config;
  
  	ASSERT3U(vic->vic_mapping_object, !=, 0);
@@ -3998,7 +4046,7 @@ Applied-Upstream: master
  	ASSERT(vd->vdev_removing || vd->vdev_ops == &vdev_indirect_ops);
  	ASSERT(spa_feature_is_enabled(spa, SPA_FEATURE_OBSOLETE_COUNTS));
  
-@@ -845,7 +845,7 @@
+@@ -845,7 +845,7 @@ vdev_indirect_sync_obsolete(vdev_t *vd, dmu_tx_t *tx)
  
  	space_map_write(vd->vdev_obsolete_sm,
  	    vd->vdev_obsolete_segments, SM_ALLOC, SM_NO_VDEVID, tx);
@@ -4007,9 +4055,11 @@ Applied-Upstream: master
  }
  
  int
+diff --git a/module/zfs/vdev_initialize.c b/module/zfs/vdev_initialize.c
+index 0a7323f58..008e014ec 100644
 --- a/module/zfs/vdev_initialize.c
 +++ b/module/zfs/vdev_initialize.c
-@@ -330,13 +330,14 @@
+@@ -330,13 +330,14 @@ vdev_initialize_block_free(abd_t *data)
  static int
  vdev_initialize_ranges(vdev_t *vd, abd_t *data)
  {
@@ -4027,7 +4077,7 @@ Applied-Upstream: master
  
  		/* Split range into legally-sized physical chunks */
  		uint64_t writes_required =
-@@ -346,7 +347,7 @@
+@@ -346,7 +347,7 @@ vdev_initialize_ranges(vdev_t *vd, abd_t *data)
  			int error;
  
  			error = vdev_initialize_write(vd,
@@ -4036,7 +4086,7 @@ Applied-Upstream: master
  			    (w * zfs_initialize_chunk_size),
  			    MIN(size - (w * zfs_initialize_chunk_size),
  			    zfs_initialize_chunk_size), data);
-@@ -440,13 +441,13 @@
+@@ -440,13 +441,13 @@ vdev_initialize_calculate_progress(vdev_t *vd)
  		VERIFY0(metaslab_load(msp));
  
  		zfs_btree_index_t where;
@@ -4054,7 +4104,7 @@ Applied-Upstream: master
  
  			vdev_xlate_walk(vd, &logical_rs,
  			    vdev_initialize_xlate_progress, vd);
-@@ -503,7 +504,7 @@
+@@ -503,7 +504,7 @@ vdev_initialize_xlate_range_add(void *arg, range_seg64_t *physical_rs)
  
  	ASSERT3U(physical_rs->rs_end, >, physical_rs->rs_start);
  
@@ -4063,7 +4113,7 @@ Applied-Upstream: master
  	    physical_rs->rs_end - physical_rs->rs_start);
  }
  
-@@ -539,8 +540,8 @@
+@@ -539,8 +540,8 @@ vdev_initialize_thread(void *arg)
  
  	abd_t *deadbeef = vdev_initialize_block_alloc();
  
@@ -4074,7 +4124,7 @@ Applied-Upstream: master
  
  	for (uint64_t i = 0; !vd->vdev_detached &&
  	    i < vd->vdev_top->vdev_ms_count; i++) {
-@@ -563,15 +564,15 @@
+@@ -563,15 +564,15 @@ vdev_initialize_thread(void *arg)
  			unload_when_done = B_TRUE;
  		VERIFY0(metaslab_load(msp));
  
@@ -4093,7 +4143,7 @@ Applied-Upstream: master
  		if (error != 0)
  			break;
  	}
-@@ -584,7 +585,7 @@
+@@ -584,7 +585,7 @@ vdev_initialize_thread(void *arg)
  	}
  	mutex_exit(&vd->vdev_initialize_io_lock);
  
@@ -4102,9 +4152,11 @@ Applied-Upstream: master
  	vdev_initialize_block_free(deadbeef);
  	vd->vdev_initialize_tree = NULL;
  
+diff --git a/module/zfs/vdev_raidz.c b/module/zfs/vdev_raidz.c
+index 6103f780e..6bac2241c 100644
 --- a/module/zfs/vdev_raidz.c
 +++ b/module/zfs/vdev_raidz.c
-@@ -3953,18 +3953,18 @@
+@@ -3953,18 +3953,18 @@ vdev_raidz_expand_child_replacing(vdev_t *raidz_vd)
  }
  
  static boolean_t
@@ -4127,7 +4179,7 @@ Applied-Upstream: master
  	ASSERT3U(size, >=, 1 << ashift);
  	ASSERT(IS_P2ALIGNED(size, 1 << ashift));
  
-@@ -4001,7 +4001,7 @@
+@@ -4001,7 +4001,7 @@ raidz_reflow_impl(vdev_t *vd, vdev_raidz_expand_t *vre, range_tree_t *rt,
  	uint_t blocks = MIN(size >> ashift, next_overwrite_blkid - blkid);
  	size = (uint64_t)blocks << ashift;
  
@@ -4136,7 +4188,7 @@ Applied-Upstream: master
  
  	uint_t reads = MIN(blocks, old_children);
  	uint_t writes = MIN(blocks, vd->vdev_children);
-@@ -4553,12 +4553,13 @@
+@@ -4553,12 +4553,13 @@ spa_raidz_expand_thread(void *arg, zthr_t *zthr)
  		 * space (e.g. in ms_defer), and it's fine to copy that too.
  		 */
  		uint64_t shift, start;
@@ -4154,7 +4206,7 @@ Applied-Upstream: master
  		mutex_exit(&msp->ms_lock);
  
  		/*
-@@ -4572,8 +4573,8 @@
+@@ -4572,8 +4573,8 @@ spa_raidz_expand_thread(void *arg, zthr_t *zthr)
  		int sectorsz = 1 << raidvd->vdev_ashift;
  		uint64_t ms_last_offset = msp->ms_start +
  		    msp->ms_size - sectorsz;
@@ -4165,7 +4217,7 @@ Applied-Upstream: master
  		}
  
  		/*
-@@ -4582,12 +4583,12 @@
+@@ -4582,12 +4583,12 @@ spa_raidz_expand_thread(void *arg, zthr_t *zthr)
  		 * discard any state that we have already processed.
  		 */
  		if (vre->vre_offset > msp->ms_start) {
@@ -4180,7 +4232,7 @@ Applied-Upstream: master
  		    vre->vre_failed_offset == UINT64_MAX) {
  
  			/*
-@@ -4649,8 +4650,8 @@
+@@ -4649,8 +4650,8 @@ spa_raidz_expand_thread(void *arg, zthr_t *zthr)
  		spa_config_exit(spa, SCL_CONFIG, FTAG);
  
  		metaslab_enable(msp, B_FALSE, B_FALSE);
@@ -4191,9 +4243,11 @@ Applied-Upstream: master
  
  		spa_config_enter(spa, SCL_CONFIG, FTAG, RW_READER);
  		raidvd = vdev_lookup_top(spa, vre->vre_vdev_id);
+diff --git a/module/zfs/vdev_rebuild.c b/module/zfs/vdev_rebuild.c
+index f80ed1b40..7ca1b1f84 100644
 --- a/module/zfs/vdev_rebuild.c
 +++ b/module/zfs/vdev_rebuild.c
-@@ -641,10 +641,10 @@
+@@ -641,10 +641,10 @@ vdev_rebuild_ranges(vdev_rebuild_t *vr)
  	zfs_btree_index_t idx;
  	int error;
  
@@ -4207,7 +4261,7 @@ Applied-Upstream: master
  
  		/*
  		 * zfs_scan_suspend_progress can be set to disable rebuild
-@@ -786,7 +786,8 @@
+@@ -786,7 +786,8 @@ vdev_rebuild_thread(void *arg)
  	vdev_rebuild_phys_t *vrp = &vr->vr_rebuild_phys;
  	vr->vr_top_vdev = vd;
  	vr->vr_scan_msp = NULL;
@@ -4217,7 +4271,7 @@ Applied-Upstream: master
  	mutex_init(&vr->vr_io_lock, NULL, MUTEX_DEFAULT, NULL);
  	cv_init(&vr->vr_io_cv, NULL, CV_DEFAULT, NULL);
  
-@@ -833,7 +834,7 @@
+@@ -833,7 +834,7 @@ vdev_rebuild_thread(void *arg)
  			break;
  		}
  
@@ -4226,7 +4280,7 @@ Applied-Upstream: master
  
  		/* Disable any new allocations to this metaslab */
  		spa_config_exit(spa, SCL_CONFIG, FTAG);
-@@ -848,7 +849,7 @@
+@@ -848,7 +849,7 @@ vdev_rebuild_thread(void *arg)
  		 * on disk and therefore will be rebuilt.
  		 */
  		for (int j = 0; j < TXG_SIZE; j++) {
@@ -4235,7 +4289,7 @@ Applied-Upstream: master
  				mutex_exit(&msp->ms_lock);
  				mutex_exit(&msp->ms_sync_lock);
  				txg_wait_synced(dsl, 0);
-@@ -869,21 +870,21 @@
+@@ -869,21 +870,21 @@ vdev_rebuild_thread(void *arg)
  			    vr->vr_scan_tree, SM_ALLOC));
  
  			for (int i = 0; i < TXG_SIZE; i++) {
@@ -4263,7 +4317,7 @@ Applied-Upstream: master
  			    vrp->vrp_last_offset);
  		}
  
-@@ -904,7 +905,7 @@
+@@ -904,7 +905,7 @@ vdev_rebuild_thread(void *arg)
  		 * Walk the allocated space map and issue the rebuild I/O.
  		 */
  		error = vdev_rebuild_ranges(vr);
@@ -4272,7 +4326,7 @@ Applied-Upstream: master
  
  		spa_config_enter(spa, SCL_CONFIG, FTAG, RW_READER);
  		metaslab_enable(msp, B_FALSE, B_FALSE);
-@@ -913,7 +914,7 @@
+@@ -913,7 +914,7 @@ vdev_rebuild_thread(void *arg)
  			break;
  	}
  
@@ -4281,9 +4335,11 @@ Applied-Upstream: master
  	spa_config_exit(spa, SCL_CONFIG, FTAG);
  
  	/* Wait for any remaining rebuild I/O to complete */
+diff --git a/module/zfs/vdev_removal.c b/module/zfs/vdev_removal.c
+index 08c85a874..e1819448a 100644
 --- a/module/zfs/vdev_removal.c
 +++ b/module/zfs/vdev_removal.c
-@@ -369,12 +369,13 @@
+@@ -369,12 +369,13 @@ spa_vdev_removal_create(vdev_t *vd)
  	spa_vdev_removal_t *svr = kmem_zalloc(sizeof (*svr), KM_SLEEP);
  	mutex_init(&svr->svr_lock, NULL, MUTEX_DEFAULT, NULL);
  	cv_init(&svr->svr_cv, NULL, CV_DEFAULT, NULL);
@@ -4300,7 +4356,7 @@ Applied-Upstream: master
  		list_create(&svr->svr_new_segments[i],
  		    sizeof (vdev_indirect_mapping_entry_t),
  		    offsetof(vdev_indirect_mapping_entry_t, vime_node));
-@@ -389,11 +390,11 @@
+@@ -389,11 +390,11 @@ spa_vdev_removal_destroy(spa_vdev_removal_t *svr)
  	for (int i = 0; i < TXG_SIZE; i++) {
  		ASSERT0(svr->svr_bytes_done[i]);
  		ASSERT0(svr->svr_max_offset_to_sync[i]);
@@ -4314,7 +4370,7 @@ Applied-Upstream: master
  	mutex_destroy(&svr->svr_lock);
  	cv_destroy(&svr->svr_cv);
  	kmem_free(svr, sizeof (*svr));
-@@ -475,11 +476,11 @@
+@@ -475,11 +476,11 @@ vdev_remove_initiate_sync(void *arg, dmu_tx_t *tx)
  		 * be copied.
  		 */
  		spa->spa_removing_phys.sr_to_copy -=
@@ -4329,7 +4385,7 @@ Applied-Upstream: master
  	}
  
  	/*
-@@ -770,7 +771,7 @@
+@@ -770,7 +771,7 @@ free_from_removing_vdev(vdev_t *vd, uint64_t offset, uint64_t size)
  			 * completed the copy and synced the mapping (see
  			 * vdev_mapping_sync).
  			 */
@@ -4338,7 +4394,7 @@ Applied-Upstream: master
  			    offset, inflight_size);
  			size -= inflight_size;
  			offset += inflight_size;
-@@ -806,7 +807,8 @@
+@@ -806,7 +807,8 @@ free_from_removing_vdev(vdev_t *vd, uint64_t offset, uint64_t size)
  		    uint64_t, size);
  
  		if (svr->svr_allocd_segs != NULL)
@@ -4348,7 +4404,7 @@ Applied-Upstream: master
  
  		/*
  		 * Since we now do not need to copy this data, for
-@@ -915,7 +917,7 @@
+@@ -915,7 +917,7 @@ vdev_mapping_sync(void *arg, dmu_tx_t *tx)
  	 * mapping entries were in flight.
  	 */
  	mutex_enter(&svr->svr_lock);
@@ -4357,7 +4413,7 @@ Applied-Upstream: master
  	    free_mapped_segment_cb, vd);
  	ASSERT3U(svr->svr_max_offset_to_sync[txg & TXG_MASK], >=,
  	    vdev_indirect_mapping_max_offset(vim));
-@@ -929,7 +931,7 @@
+@@ -929,7 +931,7 @@ typedef struct vdev_copy_segment_arg {
  	spa_t *vcsa_spa;
  	dva_t *vcsa_dest_dva;
  	uint64_t vcsa_txg;
@@ -4366,7 +4422,7 @@ Applied-Upstream: master
  } vdev_copy_segment_arg_t;
  
  static void
-@@ -966,9 +968,9 @@
+@@ -966,9 +968,9 @@ spa_vdev_copy_segment_done(zio_t *zio)
  {
  	vdev_copy_segment_arg_t *vcsa = zio->io_private;
  
@@ -4378,7 +4434,7 @@ Applied-Upstream: master
  	kmem_free(vcsa, sizeof (*vcsa));
  
  	spa_config_exit(zio->io_spa, SCL_STATE, zio->io_spa);
-@@ -1119,7 +1121,7 @@
+@@ -1119,7 +1121,7 @@ spa_vdev_copy_one_child(vdev_copy_arg_t *vca, zio_t *nzio,
   * read from the old location and write to the new location.
   */
  static int
@@ -4387,7 +4443,7 @@ Applied-Upstream: master
      uint64_t maxalloc, uint64_t txg,
      vdev_copy_arg_t *vca, zio_alloc_list_t *zal)
  {
-@@ -1128,14 +1130,14 @@
+@@ -1128,14 +1130,14 @@ spa_vdev_copy_segment(vdev_t *vd, range_tree_t *segs,
  	spa_vdev_removal_t *svr = spa->spa_vdev_removal;
  	vdev_indirect_mapping_entry_t *entry;
  	dva_t dst = {{ 0 }};
@@ -4405,7 +4461,7 @@ Applied-Upstream: master
  		/*
  		 * We can't allocate all the segments.  Prefer to end
  		 * the allocation at the end of a segment, thus avoiding
-@@ -1143,13 +1145,13 @@
+@@ -1143,13 +1145,13 @@ spa_vdev_copy_segment(vdev_t *vd, range_tree_t *segs,
  		 */
  		range_seg_max_t search;
  		zfs_btree_index_t where;
@@ -4423,7 +4479,7 @@ Applied-Upstream: master
  		} else {
  			/*
  			 * There are no segments that end before maxalloc.
-@@ -1182,27 +1184,27 @@
+@@ -1182,27 +1184,27 @@ spa_vdev_copy_segment(vdev_t *vd, range_tree_t *segs,
  	 * relative to the start of the range to be copied (i.e. relative to the
  	 * local variable "start").
  	 */
@@ -4461,7 +4517,7 @@ Applied-Upstream: master
  
  	/*
  	 * We can't have any padding of the allocated size, otherwise we will
-@@ -1216,7 +1218,8 @@
+@@ -1216,7 +1218,8 @@ spa_vdev_copy_segment(vdev_t *vd, range_tree_t *segs,
  	DVA_MAPPING_SET_SRC_OFFSET(&entry->vime_mapping, start);
  	entry->vime_mapping.vimep_dst = dst;
  	if (spa_feature_is_enabled(spa, SPA_FEATURE_OBSOLETE_COUNTS)) {
@@ -4471,7 +4527,7 @@ Applied-Upstream: master
  	}
  
  	vdev_copy_segment_arg_t *vcsa = kmem_zalloc(sizeof (*vcsa), KM_SLEEP);
-@@ -1455,30 +1458,31 @@
+@@ -1455,30 +1458,31 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
  	 * allocated segments that we are copying.  We may also be copying
  	 * free segments (of up to vdev_removal_max_span bytes).
  	 */
@@ -4513,7 +4569,7 @@ Applied-Upstream: master
  				/*
  				 * This additional segment would extend past
  				 * max_alloc. Rather than splitting this
-@@ -1486,19 +1490,19 @@
+@@ -1486,19 +1490,19 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
  				 */
  				break;
  			} else {
@@ -4540,7 +4596,7 @@ Applied-Upstream: master
  		return;
  	}
  
-@@ -1507,20 +1511,20 @@
+@@ -1507,20 +1511,20 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
  		    svr, tx);
  	}
  
@@ -4564,7 +4620,7 @@ Applied-Upstream: master
  		int error = spa_vdev_copy_segment(vd,
  		    segs, thismax, txg, vca, &zal);
  
-@@ -1537,7 +1541,7 @@
+@@ -1537,7 +1541,7 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
  			ASSERT3U(spa->spa_max_ashift, >=, SPA_MINBLOCKSHIFT);
  			ASSERT3U(spa->spa_max_ashift, ==, spa->spa_min_ashift);
  			uint64_t attempted =
@@ -4573,7 +4629,7 @@ Applied-Upstream: master
  			thismax = P2ROUNDUP(attempted / 2,
  			    1 << spa->spa_max_ashift);
  			/*
-@@ -1557,7 +1561,7 @@
+@@ -1557,7 +1561,7 @@ spa_vdev_copy_impl(vdev_t *vd, spa_vdev_removal_t *svr, vdev_copy_arg_t *vca,
  		}
  	}
  	metaslab_trace_fini(&zal);
@@ -4582,7 +4638,7 @@ Applied-Upstream: master
  }
  
  /*
-@@ -1628,7 +1632,7 @@
+@@ -1628,7 +1632,7 @@ spa_vdev_remove_thread(void *arg)
  		metaslab_t *msp = vd->vdev_ms[msi];
  		ASSERT3U(msi, <=, vd->vdev_ms_count);
  
@@ -4591,7 +4647,7 @@ Applied-Upstream: master
  
  		mutex_enter(&msp->ms_sync_lock);
  		mutex_enter(&msp->ms_lock);
-@@ -1637,7 +1641,7 @@
+@@ -1637,7 +1641,7 @@ spa_vdev_remove_thread(void *arg)
  		 * Assert nothing in flight -- ms_*tree is empty.
  		 */
  		for (int i = 0; i < TXG_SIZE; i++) {
@@ -4600,7 +4656,7 @@ Applied-Upstream: master
  		}
  
  		/*
-@@ -1653,19 +1657,20 @@
+@@ -1653,19 +1657,20 @@ spa_vdev_remove_thread(void *arg)
  			VERIFY0(space_map_load(msp->ms_sm,
  			    svr->svr_allocd_segs, SM_ALLOC));
  
@@ -4628,7 +4684,7 @@ Applied-Upstream: master
  		}
  		mutex_exit(&msp->ms_lock);
  		mutex_exit(&msp->ms_sync_lock);
-@@ -1677,7 +1682,7 @@
+@@ -1677,7 +1682,7 @@ spa_vdev_remove_thread(void *arg)
  		    (u_longlong_t)msp->ms_id);
  
  		while (!svr->svr_thread_exit &&
@@ -4637,7 +4693,7 @@ Applied-Upstream: master
  
  			mutex_exit(&svr->svr_lock);
  
-@@ -1756,7 +1761,7 @@
+@@ -1756,7 +1761,7 @@ spa_vdev_remove_thread(void *arg)
  
  	if (svr->svr_thread_exit) {
  		mutex_enter(&svr->svr_lock);
@@ -4646,7 +4702,7 @@ Applied-Upstream: master
  		svr->svr_thread = NULL;
  		cv_broadcast(&svr->svr_cv);
  		mutex_exit(&svr->svr_lock);
-@@ -1776,7 +1781,7 @@
+@@ -1776,7 +1781,7 @@ spa_vdev_remove_thread(void *arg)
  			spa_vdev_remove_cancel_impl(spa);
  		}
  	} else {
@@ -4655,7 +4711,7 @@ Applied-Upstream: master
  		vdev_remove_complete(spa);
  	}
  
-@@ -1885,7 +1890,7 @@
+@@ -1885,7 +1890,7 @@ spa_vdev_remove_cancel_sync(void *arg, dmu_tx_t *tx)
  		if (msp->ms_start >= vdev_indirect_mapping_max_offset(vim))
  			break;
  
@@ -4664,7 +4720,7 @@ Applied-Upstream: master
  
  		mutex_enter(&msp->ms_lock);
  
-@@ -1893,22 +1898,22 @@
+@@ -1893,22 +1898,22 @@ spa_vdev_remove_cancel_sync(void *arg, dmu_tx_t *tx)
  		 * Assert nothing in flight -- ms_*tree is empty.
  		 */
  		for (int i = 0; i < TXG_SIZE; i++)
@@ -4696,7 +4752,7 @@ Applied-Upstream: master
  
  			/*
  			 * Clear everything past what has been synced,
-@@ -1918,7 +1923,7 @@
+@@ -1918,7 +1923,7 @@ spa_vdev_remove_cancel_sync(void *arg, dmu_tx_t *tx)
  			uint64_t sm_end = msp->ms_sm->sm_start +
  			    msp->ms_sm->sm_size;
  			if (sm_end > syncd)
@@ -4705,7 +4761,7 @@ Applied-Upstream: master
  				    syncd, sm_end - syncd);
  
  			mutex_exit(&svr->svr_lock);
-@@ -1926,7 +1931,7 @@
+@@ -1926,7 +1931,7 @@ spa_vdev_remove_cancel_sync(void *arg, dmu_tx_t *tx)
  		mutex_exit(&msp->ms_lock);
  
  		mutex_enter(&svr->svr_lock);
@@ -4714,7 +4770,7 @@ Applied-Upstream: master
  		    free_mapped_segment_cb, vd);
  		mutex_exit(&svr->svr_lock);
  	}
-@@ -1935,7 +1940,7 @@
+@@ -1935,7 +1940,7 @@ spa_vdev_remove_cancel_sync(void *arg, dmu_tx_t *tx)
  	 * Note: this must happen after we invoke free_mapped_segment_cb,
  	 * because it adds to the obsolete_segments.
  	 */
@@ -4723,9 +4779,11 @@ Applied-Upstream: master
  
  	ASSERT3U(vic->vic_mapping_object, ==,
  	    vdev_indirect_mapping_object(vd->vdev_indirect_mapping));
+diff --git a/module/zfs/vdev_trim.c b/module/zfs/vdev_trim.c
+index 9cf10332e..d13753f81 100644
 --- a/module/zfs/vdev_trim.c
 +++ b/module/zfs/vdev_trim.c
-@@ -149,7 +149,7 @@
+@@ -149,7 +149,7 @@ typedef struct trim_args {
  	 */
  	vdev_t		*trim_vdev;		/* Leaf vdev to TRIM */
  	metaslab_t	*trim_msp;		/* Disabled metaslab */
@@ -4734,7 +4792,7 @@ Applied-Upstream: master
  	trim_type_t	trim_type;		/* Manual or auto TRIM */
  	uint64_t	trim_extent_bytes_max;	/* Maximum TRIM I/O size */
  	uint64_t	trim_extent_bytes_min;	/* Minimum TRIM I/O size */
-@@ -601,10 +601,10 @@
+@@ -601,10 +601,10 @@ vdev_trim_ranges(trim_args_t *ta)
  	ta->trim_start_time = gethrtime();
  	ta->trim_bytes_done = 0;
  
@@ -4748,7 +4806,7 @@ Applied-Upstream: master
  
  		if (extent_bytes_min && size < extent_bytes_min) {
  			spa_iostats_trim_add(spa, ta->trim_type,
-@@ -617,7 +617,7 @@
+@@ -617,7 +617,7 @@ vdev_trim_ranges(trim_args_t *ta)
  
  		for (uint64_t w = 0; w < writes_required; w++) {
  			error = vdev_trim_range(ta, VDEV_LABEL_START_SIZE +
@@ -4757,7 +4815,7 @@ Applied-Upstream: master
  			    (w *extent_bytes_max), MIN(size -
  			    (w * extent_bytes_max), extent_bytes_max));
  			if (error != 0) {
-@@ -729,13 +729,13 @@
+@@ -729,13 +729,13 @@ vdev_trim_calculate_progress(vdev_t *vd)
  		 */
  		VERIFY0(metaslab_load(msp));
  
@@ -4775,7 +4833,7 @@ Applied-Upstream: master
  
  			vdev_xlate_walk(vd, &logical_rs,
  			    vdev_trim_xlate_progress, vd);
-@@ -832,7 +832,7 @@
+@@ -832,7 +832,7 @@ vdev_trim_xlate_range_add(void *arg, range_seg64_t *physical_rs)
  
  	ASSERT3U(physical_rs->rs_end, >, physical_rs->rs_start);
  
@@ -4784,7 +4842,7 @@ Applied-Upstream: master
  	    physical_rs->rs_end - physical_rs->rs_start);
  }
  
-@@ -858,7 +858,8 @@
+@@ -858,7 +858,8 @@ vdev_trim_range_add(void *arg, uint64_t start, uint64_t size)
  		metaslab_t *msp = ta->trim_msp;
  		VERIFY0(metaslab_load(msp));
  		VERIFY3B(msp->ms_loaded, ==, B_TRUE);
@@ -4794,7 +4852,7 @@ Applied-Upstream: master
  	}
  
  	ASSERT(vd->vdev_ops->vdev_op_leaf);
-@@ -900,7 +901,7 @@
+@@ -900,7 +901,7 @@ vdev_trim_thread(void *arg)
  	ta.trim_vdev = vd;
  	ta.trim_extent_bytes_max = zfs_trim_extent_bytes_max;
  	ta.trim_extent_bytes_min = zfs_trim_extent_bytes_min;
@@ -4803,7 +4861,7 @@ Applied-Upstream: master
  	ta.trim_type = TRIM_TYPE_MANUAL;
  	ta.trim_flags = 0;
  
-@@ -946,22 +947,23 @@
+@@ -946,22 +947,23 @@ vdev_trim_thread(void *arg)
  		}
  
  		ta.trim_msp = msp;
@@ -4831,7 +4889,7 @@ Applied-Upstream: master
  
  	mutex_enter(&vd->vdev_trim_lock);
  	if (!vd->vdev_trim_exit_wanted) {
-@@ -1204,7 +1206,7 @@
+@@ -1204,7 +1206,7 @@ vdev_trim_range_verify(void *arg, uint64_t start, uint64_t size)
  
  	VERIFY3B(msp->ms_loaded, ==, B_TRUE);
  	VERIFY3U(msp->ms_disabled, >, 0);
@@ -4840,7 +4898,7 @@ Applied-Upstream: master
  }
  
  /*
-@@ -1261,7 +1263,7 @@
+@@ -1261,7 +1263,7 @@ vdev_autotrim_thread(void *arg)
  		for (uint64_t i = shift % txgs_per_trim; i < vd->vdev_ms_count;
  		    i += txgs_per_trim) {
  			metaslab_t *msp = vd->vdev_ms[i];
@@ -4849,7 +4907,7 @@ Applied-Upstream: master
  			boolean_t issued_trim = B_FALSE;
  			boolean_t wait_aborted = B_FALSE;
  
-@@ -1276,7 +1278,7 @@
+@@ -1276,7 +1278,7 @@ vdev_autotrim_thread(void *arg)
  			 * or when there are no recent frees to trim.
  			 */
  			if (msp->ms_sm == NULL ||
@@ -4858,7 +4916,7 @@ Applied-Upstream: master
  				mutex_exit(&msp->ms_lock);
  				metaslab_enable(msp, B_FALSE, B_FALSE);
  				continue;
-@@ -1302,10 +1304,10 @@
+@@ -1302,10 +1304,10 @@ vdev_autotrim_thread(void *arg)
  			 * Allocate an empty range tree which is swapped in
  			 * for the existing ms_trim tree while it is processed.
  			 */
@@ -4873,7 +4931,7 @@ Applied-Upstream: master
  
  			/*
  			 * There are two cases when constructing the per-vdev
-@@ -1357,9 +1359,9 @@
+@@ -1357,9 +1359,9 @@ vdev_autotrim_thread(void *arg)
  				if (!cvd->vdev_ops->vdev_op_leaf)
  					continue;
  
@@ -4886,7 +4944,7 @@ Applied-Upstream: master
  				    vdev_trim_range_add, ta);
  			}
  
-@@ -1406,13 +1408,13 @@
+@@ -1406,13 +1408,13 @@ vdev_autotrim_thread(void *arg)
  				mutex_enter(&msp->ms_lock);
  				VERIFY0(metaslab_load(msp));
  				VERIFY3P(tap[0].trim_msp, ==, msp);
@@ -4903,7 +4961,7 @@ Applied-Upstream: master
  
  			/*
  			 * Wait for couples of kicks, to ensure the trim io is
-@@ -1434,8 +1436,9 @@
+@@ -1434,8 +1436,9 @@ vdev_autotrim_thread(void *arg)
  				if (ta->trim_tree == NULL)
  					continue;
  
@@ -4915,7 +4973,7 @@ Applied-Upstream: master
  			}
  
  			kmem_free(tap, sizeof (trim_args_t) * children);
-@@ -1474,7 +1477,7 @@
+@@ -1474,7 +1477,7 @@ vdev_autotrim_thread(void *arg)
  			metaslab_t *msp = vd->vdev_ms[i];
  
  			mutex_enter(&msp->ms_lock);
@@ -4924,7 +4982,7 @@ Applied-Upstream: master
  			mutex_exit(&msp->ms_lock);
  		}
  	}
-@@ -1596,7 +1599,7 @@
+@@ -1596,7 +1599,7 @@ vdev_trim_l2arc_thread(void *arg)
  	vd->vdev_trim_secure = 0;
  
  	ta.trim_vdev = vd;
@@ -4933,7 +4991,7 @@ Applied-Upstream: master
  	ta.trim_type = TRIM_TYPE_MANUAL;
  	ta.trim_extent_bytes_max = zfs_trim_extent_bytes_max;
  	ta.trim_extent_bytes_min = SPA_MINBLOCKSIZE;
-@@ -1606,7 +1609,7 @@
+@@ -1606,7 +1609,7 @@ vdev_trim_l2arc_thread(void *arg)
  	physical_rs.rs_end = vd->vdev_trim_bytes_est =
  	    vdev_get_min_asize(vd);
  
@@ -4942,7 +5000,7 @@ Applied-Upstream: master
  	    physical_rs.rs_end - physical_rs.rs_start);
  
  	mutex_enter(&vd->vdev_trim_lock);
-@@ -1622,8 +1625,8 @@
+@@ -1622,8 +1625,8 @@ vdev_trim_l2arc_thread(void *arg)
  	}
  	mutex_exit(&vd->vdev_trim_io_lock);
  
@@ -4953,7 +5011,7 @@ Applied-Upstream: master
  
  	mutex_enter(&vd->vdev_trim_lock);
  	if (!vd->vdev_trim_exit_wanted && vdev_writeable(vd)) {
-@@ -1731,7 +1734,7 @@
+@@ -1731,7 +1734,7 @@ vdev_trim_simple(vdev_t *vd, uint64_t start, uint64_t size)
  	ASSERT(!vd->vdev_top->vdev_rz_expanding);
  
  	ta.trim_vdev = vd;
@@ -4962,7 +5020,7 @@ Applied-Upstream: master
  	ta.trim_type = TRIM_TYPE_SIMPLE;
  	ta.trim_extent_bytes_max = zfs_trim_extent_bytes_max;
  	ta.trim_extent_bytes_min = SPA_MINBLOCKSIZE;
-@@ -1740,7 +1743,7 @@
+@@ -1740,7 +1743,7 @@ vdev_trim_simple(vdev_t *vd, uint64_t start, uint64_t size)
  	ASSERT3U(physical_rs.rs_end, >=, physical_rs.rs_start);
  
  	if (physical_rs.rs_end > physical_rs.rs_start) {
@@ -4971,7 +5029,7 @@ Applied-Upstream: master
  		    physical_rs.rs_end - physical_rs.rs_start);
  	} else {
  		ASSERT3U(physical_rs.rs_end, ==, physical_rs.rs_start);
-@@ -1754,8 +1757,8 @@
+@@ -1754,8 +1757,8 @@ vdev_trim_simple(vdev_t *vd, uint64_t start, uint64_t size)
  	}
  	mutex_exit(&vd->vdev_trim_io_lock);
  
@@ -4982,3 +5040,6 @@ Applied-Upstream: master
  
  	return (error);
  }
+-- 
+2.39.5
+

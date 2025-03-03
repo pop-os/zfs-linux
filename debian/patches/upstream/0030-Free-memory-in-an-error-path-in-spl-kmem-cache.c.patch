@@ -1,0 +1,30 @@
+From db62886d98a0f580fab937ec7389d72b5e517bc5 Mon Sep 17 00:00:00 2001
+From: vandanarungta <46906819+vandanarungta@users.noreply.github.com>
+Date: Tue, 11 Feb 2025 17:37:17 -0800
+Subject: [PATCH 30/53] Free memory in an error path in spl-kmem-cache.c
+
+skc->skc_name also needs to be freed in an error path.
+
+Reviewed-by: Alexander Motin <mav@FreeBSD.org>
+Reviewed-by: Tino Reichardt <milky-zfs@mcmilk.de>
+Signed-off-by: Vandana Rungta <vrungta@amazon.com>
+Closes #17041
+---
+ module/os/linux/spl/spl-kmem-cache.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/module/os/linux/spl/spl-kmem-cache.c b/module/os/linux/spl/spl-kmem-cache.c
+index 33c7d0879..da5513c50 100644
+--- a/module/os/linux/spl/spl-kmem-cache.c
++++ b/module/os/linux/spl/spl-kmem-cache.c
+@@ -727,6 +727,7 @@ spl_kmem_cache_create(const char *name, size_t size, size_t align,
+ 
+ 	rc = percpu_counter_init(&skc->skc_linux_alloc, 0, GFP_KERNEL);
+ 	if (rc != 0) {
++		kfree(skc->skc_name);
+ 		kfree(skc);
+ 		return (NULL);
+ 	}
+-- 
+2.39.5
+

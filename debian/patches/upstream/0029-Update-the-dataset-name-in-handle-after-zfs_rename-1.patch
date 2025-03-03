@@ -1,0 +1,43 @@
+From b901d4a0b6388eb75456d6888ba4fea103c907cc Mon Sep 17 00:00:00 2001
+From: Umer Saleem <usaleem@ixsystems.com>
+Date: Tue, 11 Feb 2025 22:07:29 +0500
+Subject: [PATCH 29/53] Update the dataset name in handle after zfs_rename
+ (#17040)
+
+For zfs_rename, after the dataset name is successfully updated,
+the dataset handle that was passed to zfs_rename, still contains
+the old name, due to which, the dataset handle becomes invalid.
+The following operations performed using this handle result in
+error since the dataset with old name cannot be found anymore.
+
+changelist_rename does update the names in dataset handles,
+but those are temporary handles that were created during
+changelist_gather. The original handle that was used to call
+zfs_rename is not updated.
+
+We should update the name in original ZFS handle after the IOCTL
+for rename returns success for the operation.
+
+Signed-off-by: Umer Saleem <usaleem@ixsystems.com>
+Reviewed-by: Ameer Hamza <ahamza@ixsystems.com>
+Reviewed-by: Alexander Motin <mav@FreeBSD.org>
+Reviewed-by: Tony Hutter <hutter2@llnl.gov>
+---
+ lib/libzfs/libzfs_dataset.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/lib/libzfs/libzfs_dataset.c b/lib/libzfs/libzfs_dataset.c
+index 231bbbd92..06fa52b00 100644
+--- a/lib/libzfs/libzfs_dataset.c
++++ b/lib/libzfs/libzfs_dataset.c
+@@ -4673,6 +4673,7 @@ zfs_rename(zfs_handle_t *zhp, const char *target, renameflags_t flags)
+ 			changelist_rename(cl, zfs_get_name(zhp), target);
+ 			ret = changelist_postfix(cl);
+ 		}
++		(void) strlcpy(zhp->zfs_name, target, sizeof (zhp->zfs_name));
+ 	}
+ 
+ error:
+-- 
+2.39.5
+

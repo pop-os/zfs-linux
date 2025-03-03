@@ -1,0 +1,31 @@
+From 21205f6488ade598427cc525b349be75a69d69bd Mon Sep 17 00:00:00 2001
+From: Jaydeep Kshirsagar <jkshirsagar@maxlinear.com>
+Date: Sat, 1 Feb 2025 08:15:24 -0800
+Subject: [PATCH 18/53] Avoid ARC buffer transfrom operations in prefetch
+
+This change will prevent prefetch to perform unnecessary ARC buffer
+fill when reading from disk.
+
+Reviewed-by: Alexander Motin <mav@FreeBSD.org>
+Signed-off-by: Jaydeep Kshirsagar <jkshirsagar@maxlinear.com>
+Co-authored-by: Alexander Motin <mav@FreeBSD.org>
+Closes #17013
+---
+ module/zfs/arc.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/module/zfs/arc.c b/module/zfs/arc.c
+index bd6f076df..1f653d953 100644
+--- a/module/zfs/arc.c
++++ b/module/zfs/arc.c
+@@ -6031,6 +6031,7 @@ top:
+ 		acb->acb_compressed = compressed_read;
+ 		acb->acb_encrypted = encrypted_read;
+ 		acb->acb_noauth = noauth_read;
++		acb->acb_nobuf = no_buf;
+ 		acb->acb_zb = *zb;
+ 
+ 		ASSERT3P(hdr->b_l1hdr.b_acb, ==, NULL);
+-- 
+2.39.5
+
