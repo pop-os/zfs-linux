@@ -1,13 +1,12 @@
 From 68473c4fd84774ffa0e413975f49ac1a98b84858 Mon Sep 17 00:00:00 2001
 From: Rob Norris <robn@despairlabs.com>
 Date: Tue, 11 Feb 2025 08:50:10 +1100
-Subject: [PATCH] range_tree: convert remaining range_* defs to zfs_range_*
+Subject: [PATCH 32/53] range_tree: convert remaining range_* defs to
+ zfs_range_*
 
 Signed-off-by: Rob Norris <robn@despairlabs.com>
 Reviewed-by: Tony Hutter <hutter2@llnl.gov>
 Reviewed-by: Rob Norris <robn@despairlabs.com>
-Forwarded: https://github.com/openzfs/zfs/pull/17010
-Applied-Upstream: master
 ---
  cmd/zdb/zdb.c                |  7 ++---
  include/sys/metaslab_impl.h  |  4 +--
@@ -27,9 +26,11 @@ Applied-Upstream: master
  module/zfs/vdev_trim.c       | 14 +++++-----
  16 files changed, 126 insertions(+), 124 deletions(-)
 
+diff --git a/cmd/zdb/zdb.c b/cmd/zdb/zdb.c
+index dd521257c..5e8f282e9 100644
 --- a/cmd/zdb/zdb.c
 +++ b/cmd/zdb/zdb.c
-@@ -1646,7 +1646,7 @@
+@@ -1646,7 +1646,7 @@ dump_metaslab_stats(metaslab_t *msp)
  	    "segments", zfs_btree_numnodes(t), "maxsize", maxbuf,
  	    "freepct", free_pct);
  	(void) printf("\tIn-memory histogram:\n");
@@ -38,7 +39,7 @@ Applied-Upstream: master
  }
  
  static void
-@@ -1769,7 +1769,8 @@
+@@ -1769,7 +1769,8 @@ dump_metaslab_groups(spa_t *spa, boolean_t show_special)
  			(void) printf("%3llu%%\n",
  			    (u_longlong_t)mg->mg_fragmentation);
  		}
@@ -48,7 +49,7 @@ Applied-Upstream: master
  	}
  
  	(void) printf("\tpool %s\tfragmentation", spa_name(spa));
-@@ -1778,7 +1779,7 @@
+@@ -1778,7 +1779,7 @@ dump_metaslab_groups(spa_t *spa, boolean_t show_special)
  		(void) printf("\t%3s\n", "-");
  	else
  		(void) printf("\t%3llu%%\n", (u_longlong_t)fragmentation);
@@ -57,9 +58,11 @@ Applied-Upstream: master
  }
  
  static void
+diff --git a/include/sys/metaslab_impl.h b/include/sys/metaslab_impl.h
+index eae543731..9c35f27ff 100644
 --- a/include/sys/metaslab_impl.h
 +++ b/include/sys/metaslab_impl.h
-@@ -200,7 +200,7 @@
+@@ -200,7 +200,7 @@ struct metaslab_class {
  	uint64_t		mc_deferred;	/* total deferred frees */
  	uint64_t		mc_space;	/* total space (alloc + free) */
  	uint64_t		mc_dspace;	/* total deflated space */
@@ -68,7 +71,7 @@ Applied-Upstream: master
  
  	/*
  	 * List of all loaded metaslabs in the class, sorted in order of most
-@@ -290,7 +290,7 @@
+@@ -290,7 +290,7 @@ struct metaslab_group {
  	uint64_t		mg_allocations;
  	uint64_t		mg_failed_allocations;
  	uint64_t		mg_fragmentation;
@@ -77,6 +80,8 @@ Applied-Upstream: master
  
  	int			mg_ms_disabled;
  	boolean_t		mg_disabled_updating;
+diff --git a/include/sys/range_tree.h b/include/sys/range_tree.h
+index 4b0a3f2bf..23eea3210 100644
 --- a/include/sys/range_tree.h
 +++ b/include/sys/range_tree.h
 @@ -37,7 +37,7 @@
@@ -88,7 +93,7 @@ Applied-Upstream: master
  
  typedef struct zfs_range_tree_ops zfs_range_tree_ops_t;
  
-@@ -72,34 +72,34 @@
+@@ -72,34 +72,34 @@ typedef struct zfs_range_tree {
  	 * rt_histogram[i], contains the number of ranges whose size is:
  	 * 2^i <= size of range in bytes < 2^(i+1)
  	 */
@@ -131,7 +136,7 @@ Applied-Upstream: master
  
  /*
   * This is just for clarity of code purposes, so we can make it clear that a
-@@ -122,11 +122,11 @@
+@@ -122,11 +122,11 @@ zfs_rs_get_start_raw(const zfs_range_seg_t *rs, const zfs_range_tree_t *rt)
  	ASSERT3U(rt->rt_type, <=, ZFS_RANGE_SEG_NUM_TYPES);
  	switch (rt->rt_type) {
  	case ZFS_RANGE_SEG32:
@@ -146,7 +151,7 @@ Applied-Upstream: master
  	default:
  		VERIFY(0);
  		return (0);
-@@ -139,11 +139,11 @@
+@@ -139,11 +139,11 @@ zfs_rs_get_end_raw(const zfs_range_seg_t *rs, const zfs_range_tree_t *rt)
  	ASSERT3U(rt->rt_type, <=, ZFS_RANGE_SEG_NUM_TYPES);
  	switch (rt->rt_type) {
  	case ZFS_RANGE_SEG32:
@@ -161,7 +166,7 @@ Applied-Upstream: master
  	default:
  		VERIFY(0);
  		return (0);
-@@ -156,15 +156,15 @@
+@@ -156,15 +156,15 @@ zfs_rs_get_fill_raw(const zfs_range_seg_t *rs, const zfs_range_tree_t *rt)
  	ASSERT3U(rt->rt_type, <=, ZFS_RANGE_SEG_NUM_TYPES);
  	switch (rt->rt_type) {
  	case ZFS_RANGE_SEG32: {
@@ -180,7 +185,7 @@ Applied-Upstream: master
  	default:
  		VERIFY(0);
  		return (0);
-@@ -197,13 +197,13 @@
+@@ -197,13 +197,13 @@ zfs_rs_set_start_raw(zfs_range_seg_t *rs, zfs_range_tree_t *rt, uint64_t start)
  	switch (rt->rt_type) {
  	case ZFS_RANGE_SEG32:
  		ASSERT3U(start, <=, UINT32_MAX);
@@ -197,7 +202,7 @@ Applied-Upstream: master
  		break;
  	default:
  		VERIFY(0);
-@@ -217,13 +217,13 @@
+@@ -217,13 +217,13 @@ zfs_rs_set_end_raw(zfs_range_seg_t *rs, zfs_range_tree_t *rt, uint64_t end)
  	switch (rt->rt_type) {
  	case ZFS_RANGE_SEG32:
  		ASSERT3U(end, <=, UINT32_MAX);
@@ -214,7 +219,7 @@ Applied-Upstream: master
  		break;
  	default:
  		VERIFY(0);
-@@ -243,7 +243,7 @@
+@@ -243,7 +243,7 @@ zfs_zfs_rs_set_fill_raw(zfs_range_seg_t *rs, zfs_range_tree_t *rt,
  		    zfs_rs_get_start_raw(rs, rt));
  		break;
  	case ZFS_RANGE_SEG_GAP:
@@ -223,9 +228,11 @@ Applied-Upstream: master
  		break;
  	default:
  		VERIFY(0);
+diff --git a/include/sys/vdev.h b/include/sys/vdev.h
+index 38f62b07d..6ab7ac40b 100644
 --- a/include/sys/vdev.h
 +++ b/include/sys/vdev.h
-@@ -106,12 +106,12 @@
+@@ -106,12 +106,12 @@ extern void vdev_expand(vdev_t *vd, uint64_t txg);
  extern void vdev_split(vdev_t *vd);
  extern void vdev_deadman(vdev_t *vd, const char *tag);
  
@@ -243,9 +250,11 @@ Applied-Upstream: master
      vdev_xlate_func_t *func, void *arg);
  
  extern void vdev_get_stats_ex(vdev_t *vd, vdev_stat_t *vs, vdev_stat_ex_t *vsx);
+diff --git a/include/sys/vdev_impl.h b/include/sys/vdev_impl.h
+index 6840ee789..315e2fc88 100644
 --- a/include/sys/vdev_impl.h
 +++ b/include/sys/vdev_impl.h
-@@ -91,8 +91,8 @@
+@@ -91,8 +91,8 @@ typedef void	vdev_remap_func_t(vdev_t *vd, uint64_t offset, uint64_t size,
   * Given a target vdev, translates the logical range "in" to the physical
   * range "res"
   */
@@ -256,7 +265,7 @@ Applied-Upstream: master
  typedef uint64_t vdev_rebuild_asize_func_t(vdev_t *vd, uint64_t start,
      uint64_t size, uint64_t max_segment);
  typedef void vdev_metaslab_init_func_t(vdev_t *vd, uint64_t *startp,
-@@ -616,8 +616,8 @@
+@@ -616,8 +616,8 @@ extern vdev_ops_t vdev_indirect_ops;
  /*
   * Common size functions
   */
@@ -267,9 +276,11 @@ Applied-Upstream: master
  extern uint64_t vdev_default_asize(vdev_t *vd, uint64_t psize, uint64_t txg);
  extern uint64_t vdev_default_min_asize(vdev_t *vd);
  extern uint64_t vdev_get_min_asize(vdev_t *vd);
+diff --git a/module/zfs/dsl_scan.c b/module/zfs/dsl_scan.c
+index bc5c3cb9a..5977f8c82 100644
 --- a/module/zfs/dsl_scan.c
 +++ b/module/zfs/dsl_scan.c
-@@ -1602,8 +1602,8 @@
+@@ -1602,8 +1602,8 @@ dsl_scan_should_clear(dsl_scan_t *scn)
  			 * # of extents in exts_by_addr = # in exts_by_size.
  			 * B-tree efficiency is ~75%, but can be as low as 50%.
  			 */
@@ -280,7 +291,7 @@ Applied-Upstream: master
  			    3 / 2) + queue->q_sio_memused;
  		}
  		mutex_exit(&tvd->vdev_scan_io_queue_lock);
-@@ -5006,7 +5006,7 @@
+@@ -5006,7 +5006,7 @@ ext_size_destroy(zfs_range_tree_t *rt, void *arg)
  }
  
  static uint64_t
@@ -289,7 +300,7 @@ Applied-Upstream: master
  {
  	(void) rt;
  	uint64_t size = rsg->rs_end - rsg->rs_start;
-@@ -5021,7 +5021,7 @@
+@@ -5021,7 +5021,7 @@ ext_size_add(zfs_range_tree_t *rt, zfs_range_seg_t *rs, void *arg)
  {
  	zfs_btree_t *size_tree = arg;
  	ASSERT3U(rt->rt_type, ==, ZFS_RANGE_SEG_GAP);
@@ -298,7 +309,7 @@ Applied-Upstream: master
  	zfs_btree_add(size_tree, &v);
  }
  
-@@ -5030,7 +5030,7 @@
+@@ -5030,7 +5030,7 @@ ext_size_remove(zfs_range_tree_t *rt, zfs_range_seg_t *rs, void *arg)
  {
  	zfs_btree_t *size_tree = arg;
  	ASSERT3U(rt->rt_type, ==, ZFS_RANGE_SEG_GAP);
@@ -307,9 +318,11 @@ Applied-Upstream: master
  	zfs_btree_remove(size_tree, &v);
  }
  
+diff --git a/module/zfs/metaslab.c b/module/zfs/metaslab.c
+index 105467988..e3c9afbd6 100644
 --- a/module/zfs/metaslab.c
 +++ b/module/zfs/metaslab.c
-@@ -518,7 +518,7 @@
+@@ -518,7 +518,7 @@ metaslab_class_histogram_verify(metaslab_class_t *mc)
  	if ((zfs_flags & ZFS_DEBUG_HISTOGRAM_VERIFY) == 0)
  		return;
  
@@ -318,7 +331,7 @@ Applied-Upstream: master
  	    KM_SLEEP);
  
  	mutex_enter(&mc->mc_lock);
-@@ -538,16 +538,16 @@
+@@ -538,16 +538,16 @@ metaslab_class_histogram_verify(metaslab_class_t *mc)
  		IMPLY(mg == mg->mg_vd->vdev_log_mg,
  		    mc == spa_embedded_log_class(mg->mg_vd->vdev_spa));
  
@@ -338,7 +351,7 @@ Applied-Upstream: master
  }
  
  /*
-@@ -1029,10 +1029,10 @@
+@@ -1029,10 +1029,10 @@ metaslab_group_histogram_verify(metaslab_group_t *mg)
  	if ((zfs_flags & ZFS_DEBUG_HISTOGRAM_VERIFY) == 0)
  		return;
  
@@ -351,7 +364,7 @@ Applied-Upstream: master
  	    SPACE_MAP_HISTOGRAM_SIZE + ashift);
  
  	mutex_enter(&mg->mg_lock);
-@@ -1049,12 +1049,12 @@
+@@ -1049,12 +1049,12 @@ metaslab_group_histogram_verify(metaslab_group_t *mg)
  		}
  	}
  
@@ -366,7 +379,7 @@ Applied-Upstream: master
  }
  
  static void
-@@ -1344,8 +1344,8 @@
+@@ -1344,8 +1344,8 @@ __attribute__((always_inline)) inline
  static int
  metaslab_rangesize32_compare(const void *x1, const void *x2)
  {
@@ -377,7 +390,7 @@ Applied-Upstream: master
  
  	uint64_t rs_size1 = r1->rs_end - r1->rs_start;
  	uint64_t rs_size2 = r2->rs_end - r2->rs_start;
-@@ -1363,8 +1363,8 @@
+@@ -1363,8 +1363,8 @@ __attribute__((always_inline)) inline
  static int
  metaslab_rangesize64_compare(const void *x1, const void *x2)
  {
@@ -388,7 +401,7 @@ Applied-Upstream: master
  
  	uint64_t rs_size1 = r1->rs_end - r1->rs_start;
  	uint64_t rs_size2 = r2->rs_end - r2->rs_start;
-@@ -1390,7 +1390,7 @@
+@@ -1390,7 +1390,7 @@ metaslab_size_sorted_add(void *arg, uint64_t start, uint64_t size)
  	struct mssa_arg *mssap = arg;
  	zfs_range_tree_t *rt = mssap->rt;
  	metaslab_rt_arg_t *mrap = mssap->mra;
@@ -397,7 +410,7 @@ Applied-Upstream: master
  	zfs_rs_set_start(&seg, rt, start);
  	zfs_rs_set_end(&seg, rt, start + size);
  	metaslab_rt_add(rt, &seg, mrap);
-@@ -1411,10 +1411,10 @@
+@@ -1411,10 +1411,10 @@ metaslab_size_tree_full_load(zfs_range_tree_t *rt)
  
  
  ZFS_BTREE_FIND_IN_BUF_FUNC(metaslab_rt_find_rangesize32_in_buf,
@@ -410,7 +423,7 @@ Applied-Upstream: master
  
  /*
   * Create any block allocator specific components. The current allocators
-@@ -1432,12 +1432,12 @@
+@@ -1432,12 +1432,12 @@ metaslab_rt_create(zfs_range_tree_t *rt, void *arg)
  	bt_find_in_buf_f bt_find;
  	switch (rt->rt_type) {
  	case ZFS_RANGE_SEG32:
@@ -425,7 +438,7 @@ Applied-Upstream: master
  		compare = metaslab_rangesize64_compare;
  		bt_find = metaslab_rt_find_rangesize64_in_buf;
  		break;
-@@ -1603,7 +1603,7 @@
+@@ -1603,7 +1603,7 @@ metaslab_block_find(zfs_btree_t *t, zfs_range_tree_t *rt, uint64_t start,
      uint64_t size, zfs_btree_index_t *where)
  {
  	zfs_range_seg_t *rs;
@@ -434,7 +447,7 @@ Applied-Upstream: master
  
  	zfs_rs_set_start(&rsearch, rt, start);
  	zfs_rs_set_end(&rsearch, rt, start + size);
-@@ -1857,7 +1857,7 @@
+@@ -1857,7 +1857,7 @@ metaslab_ndf_alloc(metaslab_t *msp, uint64_t size)
  	zfs_range_tree_t *rt = msp->ms_allocatable;
  	zfs_btree_index_t where;
  	zfs_range_seg_t *rs;
@@ -443,7 +456,7 @@ Applied-Upstream: master
  	uint64_t hbit = highbit64(size);
  	uint64_t *cursor = &msp->ms_lbas[hbit - 1];
  	uint64_t max_size = metaslab_largest_allocatable(msp);
-@@ -2035,7 +2035,7 @@
+@@ -2035,7 +2035,7 @@ metaslab_aux_histogram_add(uint64_t *histogram, uint64_t shift,
  	 * from the space map histogram.
  	 */
  	int idx = 0;
@@ -452,7 +465,7 @@ Applied-Upstream: master
  		ASSERT3U(i, >=, idx + shift);
  		histogram[idx] += rt->rt_histogram[i] << (i - idx - shift);
  
-@@ -3105,7 +3105,7 @@
+@@ -3110,7 +3110,7 @@ metaslab_weight_from_range_tree(metaslab_t *msp)
  
  	ASSERT(msp->ms_loaded);
  
@@ -461,9 +474,11 @@ Applied-Upstream: master
  	    i--) {
  		uint8_t shift = msp->ms_group->mg_vd->vdev_ashift;
  		int max_idx = SPACE_MAP_HISTOGRAM_SIZE + shift - 1;
+diff --git a/module/zfs/range_tree.c b/module/zfs/range_tree.c
+index 3cbd5712e..8bb9a0724 100644
 --- a/module/zfs/range_tree.c
 +++ b/module/zfs/range_tree.c
-@@ -82,13 +82,13 @@
+@@ -82,13 +82,13 @@ zfs_rs_copy(zfs_range_seg_t *src, zfs_range_seg_t *dest, zfs_range_tree_t *rt)
  	size_t size = 0;
  	switch (rt->rt_type) {
  	case ZFS_RANGE_SEG32:
@@ -480,7 +495,7 @@ Applied-Upstream: master
  		break;
  	default:
  		__builtin_unreachable();
-@@ -101,7 +101,7 @@
+@@ -101,7 +101,7 @@ zfs_range_tree_stat_verify(zfs_range_tree_t *rt)
  {
  	zfs_range_seg_t *rs;
  	zfs_btree_index_t where;
@@ -489,7 +504,7 @@ Applied-Upstream: master
  	int i;
  
  	for (rs = zfs_btree_first(&rt->rt_root, &where); rs != NULL;
-@@ -114,7 +114,7 @@
+@@ -114,7 +114,7 @@ zfs_range_tree_stat_verify(zfs_range_tree_t *rt)
  		ASSERT3U(hist[idx], !=, 0);
  	}
  
@@ -498,7 +513,7 @@ Applied-Upstream: master
  		if (hist[i] != rt->rt_histogram[i]) {
  			zfs_dbgmsg("i=%d, hist=%px, hist=%llu, rt_hist=%llu",
  			    i, hist, (u_longlong_t)hist[i],
-@@ -156,8 +156,8 @@
+@@ -156,8 +156,8 @@ __attribute__((always_inline)) inline
  static int
  zfs_range_tree_seg32_compare(const void *x1, const void *x2)
  {
@@ -509,7 +524,7 @@ Applied-Upstream: master
  
  	ASSERT3U(r1->rs_start, <=, r1->rs_end);
  	ASSERT3U(r2->rs_start, <=, r2->rs_end);
-@@ -169,8 +169,8 @@
+@@ -169,8 +169,8 @@ __attribute__((always_inline)) inline
  static int
  zfs_range_tree_seg64_compare(const void *x1, const void *x2)
  {
@@ -520,7 +535,7 @@ Applied-Upstream: master
  
  	ASSERT3U(r1->rs_start, <=, r1->rs_end);
  	ASSERT3U(r2->rs_start, <=, r2->rs_end);
-@@ -182,8 +182,8 @@
+@@ -182,8 +182,8 @@ __attribute__((always_inline)) inline
  static int
  zfs_range_tree_seg_gap_compare(const void *x1, const void *x2)
  {
@@ -531,7 +546,7 @@ Applied-Upstream: master
  
  	ASSERT3U(r1->rs_start, <=, r1->rs_end);
  	ASSERT3U(r2->rs_start, <=, r2->rs_end);
-@@ -191,14 +191,14 @@
+@@ -191,14 +191,14 @@ zfs_range_tree_seg_gap_compare(const void *x1, const void *x2)
  	return ((r1->rs_start >= r2->rs_end) - (r1->rs_end <= r2->rs_start));
  }
  
@@ -550,7 +565,7 @@ Applied-Upstream: master
  
  zfs_range_tree_t *
  zfs_range_tree_create_gap(const zfs_range_tree_ops_t *ops,
-@@ -214,17 +214,17 @@
+@@ -214,17 +214,17 @@ zfs_range_tree_create_gap(const zfs_range_tree_ops_t *ops,
  	bt_find_in_buf_f bt_find;
  	switch (type) {
  	case ZFS_RANGE_SEG32:
@@ -571,7 +586,7 @@ Applied-Upstream: master
  		compare = zfs_range_tree_seg_gap_compare;
  		bt_find = zfs_range_tree_seg_gap_find_in_buf;
  		break;
-@@ -296,7 +296,7 @@
+@@ -296,7 +296,7 @@ zfs_range_tree_add_impl(void *arg, uint64_t start, uint64_t size, uint64_t fill)
  	zfs_range_tree_t *rt = arg;
  	zfs_btree_index_t where;
  	zfs_range_seg_t *rs_before, *rs_after, *rs;
@@ -580,7 +595,7 @@ Applied-Upstream: master
  	uint64_t end = start + size, gap = rt->rt_gap;
  	uint64_t bridge_size = 0;
  	boolean_t merge_before, merge_after;
-@@ -448,7 +448,7 @@
+@@ -448,7 +448,7 @@ zfs_range_tree_remove_impl(zfs_range_tree_t *rt, uint64_t start, uint64_t size,
  {
  	zfs_btree_index_t where;
  	zfs_range_seg_t *rs;
@@ -589,7 +604,7 @@ Applied-Upstream: master
  	uint64_t end = start + size;
  	boolean_t left_over, right_over;
  
-@@ -510,7 +510,7 @@
+@@ -510,7 +510,7 @@ zfs_range_tree_remove_impl(zfs_range_tree_t *rt, uint64_t start, uint64_t size,
  		rt->rt_ops->rtop_remove(rt, rs, rt->rt_arg);
  
  	if (left_over && right_over) {
@@ -598,7 +613,7 @@ Applied-Upstream: master
  		zfs_rs_set_start(&newseg, rt, end);
  		zfs_rs_set_end_raw(&newseg, rt, zfs_rs_get_end_raw(rs, rt));
  		zfs_rs_set_fill(&newseg, rt, zfs_rs_get_end(rs, rt) - end);
-@@ -593,7 +593,7 @@
+@@ -593,7 +593,7 @@ zfs_range_tree_resize_segment(zfs_range_tree_t *rt, zfs_range_seg_t *rs,
  static zfs_range_seg_t *
  zfs_range_tree_find_impl(zfs_range_tree_t *rt, uint64_t start, uint64_t size)
  {
@@ -607,7 +622,7 @@ Applied-Upstream: master
  	uint64_t end = start + size;
  
  	VERIFY(size != 0);
-@@ -644,7 +644,7 @@
+@@ -644,7 +644,7 @@ zfs_range_tree_find_in(zfs_range_tree_t *rt, uint64_t start, uint64_t size,
  	if (rt->rt_type == ZFS_RANGE_SEG64)
  		ASSERT3U(start + size, >, start);
  
@@ -616,7 +631,7 @@ Applied-Upstream: master
  	zfs_rs_set_start(&rsearch, rt, start);
  	zfs_rs_set_end_raw(&rsearch, rt, zfs_rs_get_start_raw(&rsearch, rt) +
  	    1);
-@@ -772,7 +772,7 @@
+@@ -772,7 +772,7 @@ zfs_range_tree_remove_xor_add_segment(uint64_t start, uint64_t end,
      zfs_range_tree_t *removefrom, zfs_range_tree_t *addto)
  {
  	zfs_btree_index_t where;
@@ -625,7 +640,7 @@ Applied-Upstream: master
  	zfs_rs_set_start(&starting_rs, removefrom, start);
  	zfs_rs_set_end_raw(&starting_rs, removefrom,
  	    zfs_rs_get_start_raw(&starting_rs, removefrom) + 1);
-@@ -801,7 +801,7 @@
+@@ -801,7 +801,7 @@ zfs_range_tree_remove_xor_add_segment(uint64_t start, uint64_t end,
  		    end);
  		uint64_t overlap_size = overlap_end - overlap_start;
  		ASSERT3S(overlap_size, >, 0);
@@ -634,9 +649,11 @@ Applied-Upstream: master
  		zfs_rs_copy(curr, &rs, removefrom);
  
  		zfs_range_tree_remove(removefrom, overlap_start, overlap_size);
+diff --git a/module/zfs/space_map.c b/module/zfs/space_map.c
+index e9e03e05c..36e15b8d7 100644
 --- a/module/zfs/space_map.c
 +++ b/module/zfs/space_map.c
-@@ -497,7 +497,7 @@
+@@ -497,7 +497,7 @@ space_map_histogram_add(space_map_t *sm, zfs_range_tree_t *rt, dmu_tx_t *tx)
  	 * map only cares about allocatable blocks (minimum of sm_shift) we
  	 * can safely ignore all ranges in the range tree smaller than sm_shift.
  	 */
@@ -645,7 +662,7 @@ Applied-Upstream: master
  
  		/*
  		 * Since the largest histogram bucket in the space map is
-@@ -1050,7 +1050,7 @@
+@@ -1050,7 +1050,7 @@ space_map_estimate_optimal_size(space_map_t *sm, zfs_range_tree_t *rt,
  			size += histogram[idx] * entry_size;
  
  		if (!spa_feature_is_enabled(spa, SPA_FEATURE_SPACEMAP_V2)) {
@@ -654,7 +671,7 @@ Applied-Upstream: master
  				ASSERT3U(idx, >=, single_entry_max_bucket);
  				entries_for_seg =
  				    1ULL << (idx - single_entry_max_bucket);
-@@ -1067,7 +1067,7 @@
+@@ -1067,7 +1067,7 @@ space_map_estimate_optimal_size(space_map_t *sm, zfs_range_tree_t *rt,
  	for (; idx <= double_entry_max_bucket; idx++)
  		size += histogram[idx] * 2 * sizeof (uint64_t);
  
@@ -663,9 +680,11 @@ Applied-Upstream: master
  		ASSERT3U(idx, >=, double_entry_max_bucket);
  		entries_for_seg = 1ULL << (idx - double_entry_max_bucket);
  		size += histogram[idx] *
+diff --git a/module/zfs/vdev.c b/module/zfs/vdev.c
+index 40fd75b83..74e36c030 100644
 --- a/module/zfs/vdev.c
 +++ b/module/zfs/vdev.c
-@@ -294,8 +294,8 @@
+@@ -294,8 +294,8 @@ vdev_get_mg(vdev_t *vd, metaslab_class_t *mc)
  }
  
  void
@@ -676,7 +695,7 @@ Applied-Upstream: master
  {
  	(void) vd, (void) remain_rs;
  
-@@ -1677,7 +1677,7 @@
+@@ -1677,7 +1677,7 @@ vdev_metaslab_fini(vdev_t *vd)
  		vd->vdev_ms = NULL;
  		vd->vdev_ms_count = 0;
  
@@ -685,7 +704,7 @@ Applied-Upstream: master
  			ASSERT0(mg->mg_histogram[i]);
  			if (vd->vdev_log_mg != NULL)
  				ASSERT0(vd->vdev_log_mg->mg_histogram[i]);
-@@ -5689,7 +5689,7 @@
+@@ -5689,7 +5689,7 @@ vdev_clear_resilver_deferred(vdev_t *vd, dmu_tx_t *tx)
  }
  
  boolean_t
@@ -694,7 +713,7 @@ Applied-Upstream: master
  {
  	return (rs->rs_start == rs->rs_end);
  }
-@@ -5703,8 +5703,8 @@
+@@ -5703,8 +5703,8 @@ vdev_xlate_is_empty(range_seg64_t *rs)
   * specific translation function to do the real conversion.
   */
  void
@@ -705,7 +724,7 @@ Applied-Upstream: master
  {
  	/*
  	 * Walk up the vdev tree
-@@ -5736,7 +5736,7 @@
+@@ -5736,7 +5736,7 @@ vdev_xlate(vdev_t *vd, const range_seg64_t *logical_rs,
  	 * range into its physical and any remaining components by calling
  	 * the vdev specific translate function.
  	 */
@@ -714,7 +733,7 @@ Applied-Upstream: master
  	pvd->vdev_ops->vdev_op_xlate(vd, physical_rs, &intermediate, remain_rs);
  
  	physical_rs->rs_start = intermediate.rs_start;
-@@ -5744,12 +5744,12 @@
+@@ -5744,12 +5744,12 @@ vdev_xlate(vdev_t *vd, const range_seg64_t *logical_rs,
  }
  
  void
@@ -731,9 +750,11 @@ Applied-Upstream: master
  
  	while (!vdev_xlate_is_empty(&iter_rs)) {
  
+diff --git a/module/zfs/vdev_draid.c b/module/zfs/vdev_draid.c
+index 419c8ac5b..45f8bcfbd 100644
 --- a/module/zfs/vdev_draid.c
 +++ b/module/zfs/vdev_draid.c
-@@ -1823,7 +1823,7 @@
+@@ -1823,7 +1823,7 @@ static void
  vdev_draid_io_verify(vdev_t *vd, raidz_row_t *rr, int col)
  {
  #ifdef ZFS_DEBUG
@@ -742,7 +763,7 @@ Applied-Upstream: master
  	logical_rs.rs_start = rr->rr_offset;
  	logical_rs.rs_end = logical_rs.rs_start +
  	    vdev_draid_asize(vd, rr->rr_size, 0);
-@@ -2080,8 +2080,8 @@
+@@ -2080,8 +2080,8 @@ vdev_draid_state_change(vdev_t *vd, int faulted, int degraded)
  }
  
  static void
@@ -753,9 +774,11 @@ Applied-Upstream: master
  {
  	vdev_t *raidvd = cvd->vdev_parent;
  	ASSERT(raidvd->vdev_ops == &vdev_draid_ops);
+diff --git a/module/zfs/vdev_initialize.c b/module/zfs/vdev_initialize.c
+index 008e014ec..f6e2662bd 100644
 --- a/module/zfs/vdev_initialize.c
 +++ b/module/zfs/vdev_initialize.c
-@@ -359,7 +359,7 @@
+@@ -359,7 +359,7 @@ vdev_initialize_ranges(vdev_t *vd, abd_t *data)
  }
  
  static void
@@ -764,7 +787,7 @@ Applied-Upstream: master
  {
  	uint64_t *last_rs_end = (uint64_t *)arg;
  
-@@ -368,7 +368,7 @@
+@@ -368,7 +368,7 @@ vdev_initialize_xlate_last_rs_end(void *arg, range_seg64_t *physical_rs)
  }
  
  static void
@@ -773,7 +796,7 @@ Applied-Upstream: master
  {
  	vdev_t *vd = (vdev_t *)arg;
  
-@@ -407,7 +407,7 @@
+@@ -407,7 +407,7 @@ vdev_initialize_calculate_progress(vdev_t *vd)
  		 * on our vdev. We use this to determine if we are
  		 * in the middle of this metaslab range.
  		 */
@@ -782,7 +805,7 @@ Applied-Upstream: master
  		logical_rs.rs_start = msp->ms_start;
  		logical_rs.rs_end = msp->ms_start + msp->ms_size;
  
-@@ -481,7 +481,7 @@
+@@ -481,7 +481,7 @@ vdev_initialize_load(vdev_t *vd)
  }
  
  static void
@@ -791,7 +814,7 @@ Applied-Upstream: master
  {
  	vdev_t *vd = arg;
  
-@@ -516,7 +516,7 @@
+@@ -516,7 +516,7 @@ static void
  vdev_initialize_range_add(void *arg, uint64_t start, uint64_t size)
  {
  	vdev_t *vd = arg;
@@ -800,9 +823,11 @@ Applied-Upstream: master
  	logical_rs.rs_start = start;
  	logical_rs.rs_end = start + size;
  
+diff --git a/module/zfs/vdev_label.c b/module/zfs/vdev_label.c
+index 9d12bc2eb..2c4e0c1c4 100644
 --- a/module/zfs/vdev_label.c
 +++ b/module/zfs/vdev_label.c
-@@ -643,7 +643,8 @@
+@@ -643,7 +643,8 @@ vdev_config_generate(spa_t *spa, vdev_t *vd, boolean_t getstats,
  			 * will be combined with adjacent allocated segments
  			 * as a single mapping.
  			 */
@@ -812,9 +837,11 @@ Applied-Upstream: master
  				if (i + 1 < highbit64(vdev_removal_max_span)
  				    - 1) {
  					to_alloc +=
+diff --git a/module/zfs/vdev_raidz.c b/module/zfs/vdev_raidz.c
+index 6bac2241c..59225e766 100644
 --- a/module/zfs/vdev_raidz.c
 +++ b/module/zfs/vdev_raidz.c
-@@ -2305,7 +2305,7 @@
+@@ -2305,7 +2305,7 @@ vdev_raidz_io_verify(zio_t *zio, raidz_map_t *rm, raidz_row_t *rr, int col)
  {
  	(void) rm;
  #ifdef ZFS_DEBUG
@@ -823,7 +850,7 @@ Applied-Upstream: master
  	logical_rs.rs_start = rr->rr_offset;
  	logical_rs.rs_end = logical_rs.rs_start +
  	    vdev_raidz_asize(zio->io_vd, rr->rr_size,
-@@ -3650,8 +3650,8 @@
+@@ -3650,8 +3650,8 @@ vdev_raidz_need_resilver(vdev_t *vd, const dva_t *dva, size_t psize,
  }
  
  static void
@@ -834,9 +861,11 @@ Applied-Upstream: master
  {
  	(void) remain_rs;
  
+diff --git a/module/zfs/vdev_removal.c b/module/zfs/vdev_removal.c
+index e1819448a..1970c5425 100644
 --- a/module/zfs/vdev_removal.c
 +++ b/module/zfs/vdev_removal.c
-@@ -1143,7 +1143,7 @@
+@@ -1143,7 +1143,7 @@ spa_vdev_copy_segment(vdev_t *vd, zfs_range_tree_t *segs,
  		 * the allocation at the end of a segment, thus avoiding
  		 * additional split blocks.
  		 */
@@ -845,9 +874,11 @@ Applied-Upstream: master
  		zfs_btree_index_t where;
  		zfs_rs_set_start(&search, segs, start + maxalloc);
  		zfs_rs_set_end(&search, segs, start + maxalloc);
+diff --git a/module/zfs/vdev_trim.c b/module/zfs/vdev_trim.c
+index d13753f81..1ca0b23c0 100644
 --- a/module/zfs/vdev_trim.c
 +++ b/module/zfs/vdev_trim.c
-@@ -645,7 +645,7 @@
+@@ -645,7 +645,7 @@ done:
  }
  
  static void
@@ -856,7 +887,7 @@ Applied-Upstream: master
  {
  	uint64_t *last_rs_end = (uint64_t *)arg;
  
-@@ -654,7 +654,7 @@
+@@ -654,7 +654,7 @@ vdev_trim_xlate_last_rs_end(void *arg, range_seg64_t *physical_rs)
  }
  
  static void
@@ -865,7 +896,7 @@ Applied-Upstream: master
  {
  	vdev_t *vd = (vdev_t *)arg;
  
-@@ -696,7 +696,7 @@
+@@ -696,7 +696,7 @@ vdev_trim_calculate_progress(vdev_t *vd)
  		 * on our vdev. We use this to determine if we are
  		 * in the middle of this metaslab range.
  		 */
@@ -874,7 +905,7 @@ Applied-Upstream: master
  		logical_rs.rs_start = msp->ms_start;
  		logical_rs.rs_end = msp->ms_start + msp->ms_size;
  
-@@ -807,7 +807,7 @@
+@@ -807,7 +807,7 @@ vdev_trim_load(vdev_t *vd)
  }
  
  static void
@@ -883,7 +914,7 @@ Applied-Upstream: master
  {
  	trim_args_t *ta = arg;
  	vdev_t *vd = ta->trim_vdev;
-@@ -845,7 +845,7 @@
+@@ -845,7 +845,7 @@ vdev_trim_range_add(void *arg, uint64_t start, uint64_t size)
  {
  	trim_args_t *ta = arg;
  	vdev_t *vd = ta->trim_vdev;
@@ -892,7 +923,7 @@ Applied-Upstream: master
  	logical_rs.rs_start = start;
  	logical_rs.rs_end = start + size;
  
-@@ -1588,7 +1588,7 @@
+@@ -1588,7 +1588,7 @@ vdev_trim_l2arc_thread(void *arg)
  	spa_t		*spa = vd->vdev_spa;
  	l2arc_dev_t	*dev = l2arc_vdev_get(vd);
  	trim_args_t	ta = {0};
@@ -901,7 +932,7 @@ Applied-Upstream: master
  
  	ASSERT(vdev_is_concrete(vd));
  	spa_config_enter(spa, SCL_CONFIG, FTAG, RW_READER);
-@@ -1722,7 +1722,7 @@
+@@ -1722,7 +1722,7 @@ int
  vdev_trim_simple(vdev_t *vd, uint64_t start, uint64_t size)
  {
  	trim_args_t ta = {0};
@@ -910,3 +941,6 @@ Applied-Upstream: master
  	int error;
  	physical_rs.rs_start = start;
  	physical_rs.rs_end = start + size;
+-- 
+2.39.5
+

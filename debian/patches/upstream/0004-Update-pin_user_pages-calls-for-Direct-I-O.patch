@@ -1,0 +1,391 @@
+From 1e32c57893937382a5000890eda59667b39d98ad Mon Sep 17 00:00:00 2001
+From: Brian Atkinson <batkinson@lanl.gov>
+Date: Thu, 30 Jan 2025 18:53:59 -0500
+Subject: [PATCH 16/53] Update pin_user_pages() calls for Direct I/O
+
+Originally #16856 updated Linux Direct I/O requests to use the new
+pin_user_pages API. However, it was an oversight that this PR only
+handled iov_iter's of type ITER_IOVEC and ITER_UBUF. Other iov_iter
+types may try and use the pin_user_pages API if it is available. This
+can lead to panics as the iov_iter is not being iterated over correctly
+in zfs_uio_pin_user_pages().
+
+Unfortunately, generic iov_iter API's that call pin_user_page_fast() are
+protected as GPL only. Rather than update zfs_uio_pin_user_pages() to
+account for all iov_iter types, we can simply just call
+zfs_uio_get_dio_page_iov_iter() if the iov_iter type is not ITER_IOVEC
+or ITER_UBUF. zfs_uio_get_dio_page_iov_iter() calls the
+iov_iter_get_pages() calls that can handle any iov_iter type.
+
+In the future it might be worth using the exposed iov_iter iterator
+functions that are included in the header iov_iter.h since v6.7. These
+functions allow for any iov_iter type to be iterated over and advanced
+while applying a step function during iteration. This could possibly be
+leveraged in zfs_uio_pin_user_pages().
+
+A new ZFS test case was added to test that a ITER_BVEC is handled
+correctly using this new code path. This test case was provided though
+issue #16956.
+
+Reviewed-by: Alexander Motin <mav@FreeBSD.org>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Ameer Hamza <ahamza@ixsystems.com>
+Signed-off-by: Brian Atkinson <batkinson@lanl.gov>
+Closes #16956
+Closes #17006
+---
+ config/kernel-vfs-iov_iter.m4                 | 27 +++++++
+ include/os/linux/spl/sys/uio.h                | 10 +++
+ module/os/linux/zfs/zfs_uio.c                 | 64 +++++++++------
+ tests/runfiles/linux.run                      |  2 +-
+ tests/zfs-tests/tests/Makefile.am             |  1 +
+ .../functional/direct/dio_loopback_dev.ksh    | 78 +++++++++++++++++++
+ 6 files changed, 157 insertions(+), 25 deletions(-)
+ create mode 100755 tests/zfs-tests/tests/functional/direct/dio_loopback_dev.ksh
+
+diff --git a/config/kernel-vfs-iov_iter.m4 b/config/kernel-vfs-iov_iter.m4
+index a22334303..dc4e11cef 100644
+--- a/config/kernel-vfs-iov_iter.m4
++++ b/config/kernel-vfs-iov_iter.m4
+@@ -21,6 +21,20 @@ AC_DEFUN([ZFS_AC_KERNEL_SRC_VFS_IOV_ITER], [
+ 		__attribute__((unused)) enum iter_type i = iov_iter_type(&iter);
+ 	])
+ 
++	ZFS_LINUX_TEST_SRC([iov_iter_get_pages2], [
++		#include <linux/uio.h>
++	],[
++		struct iov_iter iter = { 0 };
++		struct page **pages = NULL;
++		size_t maxsize = 4096;
++		unsigned maxpages = 1;
++		size_t start;
++		size_t ret __attribute__ ((unused));
++
++		ret = iov_iter_get_pages2(&iter, pages, maxsize, maxpages,
++		    &start);
++	])
++
+ 	ZFS_LINUX_TEST_SRC([iter_is_ubuf], [
+ 		#include <linux/uio.h>
+ 	],[
+@@ -64,6 +78,19 @@ AC_DEFUN([ZFS_AC_KERNEL_VFS_IOV_ITER], [
+ 		AC_MSG_RESULT(no)
+ 	])
+ 
++
++	dnl #
++	dnl # Kernel 6.0 changed iov_iter_get_pages() to iov_iter_get_pages2().
++	dnl #
++	AC_MSG_CHECKING([whether iov_iter_get_pages2() is available])
++	ZFS_LINUX_TEST_RESULT([iov_iter_get_pages2], [
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_IOV_ITER_GET_PAGES2, 1,
++		    [iov_iter_get_pages2() is available])
++	],[
++		AC_MSG_RESULT(no)
++	])
++
+ 	dnl #
+ 	dnl # Kernel 6.0 introduced the ITER_UBUF iov_iter type. iter_is_ubuf()
+ 	dnl # was also added to determine if the iov_iter is an ITER_UBUF.
+diff --git a/include/os/linux/spl/sys/uio.h b/include/os/linux/spl/sys/uio.h
+index 9e7afea2a..fcb4a464c 100644
+--- a/include/os/linux/spl/sys/uio.h
++++ b/include/os/linux/spl/sys/uio.h
+@@ -63,6 +63,7 @@ typedef enum zfs_uio_seg {
+ typedef struct {
+ 	struct page	**pages;	/* Mapped pages */
+ 	long 		npages;		/* Number of mapped pages */
++	boolean_t	pinned;		/* Whether FOLL_PIN was used */
+ } zfs_uio_dio_t;
+ 
+ typedef struct zfs_uio {
+@@ -199,4 +200,13 @@ zfs_uio_iov_iter_init(zfs_uio_t *uio, struct iov_iter *iter, offset_t offset,
+ #define	zfs_uio_iov_iter_type(iter)	(iter)->type
+ #endif
+ 
++#if defined(HAVE_ITER_IS_UBUF)
++#define	zfs_user_backed_iov_iter(iter)	\
++	(iter_is_ubuf((iter)) || \
++	(zfs_uio_iov_iter_type((iter)) == ITER_IOVEC))
++#else
++#define	zfs_user_backed_iov_iter(iter) \
++	(zfs_uio_iov_iter_type((iter)) == ITER_IOVEC)
++#endif
++
+ #endif /* SPL_UIO_H */
+diff --git a/module/os/linux/zfs/zfs_uio.c b/module/os/linux/zfs/zfs_uio.c
+index db85b626f..1a815c62b 100644
+--- a/module/os/linux/zfs/zfs_uio.c
++++ b/module/os/linux/zfs/zfs_uio.c
+@@ -404,7 +404,6 @@ zfs_uio_page_aligned(zfs_uio_t *uio)
+ 	return (aligned);
+ }
+ 
+-
+ #if defined(HAVE_ZERO_PAGE_GPL_ONLY) || !defined(_LP64)
+ #define	ZFS_MARKEED_PAGE	0x0
+ #define	IS_ZFS_MARKED_PAGE(_p)	0
+@@ -441,7 +440,6 @@ zfs_unmark_page(struct page *page)
+ }
+ #endif /* HAVE_ZERO_PAGE_GPL_ONLY || !_LP64 */
+ 
+-#if !defined(HAVE_PIN_USER_PAGES_UNLOCKED)
+ static void
+ zfs_uio_dio_check_for_zero_page(zfs_uio_t *uio)
+ {
+@@ -473,7 +471,6 @@ zfs_uio_dio_check_for_zero_page(zfs_uio_t *uio)
+ 		}
+ 	}
+ }
+-#endif
+ 
+ void
+ zfs_uio_free_dio_pages(zfs_uio_t *uio, zfs_uio_rw_t rw)
+@@ -482,21 +479,24 @@ zfs_uio_free_dio_pages(zfs_uio_t *uio, zfs_uio_rw_t rw)
+ 	ASSERT(uio->uio_extflg & UIO_DIRECT);
+ 	ASSERT3P(uio->uio_dio.pages, !=, NULL);
+ 
++	if (uio->uio_dio.pinned) {
+ #if defined(HAVE_PIN_USER_PAGES_UNLOCKED)
+-	unpin_user_pages(uio->uio_dio.pages, uio->uio_dio.npages);
+-#else
+-	for (long i = 0; i < uio->uio_dio.npages; i++) {
+-		struct page *p = uio->uio_dio.pages[i];
++		unpin_user_pages(uio->uio_dio.pages, uio->uio_dio.npages);
++#endif
++	} else {
++		for (long i = 0; i < uio->uio_dio.npages; i++) {
++			struct page *p = uio->uio_dio.pages[i];
+ 
+-		if (IS_ZFS_MARKED_PAGE(p)) {
+-			zfs_unmark_page(p);
+-			__free_page(p);
+-			continue;
+-		}
++			if (IS_ZFS_MARKED_PAGE(p)) {
++				zfs_unmark_page(p);
++				__free_page(p);
++				continue;
++			}
+ 
+-		put_page(p);
++			put_page(p);
++		}
+ 	}
+-#endif
++
+ 	vmem_free(uio->uio_dio.pages,
+ 	    uio->uio_dio.npages * sizeof (struct page *));
+ }
+@@ -523,6 +523,7 @@ zfs_uio_pin_user_pages(zfs_uio_t *uio, zfs_uio_rw_t rw)
+ 	if (len == 0)
+ 		return (0);
+ 
++	uio->uio_dio.pinned = B_TRUE;
+ #if defined(HAVE_ITER_IS_UBUF)
+ 	if (iter_is_ubuf(uio->uio_iter)) {
+ 		nr_pages = DIV_ROUND_UP(len, PAGE_SIZE);
+@@ -569,8 +570,8 @@ zfs_uio_pin_user_pages(zfs_uio_t *uio, zfs_uio_rw_t rw)
+ 
+ 	return (0);
+ }
++#endif
+ 
+-#else
+ static int
+ zfs_uio_get_dio_pages_iov_iter(zfs_uio_t *uio, zfs_uio_rw_t rw)
+ {
+@@ -581,9 +582,15 @@ zfs_uio_get_dio_pages_iov_iter(zfs_uio_t *uio, zfs_uio_rw_t rw)
+ 	unsigned maxpages = DIV_ROUND_UP(wanted, PAGE_SIZE);
+ 
+ 	while (wanted) {
++#if defined(HAVE_IOV_ITER_GET_PAGES2)
++		cnt = iov_iter_get_pages2(uio->uio_iter,
++		    &uio->uio_dio.pages[uio->uio_dio.npages],
++		    wanted, maxpages, &start);
++#else
+ 		cnt = iov_iter_get_pages(uio->uio_iter,
+ 		    &uio->uio_dio.pages[uio->uio_dio.npages],
+ 		    wanted, maxpages, &start);
++#endif
+ 		if (cnt < 0) {
+ 			iov_iter_revert(uio->uio_iter, rollback);
+ 			return (SET_ERROR(-cnt));
+@@ -595,7 +602,12 @@ zfs_uio_get_dio_pages_iov_iter(zfs_uio_t *uio, zfs_uio_rw_t rw)
+ 		uio->uio_dio.npages += DIV_ROUND_UP(cnt, PAGE_SIZE);
+ 		rollback += cnt;
+ 		wanted -= cnt;
++#if !defined(HAVE_IOV_ITER_GET_PAGES2)
++		/*
++		 * iov_iter_get_pages2() advances the iov_iter on success.
++		 */
+ 		iov_iter_advance(uio->uio_iter, cnt);
++#endif
+ 
+ 	}
+ 	ASSERT3U(rollback, ==, uio->uio_resid - uio->uio_skip);
+@@ -603,7 +615,6 @@ zfs_uio_get_dio_pages_iov_iter(zfs_uio_t *uio, zfs_uio_rw_t rw)
+ 
+ 	return (0);
+ }
+-#endif /* HAVE_PIN_USER_PAGES_UNLOCKED */
+ 
+ /*
+  * This function pins user pages. In the event that the user pages were not
+@@ -621,7 +632,10 @@ zfs_uio_get_dio_pages_alloc(zfs_uio_t *uio, zfs_uio_rw_t rw)
+ 	if (uio->uio_segflg == UIO_ITER) {
+ 		uio->uio_dio.pages = vmem_alloc(size, KM_SLEEP);
+ #if defined(HAVE_PIN_USER_PAGES_UNLOCKED)
+-		error = zfs_uio_pin_user_pages(uio, rw);
++		if (zfs_user_backed_iov_iter(uio->uio_iter))
++			error = zfs_uio_pin_user_pages(uio, rw);
++		else
++			error = zfs_uio_get_dio_pages_iov_iter(uio, rw);
+ #else
+ 		error = zfs_uio_get_dio_pages_iov_iter(uio, rw);
+ #endif
+@@ -632,22 +646,24 @@ zfs_uio_get_dio_pages_alloc(zfs_uio_t *uio, zfs_uio_rw_t rw)
+ 	ASSERT3S(uio->uio_dio.npages, >=, 0);
+ 
+ 	if (error) {
++		if (uio->uio_dio.pinned) {
+ #if defined(HAVE_PIN_USER_PAGES_UNLOCKED)
+-		unpin_user_pages(uio->uio_dio.pages, uio->uio_dio.npages);
+-#else
+-		for (long i = 0; i < uio->uio_dio.npages; i++)
+-			put_page(uio->uio_dio.pages[i]);
++			unpin_user_pages(uio->uio_dio.pages,
++			    uio->uio_dio.npages);
+ #endif
++		} else {
++			for (long i = 0; i < uio->uio_dio.npages; i++)
++				put_page(uio->uio_dio.pages[i]);
++		}
++
+ 		vmem_free(uio->uio_dio.pages, size);
+ 		return (error);
+ 	} else {
+ 		ASSERT3S(uio->uio_dio.npages, ==, npages);
+ 	}
+ 
+-#if !defined(HAVE_PIN_USER_PAGES_UNLOCKED)
+-	if (rw == UIO_WRITE)
++	if (rw == UIO_WRITE && !uio->uio_dio.pinned)
+ 		zfs_uio_dio_check_for_zero_page(uio);
+-#endif
+ 
+ 	uio->uio_extflg |= UIO_DIRECT;
+ 
+diff --git a/tests/runfiles/linux.run b/tests/runfiles/linux.run
+index e55ec583d..2c5dcb365 100644
+--- a/tests/runfiles/linux.run
++++ b/tests/runfiles/linux.run
+@@ -103,7 +103,7 @@ tests = ['devices_001_pos', 'devices_002_neg', 'devices_003_pos']
+ tags = ['functional', 'devices']
+ 
+ [tests/functional/direct:Linux]
+-tests = ['dio_write_verify']
++tests = ['dio_loopback_dev', 'dio_write_verify']
+ tags = ['functional', 'direct']
+ 
+ [tests/functional/events:Linux]
+diff --git a/tests/zfs-tests/tests/Makefile.am b/tests/zfs-tests/tests/Makefile.am
+index d0eb4c30d..9a9f74292 100644
+--- a/tests/zfs-tests/tests/Makefile.am
++++ b/tests/zfs-tests/tests/Makefile.am
+@@ -1476,6 +1476,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS += \
+ 	functional/direct/dio_dedup.ksh \
+ 	functional/direct/dio_encryption.ksh \
+ 	functional/direct/dio_grow_block.ksh \
++	functional/direct/dio_loopback_dev.ksh \
+ 	functional/direct/dio_max_recordsize.ksh \
+ 	functional/direct/dio_mixed.ksh \
+ 	functional/direct/dio_mmap.ksh \
+diff --git a/tests/zfs-tests/tests/functional/direct/dio_loopback_dev.ksh b/tests/zfs-tests/tests/functional/direct/dio_loopback_dev.ksh
+new file mode 100755
+index 000000000..7186eba5a
+--- /dev/null
++++ b/tests/zfs-tests/tests/functional/direct/dio_loopback_dev.ksh
+@@ -0,0 +1,78 @@
++#!/bin/ksh -p
++#
++# CDDL HEADER START
++#
++# The contents of this file are subject to the terms of the
++# Common Development and Distribution License (the "License").
++# You may not use this file except in compliance with the License.
++#
++# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
++# or https://opensource.org/licenses/CDDL-1.0.
++# See the License for the specific language governing permissions
++# and limitations under the License.
++#
++# When distributing Covered Code, include this CDDL HEADER in each
++# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
++# If applicable, add the following below this CDDL HEADER, with the
++# fields enclosed by brackets "[]" replaced with your own identifying
++# information: Portions Copyright [yyyy] [name of copyright owner]
++#
++# CDDL HEADER END
++#
++
++#
++# Copyright (c) 2025 by Triad National Security, LLC.
++#
++
++. $STF_SUITE/include/libtest.shlib
++. $STF_SUITE/tests/functional/direct/dio.cfg
++. $STF_SUITE/tests/functional/direct/dio.kshlib
++
++#
++# DESCRIPTION:
++# 	Verify Direct I/O reads work with loopback devices using direct=always.
++#
++# STRATEGY:
++#	1. Create raidz zpool.
++#	2. Create dataset with the direct dataset property set to always.
++#	3. Create an empty file in dataset and setup loop device on it.
++#	4. Read from loopback device.
++#
++
++verify_runnable "global"
++
++function cleanup
++{
++	if [[ -n $lofidev ]]; then
++		losetup -d $lofidev
++	fi
++	dio_cleanup
++}
++
++log_assert "Verify loopback devices with Direct I/O."
++
++if ! is_linux; then
++	log_unsupported "This is just a check for Linux Direct I/O"
++fi
++
++log_onexit cleanup
++
++# Create zpool
++log_must truncate -s $MINVDEVSIZE $DIO_VDEVS
++log_must create_pool $TESTPOOL1 "raidz" $DIO_VDEVS
++
++# Creating dataset with direct=always
++log_must eval "zfs create -o direct=always $TESTPOOL1/$TESTFS1"
++mntpt=$(get_prop mountpoint $TESTPOOL1/$TESTFS1)
++
++# Getting a loopback device
++lofidev=$(losetup -f)
++
++# Create loopback device
++log_must truncate -s 1M "$mntpt/temp_file"
++log_must losetup $lofidev "$mntpt/temp_file"
++
++# Read from looback device to make sure Direct I/O works with loopback device
++log_must dd if=$lofidev of=/dev/null count=1 bs=4k
++
++log_pass "Verified loopback devices for Direct I/O." 
+-- 
+2.39.5
+
