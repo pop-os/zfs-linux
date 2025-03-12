@@ -1,0 +1,9 @@
+Document: python3-pyzfs
+Title: pyzfs API
+Author: ClusterHQ
+Abstract: Documentation of Python wrappers for libzfs_core library.
+Section: Programming/Python
+
+Format: HTML
+Index: /usr/share/doc/python3-pyzfs/html/index.html
+Files: /usr/share/doc/python3-pyzfs/html/*.html
