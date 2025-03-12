@@ -406,14 +406,13 @@ am__nobase_kernel_HEADERS_DIST = cityhash.h zfeature_common.h \
 	sys/zfs_sa.h sys/zfs_stat.h sys/zfs_sysfs.h sys/zfs_vfsops.h \
 	sys/zfs_vnops.h sys/zfs_znode.h sys/zil.h sys/zil_impl.h \
 	sys/zio.h sys/zio_checksum.h sys/zio_compress.h \
-	sys/zio_crypt.h sys/zio_impl.h sys/zio_priority.h sys/zrlock.h \
-	sys/zthr.h sys/crypto/api.h sys/crypto/common.h \
-	sys/crypto/icp.h sys/fm/protocol.h sys/fm/util.h \
-	sys/fm/fs/zfs.h sys/fs/zfs.h sys/lua/lauxlib.h sys/lua/lua.h \
-	sys/lua/luaconf.h sys/lua/lualib.h sys/sysevent/dev.h \
-	sys/sysevent/eventdefs.h sys/zstd/zstd.h sys/zfs_ioctl.h \
-	sys/zfs_ioctl_impl.h sys/zfs_onexit.h sys/zvol.h \
-	sys/zvol_impl.h
+	sys/zio_crypt.h sys/zio_impl.h sys/zrlock.h sys/zthr.h \
+	sys/crypto/api.h sys/crypto/common.h sys/crypto/icp.h \
+	sys/fm/protocol.h sys/fm/util.h sys/fm/fs/zfs.h sys/fs/zfs.h \
+	sys/lua/lauxlib.h sys/lua/lua.h sys/lua/luaconf.h \
+	sys/lua/lualib.h sys/sysevent/dev.h sys/sysevent/eventdefs.h \
+	sys/zstd/zstd.h sys/zfs_ioctl.h sys/zfs_ioctl_impl.h \
+	sys/zfs_onexit.h sys/zvol.h sys/zvol_impl.h
 am__nobase_libzfs_HEADERS_DIST = cityhash.h zfeature_common.h \
 	zfs_comutil.h zfs_deleg.h zfs_fletcher.h zfs_namecheck.h \
 	zfs_prop.h zfs_valstr.h sys/abd.h sys/abd_impl.h sys/aggsum.h \
@@ -453,14 +452,14 @@ am__nobase_libzfs_HEADERS_DIST = cityhash.h zfeature_common.h \
 	sys/zfs_sa.h sys/zfs_stat.h sys/zfs_sysfs.h sys/zfs_vfsops.h \
 	sys/zfs_vnops.h sys/zfs_znode.h sys/zil.h sys/zil_impl.h \
 	sys/zio.h sys/zio_checksum.h sys/zio_compress.h \
-	sys/zio_crypt.h sys/zio_impl.h sys/zio_priority.h sys/zrlock.h \
-	sys/zthr.h sys/crypto/api.h sys/crypto/common.h \
-	sys/crypto/icp.h sys/fm/protocol.h sys/fm/util.h \
-	sys/fm/fs/zfs.h sys/fs/zfs.h sys/lua/lauxlib.h sys/lua/lua.h \
-	sys/lua/luaconf.h sys/lua/lualib.h sys/sysevent/dev.h \
-	sys/sysevent/eventdefs.h sys/zstd/zstd.h libnvpair.h \
-	libuutil.h libuutil_common.h libuutil_impl.h libzdb.h libzfs.h \
-	libzfs_core.h libzfsbootenv.h libzutil.h thread_pool.h
+	sys/zio_crypt.h sys/zio_impl.h sys/zrlock.h sys/zthr.h \
+	sys/crypto/api.h sys/crypto/common.h sys/crypto/icp.h \
+	sys/fm/protocol.h sys/fm/util.h sys/fm/fs/zfs.h sys/fs/zfs.h \
+	sys/lua/lauxlib.h sys/lua/lua.h sys/lua/luaconf.h \
+	sys/lua/lualib.h sys/sysevent/dev.h sys/sysevent/eventdefs.h \
+	sys/zstd/zstd.h libnvpair.h libuutil.h libuutil_common.h \
+	libuutil_impl.h libzdb.h libzfs.h libzfs_core.h \
+	libzfsbootenv.h libzutil.h thread_pool.h
 am__noinst_HEADERS_DIST = os/freebsd/linux/compiler.h \
 	os/freebsd/linux/types.h os/freebsd/spl/acl/acl_common.h \
 	os/freebsd/spl/sys/ia32/asm_linkage.h os/freebsd/spl/sys/acl.h \
@@ -1220,7 +1219,6 @@ COMMON_H = \
 	sys/zio_compress.h \
 	sys/zio_crypt.h \
 	sys/zio_impl.h \
-	sys/zio_priority.h \
 	sys/zrlock.h \
 	sys/zthr.h \
 	\
