@@ -3217,6 +3217,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_vdev_max_auto_ashift@Base 2.0
  zfs_vdev_min_auto_ashift@Base 2.0
  zfs_vdev_queue_depth_pct@Base 0.8.2
+ zfs_vdev_raidz_impl@Base 2.3.1
  zfs_vdev_standard_sm_blksz@Base 2.0
  zfs_wrlog_data_max@Base 2.1.6
  zfs_zle_compress@Base 2.3
@@ -3370,6 +3371,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zio_write@Base 0.8.2
  zio_write_override@Base 0.8.2
  zio_write_phys@Base 0.8.2
+ ziostat_sums@Base 2.3.1
  zk_thread_create@Base 0.8.2
  zone_get_hostid@Base 0.8.2
  zpool_default_search_paths@Base 2.2.0
