@@ -1203,7 +1203,6 @@ am__dist_libzpool_la_SOURCES_DIST = lib/libzpool/abd_os.c \
 @CONFIG_USER_TRUE@	module/lua/libzpool_la-ltm.lo \
 @CONFIG_USER_TRUE@	module/lua/libzpool_la-lvm.lo \
 @CONFIG_USER_TRUE@	module/lua/libzpool_la-lzio.lo \
-@CONFIG_USER_TRUE@	module/os/linux/zfs/libzpool_la-vdev_file.lo \
 @CONFIG_USER_TRUE@	module/os/linux/zfs/libzpool_la-zio_crypt.lo \
 @CONFIG_USER_TRUE@	module/zcommon/libzpool_la-cityhash.lo \
 @CONFIG_USER_TRUE@	module/zcommon/libzpool_la-simd_stat.lo \
@@ -1298,6 +1297,7 @@ am__dist_libzpool_la_SOURCES_DIST = lib/libzpool/abd_os.c \
 @CONFIG_USER_TRUE@	module/zfs/libzpool_la-vdev.lo \
 @CONFIG_USER_TRUE@	module/zfs/libzpool_la-vdev_draid.lo \
 @CONFIG_USER_TRUE@	module/zfs/libzpool_la-vdev_draid_rand.lo \
+@CONFIG_USER_TRUE@	module/zfs/libzpool_la-vdev_file.lo \
 @CONFIG_USER_TRUE@	module/zfs/libzpool_la-vdev_indirect.lo \
 @CONFIG_USER_TRUE@	module/zfs/libzpool_la-vdev_indirect_births.lo \
 @CONFIG_USER_TRUE@	module/zfs/libzpool_la-vdev_indirect_mapping.lo \
@@ -2196,7 +2196,6 @@ am__depfiles_remade = cmd/$(DEPDIR)/mount_zfs.Po \
 	module/nvpair/$(DEPDIR)/libnvpair_la-nvpair.Plo \
 	module/nvpair/$(DEPDIR)/libnvpair_la-nvpair_alloc_fixed.Plo \
 	module/os/freebsd/zfs/$(DEPDIR)/libzfs_core_la-zfs_ioctl_compat.Plo \
-	module/os/linux/zfs/$(DEPDIR)/libzpool_la-vdev_file.Plo \
 	module/os/linux/zfs/$(DEPDIR)/libzpool_la-zio_crypt.Plo \
 	module/unicode/$(DEPDIR)/libunicode_la-u8_textprep.Plo \
 	module/unicode/$(DEPDIR)/libunicode_la-uconv.Plo \
@@ -2310,6 +2309,7 @@ am__depfiles_remade = cmd/$(DEPDIR)/mount_zfs.Po \
 	module/zfs/$(DEPDIR)/libzpool_la-vdev.Plo \
 	module/zfs/$(DEPDIR)/libzpool_la-vdev_draid.Plo \
 	module/zfs/$(DEPDIR)/libzpool_la-vdev_draid_rand.Plo \
+	module/zfs/$(DEPDIR)/libzpool_la-vdev_file.Plo \
 	module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect.Plo \
 	module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect_births.Plo \
 	module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect_mapping.Plo \
@@ -2843,6 +2843,7 @@ am__dist_scripts_test_runner_include_DATA_DIST =  \
 am__dist_scripts_zfs_tests_include_DATA_DIST =  \
 	tests/zfs-tests/include/blkdev.shlib \
 	tests/zfs-tests/include/commands.cfg \
+	tests/zfs-tests/include/kstat.shlib \
 	tests/zfs-tests/include/libtest.shlib \
 	tests/zfs-tests/include/math.shlib \
 	tests/zfs-tests/include/properties.shlib \
@@ -4336,7 +4337,6 @@ SUBDIRS = include $(am__append_86) $(am__append_95)
 @CONFIG_USER_TRUE@	module/lua/lvm.c \
 @CONFIG_USER_TRUE@	module/lua/lzio.c \
 @CONFIG_USER_TRUE@	\
-@CONFIG_USER_TRUE@	module/os/linux/zfs/vdev_file.c \
 @CONFIG_USER_TRUE@	module/os/linux/zfs/zio_crypt.c \
 @CONFIG_USER_TRUE@	\
 @CONFIG_USER_TRUE@	module/zcommon/cityhash.c \
@@ -4433,6 +4433,7 @@ SUBDIRS = include $(am__append_86) $(am__append_95)
 @CONFIG_USER_TRUE@	module/zfs/vdev.c \
 @CONFIG_USER_TRUE@	module/zfs/vdev_draid.c \
 @CONFIG_USER_TRUE@	module/zfs/vdev_draid_rand.c \
+@CONFIG_USER_TRUE@	module/zfs/vdev_file.c \
 @CONFIG_USER_TRUE@	module/zfs/vdev_indirect.c \
 @CONFIG_USER_TRUE@	module/zfs/vdev_indirect_births.c \
 @CONFIG_USER_TRUE@	module/zfs/vdev_indirect_mapping.c \
@@ -4709,6 +4710,7 @@ SUBDIRS = include $(am__append_86) $(am__append_95)
 @CONFIG_USER_TRUE@dist_scripts_zfs_tests_include_DATA = \
 @CONFIG_USER_TRUE@	tests/zfs-tests/include/blkdev.shlib \
 @CONFIG_USER_TRUE@	tests/zfs-tests/include/commands.cfg \
+@CONFIG_USER_TRUE@	tests/zfs-tests/include/kstat.shlib \
 @CONFIG_USER_TRUE@	tests/zfs-tests/include/libtest.shlib \
 @CONFIG_USER_TRUE@	tests/zfs-tests/include/math.shlib \
 @CONFIG_USER_TRUE@	tests/zfs-tests/include/properties.shlib \
@@ -6276,9 +6278,6 @@ module/os/linux/zfs/$(am__dirstamp):
 module/os/linux/zfs/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) module/os/linux/zfs/$(DEPDIR)
 	@: > module/os/linux/zfs/$(DEPDIR)/$(am__dirstamp)
-module/os/linux/zfs/libzpool_la-vdev_file.lo:  \
-	module/os/linux/zfs/$(am__dirstamp) \
-	module/os/linux/zfs/$(DEPDIR)/$(am__dirstamp)
 module/os/linux/zfs/libzpool_la-zio_crypt.lo:  \
 	module/os/linux/zfs/$(am__dirstamp) \
 	module/os/linux/zfs/$(DEPDIR)/$(am__dirstamp)
@@ -6485,6 +6484,8 @@ module/zfs/libzpool_la-vdev.lo: module/zfs/$(am__dirstamp) \
 module/zfs/libzpool_la-vdev_draid.lo: module/zfs/$(am__dirstamp) \
 	module/zfs/$(DEPDIR)/$(am__dirstamp)
 module/zfs/libzpool_la-vdev_draid_rand.lo: module/zfs/$(am__dirstamp) \
+	module/zfs/$(DEPDIR)/$(am__dirstamp)
+module/zfs/libzpool_la-vdev_file.lo: module/zfs/$(am__dirstamp) \
 	module/zfs/$(DEPDIR)/$(am__dirstamp)
 module/zfs/libzpool_la-vdev_indirect.lo: module/zfs/$(am__dirstamp) \
 	module/zfs/$(DEPDIR)/$(am__dirstamp)
@@ -8458,7 +8459,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@module/nvpair/$(DEPDIR)/libnvpair_la-nvpair.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@module/nvpair/$(DEPDIR)/libnvpair_la-nvpair_alloc_fixed.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@module/os/freebsd/zfs/$(DEPDIR)/libzfs_core_la-zfs_ioctl_compat.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@module/os/linux/zfs/$(DEPDIR)/libzpool_la-vdev_file.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@module/os/linux/zfs/$(DEPDIR)/libzpool_la-zio_crypt.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@module/unicode/$(DEPDIR)/libunicode_la-u8_textprep.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@module/unicode/$(DEPDIR)/libunicode_la-uconv.Plo@am__quote@ # am--include-marker
@@ -8572,6 +8572,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@module/zfs/$(DEPDIR)/libzpool_la-vdev.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@module/zfs/$(DEPDIR)/libzpool_la-vdev_draid.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@module/zfs/$(DEPDIR)/libzpool_la-vdev_draid_rand.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@module/zfs/$(DEPDIR)/libzpool_la-vdev_file.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect_births.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect_mapping.Plo@am__quote@ # am--include-marker
@@ -9974,13 +9975,6 @@ module/lua/libzpool_la-lzio.lo: module/lua/lzio.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libzpool_la_CPPFLAGS) $(CPPFLAGS) $(libzpool_la_CFLAGS) $(CFLAGS) -c -o module/lua/libzpool_la-lzio.lo `test -f 'module/lua/lzio.c' || echo '$(srcdir)/'`module/lua/lzio.c
 
-module/os/linux/zfs/libzpool_la-vdev_file.lo: module/os/linux/zfs/vdev_file.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libzpool_la_CPPFLAGS) $(CPPFLAGS) $(libzpool_la_CFLAGS) $(CFLAGS) -MT module/os/linux/zfs/libzpool_la-vdev_file.lo -MD -MP -MF module/os/linux/zfs/$(DEPDIR)/libzpool_la-vdev_file.Tpo -c -o module/os/linux/zfs/libzpool_la-vdev_file.lo `test -f 'module/os/linux/zfs/vdev_file.c' || echo '$(srcdir)/'`module/os/linux/zfs/vdev_file.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) module/os/linux/zfs/$(DEPDIR)/libzpool_la-vdev_file.Tpo module/os/linux/zfs/$(DEPDIR)/libzpool_la-vdev_file.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='module/os/linux/zfs/vdev_file.c' object='module/os/linux/zfs/libzpool_la-vdev_file.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libzpool_la_CPPFLAGS) $(CPPFLAGS) $(libzpool_la_CFLAGS) $(CFLAGS) -c -o module/os/linux/zfs/libzpool_la-vdev_file.lo `test -f 'module/os/linux/zfs/vdev_file.c' || echo '$(srcdir)/'`module/os/linux/zfs/vdev_file.c
-
 module/os/linux/zfs/libzpool_la-zio_crypt.lo: module/os/linux/zfs/zio_crypt.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libzpool_la_CPPFLAGS) $(CPPFLAGS) $(libzpool_la_CFLAGS) $(CFLAGS) -MT module/os/linux/zfs/libzpool_la-zio_crypt.lo -MD -MP -MF module/os/linux/zfs/$(DEPDIR)/libzpool_la-zio_crypt.Tpo -c -o module/os/linux/zfs/libzpool_la-zio_crypt.lo `test -f 'module/os/linux/zfs/zio_crypt.c' || echo '$(srcdir)/'`module/os/linux/zfs/zio_crypt.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) module/os/linux/zfs/$(DEPDIR)/libzpool_la-zio_crypt.Tpo module/os/linux/zfs/$(DEPDIR)/libzpool_la-zio_crypt.Plo
@@ -10638,6 +10632,13 @@ module/zfs/libzpool_la-vdev_draid_rand.lo: module/zfs/vdev_draid_rand.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='module/zfs/vdev_draid_rand.c' object='module/zfs/libzpool_la-vdev_draid_rand.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libzpool_la_CPPFLAGS) $(CPPFLAGS) $(libzpool_la_CFLAGS) $(CFLAGS) -c -o module/zfs/libzpool_la-vdev_draid_rand.lo `test -f 'module/zfs/vdev_draid_rand.c' || echo '$(srcdir)/'`module/zfs/vdev_draid_rand.c
+
+module/zfs/libzpool_la-vdev_file.lo: module/zfs/vdev_file.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libzpool_la_CPPFLAGS) $(CPPFLAGS) $(libzpool_la_CFLAGS) $(CFLAGS) -MT module/zfs/libzpool_la-vdev_file.lo -MD -MP -MF module/zfs/$(DEPDIR)/libzpool_la-vdev_file.Tpo -c -o module/zfs/libzpool_la-vdev_file.lo `test -f 'module/zfs/vdev_file.c' || echo '$(srcdir)/'`module/zfs/vdev_file.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) module/zfs/$(DEPDIR)/libzpool_la-vdev_file.Tpo module/zfs/$(DEPDIR)/libzpool_la-vdev_file.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='module/zfs/vdev_file.c' object='module/zfs/libzpool_la-vdev_file.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libzpool_la_CPPFLAGS) $(CPPFLAGS) $(libzpool_la_CFLAGS) $(CFLAGS) -c -o module/zfs/libzpool_la-vdev_file.lo `test -f 'module/zfs/vdev_file.c' || echo '$(srcdir)/'`module/zfs/vdev_file.c
 
 module/zfs/libzpool_la-vdev_indirect.lo: module/zfs/vdev_indirect.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libzpool_la_CPPFLAGS) $(CPPFLAGS) $(libzpool_la_CFLAGS) $(CFLAGS) -MT module/zfs/libzpool_la-vdev_indirect.lo -MD -MP -MF module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect.Tpo -c -o module/zfs/libzpool_la-vdev_indirect.lo `test -f 'module/zfs/vdev_indirect.c' || echo '$(srcdir)/'`module/zfs/vdev_indirect.c
@@ -13319,7 +13320,6 @@ distclean: distclean-recursive
 	-rm -f module/nvpair/$(DEPDIR)/libnvpair_la-nvpair.Plo
 	-rm -f module/nvpair/$(DEPDIR)/libnvpair_la-nvpair_alloc_fixed.Plo
 	-rm -f module/os/freebsd/zfs/$(DEPDIR)/libzfs_core_la-zfs_ioctl_compat.Plo
-	-rm -f module/os/linux/zfs/$(DEPDIR)/libzpool_la-vdev_file.Plo
 	-rm -f module/os/linux/zfs/$(DEPDIR)/libzpool_la-zio_crypt.Plo
 	-rm -f module/unicode/$(DEPDIR)/libunicode_la-u8_textprep.Plo
 	-rm -f module/unicode/$(DEPDIR)/libunicode_la-uconv.Plo
@@ -13433,6 +13433,7 @@ distclean: distclean-recursive
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev.Plo
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_draid.Plo
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_draid_rand.Plo
+	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_file.Plo
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect.Plo
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect_births.Plo
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect_mapping.Plo
@@ -13860,7 +13861,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f module/nvpair/$(DEPDIR)/libnvpair_la-nvpair.Plo
 	-rm -f module/nvpair/$(DEPDIR)/libnvpair_la-nvpair_alloc_fixed.Plo
 	-rm -f module/os/freebsd/zfs/$(DEPDIR)/libzfs_core_la-zfs_ioctl_compat.Plo
-	-rm -f module/os/linux/zfs/$(DEPDIR)/libzpool_la-vdev_file.Plo
 	-rm -f module/os/linux/zfs/$(DEPDIR)/libzpool_la-zio_crypt.Plo
 	-rm -f module/unicode/$(DEPDIR)/libunicode_la-u8_textprep.Plo
 	-rm -f module/unicode/$(DEPDIR)/libunicode_la-uconv.Plo
@@ -13974,6 +13974,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev.Plo
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_draid.Plo
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_draid_rand.Plo
+	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_file.Plo
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect.Plo
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect_births.Plo
 	-rm -f module/zfs/$(DEPDIR)/libzpool_la-vdev_indirect_mapping.Plo
