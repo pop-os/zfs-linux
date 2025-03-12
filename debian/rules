@@ -204,7 +204,7 @@ override_dh_installdocs:
 	dh_installdocs -A
 	dh_installdocs -a -i -A debian/README.Debian
 ifeq (,$(findstring nodoc, $(DEB_BUILD_OPTIONS)))
-	http_proxy='127.0.0.1:9' sphinx-build -N -bhtml "$(CURDIR)/contrib/pyzfs/docs/source/" debian/pyzfs-doc/usr/share/doc/pyzfs-doc/html/
+	http_proxy='127.0.0.1:9' sphinx-build -N -bhtml "$(CURDIR)/contrib/pyzfs/docs/source/" debian/pyzfs-doc/usr/share/doc/python3-pyzfs/html/
 endif
 
 # ------------

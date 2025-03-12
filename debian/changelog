@@ -1,3 +1,17 @@
+zfs-linux (2.3.1-1) unstable; urgency=medium
+
+  * New upstream version 2.3.1
+  * d/patches:
+    + remove applied patches in 2.3.1
+    + backport upstream patch to fix flushing on zvol (closes: #1100086)
+  * d/rules: install pyzfs documentation into usr/share/doc/python3-pyzfs
+    + add link for backward compatibility
+    + add pyzfs-doc.doc-base
+  * Add new symbols in libzpool6linux
+  * Remove unused lintian-overrides
+
+ -- Shengqi Chen <harry@debian.org>  Wed, 12 Mar 2025 13:56:58 +0800
+
 zfs-linux (2.3.0-2) unstable; urgency=medium
 
   * cherry-pick upstream pre-2.3.1 patches
