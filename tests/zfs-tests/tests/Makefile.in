@@ -179,6 +179,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-register_sysctl_table.m4 \
 	$(top_srcdir)/config/kernel-rename.m4 \
 	$(top_srcdir)/config/kernel-revalidate-disk-size.m4 \
+	$(top_srcdir)/config/kernel-sb-dying.m4 \
 	$(top_srcdir)/config/kernel-sched.m4 \
 	$(top_srcdir)/config/kernel-security-inode-init.m4 \
 	$(top_srcdir)/config/kernel-set-nlink.m4 \
@@ -202,6 +203,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-vfs-fsync.m4 \
 	$(top_srcdir)/config/kernel-vfs-iov_iter.m4 \
 	$(top_srcdir)/config/kernel-vfs-migrate_folio.m4 \
+	$(top_srcdir)/config/kernel-vfs-migratepage.m4 \
 	$(top_srcdir)/config/kernel-vfs-read_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-set_page_dirty.m4 \
 	$(top_srcdir)/config/kernel-writepage_t.m4 \
@@ -482,7 +484,6 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/cli_root/json/setup.ksh \
 	functional/cli_root/json/json_sanity.ksh \
 	functional/cli_root/zinject/zinject_args.ksh \
-	functional/cli_root/zinject/zinject_counts.ksh \
 	functional/cli_root/zinject/zinject_probe.ksh \
 	functional/cli_root/zdb/zdb_002_pos.ksh \
 	functional/cli_root/zdb/zdb_003_pos.ksh \
@@ -1111,6 +1112,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/cli_root/zpool_set/user_property_001_pos.ksh \
 	functional/cli_root/zpool_set/user_property_002_neg.ksh \
 	functional/cli_root/zpool_set/zpool_set_features.ksh \
+	functional/cli_root/zpool_set/zpool_set_clear_userprop.ksh \
 	functional/cli_root/zpool_split/cleanup.ksh \
 	functional/cli_root/zpool_split/setup.ksh \
 	functional/cli_root/zpool_split/zpool_split_cliargs.ksh \
@@ -1291,8 +1293,8 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/cp_files/cp_stress.ksh \
 	functional/cp_files/setup.ksh functional/crtime/cleanup.ksh \
 	functional/crtime/crtime_001_pos.ksh \
-	functional/crtime/setup.ksh functional/ctime/cleanup.ksh \
-	functional/ctime/ctime_001_pos.ksh functional/ctime/setup.ksh \
+	functional/crtime/setup.ksh functional/crypto/icp_aes_ccm.ksh \
+	functional/crypto/icp_aes_gcm.ksh \
 	functional/deadman/deadman_ratelimit.ksh \
 	functional/deadman/deadman_sync.ksh \
 	functional/deadman/deadman_zio.ksh \
@@ -1303,7 +1305,9 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/dedup/dedup_legacy_import.ksh \
 	functional/dedup/dedup_legacy_fdt_upgrade.ksh \
 	functional/dedup/dedup_legacy_fdt_mixed.ksh \
+	functional/dedup/dedup_prune.ksh \
 	functional/dedup/dedup_quota.ksh \
+	functional/dedup/dedup_zap_shrink.ksh \
 	functional/delegate/cleanup.ksh functional/delegate/setup.ksh \
 	functional/delegate/zfs_allow_001_pos.ksh \
 	functional/delegate/zfs_allow_002_pos.ksh \
@@ -1880,7 +1884,8 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/sparse/cleanup.ksh functional/sparse/setup.ksh \
 	functional/sparse/sparse_001_pos.ksh \
 	functional/stat/cleanup.ksh functional/stat/setup.ksh \
-	functional/stat/stat_001_pos.ksh functional/suid/cleanup.ksh \
+	functional/stat/stat_001_pos.ksh \
+	functional/stat/statx_dioalign.ksh functional/suid/cleanup.ksh \
 	functional/suid/setup.ksh \
 	functional/suid/suid_write_to_none.ksh \
 	functional/suid/suid_write_to_sgid.ksh \
@@ -2486,6 +2491,10 @@ nobase_dist_datadir_zfs_tests_tests_DATA = perf/nfs-sample.cfg \
 	functional/checksum/default.cfg \
 	functional/clean_mirror/clean_mirror_common.kshlib \
 	functional/clean_mirror/default.cfg \
+	functional/crypto/aes_ccm_test.json \
+	functional/crypto/aes_ccm_test.txt \
+	functional/crypto/aes_gcm_test.json \
+	functional/crypto/aes_gcm_test.txt \
 	functional/cli_root/cli_common.kshlib \
 	functional/cli_root/zfs_copies/zfs_copies.cfg \
 	functional/cli_root/zfs_copies/zfs_copies.kshlib \
@@ -2952,7 +2961,6 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/cli_root/json/setup.ksh \
 	functional/cli_root/json/json_sanity.ksh \
 	functional/cli_root/zinject/zinject_args.ksh \
-	functional/cli_root/zinject/zinject_counts.ksh \
 	functional/cli_root/zinject/zinject_probe.ksh \
 	functional/cli_root/zdb/zdb_002_pos.ksh \
 	functional/cli_root/zdb/zdb_003_pos.ksh \
@@ -3581,6 +3589,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/cli_root/zpool_set/user_property_001_pos.ksh \
 	functional/cli_root/zpool_set/user_property_002_neg.ksh \
 	functional/cli_root/zpool_set/zpool_set_features.ksh \
+	functional/cli_root/zpool_set/zpool_set_clear_userprop.ksh \
 	functional/cli_root/zpool_split/cleanup.ksh \
 	functional/cli_root/zpool_split/setup.ksh \
 	functional/cli_root/zpool_split/zpool_split_cliargs.ksh \
@@ -3761,8 +3770,8 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/cp_files/cp_stress.ksh \
 	functional/cp_files/setup.ksh functional/crtime/cleanup.ksh \
 	functional/crtime/crtime_001_pos.ksh \
-	functional/crtime/setup.ksh functional/ctime/cleanup.ksh \
-	functional/ctime/ctime_001_pos.ksh functional/ctime/setup.ksh \
+	functional/crtime/setup.ksh functional/crypto/icp_aes_ccm.ksh \
+	functional/crypto/icp_aes_gcm.ksh \
 	functional/deadman/deadman_ratelimit.ksh \
 	functional/deadman/deadman_sync.ksh \
 	functional/deadman/deadman_zio.ksh \
@@ -3773,7 +3782,9 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/dedup/dedup_legacy_import.ksh \
 	functional/dedup/dedup_legacy_fdt_upgrade.ksh \
 	functional/dedup/dedup_legacy_fdt_mixed.ksh \
+	functional/dedup/dedup_prune.ksh \
 	functional/dedup/dedup_quota.ksh \
+	functional/dedup/dedup_zap_shrink.ksh \
 	functional/delegate/cleanup.ksh functional/delegate/setup.ksh \
 	functional/delegate/zfs_allow_001_pos.ksh \
 	functional/delegate/zfs_allow_002_pos.ksh \
@@ -4350,7 +4361,8 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/sparse/cleanup.ksh functional/sparse/setup.ksh \
 	functional/sparse/sparse_001_pos.ksh \
 	functional/stat/cleanup.ksh functional/stat/setup.ksh \
-	functional/stat/stat_001_pos.ksh functional/suid/cleanup.ksh \
+	functional/stat/stat_001_pos.ksh \
+	functional/stat/statx_dioalign.ksh functional/suid/cleanup.ksh \
 	functional/suid/setup.ksh \
 	functional/suid/suid_write_to_none.ksh \
 	functional/suid/suid_write_to_sgid.ksh \

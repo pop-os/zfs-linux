@@ -487,6 +487,7 @@ target_triplet = @target@
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/zfs_diff-socket$(EXEEXT) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/badsend$(EXEEXT) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/btree_test$(EXEEXT) \
+@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/crypto_test$(EXEEXT) \
 @CONFIG_USER_TRUE@	$(am__EXEEXT_3) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/draid$(EXEEXT) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/file_append$(EXEEXT) \
@@ -523,6 +524,7 @@ target_triplet = @target@
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_89 = tests/zfs-tests/cmd/getversion \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/user_ns_exec \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/renameat2 \
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/statx \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/xattrtest \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/zed_fd_spill-zedlet \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/idmap_util \
@@ -630,6 +632,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-register_sysctl_table.m4 \
 	$(top_srcdir)/config/kernel-rename.m4 \
 	$(top_srcdir)/config/kernel-revalidate-disk-size.m4 \
+	$(top_srcdir)/config/kernel-sb-dying.m4 \
 	$(top_srcdir)/config/kernel-sched.m4 \
 	$(top_srcdir)/config/kernel-security-inode-init.m4 \
 	$(top_srcdir)/config/kernel-set-nlink.m4 \
@@ -653,6 +656,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-vfs-fsync.m4 \
 	$(top_srcdir)/config/kernel-vfs-iov_iter.m4 \
 	$(top_srcdir)/config/kernel-vfs-migrate_folio.m4 \
+	$(top_srcdir)/config/kernel-vfs-migratepage.m4 \
 	$(top_srcdir)/config/kernel-vfs-read_folio.m4 \
 	$(top_srcdir)/config/kernel-vfs-set_page_dirty.m4 \
 	$(top_srcdir)/config/kernel-writepage_t.m4 \
@@ -783,6 +787,7 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__EXEEXT_5 = tests/zfs-tests/cmd/getversion$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/user_ns_exec$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/renameat2$(EXEEXT) \
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/statx$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/xattrtest$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/zed_fd_spill-zedlet$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/idmap_util$(EXEEXT) \
@@ -1477,6 +1482,14 @@ tests_zfs_tests_cmd_cp_files_SOURCES = tests/zfs-tests/cmd/cp_files.c
 tests_zfs_tests_cmd_cp_files_OBJECTS =  \
 	tests/zfs-tests/cmd/cp_files.$(OBJEXT)
 tests_zfs_tests_cmd_cp_files_LDADD = $(LDADD)
+am__tests_zfs_tests_cmd_crypto_test_SOURCES_DIST =  \
+	tests/zfs-tests/cmd/crypto_test.c
+@CONFIG_USER_TRUE@am_tests_zfs_tests_cmd_crypto_test_OBJECTS =  \
+@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/crypto_test.$(OBJEXT)
+tests_zfs_tests_cmd_crypto_test_OBJECTS =  \
+	$(am_tests_zfs_tests_cmd_crypto_test_OBJECTS)
+@CONFIG_USER_TRUE@tests_zfs_tests_cmd_crypto_test_DEPENDENCIES =  \
+@CONFIG_USER_TRUE@	libzpool.la
 tests_zfs_tests_cmd_ctime_SOURCES = tests/zfs-tests/cmd/ctime.c
 tests_zfs_tests_cmd_ctime_OBJECTS =  \
 	tests/zfs-tests/cmd/ctime.$(OBJEXT)
@@ -1691,6 +1704,10 @@ tests_zfs_tests_cmd_skein_test_OBJECTS =  \
 	$(am_tests_zfs_tests_cmd_skein_test_OBJECTS)
 @CONFIG_USER_TRUE@tests_zfs_tests_cmd_skein_test_DEPENDENCIES =  \
 @CONFIG_USER_TRUE@	libicp.la libspl.la libspl_assert.la
+tests_zfs_tests_cmd_statx_SOURCES = tests/zfs-tests/cmd/statx.c
+tests_zfs_tests_cmd_statx_OBJECTS =  \
+	tests/zfs-tests/cmd/statx.$(OBJEXT)
+tests_zfs_tests_cmd_statx_LDADD = $(LDADD)
 tests_zfs_tests_cmd_stride_dd_SOURCES =  \
 	tests/zfs-tests/cmd/stride_dd.c
 tests_zfs_tests_cmd_stride_dd_OBJECTS =  \
@@ -2388,6 +2405,7 @@ am__depfiles_remade = cmd/$(DEPDIR)/mount_zfs.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/cp_files.Po \
+	tests/zfs-tests/cmd/$(DEPDIR)/crypto_test.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/ctime.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/devname2devid-devname2devid.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/dir_rd_update.Po \
@@ -2414,6 +2432,7 @@ am__depfiles_remade = cmd/$(DEPDIR)/mount_zfs.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/renameat2.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/rm_lnkcnt_zero_file.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/send_doall.Po \
+	tests/zfs-tests/cmd/$(DEPDIR)/statx.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/stride_dd.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/suid_write_to_file.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/threadsappend.Po \
@@ -2496,6 +2515,7 @@ SOURCES = $(contrib_pam_zfs_key_pam_zfs_key_la_SOURCES) \
 	tests/zfs-tests/cmd/clone_mmap_cached.c \
 	tests/zfs-tests/cmd/clone_mmap_write.c \
 	tests/zfs-tests/cmd/clonefile.c tests/zfs-tests/cmd/cp_files.c \
+	$(tests_zfs_tests_cmd_crypto_test_SOURCES) \
 	tests/zfs-tests/cmd/ctime.c \
 	tests/zfs-tests/cmd/devname2devid.c \
 	tests/zfs-tests/cmd/dir_rd_update.c \
@@ -2532,7 +2552,7 @@ SOURCES = $(contrib_pam_zfs_key_pam_zfs_key_la_SOURCES) \
 	tests/zfs-tests/cmd/send_doall.c \
 	$(tests_zfs_tests_cmd_sha2_test_SOURCES) \
 	$(tests_zfs_tests_cmd_skein_test_SOURCES) \
-	tests/zfs-tests/cmd/stride_dd.c \
+	tests/zfs-tests/cmd/statx.c tests/zfs-tests/cmd/stride_dd.c \
 	tests/zfs-tests/cmd/suid_write_to_file.c \
 	tests/zfs-tests/cmd/threadsappend.c \
 	tests/zfs-tests/cmd/truncate_test.c \
@@ -2575,6 +2595,7 @@ DIST_SOURCES = $(am__contrib_pam_zfs_key_pam_zfs_key_la_SOURCES_DIST) \
 	tests/zfs-tests/cmd/clone_mmap_cached.c \
 	tests/zfs-tests/cmd/clone_mmap_write.c \
 	tests/zfs-tests/cmd/clonefile.c tests/zfs-tests/cmd/cp_files.c \
+	$(am__tests_zfs_tests_cmd_crypto_test_SOURCES_DIST) \
 	tests/zfs-tests/cmd/ctime.c \
 	tests/zfs-tests/cmd/devname2devid.c \
 	tests/zfs-tests/cmd/dir_rd_update.c \
@@ -2611,7 +2632,7 @@ DIST_SOURCES = $(am__contrib_pam_zfs_key_pam_zfs_key_la_SOURCES_DIST) \
 	tests/zfs-tests/cmd/send_doall.c \
 	$(am__tests_zfs_tests_cmd_sha2_test_SOURCES_DIST) \
 	$(am__tests_zfs_tests_cmd_skein_test_SOURCES_DIST) \
-	tests/zfs-tests/cmd/stride_dd.c \
+	tests/zfs-tests/cmd/statx.c tests/zfs-tests/cmd/stride_dd.c \
 	tests/zfs-tests/cmd/suid_write_to_file.c \
 	tests/zfs-tests/cmd/threadsappend.c \
 	tests/zfs-tests/cmd/truncate_test.c \
@@ -3457,8 +3478,8 @@ INSTALL_DATA_HOOKS = scripts-install-data-hook $(am__append_15) \
 	$(am__append_24) $(am__append_46) $(am__append_85)
 ALL_LOCAL = scripts-all-local $(am__append_32)
 CLEAN_LOCAL = scripts-clean-local $(am__append_33)
-CHECKS = shellcheck checkbashisms $(am__append_84) cstyle testscheck \
-	vcscheck zstdcheck flake8
+CHECKS = shellcheck checkbashisms $(am__append_84) spdxcheck cstyle \
+	testscheck vcscheck zstdcheck flake8
 PHONY = cppcheck shellcheck checkbashisms $(am__append_16) \
 	$(am__append_94) gitrev install-data-hook \
 	$(INSTALL_DATA_HOOKS) maintainer-clean-local distclean-local \
@@ -4634,6 +4655,8 @@ SUBDIRS = include $(am__append_86) $(am__append_95)
 @CONFIG_USER_TRUE@	libzpool.la \
 @CONFIG_USER_TRUE@	libzfs_core.la
 
+@CONFIG_USER_TRUE@tests_zfs_tests_cmd_crypto_test_SOURCES = tests/zfs-tests/cmd/crypto_test.c
+@CONFIG_USER_TRUE@tests_zfs_tests_cmd_crypto_test_LDADD = libzpool.la
 @CONFIG_USER_TRUE@@WANT_DEVNAME2DEVID_TRUE@tests_zfs_tests_cmd_devname2devid_CFLAGS = $(AM_CFLAGS) $(LIBUDEV_CFLAGS)
 @CONFIG_USER_TRUE@@WANT_DEVNAME2DEVID_TRUE@tests_zfs_tests_cmd_devname2devid_LDADD = $(LIBUDEV_LIBS)
 @CONFIG_USER_TRUE@tests_zfs_tests_cmd_draid_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS)
@@ -6847,6 +6870,13 @@ tests/zfs-tests/cmd/cp_files.$(OBJEXT):  \
 tests/zfs-tests/cmd/cp_files$(EXEEXT): $(tests_zfs_tests_cmd_cp_files_OBJECTS) $(tests_zfs_tests_cmd_cp_files_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_cp_files_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
 	@rm -f tests/zfs-tests/cmd/cp_files$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_cp_files_OBJECTS) $(tests_zfs_tests_cmd_cp_files_LDADD) $(LIBS)
+tests/zfs-tests/cmd/crypto_test.$(OBJEXT):  \
+	tests/zfs-tests/cmd/$(am__dirstamp) \
+	tests/zfs-tests/cmd/$(DEPDIR)/$(am__dirstamp)
+
+tests/zfs-tests/cmd/crypto_test$(EXEEXT): $(tests_zfs_tests_cmd_crypto_test_OBJECTS) $(tests_zfs_tests_cmd_crypto_test_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_crypto_test_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
+	@rm -f tests/zfs-tests/cmd/crypto_test$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_crypto_test_OBJECTS) $(tests_zfs_tests_cmd_crypto_test_LDADD) $(LIBS)
 tests/zfs-tests/cmd/ctime.$(OBJEXT):  \
 	tests/zfs-tests/cmd/$(am__dirstamp) \
 	tests/zfs-tests/cmd/$(DEPDIR)/$(am__dirstamp)
@@ -7125,6 +7155,13 @@ tests/zfs-tests/cmd/checksum/skein_test.$(OBJEXT):  \
 tests/zfs-tests/cmd/skein_test$(EXEEXT): $(tests_zfs_tests_cmd_skein_test_OBJECTS) $(tests_zfs_tests_cmd_skein_test_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_skein_test_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
 	@rm -f tests/zfs-tests/cmd/skein_test$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_skein_test_OBJECTS) $(tests_zfs_tests_cmd_skein_test_LDADD) $(LIBS)
+tests/zfs-tests/cmd/statx.$(OBJEXT):  \
+	tests/zfs-tests/cmd/$(am__dirstamp) \
+	tests/zfs-tests/cmd/$(DEPDIR)/$(am__dirstamp)
+
+tests/zfs-tests/cmd/statx$(EXEEXT): $(tests_zfs_tests_cmd_statx_OBJECTS) $(tests_zfs_tests_cmd_statx_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_statx_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
+	@rm -f tests/zfs-tests/cmd/statx$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_statx_OBJECTS) $(tests_zfs_tests_cmd_statx_LDADD) $(LIBS)
 tests/zfs-tests/cmd/stride_dd.$(OBJEXT):  \
 	tests/zfs-tests/cmd/$(am__dirstamp) \
 	tests/zfs-tests/cmd/$(DEPDIR)/$(am__dirstamp)
@@ -8651,6 +8688,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/cp_files.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/crypto_test.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/ctime.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/devname2devid-devname2devid.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/dir_rd_update.Po@am__quote@ # am--include-marker
@@ -8677,6 +8715,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/renameat2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/rm_lnkcnt_zero_file.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/send_doall.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/statx.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/stride_dd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/suid_write_to_file.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/threadsappend.Po@am__quote@ # am--include-marker
@@ -13512,6 +13551,7 @@ distclean: distclean-recursive
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/cp_files.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/crypto_test.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/ctime.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/devname2devid-devname2devid.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/dir_rd_update.Po
@@ -13538,6 +13578,7 @@ distclean: distclean-recursive
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/renameat2.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/rm_lnkcnt_zero_file.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/send_doall.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/statx.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/stride_dd.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/suid_write_to_file.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/threadsappend.Po
@@ -14053,6 +14094,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/cp_files.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/crypto_test.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/ctime.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/devname2devid-devname2devid.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/dir_rd_update.Po
@@ -14079,6 +14121,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/renameat2.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/rm_lnkcnt_zero_file.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/send_doall.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/statx.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/stride_dd.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/suid_write_to_file.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/threadsappend.Po
@@ -14347,6 +14390,7 @@ export INSTALL_UDEV_RULE_DIR=$(udevruledir)
 export INSTALL_MOUNT_HELPER_DIR=$(mounthelperdir)
 export INSTALL_SYSCONF_DIR=$(sysconfdir)
 export INSTALL_PYTHON_DIR=$(pythonsitedir)
+export INSTALL_PKGDATA_DIR=$(pkgdatadir)
 
 export KMOD_SPL=$(abs_top_builddir)/module/spl.ko
 export KMOD_ZFS=$(abs_top_builddir)/module/zfs.ko
@@ -14533,6 +14577,8 @@ commitcheck:
 	$(AM_V_at)if git rev-parse --git-dir > /dev/null 2>&1; then \
 		${top_srcdir}/scripts/commitcheck.sh; \
 	fi
+spdxcheck:
+	$(AM_V_at)$(top_srcdir)/scripts/spdxcheck.pl
 cstyle:
 	$(AM_V_at)find $(top_srcdir) -name build -prune \
 		-o -type f -name '*.[hc]' \
