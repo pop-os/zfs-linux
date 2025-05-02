@@ -671,6 +671,9 @@
 /* generic_copy_file_range() is available */
 #undef HAVE_VFS_GENERIC_COPY_FILE_RANGE
 
+/* migratepage exists */
+#undef HAVE_VFS_MIGRATEPAGE
+
 /* migrate_folio exists */
 #undef HAVE_VFS_MIGRATE_FOLIO
 
