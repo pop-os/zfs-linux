@@ -7,7 +7,7 @@ Forwarded: not-needed
 Bug: https://bugs.launchpad.net/ubuntu/+source/zfs-linux/+bug/1760173
 --- a/lib/libzfs/os/linux/libzfs_util_os.c
 +++ b/lib/libzfs/os/linux/libzfs_util_os.c
-@@ -109,6 +109,16 @@
+@@ -110,6 +110,16 @@
  
  	const char *timeout_str = getenv("ZFS_MODULE_TIMEOUT");
  	int seconds = 10;

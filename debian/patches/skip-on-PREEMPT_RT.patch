@@ -6,7 +6,7 @@ Last-Update: 2024-08-08
 
 --- a/scripts/dkms.mkconf
 +++ b/scripts/dkms.mkconf
-@@ -25,6 +25,9 @@ PACKAGE_NAME="${pkgname}"
+@@ -25,6 +25,9 @@
  PACKAGE_VERSION="${pkgver}"
  PACKAGE_CONFIG="${pkgcfg}"
  NO_WEAK_MODULES="yes"
