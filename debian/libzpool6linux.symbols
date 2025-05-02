@@ -579,6 +579,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  ddt_phys_refcnt@Base 2.3
  ddt_phys_select@Base 0.8.2
  ddt_phys_total_refcnt@Base 0.8.2
+ ddt_phys_unextend@Base 2.3.2
  ddt_prefetch@Base 0.8.2
  ddt_prefetch_all@Base 2.3
  ddt_prune_artificial_age@Base 2.3
@@ -2483,6 +2484,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  vdev_uberblock_load@Base 0.8.2
  vdev_uberblock_sync_list@Base 2.3
  vdev_uninitialize@Base 2.1.12
+ vdev_update_nonallocating_space@Base 2.3.2
  vdev_validate@Base 0.8.2
  vdev_validate_aux@Base 0.8.2
  vdev_validate_skip@Base 0.8.2
