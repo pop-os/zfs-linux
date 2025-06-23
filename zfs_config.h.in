@@ -242,7 +242,7 @@
 /* dops->d_revalidate() takes 4 args */
 #undef HAVE_D_REVALIDATE_4ARGS
 
-/* Define to 1 if you have the `execvpe' function. */
+/* Define to 1 if you have the 'execvpe' function. */
 #undef HAVE_EXECVPE
 
 /* fault_in_iov_iter_readable() is available */
@@ -284,7 +284,7 @@
 /* Define if the GNU gettext() function is already present or preinstalled. */
 #undef HAVE_GETTEXT
 
-/* Define to 1 if you have the `gettid' function. */
+/* Define to 1 if you have the 'gettid' function. */
 #undef HAVE_GETTID
 
 /* iops->get_acl() exists */
@@ -359,6 +359,9 @@
 /* iops->create() takes struct user_namespace* */
 #undef HAVE_IOPS_CREATE_USERNS
 
+/* iops->mkdir() returns struct dentry* */
+#undef HAVE_IOPS_MKDIR_DENTRY
+
 /* iops->mkdir() takes struct mnt_idmap* */
 #undef HAVE_IOPS_MKDIR_IDMAP
 
@@ -395,7 +398,7 @@
 /* iov_iter_type() is available */
 #undef HAVE_IOV_ITER_TYPE
 
-/* Define to 1 if you have the `issetugid' function. */
+/* Define to 1 if you have the 'issetugid' function. */
 #undef HAVE_ISSETUGID
 
 /* iter_iov() is available */
@@ -473,7 +476,7 @@
 /* Noting that make_request_fn() returns blk_qc_t */
 #undef HAVE_MAKE_REQUEST_FN_RET_QC
 
-/* Define to 1 if you have the `mlockall' function. */
+/* Define to 1 if you have the 'mlockall' function. */
 #undef HAVE_MLOCKALL
 
 /* PG_error flag is available */
@@ -584,6 +587,9 @@
 /* STACK_FRAME_NON_STANDARD is defined */
 #undef HAVE_STACK_FRAME_NON_STANDARD
 
+/* STACK_FRAME_NON_STANDARD asm macro is defined */
+#undef HAVE_STACK_FRAME_NON_STANDARD_ASM
+
 /* standalone <linux/stdarg.h> exists */
 #undef HAVE_STANDALONE_LINUX_STDARG
 
@@ -602,10 +608,10 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if you have the `strlcat' function. */
+/* Define to 1 if you have the 'strlcat' function. */
 #undef HAVE_STRLCAT
 
-/* Define to 1 if you have the `strlcpy' function. */
+/* Define to 1 if you have the 'strlcpy' function. */
 #undef HAVE_STRLCPY
 
 /* submit_bio is member of struct block_device_operations */
@@ -616,6 +622,9 @@
 
 /* have super_block s_shrink pointer */
 #undef HAVE_SUPER_BLOCK_S_SHRINK_PTR
+
+/* have super_block s_wb_err */
+#undef HAVE_SUPER_BLOCK_S_WB_ERR
 
 /* sync_blockdev() is declared in include/blkdev.h */
 #undef HAVE_SYNC_BLOCKDEV
@@ -628,6 +637,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* timer_delete_sync is available */
+#undef HAVE_TIMER_DELETE_SYNC
 
 /* i_op->tmpfile() uses old dentry signature */
 #undef HAVE_TMPFILE_DENTRY
@@ -644,7 +656,7 @@
 /* kernel has totalram_pages() */
 #undef HAVE_TOTALRAM_PAGES_FUNC
 
-/* Define to 1 if you have the `udev_device_get_is_initialized' function. */
+/* Define to 1 if you have the 'udev_device_get_is_initialized' function. */
 #undef HAVE_UDEV_DEVICE_GET_IS_INITIALIZED
 
 /* kernel has __kernel_fpu_* functions */
@@ -725,6 +737,9 @@
 /* Define if you have [z] */
 #undef HAVE_ZLIB
 
+/* libunwind is llvm libunwind */
+#undef IS_LIBUNWIND_LLVM
+
 /* kernel exports FPU functions */
 #undef KERNEL_EXPORTS_X86_FPU
 
@@ -782,7 +797,7 @@
 /* pde_data() is PDE_DATA() */
 #undef SPL_PDE_DATA
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
