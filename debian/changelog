@@ -1,3 +1,12 @@
+zfs-linux (2.3.3-1) UNRELEASED; urgency=medium
+
+  * New upstream version 2.3.3 (closes: #1106035, #1106556).
+  * d/patches: refresh existing patches.
+  * d/symbols: add symbols in new version, remove vanished ones.
+  * d/copyright: remove deprecated FSF physical addresses.
+
+ -- Shengqi Chen <harry@debian.org>  Mon, 23 Jun 2025 10:15:56 +0800
+
 zfs-linux (2.3.2-1) unstable; urgency=medium
 
   * New upstream version 2.3.2 (closes: #1104418).
