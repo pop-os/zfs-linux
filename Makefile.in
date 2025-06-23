@@ -633,6 +633,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-rename.m4 \
 	$(top_srcdir)/config/kernel-revalidate-disk-size.m4 \
 	$(top_srcdir)/config/kernel-sb-dying.m4 \
+	$(top_srcdir)/config/kernel-sb-wb-err.m4 \
 	$(top_srcdir)/config/kernel-sched.m4 \
 	$(top_srcdir)/config/kernel-security-inode-init.m4 \
 	$(top_srcdir)/config/kernel-set-nlink.m4 \
@@ -645,6 +646,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-strlcpy.m4 \
 	$(top_srcdir)/config/kernel-symlink.m4 \
 	$(top_srcdir)/config/kernel-sysfs.m4 \
+	$(top_srcdir)/config/kernel-timer.m4 \
 	$(top_srcdir)/config/kernel-tmpfile.m4 \
 	$(top_srcdir)/config/kernel-totalhigh_pages.m4 \
 	$(top_srcdir)/config/kernel-totalram-pages-func.m4 \
@@ -724,8 +726,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
 	$(am__dist_zpoolcompat_DATA_DIST) $(am__extra_HEADERS_DIST) \
 	$(am__libspl_HEADERS_DIST) $(am__libspl_ia32_HEADERS_DIST) \
 	$(am__libspl_rpc_HEADERS_DIST) $(am__libspl_sys_HEADERS_DIST) \
-	$(am__libspl_sys_dktp_HEADERS_DIST) \
-	$(am__libzpool_HEADERS_DIST) $(am__DIST_COMMON)
+	$(am__libspl_sys_dktp_HEADERS_DIST) $(am__DIST_COMMON)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
@@ -776,8 +777,7 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" \
 	"$(DESTDIR)$(systemdunitdir)" "$(DESTDIR)$(udevruledir)" \
 	"$(DESTDIR)$(extradir)" "$(DESTDIR)$(libspldir)" \
 	"$(DESTDIR)$(libspl_ia32dir)" "$(DESTDIR)$(libspl_rpcdir)" \
-	"$(DESTDIR)$(libspl_sysdir)" "$(DESTDIR)$(libspl_sys_dktpdir)" \
-	"$(DESTDIR)$(libzpooldir)"
+	"$(DESTDIR)$(libspl_sysdir)" "$(DESTDIR)$(libspl_sys_dktpdir)"
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__EXEEXT_1 = mount.zfs$(EXEEXT)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__EXEEXT_2 =  \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	zgenhostid$(EXEEXT) \
@@ -1137,6 +1137,7 @@ libzfs_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 @CONFIG_USER_TRUE@libzfs_core_la_DEPENDENCIES = libnvpair.la libspl.la \
 @CONFIG_USER_TRUE@	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am__libzfs_core_la_SOURCES_DIST = lib/libzfs_core/libzfs_core.c \
+	lib/libzfs_core/libzfs_core_impl.h \
 	lib/libzfs_core/os/linux/libzfs_core_ioctl.c \
 	lib/libzfs_core/os/freebsd/libzfs_core_ioctl.c
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__objects_11 = lib/libzfs_core/os/linux/libzfs_core_la-libzfs_core_ioctl.lo
@@ -2926,8 +2927,9 @@ am__libspl_ia32_HEADERS_DIST =  \
 	lib/libspl/include/os/freebsd/sys/ia32/asm_linkage.h \
 	lib/libspl/include/os/linux/sys/ia32/asm_linkage.h
 am__libspl_rpc_HEADERS_DIST = lib/libspl/include/rpc/xdr.h
-am__libspl_sys_HEADERS_DIST = lib/libspl/include/sys/acl.h \
-	lib/libspl/include/sys/acl_impl.h \
+am__libspl_sys_HEADERS_DIST = lib/libspl/include/sys/abd_os.h \
+	lib/libspl/include/sys/abd_impl_os.h \
+	lib/libspl/include/sys/acl.h lib/libspl/include/sys/acl_impl.h \
 	lib/libspl/include/sys/asm_linkage.h \
 	lib/libspl/include/sys/backtrace.h \
 	lib/libspl/include/sys/callb.h \
@@ -2976,11 +2978,9 @@ am__libspl_sys_HEADERS_DIST = lib/libspl/include/sys/acl.h \
 	lib/libspl/include/os/freebsd/sys/zfs_context_os.h
 am__libspl_sys_dktp_HEADERS_DIST =  \
 	lib/libspl/include/sys/dktp/fdisk.h
-am__libzpool_HEADERS_DIST = lib/libzpool/include/sys/abd_os.h \
-	lib/libzpool/include/sys/abd_impl_os.h
 HEADERS = $(extra_HEADERS) $(libspl_HEADERS) $(libspl_ia32_HEADERS) \
 	$(libspl_rpc_HEADERS) $(libspl_sys_HEADERS) \
-	$(libspl_sys_dktp_HEADERS) $(libzpool_HEADERS)
+	$(libspl_sys_dktp_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -3042,7 +3042,6 @@ am__DIST_COMMON = $(dist_man_MANS) $(srcdir)/Makefile.in \
 	$(srcdir)/lib/libzfs_core/Makefile.am \
 	$(srcdir)/lib/libzfsbootenv/Makefile.am \
 	$(srcdir)/lib/libzpool/Makefile.am \
-	$(srcdir)/lib/libzpool/include/Makefile.am \
 	$(srcdir)/lib/libzstd/Makefile.am \
 	$(srcdir)/lib/libzutil/Makefile.am $(srcdir)/man/Makefile.am \
 	$(srcdir)/rpm/Makefile.am $(srcdir)/tests/Makefile.am \
@@ -3496,9 +3495,9 @@ AM_CPPFLAGS = -include $(top_builddir)/zfs_config.h \
 	-I$(top_srcdir)/module/icp/include \
 	-I$(top_srcdir)/lib/libspl/include \
 	-I$(top_srcdir)/lib/libspl/include/os/@ac_system_l@ \
-	-I$(top_srcdir)/lib/libzpool/include -D_GNU_SOURCE \
-	-D_REENTRANT -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE \
-	-DLIBEXECDIR=\"$(libexecdir)\" -DZFSEXECDIR=\"$(zfsexecdir)\" \
+	-D_GNU_SOURCE -D_REENTRANT -D_FILE_OFFSET_BITS=64 \
+	-D_LARGEFILE64_SOURCE -DLIBEXECDIR=\"$(libexecdir)\" \
+	-DZFSEXECDIR=\"$(zfsexecdir)\" \
 	-DRUNSTATEDIR=\"$(runstatedir)\" -DSBINDIR=\"$(sbindir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" -DPKGDATADIR=\"$(pkgdatadir)\" \
 	$(DEBUG_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS) \
@@ -4142,7 +4141,10 @@ SUBDIRS = include $(am__append_86) $(am__append_95)
 @CONFIG_USER_TRUE@	lib/libspl/include/rpc/xdr.h
 
 @CONFIG_USER_TRUE@libspl_sysdir = $(libspldir)/sys
-@CONFIG_USER_TRUE@libspl_sys_HEADERS = lib/libspl/include/sys/acl.h \
+@CONFIG_USER_TRUE@libspl_sys_HEADERS =  \
+@CONFIG_USER_TRUE@	lib/libspl/include/sys/abd_os.h \
+@CONFIG_USER_TRUE@	lib/libspl/include/sys/abd_impl_os.h \
+@CONFIG_USER_TRUE@	lib/libspl/include/sys/acl.h \
 @CONFIG_USER_TRUE@	lib/libspl/include/sys/acl_impl.h \
 @CONFIG_USER_TRUE@	lib/libspl/include/sys/asm_linkage.h \
 @CONFIG_USER_TRUE@	lib/libspl/include/sys/backtrace.h \
@@ -4242,11 +4244,12 @@ SUBDIRS = include $(am__append_86) $(am__append_95)
 
 @CONFIG_USER_TRUE@libzfs_core_la_CFLAGS = $(AM_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) -fvisibility=hidden
+@CONFIG_USER_TRUE@libzfs_core_la_CPPFLAGS = $(AM_CPPFLAGS) \
+@CONFIG_USER_TRUE@	-I$(srcdir)/lib/libzfs_core $(am__append_65)
 @CONFIG_USER_TRUE@libzfs_core_la_SOURCES =  \
 @CONFIG_USER_TRUE@	lib/libzfs_core/libzfs_core.c \
+@CONFIG_USER_TRUE@	lib/libzfs_core/libzfs_core_impl.h \
 @CONFIG_USER_TRUE@	$(am__append_64) $(am__append_66)
-@CONFIG_USER_TRUE@libzfs_core_la_CPPFLAGS = $(AM_CPPFLAGS) \
-@CONFIG_USER_TRUE@	$(am__append_65)
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@nodist_libzfs_core_la_SOURCES = \
 @BUILD_FREEBSD_TRUE@@CONFIG_USER_TRUE@	module/os/freebsd/zfs/zfs_ioctl_compat.c
 
@@ -4311,11 +4314,6 @@ SUBDIRS = include $(am__append_86) $(am__append_95)
 
 @CONFIG_USER_TRUE@libzfsbootenv_la_LDFLAGS = $(am__append_73) \
 @CONFIG_USER_TRUE@	-version-info 1:0:0
-@CONFIG_USER_TRUE@libzpooldir = $(includedir)/libzpool
-@CONFIG_USER_TRUE@libzpool_HEADERS = \
-@CONFIG_USER_TRUE@	lib/libzpool/include/sys/abd_os.h \
-@CONFIG_USER_TRUE@	lib/libzpool/include/sys/abd_impl_os.h
-
 @CONFIG_USER_TRUE@libzpool_la_CFLAGS = $(AM_CFLAGS) $(KERNEL_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) $(ZLIB_CFLAGS)
 @CONFIG_USER_TRUE@libzpool_la_CPPFLAGS = $(AM_CPPFLAGS) \
@@ -4782,7 +4780,7 @@ all: zfs_config.h
 .SUFFIXES: .S .c .lo .o .obj
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/Rules.am $(top_srcdir)/config/CppCheck.am $(top_srcdir)/config/Shellcheck.am $(top_srcdir)/config/Substfiles.am $(top_srcdir)/scripts/Makefile.am $(srcdir)/rpm/Makefile.am $(srcdir)/cmd/Makefile.am $(srcdir)/cmd/raidz_test/Makefile.am $(srcdir)/cmd/zdb/Makefile.am $(srcdir)/cmd/zfs/Makefile.am $(srcdir)/cmd/zinject/Makefile.am $(srcdir)/cmd/zpool/Makefile.am $(srcdir)/cmd/zpool_influxdb/Makefile.am $(srcdir)/cmd/zstream/Makefile.am $(srcdir)/cmd/zed/Makefile.am $(srcdir)/cmd/zed/zed.d/Makefile.am $(srcdir)/contrib/Makefile.am $(srcdir)/contrib/bash_completion.d/Makefile.am $(srcdir)/contrib/debian/Makefile.am $(srcdir)/contrib/pyzfs/Makefile.am $(srcdir)/contrib/zcp/Makefile.am $(srcdir)/contrib/bpftrace/Makefile.am $(srcdir)/contrib/dracut/Makefile.am $(srcdir)/contrib/initramfs/Makefile.am $(srcdir)/contrib/pam_zfs_key/Makefile.am $(srcdir)/etc/Makefile.am $(srcdir)/lib/Makefile.am $(srcdir)/lib/libavl/Makefile.am $(srcdir)/lib/libicp/Makefile.am $(srcdir)/lib/libnvpair/Makefile.am $(srcdir)/lib/libshare/Makefile.am $(srcdir)/lib/libspl/Makefile.am $(srcdir)/lib/libspl/include/Makefile.am $(srcdir)/lib/libtpool/Makefile.am $(srcdir)/lib/libunicode/Makefile.am $(srcdir)/lib/libuutil/Makefile.am $(srcdir)/lib/libzdb/Makefile.am $(srcdir)/lib/libzfs_core/Makefile.am $(srcdir)/lib/libzfs/Makefile.am $(srcdir)/lib/libzfsbootenv/Makefile.am $(srcdir)/lib/libzpool/Makefile.am $(srcdir)/lib/libzpool/include/Makefile.am $(srcdir)/lib/libzstd/Makefile.am $(srcdir)/lib/libzutil/Makefile.am $(srcdir)/lib/libefi/Makefile.am $(srcdir)/man/Makefile.am $(srcdir)/tests/Makefile.am $(srcdir)/tests/zfs-tests/Makefile.am $(srcdir)/tests/zfs-tests/cmd/Makefile.am $(srcdir)/udev/Makefile.am $(srcdir)/config/rpm.am $(srcdir)/config/deb.am $(srcdir)/config/tgz.am $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/Rules.am $(top_srcdir)/config/CppCheck.am $(top_srcdir)/config/Shellcheck.am $(top_srcdir)/config/Substfiles.am $(top_srcdir)/scripts/Makefile.am $(srcdir)/rpm/Makefile.am $(srcdir)/cmd/Makefile.am $(srcdir)/cmd/raidz_test/Makefile.am $(srcdir)/cmd/zdb/Makefile.am $(srcdir)/cmd/zfs/Makefile.am $(srcdir)/cmd/zinject/Makefile.am $(srcdir)/cmd/zpool/Makefile.am $(srcdir)/cmd/zpool_influxdb/Makefile.am $(srcdir)/cmd/zstream/Makefile.am $(srcdir)/cmd/zed/Makefile.am $(srcdir)/cmd/zed/zed.d/Makefile.am $(srcdir)/contrib/Makefile.am $(srcdir)/contrib/bash_completion.d/Makefile.am $(srcdir)/contrib/debian/Makefile.am $(srcdir)/contrib/pyzfs/Makefile.am $(srcdir)/contrib/zcp/Makefile.am $(srcdir)/contrib/bpftrace/Makefile.am $(srcdir)/contrib/dracut/Makefile.am $(srcdir)/contrib/initramfs/Makefile.am $(srcdir)/contrib/pam_zfs_key/Makefile.am $(srcdir)/etc/Makefile.am $(srcdir)/lib/Makefile.am $(srcdir)/lib/libavl/Makefile.am $(srcdir)/lib/libicp/Makefile.am $(srcdir)/lib/libnvpair/Makefile.am $(srcdir)/lib/libshare/Makefile.am $(srcdir)/lib/libspl/Makefile.am $(srcdir)/lib/libspl/include/Makefile.am $(srcdir)/lib/libtpool/Makefile.am $(srcdir)/lib/libunicode/Makefile.am $(srcdir)/lib/libuutil/Makefile.am $(srcdir)/lib/libzdb/Makefile.am $(srcdir)/lib/libzfs_core/Makefile.am $(srcdir)/lib/libzfs/Makefile.am $(srcdir)/lib/libzfsbootenv/Makefile.am $(srcdir)/lib/libzpool/Makefile.am $(srcdir)/lib/libzstd/Makefile.am $(srcdir)/lib/libzutil/Makefile.am $(srcdir)/lib/libefi/Makefile.am $(srcdir)/man/Makefile.am $(srcdir)/tests/Makefile.am $(srcdir)/tests/zfs-tests/Makefile.am $(srcdir)/tests/zfs-tests/cmd/Makefile.am $(srcdir)/udev/Makefile.am $(srcdir)/config/rpm.am $(srcdir)/config/deb.am $(srcdir)/config/tgz.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -4804,7 +4802,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles);; \
 	esac;
-$(top_srcdir)/config/Rules.am $(top_srcdir)/config/CppCheck.am $(top_srcdir)/config/Shellcheck.am $(top_srcdir)/config/Substfiles.am $(top_srcdir)/scripts/Makefile.am $(srcdir)/rpm/Makefile.am $(srcdir)/cmd/Makefile.am $(srcdir)/cmd/raidz_test/Makefile.am $(srcdir)/cmd/zdb/Makefile.am $(srcdir)/cmd/zfs/Makefile.am $(srcdir)/cmd/zinject/Makefile.am $(srcdir)/cmd/zpool/Makefile.am $(srcdir)/cmd/zpool_influxdb/Makefile.am $(srcdir)/cmd/zstream/Makefile.am $(srcdir)/cmd/zed/Makefile.am $(srcdir)/cmd/zed/zed.d/Makefile.am $(srcdir)/contrib/Makefile.am $(srcdir)/contrib/bash_completion.d/Makefile.am $(srcdir)/contrib/debian/Makefile.am $(srcdir)/contrib/pyzfs/Makefile.am $(srcdir)/contrib/zcp/Makefile.am $(srcdir)/contrib/bpftrace/Makefile.am $(srcdir)/contrib/dracut/Makefile.am $(srcdir)/contrib/initramfs/Makefile.am $(srcdir)/contrib/pam_zfs_key/Makefile.am $(srcdir)/etc/Makefile.am $(srcdir)/lib/Makefile.am $(srcdir)/lib/libavl/Makefile.am $(srcdir)/lib/libicp/Makefile.am $(srcdir)/lib/libnvpair/Makefile.am $(srcdir)/lib/libshare/Makefile.am $(srcdir)/lib/libspl/Makefile.am $(srcdir)/lib/libspl/include/Makefile.am $(srcdir)/lib/libtpool/Makefile.am $(srcdir)/lib/libunicode/Makefile.am $(srcdir)/lib/libuutil/Makefile.am $(srcdir)/lib/libzdb/Makefile.am $(srcdir)/lib/libzfs_core/Makefile.am $(srcdir)/lib/libzfs/Makefile.am $(srcdir)/lib/libzfsbootenv/Makefile.am $(srcdir)/lib/libzpool/Makefile.am $(srcdir)/lib/libzpool/include/Makefile.am $(srcdir)/lib/libzstd/Makefile.am $(srcdir)/lib/libzutil/Makefile.am $(srcdir)/lib/libefi/Makefile.am $(srcdir)/man/Makefile.am $(srcdir)/tests/Makefile.am $(srcdir)/tests/zfs-tests/Makefile.am $(srcdir)/tests/zfs-tests/cmd/Makefile.am $(srcdir)/udev/Makefile.am $(srcdir)/config/rpm.am $(srcdir)/config/deb.am $(srcdir)/config/tgz.am $(am__empty):
+$(top_srcdir)/config/Rules.am $(top_srcdir)/config/CppCheck.am $(top_srcdir)/config/Shellcheck.am $(top_srcdir)/config/Substfiles.am $(top_srcdir)/scripts/Makefile.am $(srcdir)/rpm/Makefile.am $(srcdir)/cmd/Makefile.am $(srcdir)/cmd/raidz_test/Makefile.am $(srcdir)/cmd/zdb/Makefile.am $(srcdir)/cmd/zfs/Makefile.am $(srcdir)/cmd/zinject/Makefile.am $(srcdir)/cmd/zpool/Makefile.am $(srcdir)/cmd/zpool_influxdb/Makefile.am $(srcdir)/cmd/zstream/Makefile.am $(srcdir)/cmd/zed/Makefile.am $(srcdir)/cmd/zed/zed.d/Makefile.am $(srcdir)/contrib/Makefile.am $(srcdir)/contrib/bash_completion.d/Makefile.am $(srcdir)/contrib/debian/Makefile.am $(srcdir)/contrib/pyzfs/Makefile.am $(srcdir)/contrib/zcp/Makefile.am $(srcdir)/contrib/bpftrace/Makefile.am $(srcdir)/contrib/dracut/Makefile.am $(srcdir)/contrib/initramfs/Makefile.am $(srcdir)/contrib/pam_zfs_key/Makefile.am $(srcdir)/etc/Makefile.am $(srcdir)/lib/Makefile.am $(srcdir)/lib/libavl/Makefile.am $(srcdir)/lib/libicp/Makefile.am $(srcdir)/lib/libnvpair/Makefile.am $(srcdir)/lib/libshare/Makefile.am $(srcdir)/lib/libspl/Makefile.am $(srcdir)/lib/libspl/include/Makefile.am $(srcdir)/lib/libtpool/Makefile.am $(srcdir)/lib/libunicode/Makefile.am $(srcdir)/lib/libuutil/Makefile.am $(srcdir)/lib/libzdb/Makefile.am $(srcdir)/lib/libzfs_core/Makefile.am $(srcdir)/lib/libzfs/Makefile.am $(srcdir)/lib/libzfsbootenv/Makefile.am $(srcdir)/lib/libzpool/Makefile.am $(srcdir)/lib/libzstd/Makefile.am $(srcdir)/lib/libzutil/Makefile.am $(srcdir)/lib/libefi/Makefile.am $(srcdir)/man/Makefile.am $(srcdir)/tests/Makefile.am $(srcdir)/tests/zfs-tests/Makefile.am $(srcdir)/tests/zfs-tests/cmd/Makefile.am $(srcdir)/udev/Makefile.am $(srcdir)/config/rpm.am $(srcdir)/config/deb.am $(srcdir)/config/tgz.am $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -12589,27 +12587,6 @@ uninstall-libspl_sys_dktpHEADERS:
 	@list='$(libspl_sys_dktp_HEADERS)'; test -n "$(libspl_sys_dktpdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(libspl_sys_dktpdir)'; $(am__uninstall_files_from_dir)
-install-libzpoolHEADERS: $(libzpool_HEADERS)
-	@$(NORMAL_INSTALL)
-	@list='$(libzpool_HEADERS)'; test -n "$(libzpooldir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(libzpooldir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(libzpooldir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_HEADER) $$files '$(DESTDIR)$(libzpooldir)'"; \
-	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(libzpooldir)" || exit $$?; \
-	done
-
-uninstall-libzpoolHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(libzpool_HEADERS)'; test -n "$(libzpooldir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(libzpooldir)'; $(am__uninstall_files_from_dir)
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -12945,7 +12922,7 @@ install-pammoduleLTLIBRARIES: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_zfs_tests_bindir)" "$(DESTDIR)$(scripts_zfs_tests_functional_cp_filesdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_hkdfdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_libzfsdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_tmpfiledir)" "$(DESTDIR)$(scripts_zfs_tests_functional_vdev_diskdir)" "$(DESTDIR)$(systemdgeneratordir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pammoduledir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(i_tdir)" "$(DESTDIR)$(i_t_scriptsdir)" "$(DESTDIR)$(i_t_scripts_localtopdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(scripts_zfs_tests_callbacksdir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(zpoolexecdir)" "$(DESTDIR)$(i_t_hooksdir)" "$(DESTDIR)$(initdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(pkgdracut_02dir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_test_runner_bindir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man4dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(i_t_conf_ddir)" "$(DESTDIR)$(i_t_confhooks_ddir)" "$(DESTDIR)$(modulesloaddir)" "$(DESTDIR)$(pamconfigsdir)" "$(DESTDIR)$(scripts_runfilesdir)" "$(DESTDIR)$(scripts_test_runner_includedir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdpresetdir)" "$(DESTDIR)$(zedconfdir)" "$(DESTDIR)$(zpoolcompatdir)" "$(DESTDIR)$(initconfdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sudoersddir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdunitdir)" "$(DESTDIR)$(udevruledir)" "$(DESTDIR)$(extradir)" "$(DESTDIR)$(libspldir)" "$(DESTDIR)$(libspl_ia32dir)" "$(DESTDIR)$(libspl_rpcdir)" "$(DESTDIR)$(libspl_sysdir)" "$(DESTDIR)$(libspl_sys_dktpdir)" "$(DESTDIR)$(libzpooldir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_zfs_tests_bindir)" "$(DESTDIR)$(scripts_zfs_tests_functional_cp_filesdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_hkdfdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_libzfsdir)" "$(DESTDIR)$(scripts_zfs_tests_functional_tmpfiledir)" "$(DESTDIR)$(scripts_zfs_tests_functional_vdev_diskdir)" "$(DESTDIR)$(systemdgeneratordir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(pammoduledir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(i_tdir)" "$(DESTDIR)$(i_t_scriptsdir)" "$(DESTDIR)$(i_t_scripts_localtopdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(scripts_zfs_tests_callbacksdir)" "$(DESTDIR)$(udevdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(zfsexecdir)" "$(DESTDIR)$(zpoolexecdir)" "$(DESTDIR)$(i_t_hooksdir)" "$(DESTDIR)$(initdir)" "$(DESTDIR)$(zedexecdir)" "$(DESTDIR)$(pkgdracut_02dir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(scripts_test_runner_bindir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man4dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(i_t_conf_ddir)" "$(DESTDIR)$(i_t_confhooks_ddir)" "$(DESTDIR)$(modulesloaddir)" "$(DESTDIR)$(pamconfigsdir)" "$(DESTDIR)$(scripts_runfilesdir)" "$(DESTDIR)$(scripts_test_runner_includedir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdpresetdir)" "$(DESTDIR)$(zedconfdir)" "$(DESTDIR)$(zpoolcompatdir)" "$(DESTDIR)$(initconfdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(scripts_zfs_tests_includedir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(pkgdracut_90dir)" "$(DESTDIR)$(sudoersddir)" "$(DESTDIR)$(sysconf_zfsdir)" "$(DESTDIR)$(systemdunitdir)" "$(DESTDIR)$(udevruledir)" "$(DESTDIR)$(extradir)" "$(DESTDIR)$(libspldir)" "$(DESTDIR)$(libspl_ia32dir)" "$(DESTDIR)$(libspl_rpcdir)" "$(DESTDIR)$(libspl_sysdir)" "$(DESTDIR)$(libspl_sys_dktpdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -13643,8 +13620,8 @@ install-data-am: install-dist_i_tSCRIPTS install-dist_i_t_conf_dDATA \
 	install-initconfDATA install-libsplHEADERS \
 	install-libspl_ia32HEADERS install-libspl_rpcHEADERS \
 	install-libspl_sysHEADERS install-libspl_sys_dktpHEADERS \
-	install-libzpoolHEADERS install-man \
-	install-mounthelperPROGRAMS install-nodist_bashcompletionDATA \
+	install-man install-mounthelperPROGRAMS \
+	install-nodist_bashcompletionDATA \
 	install-nodist_scripts_zfs_tests_includeDATA \
 	install-pammoduleLTLIBRARIES install-pkgconfigDATA \
 	install-pkgdracut_02SCRIPTS install-pkgdracut_90DATA \
@@ -14192,8 +14169,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	uninstall-initconfDATA uninstall-libLTLIBRARIES \
 	uninstall-libsplHEADERS uninstall-libspl_ia32HEADERS \
 	uninstall-libspl_rpcHEADERS uninstall-libspl_sysHEADERS \
-	uninstall-libspl_sys_dktpHEADERS uninstall-libzpoolHEADERS \
-	uninstall-man uninstall-mounthelperPROGRAMS \
+	uninstall-libspl_sys_dktpHEADERS uninstall-man \
+	uninstall-mounthelperPROGRAMS \
 	uninstall-nodist_bashcompletionDATA \
 	uninstall-nodist_scripts_zfs_tests_includeDATA \
 	uninstall-nodist_zedexecSCRIPTS uninstall-pammoduleLTLIBRARIES \
@@ -14260,10 +14237,9 @@ uninstall-man: uninstall-man1 uninstall-man4 uninstall-man5 \
 	install-initconfDATA install-libLTLIBRARIES \
 	install-libsplHEADERS install-libspl_ia32HEADERS \
 	install-libspl_rpcHEADERS install-libspl_sysHEADERS \
-	install-libspl_sys_dktpHEADERS install-libzpoolHEADERS \
-	install-man install-man1 install-man4 install-man5 \
-	install-man7 install-man8 install-mounthelperPROGRAMS \
-	install-nodist_bashcompletionDATA \
+	install-libspl_sys_dktpHEADERS install-man install-man1 \
+	install-man4 install-man5 install-man7 install-man8 \
+	install-mounthelperPROGRAMS install-nodist_bashcompletionDATA \
 	install-nodist_scripts_zfs_tests_includeDATA \
 	install-nodist_zedexecSCRIPTS install-pammoduleLTLIBRARIES \
 	install-pdf install-pdf-am install-pkgconfigDATA \
@@ -14306,9 +14282,9 @@ uninstall-man: uninstall-man1 uninstall-man4 uninstall-man5 \
 	uninstall-initconfDATA uninstall-libLTLIBRARIES \
 	uninstall-libsplHEADERS uninstall-libspl_ia32HEADERS \
 	uninstall-libspl_rpcHEADERS uninstall-libspl_sysHEADERS \
-	uninstall-libspl_sys_dktpHEADERS uninstall-libzpoolHEADERS \
-	uninstall-man uninstall-man1 uninstall-man4 uninstall-man5 \
-	uninstall-man7 uninstall-man8 uninstall-mounthelperPROGRAMS \
+	uninstall-libspl_sys_dktpHEADERS uninstall-man uninstall-man1 \
+	uninstall-man4 uninstall-man5 uninstall-man7 uninstall-man8 \
+	uninstall-mounthelperPROGRAMS \
 	uninstall-nodist_bashcompletionDATA \
 	uninstall-nodist_scripts_zfs_tests_includeDATA \
 	uninstall-nodist_zedexecSCRIPTS uninstall-pammoduleLTLIBRARIES \

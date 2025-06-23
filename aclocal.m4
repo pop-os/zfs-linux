@@ -14,8 +14,8 @@
 m4_ifndef([AC_CONFIG_MACRO_DIRS], [m4_defun([_AM_CONFIG_MACRO_DIRS], [])m4_defun([AC_CONFIG_MACRO_DIRS], [_AM_CONFIG_MACRO_DIRS($@)])])
 m4_ifndef([AC_AUTOCONF_VERSION],
   [m4_copy([m4_PACKAGE_VERSION], [AC_AUTOCONF_VERSION])])dnl
-m4_if(m4_defn([AC_AUTOCONF_VERSION]), [2.71],,
-[m4_warning([this file was generated for autoconf 2.71.
+m4_if(m4_defn([AC_AUTOCONF_VERSION]), [2.72],,
+[m4_warning([this file was generated for autoconf 2.72.
 You have another version of autoconf.  It may work, but is not guaranteed to.
 If you have problems, you may need to regenerate the build system entirely.
 To do so, use the procedure documented by the package, typically 'autoreconf'.])])
@@ -1667,6 +1667,7 @@ m4_include([config/kernel-register_sysctl_table.m4])
 m4_include([config/kernel-rename.m4])
 m4_include([config/kernel-revalidate-disk-size.m4])
 m4_include([config/kernel-sb-dying.m4])
+m4_include([config/kernel-sb-wb-err.m4])
 m4_include([config/kernel-sched.m4])
 m4_include([config/kernel-security-inode-init.m4])
 m4_include([config/kernel-set-nlink.m4])
@@ -1679,6 +1680,7 @@ m4_include([config/kernel-stdarg.m4])
 m4_include([config/kernel-strlcpy.m4])
 m4_include([config/kernel-symlink.m4])
 m4_include([config/kernel-sysfs.m4])
+m4_include([config/kernel-timer.m4])
 m4_include([config/kernel-tmpfile.m4])
 m4_include([config/kernel-totalhigh_pages.m4])
 m4_include([config/kernel-totalram-pages-func.m4])
