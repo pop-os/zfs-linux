@@ -347,6 +347,7 @@ libzfs.so.6 libzfs6linux #MINVER#
  zfs_hold@Base 0.8.2
  zfs_hold_nvl@Base 0.8.2
  zfs_ioctl@Base 0.8.2
+ zfs_is_encrypted@Base 2.3.3
  zfs_is_mounted@Base 0.8.2
  zfs_is_shared@Base 0.8.2
  zfs_isnumber@Base 2.2
