@@ -1,1 +1,1 @@
-#define	ZFS_META_GITREV "92f430b-dist"
+#define	ZFS_META_GITREV "1af41fd-dist"

@@ -169,6 +169,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  arc_alloc_buf@Base 0.8.2
  arc_alloc_compressed_buf@Base 0.8.2
  arc_alloc_raw_buf@Base 0.8.2
+ arc_async_flush_guid_inuse@Base 2.3.3
  arc_available_memory@Base 2.0
  arc_bcopy_func@Base 0.8.2
  arc_buf_access@Base 0.8.2
@@ -184,6 +185,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  arc_default_max@Base 2.0
  arc_fini@Base 0.8.2
  arc_flush@Base 0.8.2
+ arc_flush_async@Base 2.3.3
  arc_free_memory@Base 2.0
  arc_freed@Base 0.8.2
  arc_get_complevel@Base 2.0
@@ -486,6 +488,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  dataset_nestcheck@Base 0.8.2
  dbuf_add_ref@Base 0.8.2
  dbuf_assign_arcbuf@Base 0.8.2
+ dbuf_cache_reduce_target_size@Base 2.3.3
  dbuf_caches@Base 0.8.2
  dbuf_create_bonus@Base 0.8.2
  dbuf_destroy@Base 0.8.2
@@ -1777,7 +1780,6 @@ libzpool.so.6 libzpool6linux #MINVER#
  scan_fini@Base 0.8.2
  scan_init@Base 0.8.2
  secpolicy_zfs@Base 0.8.2
- secpolicy_zfs_proc@Base 2.0
  seq_printf@Base 0.8.2
  set_global_var@Base 0.8.2
  (arch=armel armhf arm64)sha256_armv7_impl@Base 2.2.0
@@ -1900,6 +1902,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  spa_freeze@Base 0.8.2
  spa_freeze_txg@Base 0.8.2
  spa_generate_guid@Base 0.8.2
+ spa_generate_load_guid@Base 2.3.3
  spa_generate_syncing_log_sm@Base 2.0
  spa_get_allocator@Base 2.3
  spa_get_autotrim@Base 0.8.2
@@ -2210,7 +2213,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  txg_wait_callbacks@Base 0.8.2
  txg_wait_open@Base 0.8.2
  txg_wait_synced@Base 0.8.2
- txg_wait_synced_sig@Base 0.8.3
+ txg_wait_synced_flags@Base 2.3.3
  u8_strcmp@Base 0.8.2
  u8_textprep_str@Base 0.8.2
  u8_validate@Base 0.8.2

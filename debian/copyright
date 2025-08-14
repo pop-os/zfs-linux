@@ -865,8 +865,7 @@ License: GPL-2+
  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  .
  You should have received a copy of the GNU General Public License along with
- this package; if not, write to the Free Software Foundation, Inc., 51 Franklin
- St, Fifth Floor, Boston, MA  02110-1301 USA
+ this program. If not, see <https://www.gnu.org/licenses/>.
  .
  On Debian systems, the full text of the GNU General Public License version 2
  can be found in the file /usr/share/common-licenses/GPL-2.
@@ -889,9 +888,7 @@ License: GPL-2+ with autoconf exception
  .
  You should have received a copy of the GNU General Public License
  along with GNU Libtool; see the file COPYING.  If not, a copy
- can be downloaded from http://www.gnu.org/licenses/gpl.html,
- or obtained by writing to the Free Software Foundation, Inc.,
- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ can be downloaded from http://www.gnu.org/licenses/gpl.html.
  .
  On Debian systems, the full text of the GNU General Public License version 2
  can be found in the file /usr/share/common-licenses/GPL-2.
