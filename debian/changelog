@@ -1,3 +1,9 @@
+zfs-linux (2.3.3-1pop1) jammy; urgency=medium
+
+  * Backport new release for Pop!_OS
+
+ -- Michael Murphy <michael@mmurphy.dev>  Thu, 14 Aug 2025 20:03:35 +0200
+
 zfs-linux (2.3.3-1) unstable; urgency=medium
 
   * New upstream version 2.3.3 (closes: #1106035, #1106556).
