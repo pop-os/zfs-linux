@@ -3004,7 +3004,6 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_dedup_log_flush_entries_min@Base 2.3
  zfs_dedup_log_flush_flow_rate_txgs@Base 2.3
  zfs_dedup_log_flush_min_time_ms@Base 2.3
- zfs_dedup_log_flush_passes_max@Base 2.3
  zfs_dedup_log_mem_max@Base 2.3
  zfs_dedup_log_mem_max_percent@Base 2.3
  zfs_dedup_log_txg_max@Base 2.3

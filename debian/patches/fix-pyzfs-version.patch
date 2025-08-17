@@ -7,12 +7,20 @@ Last-Update: 2024-10-11
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 --- a/contrib/pyzfs/setup.py.in
 +++ b/contrib/pyzfs/setup.py.in
-@@ -20,7 +20,7 @@
+@@ -18,9 +18,15 @@
  
+ srcdir = "@abs_top_srcdir@/contrib/pyzfs"
+ 
++# Python does not accept debian versioning schema
++version = "@VERSION@"
++if "~" in version:
++    main_r, pre_r = version.split("~")
++    version = main_r + "a1"
++
  setup(
      name="pyzfs",
 -    version="@VERSION@",
-+    version="@VERSION@".replace("~", ""),
++    version=version,
      description="Wrapper for libzfs_core",
      author="ClusterHQ",
      author_email="support@clusterhq.com",
