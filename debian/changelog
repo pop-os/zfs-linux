@@ -1,3 +1,16 @@
+zfs-linux (2.3.4~git20250812.3b64a96-1) experimental; urgency=medium
+
+  [ Shengqi Chen ]
+  * New upstream version 2.3.4~git20250812.3b64a96 (from zfs-2.3.4-staging).
+  * d/patches: further patch pyzfs to fix error on debian pre-release version.
+  * d/install: add new manpage for zfs-rewrite in zfsutils-linux.
+  * d/symbols: remove missing symbol for libzpool6linux.
+
+  [ Attila Fülöp ]
+  * d/rules: fix dkms build by retaining more fields in configure.ac.
+
+ -- Shengqi Chen <harry@debian.org>  Sun, 17 Aug 2025 10:52:15 +0800
+
 zfs-linux (2.3.3-1) unstable; urgency=medium
 
   * New upstream version 2.3.3 (closes: #1106035, #1106556).
