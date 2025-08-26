@@ -2721,6 +2721,7 @@ am__dist_noinst_DATA_DIST =  \
 	etc/systemd/system/zfs-import-scan.service.in \
 	etc/systemd/system/zfs-import.target.in \
 	etc/systemd/system/zfs-mount.service.in \
+	etc/systemd/system/zfs-mount@.service.in \
 	etc/systemd/system/zfs-scrub-monthly@.timer.in \
 	etc/systemd/system/zfs-scrub-weekly@.timer.in \
 	etc/systemd/system/zfs-scrub@.service.in \
@@ -3229,7 +3230,6 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 INTLLIBS = @INTLLIBS@
-INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 IS_SYSV_RC = @IS_SYSV_RC@
 KERNEL_ARCH = @KERNEL_ARCH@
 KERNEL_CC = @KERNEL_CC@
@@ -4049,6 +4049,7 @@ SUBDIRS = include $(am__append_86) $(am__append_95)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@@INIT_SYSTEMD_TRUE@	etc/systemd/system/zfs-import-scan.service \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@@INIT_SYSTEMD_TRUE@	etc/systemd/system/zfs-import.target \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@@INIT_SYSTEMD_TRUE@	etc/systemd/system/zfs-mount.service \
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@@INIT_SYSTEMD_TRUE@	etc/systemd/system/zfs-mount@.service \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@@INIT_SYSTEMD_TRUE@	etc/systemd/system/zfs-scrub-monthly@.timer \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@@INIT_SYSTEMD_TRUE@	etc/systemd/system/zfs-scrub-weekly@.timer \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@@INIT_SYSTEMD_TRUE@	etc/systemd/system/zfs-scrub@.service \
