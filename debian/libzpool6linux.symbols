@@ -1600,6 +1600,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  metaslab_ndf_clump_shift@Base 2.3
  metaslab_preload_limit@Base 0.8.2
  metaslab_recalculate_weight_and_sort@Base 0.8.2
+ metaslab_rt_name@Base 2.3.4
  metaslab_set_selected_txg@Base 2.0
  metaslab_set_unflushed_dirty@Base 2.1.6
  metaslab_set_unflushed_txg@Base 2.0
@@ -1694,6 +1695,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_range_tree_clear@Base 0.8.2
  zfs_range_tree_contains@Base 0.8.2
  zfs_range_tree_create@Base 0.8.2
+ zfs_range_tree_create_flags@Base 2.3.4
  zfs_range_tree_create_gap@Base 2.1.6
  zfs_range_tree_destroy@Base 0.8.2
  zfs_range_tree_find@Base 0.8.2
@@ -2413,6 +2415,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  vdev_queue_io_done@Base 0.8.2
  vdev_queue_last_offset@Base 0.8.2
  vdev_queue_length@Base 0.8.2
+ vdev_queue_pool_busy@Base 2.3.4
  (arch=arm64)vdev_raidz_aarch64_neon_impl@Base 0.8.2
  (arch=arm64)vdev_raidz_aarch64_neonx2_impl@Base 0.8.2
  vdev_raidz_attach_check@Base 2.3
@@ -2465,6 +2468,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  vdev_replacing_ops@Base 0.8.2
  vdev_resilver_needed@Base 0.8.2
  vdev_root_ops@Base 0.8.2
+ vdev_rt_name@Base 0.8.2
  vdev_scan_stat_init@Base 0.8.2
  vdev_set_min_asize@Base 0.8.2
  vdev_set_state@Base 0.8.2
@@ -3001,9 +3005,13 @@ libzpool.so.6 libzpool6linux #MINVER#
  zfs_deadman_failmode@Base 0.8.2
  zfs_deadman_synctime_ms@Base 0.8.2
  zfs_deadman_ziotime_ms@Base 0.8.2
+ zfs_dedup_log_cap@Base 2.3.4
+ zfs_dedup_log_flush_entries_max@Base 2.3.4
  zfs_dedup_log_flush_entries_min@Base 2.3
  zfs_dedup_log_flush_flow_rate_txgs@Base 2.3
  zfs_dedup_log_flush_min_time_ms@Base 2.3
+ zfs_dedup_log_flush_txgs@Base 2.3.4
+ zfs_dedup_log_hard_cap@Base 2.3.4
  zfs_dedup_log_mem_max@Base 2.3
  zfs_dedup_log_mem_max_percent@Base 2.3
  zfs_dedup_log_txg_max@Base 2.3

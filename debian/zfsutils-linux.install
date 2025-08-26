@@ -10,6 +10,7 @@ usr/lib/systemd/system/zfs-import.target
 usr/lib/systemd/system/zfs-load-key.service
 usr/lib/systemd/system/zfs-load-module.service
 usr/lib/systemd/system/zfs-mount.service
+usr/lib/systemd/system/zfs-mount@.service
 usr/lib/systemd/system/zfs-scrub-monthly@.timer
 usr/lib/systemd/system/zfs-scrub-weekly@.timer
 usr/lib/systemd/system/zfs-scrub@.service
