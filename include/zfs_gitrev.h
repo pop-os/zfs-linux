@@ -1,1 +1,1 @@
-#define	ZFS_META_GITREV "zfs-2.3.3-61-g3b64a9619-dist"
+#define	ZFS_META_GITREV "34f96a1-dist"

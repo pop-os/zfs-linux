@@ -202,14 +202,6 @@
 /* Define if revalidate_disk() in block_device_operations */
 #undef HAVE_BLOCK_DEVICE_OPERATIONS_REVALIDATE_DISK
 
-/* Define to 1 if you have the Mac OS X function
-   CFLocaleCopyPreferredLanguages in the CoreFoundation framework. */
-#undef HAVE_CFLOCALECOPYPREFERREDLANGUAGES
-
-/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
-   the CoreFoundation framework. */
-#undef HAVE_CFPREFERENCESCOPYAPPVALUE
-
 /* check_disk_change() exists */
 #undef HAVE_CHECK_DISK_CHANGE
 
