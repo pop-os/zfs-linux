@@ -1,3 +1,11 @@
+zfs-linux (2.3.4-1) unstable; urgency=medium
+
+  * New upstream version 2.3.4 (closes: #1111252).
+  * d/symbols: add new symbols for libzpool6linux.
+  * d/install: install new zfs-mount@.service in zfsutils-linux.
+
+ -- Shengqi Chen <harry@debian.org>  Wed, 27 Aug 2025 00:38:22 +0800
+
 zfs-linux (2.3.4~git20250812.3b64a96-1) experimental; urgency=medium
 
   [ Shengqi Chen ]
