@@ -1,3 +1,9 @@
+zfs-linux (2.3.4-1pop1) jammy; urgency=medium
+
+  * Backport for Linux 6.16 support
+
+ -- Michael Murphy <michael@mmurphy.dev>  Thu, 28 Aug 2025 22:52:27 +0200
+
 zfs-linux (2.3.4-1) unstable; urgency=medium
 
   * New upstream version 2.3.4 (closes: #1111252).
