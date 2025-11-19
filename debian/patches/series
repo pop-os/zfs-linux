@@ -20,4 +20,3 @@ ubuntu/zfs-mount-container-start.patch
 #ubuntu/4751-suppress-types.patch
 fix-pyzfs-version.patch
 BUILD_EXCLUSIVE_KERNEL_MIN.patch
-#bump-Linux-Minimum.patch
