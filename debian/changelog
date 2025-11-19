@@ -1,3 +1,10 @@
+zfs-linux (2.3.5-1) unstable; urgency=medium
+
+  * New upstream version 2.3.5 (Closes: #1119915)
+  * d/patch: remove not used patch
+
+ -- Aron Xu <aron@debian.org>  Wed, 19 Nov 2025 14:43:19 +0800
+
 zfs-linux (2.3.4-1) unstable; urgency=medium
 
   * New upstream version 2.3.4 (closes: #1111252).
