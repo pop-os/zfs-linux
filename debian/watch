@@ -1,2 +1,4 @@
-version=4
-https://zfsonlinux.org/ .*zfs-([\d\.]+)\.tar\.gz$ debian uupdate
+Version: 5
+Source: https://zfsonlinux.org/
+Matching-Pattern: .*zfs-([\d\.]+)\.tar\.gz$
+Pgp-Mode: auto
