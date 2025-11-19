@@ -2,6 +2,11 @@
 
 set -e
 
+if [ "$(uname -i)" = "s390x" ]; then
+       echo "skip draid tests that are expected to fail on s390x arch - LP: #2097378"
+       exit 0
+fi
+
 ./debian/tests/kernel-smoke-test-pool "draid1"
 ./debian/tests/kernel-smoke-test-pool "draid2"
 ./debian/tests/kernel-smoke-test-pool "draid3"

@@ -1,3 +1,45 @@
+zfs-linux (2.3.5-1ubuntu1) resolute; urgency=medium
+
+  * Merge from Debian (LP: #2131959)
+    - debian/control:
+      - drop dependencies on "zfs-modules | zfs-dkms" such that all
+        packages can be installed in containers, on hosts that have zfs module
+        loaded
+    - debian/patches:
+      - adding
+        - ubuntu/0001-Revert-Revert-systemd-Use-non-absolute-paths-in-Exec.patch
+        - ubuntu/0002-Revert-etc-systemd-zfs-mount-generator-rewrite-in-C.patch
+        - ubuntu/0003-enable-linux-experimental.patch
+        - ubuntu//0004-Linux-6.18-replace-nth_page.patch
+        - ubuntu/0005-Linux-6.18-convert-ida_simple_-calls.patch
+        - ubuntu/0006-linux-atomic-fill-out-API-for-atomic-pointer-ops.patch
+        - ubuntu/0007-Linux-6.18-block_device_operations-getgeo-takes-stru.patch
+        - ubuntu/0008-Linux-6.18-replace-write_cache_pages.patch
+        - ubuntu/0009-Linux-6.18-namespace-type-moved-to-ns_common.patch
+        - ubuntu/0010-sha256_generic-make-internal-functions-a-little-more.patc
+        - ubuntu/0011-Linux-6.18-generic_drop_inode-and-generic_delete_ino.patch
+        - ubuntu/4000-zsys-support.patch
+        - ubuntu/4001-dracut-Open-and-mount-luks-keystore.patch
+        - ubuntu/4510-silently-ignore-modprobe-failure.patch
+        - ubuntu/fixup-abi.patch
+      - removing
+        - ubuntu/0001-Revert-etc-systemd-zfs-mount-generator-serialise-han.patch
+        - ubuntu/0002-Revert-etc-systemd-zfs-mount-generator-output-tweaks.patch
+        - ubuntu/0003-Revert-etc-systemd-zfs-mount-generator-rewrite-in-C.patch
+    - debian/rules:
+      - enforce abi check on Ubuntu amd64
+      - allow kernel version not matching META
+    - debian/tests/:
+      - reduce testing to smoketest only
+      - Ubuntu Kernel regression testing covers zfs testsuite
+      - Drop depends on linux-headers-*.
+      - draid tests fail upstream, so marking failures as expected
+        to fail
+    - debian/libzpool6linux.symbols
+      - adding spa_get_min_alloc_range to symbols
+
+ -- John Cabaj <john.cabaj@canonical.com>  Wed, 19 Nov 2025 14:41:31 -0600
+
 zfs-linux (2.3.5-1) unstable; urgency=medium
 
   * New upstream version 2.3.5 (Closes: #1119915)

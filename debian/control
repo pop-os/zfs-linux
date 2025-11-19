@@ -1,7 +1,8 @@
 Source: zfs-linux
 Section: contrib/kernel
 Priority: optional
-Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.debian.net>
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.debian.net
 Uploaders: Aron Xu <aron@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>,
            Mo Zhou <lumin@debian.org>,
@@ -216,7 +217,6 @@ Architecture: all
 Multi-Arch: foreign
 Depends: busybox-initramfs | busybox-static | busybox,
          initramfs-tools,
-         zfs-modules | zfs-dkms,
          zfsutils-linux (>= ${source:Version}),
          ${misc:Depends}
 Breaks: zfsutils-linux (<= 0.7.11-2)
@@ -233,7 +233,6 @@ Package: zfs-dracut
 Architecture: all
 Multi-Arch: foreign
 Depends: dracut,
-         zfs-modules | zfs-dkms,
          zfsutils-linux (>= ${source:Version}),
          ${misc:Depends}
 Description: OpenZFS root filesystem capabilities for Linux - dracut
@@ -255,7 +254,7 @@ Depends: libnvpair3linux (= ${binary:Version}),
          python3,
          ${misc:Depends},
          ${shlibs:Depends}
-Recommends: zfs-modules | zfs-dkms, zfs-zed
+Recommends: zfs-zed
 Breaks: spl (<< 0.7.9-2),
         spl-dkms (<< 0.8.0~rc1),
         zfs-dkms (<< ${source:Version}),
@@ -278,8 +277,7 @@ Package: zfs-zed
 Section: contrib/admin
 Architecture: linux-any
 Pre-Depends: ${misc:Pre-Depends}
-Depends: zfs-modules | zfs-dkms,
-         zfsutils-linux (>= ${binary:Version}),
+Depends: zfsutils-linux (>= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
 Description: OpenZFS Event Daemon
@@ -309,7 +307,6 @@ Depends: acl,
          python3-pyzfs,
          sudo,
          sysstat,
-         zfs-modules | zfs-dkms,
          zfsutils-linux (>=${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
