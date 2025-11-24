@@ -1,3 +1,24 @@
+zfs-linux (2.3.5-2) unstable; urgency=medium
+
+  [ Shengqi Chen ]
+  * d/watch: switch to version 5
+
+  [ Aron Xu ]
+  * d/patches: resync with Ubuntu, changes
+    - Enable ubuntu/4100-disable-bpool-upgrade.patch
+    - Enable Linux 6.18 cherry-picks
+  * Revert "d/patches: remove not used patch"
+  * d/patches/bump-Linux-Minimum.patch: refresh
+  * d/patches: enable-linux-experimental to allow building with 6.18
+  * d/upstream/signing-key.asc: add 6AD860EED4598027
+  * d/libzpool6linux.symbols: update
+  * d/source/lintian-overrides: drop unused ones, add python test ones
+  * d/control*: std-ver 4.7.2, no change required
+  * d/pyzfs-doc.lintian-overrides: removed
+  * d/control: remove redundant "Rules-Requires-Root: no"
+
+ -- Aron Xu <aron@debian.org>  Mon, 24 Nov 2025 18:13:04 +0800
+
 zfs-linux (2.3.5-1) unstable; urgency=medium
 
   * New upstream version 2.3.5 (Closes: #1119915)

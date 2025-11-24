@@ -1,0 +1,38 @@
+Description: fixup abi check files
+Author: Dimitri John Ledkov <dimitri.ledkov@canonical.com>
+Bug: https://github.com/openzfs/zfs/issues/15196
+
+
+--- zfs-linux-2.2.0~rc3.orig/lib/libuutil/libuutil.abi
++++ zfs-linux-2.2.0~rc3/lib/libuutil/libuutil.abi
+@@ -176,8 +176,6 @@
+     <elf-symbol name='mkdirp' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='print_timestamp' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='spl_pagesize' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+-    <elf-symbol name='strlcat' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+-    <elf-symbol name='strlcpy' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='uu_avl_create' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='uu_avl_destroy' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='uu_avl_find' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+--- zfs-linux-2.2.0~rc3.orig/lib/libzfs/libzfs.abi
++++ zfs-linux-2.2.0~rc3/lib/libzfs/libzfs.abi
+@@ -248,8 +248,6 @@
+     <elf-symbol name='sa_validate_shareopts' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='snapshot_namecheck' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='spl_pagesize' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+-    <elf-symbol name='strlcat' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+-    <elf-symbol name='strlcpy' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='tpool_abandon' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='tpool_create' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='tpool_destroy' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+--- zfs-linux-2.2.0~rc3.orig/lib/libzfs_core/libzfs_core.abi
++++ zfs-linux-2.2.0~rc3/lib/libzfs_core/libzfs_core.abi
+@@ -213,8 +213,6 @@
+     <elf-symbol name='mkdirp' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='print_timestamp' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+     <elf-symbol name='spl_pagesize' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+-    <elf-symbol name='strlcat' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+-    <elf-symbol name='strlcpy' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+   </elf-function-symbols>
+   <abi-instr address-size='64' path='lib/libspl/assert.c' language='LANG_C99'>
+     <class-decl name='__va_list_tag' size-in-bits='192' is-struct='yes' visibility='default' id='d5027220'>
