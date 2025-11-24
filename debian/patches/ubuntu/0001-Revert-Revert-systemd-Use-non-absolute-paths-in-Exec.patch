@@ -1,0 +1,105 @@
+From bf69bed17f2b711a658c58e70c6c135a9fac4dea Mon Sep 17 00:00:00 2001
+From: Dimitri John Ledkov <dimitri.ledkov@canonical.com>
+Date: Thu, 6 Jul 2023 18:08:38 +0100
+Subject: [PATCH] Revert "Revert "systemd: Use non-absolute paths in Exec*
+ lines""
+
+This reverts commit 6c962690245a6a2a4dfc2350c71a249641139c26.
+---
+ etc/systemd/system/zfs-import-cache.service.in |  2 +-
+ etc/systemd/system/zfs-import-scan.service.in  |  2 +-
+ etc/systemd/system/zfs-mount.service.in        |  2 +-
+ etc/systemd/system/zfs-scrub@.service.in       | 10 +++++-----
+ etc/systemd/system/zfs-share.service.in        |  2 +-
+ etc/systemd/system/zfs-trim@.service.in        | 10 +++++-----
+ etc/systemd/system/zfs-volume-wait.service.in  |  2 +-
+ etc/systemd/system/zfs-zed.service.in          |  2 +-
+ 8 files changed, 16 insertions(+), 16 deletions(-)
+
+--- a/etc/systemd/system/zfs-import-cache.service.in
++++ b/etc/systemd/system/zfs-import-cache.service.in
+@@ -17,7 +17,7 @@
+ Type=oneshot
+ RemainAfterExit=yes
+ EnvironmentFile=-@initconfdir@/zfs
+-ExecStart=@sbindir@/zpool import -c @sysconfdir@/zfs/zpool.cache -aN $ZPOOL_IMPORT_OPTS
++ExecStart=zpool import -c @sysconfdir@/zfs/zpool.cache -aN $ZPOOL_IMPORT_OPTS
+ 
+ [Install]
+ WantedBy=zfs-import.target
+--- a/etc/systemd/system/zfs-import-scan.service.in
++++ b/etc/systemd/system/zfs-import-scan.service.in
+@@ -16,7 +16,7 @@
+ Type=oneshot
+ RemainAfterExit=yes
+ EnvironmentFile=-@initconfdir@/zfs
+-ExecStart=@sbindir@/zpool import -aN -o cachefile=none $ZPOOL_IMPORT_OPTS
++ExecStart=zpool import -aN -o cachefile=none $ZPOOL_IMPORT_OPTS
+ 
+ [Install]
+ WantedBy=zfs-import.target
+--- a/etc/systemd/system/zfs-mount.service.in
++++ b/etc/systemd/system/zfs-mount.service.in
+@@ -19,7 +19,7 @@
+ Type=oneshot
+ RemainAfterExit=yes
+ EnvironmentFile=-@initconfdir@/zfs
+-ExecStart=@sbindir@/zfs mount -a
++ExecStart=zfs mount -a
+ 
+ [Install]
+ WantedBy=zfs.target
+--- a/etc/systemd/system/zfs-scrub@.service.in
++++ b/etc/systemd/system/zfs-scrub@.service.in
+@@ -8,8 +8,8 @@
+ 
+ [Service]
+ EnvironmentFile=-@initconfdir@/zfs
+-ExecStart=/bin/sh -c '\
+-if @sbindir@/zpool status %i | grep -q "scrub in progress"; then\
+-exec @sbindir@/zpool wait -t scrub %i;\
+-else exec @sbindir@/zpool scrub -w %i; fi'
+-ExecStop=-/bin/sh -c '@sbindir@/zpool scrub -p %i 2>/dev/null || true'
++ExecStart=sh -c '\
++if zpool status %i | grep -q "scrub in progress"; then\
++exec zpool wait -t scrub %i;\
++else exec zpool scrub -w %i; fi'
++ExecStop=-sh -c 'zpool scrub -p %i 2>/dev/null || true'
+--- a/etc/systemd/system/zfs-share.service.in
++++ b/etc/systemd/system/zfs-share.service.in
+@@ -14,7 +14,7 @@
+ Type=oneshot
+ RemainAfterExit=yes
+ EnvironmentFile=-@initconfdir@/zfs
+-ExecStart=@sbindir@/zfs share -a
++ExecStart=zfs share -a
+ 
+ [Install]
+ WantedBy=zfs.target
+--- a/etc/systemd/system/zfs-trim@.service.in
++++ b/etc/systemd/system/zfs-trim@.service.in
+@@ -8,8 +8,8 @@
+ 
+ [Service]
+ EnvironmentFile=-@initconfdir@/zfs
+-ExecStart=/bin/sh -c '\
+-if @sbindir@/zpool status %i | grep -q "(trimming)"; then\
+-exec @sbindir@/zpool wait -t trim %i;\
+-else exec @sbindir@/zpool trim -w %i; fi'
+-ExecStop=-/bin/sh -c '@sbindir@/zpool trim -s %i 2>/dev/null || true'
++ExecStart=sh -c '\
++if zpool status %i | grep -q "(trimming)"; then\
++exec zpool wait -t trim %i;\
++else exec zpool trim -w %i; fi'
++ExecStop=-sh -c 'zpool trim -s %i 2>/dev/null || true'
+--- a/etc/systemd/system/zfs-volume-wait.service.in
++++ b/etc/systemd/system/zfs-volume-wait.service.in
+@@ -9,7 +9,7 @@
+ Type=oneshot
+ RemainAfterExit=yes
+ EnvironmentFile=-@initconfdir@/zfs
+-ExecStart=@bindir@/zvol_wait
++ExecStart=zvol_wait
+ 
+ [Install]
+ WantedBy=zfs-volumes.target
