@@ -1,0 +1,13 @@
+Author: Andreas Beckmann <anbe@debian.org>
+Description: bump Linux-Minimum due to SHRINK_EMPTY usage
+
+SHRINK_EMPTY was introduced in Linux v4.19
+
+--- a/META
++++ b/META
+@@ -7,4 +7,4 @@ Release-Tags:  relext
+ License:       CDDL
+ Author:        OpenZFS
+ Linux-Maximum: 6.13
+-Linux-Minimum: 4.18
++Linux-Minimum: 4.19
