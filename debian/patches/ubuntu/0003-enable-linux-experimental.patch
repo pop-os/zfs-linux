@@ -1,0 +1,29 @@
+From d85062b52f77f44ce924ed542211361512df943b Mon Sep 17 00:00:00 2001
+From: John Cabaj <john.cabaj@canonical.com>
+Date: Tue, 11 Mar 2025 13:52:58 -0500
+Subject: [PATCH] Enable linux-experimental support
+
+To build against advance kernels, --enable-linux-experimental
+must be set
+
+Last-Update: 2025-03-11
+Signed-off-by: John Cabaj <john.cabaj@canonical.com>
+---
+ scripts/dkms.mkconf | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/scripts/dkms.mkconf b/scripts/dkms.mkconf
+index 046ce9edc..ec6373739 100755
+--- a/scripts/dkms.mkconf
++++ b/scripts/dkms.mkconf
+@@ -60,6 +60,7 @@ PRE_BUILD="configure
+       fi
+     }
+   )
++  --enable-linux-experimental
+ "
+ POST_BUILD="scripts/dkms.postbuild
+   -n \${PACKAGE_NAME}
+-- 
+2.43.0
+

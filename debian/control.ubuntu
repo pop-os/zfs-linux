@@ -26,11 +26,10 @@ Build-Depends: abigail-tools (>= 2.0),
                python3-sphinx,
                uuid-dev,
                zlib1g-dev
-Standards-Version: 4.7.0
+Standards-Version: 4.7.2
 Homepage: https://zfsonlinux.org/
 Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
-Rules-Requires-Root: no
 Testsuite: autopkgtest-pkg-dkms
 XS-Autobuild: yes
 

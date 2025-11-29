@@ -1920,6 +1920,7 @@ libzpool.so.6 libzpool6linux #MINVER#
  spa_get_last_removal_txg@Base 0.8.2
  spa_get_last_scrubbed_txg@Base 2.3
  spa_get_log_state@Base 0.8.2
+ spa_get_min_alloc_range@Base 2.3.5
  spa_get_rootblkptr@Base 0.8.2
  spa_get_slop_space@Base 0.8.2
  spa_get_stats@Base 0.8.2

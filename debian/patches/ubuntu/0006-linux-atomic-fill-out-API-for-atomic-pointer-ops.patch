@@ -1,0 +1,68 @@
+From 1aec627c60fe9efc3313e553cef389adda08e7b4 Mon Sep 17 00:00:00 2001
+From: Rob Norris <rob.norris@klarasystems.com>
+Date: Fri, 1 Aug 2025 08:51:47 +1000
+Subject: [PATCH] linux/atomic: fill out API for atomic pointer ops
+
+Sponsored-by: Klara, Inc.
+Sponsored-by: Wasabi Technology, Inc.
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Reviewed-by: Alexander Motin <alexander.motin@TrueNAS.com>
+Signed-off-by: Rob Norris <rob.norris@klarasystems.com>
+Closes #17580
+---
+ include/os/linux/spl/sys/atomic.h | 32 +++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/include/os/linux/spl/sys/atomic.h b/include/os/linux/spl/sys/atomic.h
+index b2a39d7d6..f4bcd58bd 100644
+--- a/include/os/linux/spl/sys/atomic.h
++++ b/include/os/linux/spl/sys/atomic.h
+@@ -71,6 +71,22 @@ atomic_cas_ptr(volatile void *target,  void *cmp, void *newval)
+ 	return ((void *)atomic_cas_64((volatile uint64_t *)target,
+ 	    (uint64_t)cmp, (uint64_t)newval));
+ }
++static __inline__ void *
++atomic_swap_ptr(volatile void *target, void *newval)
++{
++	return ((void *)atomic_swap_64((volatile uint64_t *)target,
++	    (uint64_t)newval));
++}
++static __inline__ void *
++atomic_load_ptr(volatile void *target)
++{
++	return ((void *)atomic_load_64((volatile uint64_t *)target));
++}
++static __inline__ void
++atomic_store_ptr(volatile void *target, void *newval)
++{
++	atomic_store_64((volatile uint64_t *)target, (uint64_t)newval);
++}
+ #else /* _LP64 */
+ static __inline__ void *
+ atomic_cas_ptr(volatile void *target,  void *cmp, void *newval)
+@@ -78,6 +94,22 @@ atomic_cas_ptr(volatile void *target,  void *cmp, void *newval)
+ 	return ((void *)atomic_cas_32((volatile uint32_t *)target,
+ 	    (uint32_t)cmp, (uint32_t)newval));
+ }
++static __inline__ void *
++atomic_swap_ptr(volatile void *target, void *newval)
++{
++	return ((void *)atomic_swap_32((volatile uint32_t *)target,
++	    (uint32_t)newval));
++}
++static __inline__ void *
++atomic_load_ptr(volatile void *target)
++{
++	return ((void *)atomic_load_32((volatile uint32_t *)target));
++}
++static __inline__ void
++atomic_store_ptr(volatile void *target, void *newval)
++{
++	atomic_store_32((volatile uint32_t *)target, (uint32_t)newval);
++}
+ #endif /* _LP64 */
+ 
+ #endif  /* _SPL_ATOMIC_H */
+-- 
+2.43.0
+
