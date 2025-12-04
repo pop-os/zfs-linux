@@ -1,3 +1,9 @@
+zfs-linux (2.3.5-1ubuntu1pop1) jammy; urgency=medium
+
+  * Backport
+
+ -- Michael Murphy <michael@mmurphy.dev>  Thu, 04 Dec 2025 21:58:45 +0100
+
 zfs-linux (2.3.5-1ubuntu1) resolute; urgency=medium
 
   * Merge from Debian (LP: #2131959)
