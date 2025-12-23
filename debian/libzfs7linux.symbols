@@ -1,5 +1,7 @@
-libzfs.so.6 libzfs6linux #MINVER#
+libzfs.so.7 libzfs7linux #MINVER#
 * Build-Depends-Package: libzfslinux-dev
+ (optional)__start_zfs_tunables@Base 2.4.0
+ (optional)__stop_zfs_tunables@Base 2.4.0
  _sol_getmntent@Base 2.2
  atomic_add_16@Base 2.2
  atomic_add_16_nv@Base 2.2
@@ -470,6 +472,7 @@ libzfs.so.6 libzfs6linux #MINVER#
  zfs_valstr_zio_stage@Base 2.2.7
  zfs_valstr_zio_stage_bits@Base 2.2.7
  zfs_valstr_zio_stage_pairs@Base 2.2.7
+ zfs_valstr_zio_type@Base 2.4.0
  zfs_version_kernel@Base 0.8.2
  zfs_version_nvlist@Base 2.3
  zfs_version_print@Base 0.8.2
@@ -482,6 +485,7 @@ libzfs.so.6 libzfs6linux #MINVER#
  zpool_clear@Base 0.8.2
  zpool_clear_label@Base 0.8.2
  zpool_close@Base 0.8.2
+ zpool_collect_leaves@Base 2.4.0
  zpool_collect_unsup_feat@Base 2.3
  zpool_create@Base 0.8.2
  zpool_ddt_prune@Base 2.3
@@ -531,6 +535,7 @@ libzfs.so.6 libzfs6linux #MINVER#
  zpool_import_status@Base 0.8.2
  zpool_in_use@Base 0.8.2
  zpool_initialize@Base 0.8.2
+ zpool_initialize_one@Base 2.4.0
  zpool_initialize_wait@Base 2.0
  zpool_is_draid_spare@Base 2.1
  zpool_iter@Base 0.8.2
@@ -568,9 +573,11 @@ libzfs.so.6 libzfs6linux #MINVER#
  zpool_props_refresh@Base 2.0
  zpool_read_label@Base 2.2
  zpool_refresh_stats@Base 0.8.2
+ zpool_refresh_stats_from_handle@Base 2.4.0
  zpool_reguid@Base 0.8.2
  zpool_reopen_one@Base 0.8.2
  zpool_scan@Base 0.8.2
+ zpool_scan_range@Base 2.4.0
  zpool_search_import@Base 2.2
  zpool_set_bootenv@Base 2.0
  zpool_set_guid@Base 2.3
@@ -580,6 +587,7 @@ libzfs.so.6 libzfs6linux #MINVER#
  zpool_state_to_name@Base 0.8.2
  zpool_sync_one@Base 0.8.2
  zpool_trim@Base 0.8.2
+ zpool_trim_one@Base 2.4.0
  zpool_upgrade@Base 0.8.2
  zpool_vdev_attach@Base 0.8.2
  zpool_vdev_clear@Base 0.8.2
@@ -623,6 +631,8 @@ libzfs.so.6 libzfs6linux #MINVER#
  zvol_volsize_to_reservation@Base 0.8.2
 libzfs_core.so.3 libzfs6linux #MINVER#
 * Build-Depends-Package: libzfslinux-dev
+ __start_zfs_tunables@Base 2.4.0
+ __stop_zfs_tunables@Base 2.4.0
  _sol_getmntent@Base 2.0
  atomic_add_16@Base 2.0
  atomic_add_16_nv@Base 2.0
