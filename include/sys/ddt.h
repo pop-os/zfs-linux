@@ -33,6 +33,7 @@
 #include <sys/fs/zfs.h>
 #include <sys/zio.h>
 #include <sys/dmu.h>
+#include <sys/wmsum.h>
 
 #ifdef	__cplusplus
 extern "C" {
@@ -218,6 +219,9 @@ typedef enum {
  * because its relatively rarely used.
  */
 typedef struct {
+	/* protects dde_phys, dde_orig_phys and dde_lead_zio during I/O */
+	kmutex_t	dde_io_lock;
+
 	/* copy of data after a repair read, to be rewritten */
 	abd_t		*dde_repair_abd;
 
@@ -296,6 +300,20 @@ typedef struct {
 
 	kstat_t		*ddt_ksp;	/* kstats context */
 
+	/* wmsums for hot-path lookup counters */
+	wmsum_t		ddt_kstat_dds_lookup;
+	wmsum_t		ddt_kstat_dds_lookup_live_hit;
+	wmsum_t		ddt_kstat_dds_lookup_live_wait;
+	wmsum_t		ddt_kstat_dds_lookup_live_miss;
+	wmsum_t		ddt_kstat_dds_lookup_existing;
+	wmsum_t		ddt_kstat_dds_lookup_new;
+	wmsum_t		ddt_kstat_dds_lookup_log_hit;
+	wmsum_t		ddt_kstat_dds_lookup_log_active_hit;
+	wmsum_t		ddt_kstat_dds_lookup_log_flushing_hit;
+	wmsum_t		ddt_kstat_dds_lookup_log_miss;
+	wmsum_t		ddt_kstat_dds_lookup_stored_hit;
+	wmsum_t		ddt_kstat_dds_lookup_stored_miss;
+
 	enum zio_checksum ddt_checksum;	/* checksum algorithm in use */
 	spa_t		*ddt_spa;	/* pool this ddt is on */
 	objset_t	*ddt_os;	/* ddt objset (always MOS) */
@@ -351,6 +369,8 @@ extern uint64_t ddt_phys_refcnt(const ddt_univ_phys_t *ddp,
 extern ddt_phys_variant_t ddt_phys_select(const ddt_t *ddt,
     const ddt_entry_t *dde, const blkptr_t *bp);
 extern uint64_t ddt_phys_birth(const ddt_univ_phys_t *ddp,
+    ddt_phys_variant_t v);
+extern int ddt_phys_is_gang(const ddt_univ_phys_t *ddp,
     ddt_phys_variant_t v);
 extern int ddt_phys_dva_count(const ddt_univ_phys_t *ddp, ddt_phys_variant_t v,
     boolean_t encrypted);

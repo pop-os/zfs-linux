@@ -22,6 +22,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
  * Copyright (c) 2020 by Lawrence Livermore National Security, LLC.
+ * Copyright (c) 2025, Klara, Inc.
  */
 
 #include <sys/zfs_context.h>
@@ -477,7 +478,7 @@ vdev_draid_generate_perms(const draid_map_t *map, uint8_t **permsp)
 	VERIFY3U(map->dm_children, <=, VDEV_DRAID_MAX_CHILDREN);
 	VERIFY3U(map->dm_seed, !=, 0);
 	VERIFY3U(map->dm_nperms, !=, 0);
-	VERIFY3P(map->dm_perms, ==, NULL);
+	VERIFY0P(map->dm_perms);
 
 #ifdef _KERNEL
 	/*
@@ -578,7 +579,7 @@ vdev_draid_permute_id(vdev_draid_config_t *vdc,
  * i.e. vdev_draid_psize_to_asize().
  */
 static uint64_t
-vdev_draid_asize(vdev_t *vd, uint64_t psize, uint64_t txg)
+vdev_draid_psize_to_asize(vdev_t *vd, uint64_t psize, uint64_t txg)
 {
 	(void) txg;
 	vdev_draid_config_t *vdc = vd->vdev_tsd;
@@ -590,7 +591,7 @@ vdev_draid_asize(vdev_t *vd, uint64_t psize, uint64_t txg)
 	uint64_t asize = (rows * vdc->vdc_groupwidth) << ashift;
 
 	ASSERT3U(asize, !=, 0);
-	ASSERT3U(asize % (vdc->vdc_groupwidth), ==, 0);
+	ASSERT0(asize % (vdc->vdc_groupwidth));
 
 	return (asize);
 }
@@ -599,8 +600,9 @@ vdev_draid_asize(vdev_t *vd, uint64_t psize, uint64_t txg)
  * Deflate the asize to the psize, this includes stripping parity.
  */
 uint64_t
-vdev_draid_asize_to_psize(vdev_t *vd, uint64_t asize)
+vdev_draid_asize_to_psize(vdev_t *vd, uint64_t asize, uint64_t txg)
 {
+	(void) txg;
 	vdev_draid_config_t *vdc = vd->vdev_tsd;
 
 	ASSERT0(asize % vdc->vdc_groupwidth);
@@ -703,7 +705,7 @@ vdev_draid_map_alloc_scrub(zio_t *zio, uint64_t abd_offset, raidz_row_t *rr)
 	uint64_t skip_off = 0;
 
 	ASSERT3U(zio->io_type, ==, ZIO_TYPE_READ);
-	ASSERT3P(rr->rr_abd_empty, ==, NULL);
+	ASSERT0P(rr->rr_abd_empty);
 
 	if (rr->rr_nempty > 0) {
 		rr->rr_abd_empty = abd_alloc_linear(rr->rr_nempty * skip_size,
@@ -792,7 +794,7 @@ vdev_draid_map_alloc_empty(zio_t *zio, raidz_row_t *rr)
 	uint64_t skip_off = 0;
 
 	ASSERT3U(zio->io_type, ==, ZIO_TYPE_READ);
-	ASSERT3P(rr->rr_abd_empty, ==, NULL);
+	ASSERT0P(rr->rr_abd_empty);
 
 	if (rr->rr_nempty > 0) {
 		rr->rr_abd_empty = abd_alloc_linear(rr->rr_nempty * skip_size,
@@ -806,7 +808,7 @@ vdev_draid_map_alloc_empty(zio_t *zio, raidz_row_t *rr)
 			/* empty data column (small read), add a skip sector */
 			ASSERT3U(skip_size, ==, parity_size);
 			ASSERT3U(rr->rr_nempty, !=, 0);
-			ASSERT3P(rc->rc_abd, ==, NULL);
+			ASSERT0P(rc->rc_abd);
 			rc->rc_abd = abd_get_offset_size(rr->rr_abd_empty,
 			    skip_off, skip_size);
 			skip_off += skip_size;
@@ -962,7 +964,7 @@ vdev_draid_map_alloc_row(zio_t *zio, raidz_row_t **rrp, uint64_t io_offset,
 	vdev_draid_config_t *vdc = vd->vdev_tsd;
 	uint64_t ashift = vd->vdev_top->vdev_ashift;
 	uint64_t io_size = abd_size;
-	uint64_t io_asize = vdev_draid_asize(vd, io_size, 0);
+	uint64_t io_asize = vdev_draid_psize_to_asize(vd, io_size, 0);
 	uint64_t group = vdev_draid_offset_to_group(vd, io_offset);
 	uint64_t start_offset = vdev_draid_group_to_offset(vd, group + 1);
 
@@ -972,7 +974,7 @@ vdev_draid_map_alloc_row(zio_t *zio, raidz_row_t **rrp, uint64_t io_offset,
 	 */
 	if (io_offset + io_asize > start_offset) {
 		io_size = vdev_draid_asize_to_psize(vd,
-		    start_offset - io_offset);
+		    start_offset - io_offset, 0);
 	}
 
 	/*
@@ -1117,7 +1119,7 @@ vdev_draid_map_alloc(zio_t *zio)
 	if (size < abd_size) {
 		vdev_t *vd = zio->io_vd;
 
-		io_offset += vdev_draid_asize(vd, size, 0);
+		io_offset += vdev_draid_psize_to_asize(vd, size, 0);
 		abd_offset += size;
 		abd_size -= size;
 		nrows++;
@@ -1622,7 +1624,7 @@ vdev_draid_rebuild_asize(vdev_t *vd, uint64_t start, uint64_t asize,
 	    SPA_MAXBLOCKSIZE);
 
 	ASSERT3U(vdev_draid_get_astart(vd, start), ==, start);
-	ASSERT3U(asize % (vdc->vdc_groupwidth << ashift), ==, 0);
+	ASSERT0(asize % (vdc->vdc_groupwidth << ashift));
 
 	/* Chunks must evenly span all data columns in the group. */
 	psize = (((psize >> ashift) / ndata) * ndata) << ashift;
@@ -1633,7 +1635,7 @@ vdev_draid_rebuild_asize(vdev_t *vd, uint64_t start, uint64_t asize,
 	uint64_t left = vdev_draid_group_to_offset(vd, group + 1) - start;
 	chunk_size = MIN(chunk_size, left);
 
-	ASSERT3U(chunk_size % (vdc->vdc_groupwidth << ashift), ==, 0);
+	ASSERT0(chunk_size % (vdc->vdc_groupwidth << ashift));
 	ASSERT3U(vdev_draid_offset_to_group(vd, start), ==,
 	    vdev_draid_offset_to_group(vd, start + chunk_size - 1));
 
@@ -1770,7 +1772,7 @@ vdev_draid_need_resilver(vdev_t *vd, const dva_t *dva, size_t psize,
     uint64_t phys_birth)
 {
 	uint64_t offset = DVA_GET_OFFSET(dva);
-	uint64_t asize = vdev_draid_asize(vd, psize, 0);
+	uint64_t asize = vdev_draid_psize_to_asize(vd, psize, 0);
 
 	if (phys_birth == TXG_UNKNOWN) {
 		/*
@@ -1827,7 +1829,7 @@ vdev_draid_io_verify(vdev_t *vd, raidz_row_t *rr, int col)
 	zfs_range_seg64_t logical_rs, physical_rs, remain_rs;
 	logical_rs.rs_start = rr->rr_offset;
 	logical_rs.rs_end = logical_rs.rs_start +
-	    vdev_draid_asize(vd, rr->rr_size, 0);
+	    vdev_draid_psize_to_asize(vd, rr->rr_size, 0);
 
 	raidz_col_t *rc = &rr->rr_col[col];
 	vdev_t *cvd = vd->vdev_child[rc->rc_devidx];
@@ -1993,6 +1995,33 @@ vdev_draid_io_start_read(zio_t *zio, raidz_row_t *rr)
 			    vdev_draid_rebuilding(cvd)) {
 				rc->rc_force_repair = 1;
 				rc->rc_allow_repair = 1;
+			}
+		}
+
+		if (vdev_sit_out_reads(cvd, zio->io_flags)) {
+			rr->rr_outlier_cnt++;
+			ASSERT0(rc->rc_latency_outlier);
+			rc->rc_latency_outlier = 1;
+		}
+	}
+
+	/*
+	 * When the row contains a latency outlier and sufficient parity
+	 * exists to reconstruct the column data, then skip reading the
+	 * known slow child vdev as a performance optimization.
+	 */
+	if (rr->rr_outlier_cnt > 0 &&
+	    (rr->rr_firstdatacol - rr->rr_missingparity) >=
+	    (rr->rr_missingdata + 1)) {
+
+		for (int c = rr->rr_cols - 1; c >= rr->rr_firstdatacol; c--) {
+			raidz_col_t *rc = &rr->rr_col[c];
+
+			if (rc->rc_error == 0 && rc->rc_latency_outlier) {
+				rr->rr_missingdata++;
+				rc->rc_error = SET_ERROR(EAGAIN);
+				rc->rc_skipped = 1;
+				break;
 			}
 		}
 	}
@@ -2271,7 +2300,7 @@ vdev_draid_init(spa_t *spa, nvlist_t *nv, void **tsd)
 	ASSERT3U(vdc->vdc_groupwidth, <=, vdc->vdc_ndisks);
 	ASSERT3U(vdc->vdc_groupsz, >=, 2 * VDEV_DRAID_ROWHEIGHT);
 	ASSERT3U(vdc->vdc_devslicesz, >=, VDEV_DRAID_ROWHEIGHT);
-	ASSERT3U(vdc->vdc_devslicesz % VDEV_DRAID_ROWHEIGHT, ==, 0);
+	ASSERT0(vdc->vdc_devslicesz % VDEV_DRAID_ROWHEIGHT);
 	ASSERT3U((vdc->vdc_groupwidth * vdc->vdc_ngroups) %
 	    vdc->vdc_ndisks, ==, 0);
 
@@ -2311,7 +2340,8 @@ vdev_ops_t vdev_draid_ops = {
 	.vdev_op_fini = vdev_draid_fini,
 	.vdev_op_open = vdev_draid_open,
 	.vdev_op_close = vdev_draid_close,
-	.vdev_op_asize = vdev_draid_asize,
+	.vdev_op_psize_to_asize = vdev_draid_psize_to_asize,
+	.vdev_op_asize_to_psize = vdev_draid_asize_to_psize,
 	.vdev_op_min_asize = vdev_draid_min_asize,
 	.vdev_op_min_alloc = vdev_draid_min_alloc,
 	.vdev_op_io_start = vdev_draid_io_start,
@@ -2802,7 +2832,8 @@ vdev_ops_t vdev_draid_spare_ops = {
 	.vdev_op_fini = vdev_draid_spare_fini,
 	.vdev_op_open = vdev_draid_spare_open,
 	.vdev_op_close = vdev_draid_spare_close,
-	.vdev_op_asize = vdev_default_asize,
+	.vdev_op_psize_to_asize = vdev_default_asize,
+	.vdev_op_asize_to_psize = vdev_default_psize,
 	.vdev_op_min_asize = vdev_default_min_asize,
 	.vdev_op_min_alloc = NULL,
 	.vdev_op_io_start = vdev_draid_spare_io_start,

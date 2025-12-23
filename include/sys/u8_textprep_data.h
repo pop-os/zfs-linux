@@ -147,7 +147,8 @@ typedef struct {
  * The common b1_tbl for combining class, decompositions, tolower, and
  * toupper case conversion mappings.
  */
-static const uchar_t u8_common_b1_tbl[2][256] = {
+static const uchar_t u8_common_b1_tbl[U8_UNICODE_LATEST + 1][256] = {
+#ifdef U8_UNICODE_320
 	{
 		0,  N_, N_, N_, N_, N_, N_, N_,
 		N_, N_, N_, N_, N_, N_, N_, N_,
@@ -182,6 +183,7 @@ static const uchar_t u8_common_b1_tbl[2][256] = {
 		1,  N_, N_, N_, N_, N_, N_, N_,
 		N_, N_, N_, N_, N_, N_, N_, N_,
 	},
+#endif
 	{
 		0,  N_, N_, N_, N_, N_, N_, N_,
 		N_, N_, N_, N_, N_, N_, N_, N_,
@@ -218,7 +220,9 @@ static const uchar_t u8_common_b1_tbl[2][256] = {
 	},
 };
 
-static const uchar_t u8_combining_class_b2_tbl[2][2][256] = {
+static const uchar_t u8_combining_class_b2_tbl[U8_UNICODE_LATEST + 1][2][256] =
+{
+#ifdef U8_UNICODE_320
 	{
 		{
 			0,  N_, N_, N_, N_, N_, N_, N_,
@@ -290,6 +294,7 @@ static const uchar_t u8_combining_class_b2_tbl[2][2][256] = {
 		},
 
 	},
+#endif
 	{
 		{
 			0,  N_, N_, N_, N_, N_, N_, N_,
@@ -364,7 +369,9 @@ static const uchar_t u8_combining_class_b2_tbl[2][2][256] = {
 
 };
 
-static const uchar_t u8_combining_class_b3_tbl[2][9][256] = {
+static const uchar_t u8_combining_class_b3_tbl[U8_UNICODE_LATEST + 1][9][256] =
+{
+#ifdef U8_UNICODE_320
 	{
 		{	/* Third byte table 0. */
 			N_, N_, N_, N_, N_, N_, N_, N_,
@@ -673,6 +680,7 @@ static const uchar_t u8_combining_class_b3_tbl[2][9][256] = {
 			N_, N_, N_, N_, N_, N_, N_, N_,
 		},
 	},
+#endif
 	{
 		{	/* Third byte table 0. */
 			N_, N_, N_, N_, N_, N_, N_, N_,
@@ -987,7 +995,9 @@ static const uchar_t u8_combining_class_b3_tbl[2][9][256] = {
  * Unlike other b4_tbl, the b4_tbl for combining class data has
  * the combining class values not indices to the final tables.
  */
-static const uchar_t u8_combining_class_b4_tbl[2][55][256] = {
+static const uchar_t u8_combining_class_b4_tbl[U8_UNICODE_LATEST + 1][55][256] =
+{
+#ifdef U8_UNICODE_320
 	{
 		{	/* Fourth byte table 0. */
 			0,   0,   0,   0,   0,   0,   0,   0,
@@ -2860,6 +2870,7 @@ static const uchar_t u8_combining_class_b4_tbl[2][55][256] = {
 			0,   0,   0,   0,   0,   0,   0,   0,
 		},
 	},
+#endif
 	{
 		{	/* Fourth byte table 0. */
 			0,   0,   0,   0,   0,   0,   0,   0,
@@ -4734,7 +4745,8 @@ static const uchar_t u8_combining_class_b4_tbl[2][55][256] = {
 	},
 };
 
-static const uchar_t u8_composition_b1_tbl[2][256] = {
+static const uchar_t u8_composition_b1_tbl[U8_UNICODE_LATEST + 1][256] = {
+#ifdef U8_UNICODE_320
 	{
 		0,  N_, N_, N_, N_, N_, N_, N_,
 		N_, N_, N_, N_, N_, N_, N_, N_,
@@ -4769,6 +4781,7 @@ static const uchar_t u8_composition_b1_tbl[2][256] = {
 		N_, N_, N_, N_, N_, N_, N_, N_,
 		N_, N_, N_, N_, N_, N_, N_, N_,
 	},
+#endif
 	{
 		0,  N_, N_, N_, N_, N_, N_, N_,
 		N_, N_, N_, N_, N_, N_, N_, N_,
@@ -4805,7 +4818,8 @@ static const uchar_t u8_composition_b1_tbl[2][256] = {
 	},
 };
 
-static const uchar_t u8_composition_b2_tbl[2][1][256] = {
+static const uchar_t u8_composition_b2_tbl[U8_UNICODE_LATEST + 1][1][256] = {
+#ifdef U8_UNICODE_320
 	{
 		{
 			0,  N_, N_, N_, N_, N_, N_, N_,
@@ -4843,6 +4857,7 @@ static const uchar_t u8_composition_b2_tbl[2][1][256] = {
 		},
 
 	},
+#endif
 	{
 		{
 			0,  N_, N_, N_, N_, N_, N_, N_,
@@ -4883,7 +4898,10 @@ static const uchar_t u8_composition_b2_tbl[2][1][256] = {
 
 };
 
-static const u8_displacement_t u8_composition_b3_tbl[2][5][256] = {
+static const u8_displacement_t u8_composition_b3_tbl[
+    U8_UNICODE_LATEST + 1][5][256] =
+{
+#ifdef U8_UNICODE_320
 	{
 		{	/* Third byte table 0. */
 			{ 0x8000, 0 }, { N_, 0 }, { N_, 0 },
@@ -5326,6 +5344,7 @@ static const u8_displacement_t u8_composition_b3_tbl[2][5][256] = {
 			{ N_, 0 },
 		},
 	},
+#endif
 	{
 		{	/* Third byte table 0. */
 			{ 0x8000, 0 }, { N_, 0 }, { N_, 0 },
@@ -5770,7 +5789,8 @@ static const u8_displacement_t u8_composition_b3_tbl[2][5][256] = {
 	},
 };
 
-static const uchar_t u8_composition_b4_tbl[2][41][257] = {
+static const uchar_t u8_composition_b4_tbl[U8_UNICODE_LATEST + 1][41][257] = {
+#ifdef U8_UNICODE_320
 	{
 		{	/* Fourth byte table 0. */
 			0,   0,   0,   0,   0,   0,   0,   0,
@@ -7208,6 +7228,7 @@ static const uchar_t u8_composition_b4_tbl[2][41][257] = {
 			0,
 		},
 	},
+#endif
 	{
 		{	/* Fourth byte table 0. */
 			0,   0,   0,   0,   0,   0,   0,   0,
@@ -8647,7 +8668,10 @@ static const uchar_t u8_composition_b4_tbl[2][41][257] = {
 	},
 };
 
-static const uint16_t u8_composition_b4_16bit_tbl[2][5][257] = {
+static const uint16_t u8_composition_b4_16bit_tbl[
+    U8_UNICODE_LATEST + 1][5][257] =
+{
+#ifdef U8_UNICODE_320
 	{
 		{	/* Fourth byte 16-bit table 0. */
 			0,    0,    0,    0,    0,    0,    0,    0,
@@ -8825,6 +8849,7 @@ static const uint16_t u8_composition_b4_16bit_tbl[2][5][257] = {
 			362,
 		},
 	},
+#endif
 	{
 		{	/* Fourth byte 16-bit table 0. */
 			0,    0,    0,    0,    0,    0,    0,    0,
@@ -9004,7 +9029,8 @@ static const uint16_t u8_composition_b4_16bit_tbl[2][5][257] = {
 	},
 };
 
-static const uchar_t u8_composition_final_tbl[2][6623] = {
+static const uchar_t u8_composition_final_tbl[U8_UNICODE_LATEST + 1][6623] = {
+#ifdef U8_UNICODE_320
 	{
 		0x01, 0xCC, 0xB8, FIL_, 0xE2, 0x89, 0xAE, FIL_,
 		0x01, 0xCC, 0xB8, FIL_, 0xE2, 0x89, 0xA0, FIL_,
@@ -9835,6 +9861,7 @@ static const uchar_t u8_composition_final_tbl[2][6623] = {
 		0,    0,    0,    0,    0,    0,    0,    0,
 		0,    0,    0,    0,    0,    0,    0,
 	},
+#endif
 	{
 		0x01, 0xCC, 0xB8, FIL_, 0xE2, 0x89, 0xAE, FIL_,
 		0x01, 0xCC, 0xB8, FIL_, 0xE2, 0x89, 0xA0, FIL_,
@@ -10667,7 +10694,8 @@ static const uchar_t u8_composition_final_tbl[2][6623] = {
 	},
 };
 
-static const uchar_t u8_decomp_b2_tbl[2][2][256] = {
+static const uchar_t u8_decomp_b2_tbl[U8_UNICODE_LATEST + 1][2][256] = {
+#ifdef U8_UNICODE_320
 	{
 		{
 			0,  N_, N_, N_, N_, N_, N_, N_,
@@ -10739,6 +10767,7 @@ static const uchar_t u8_decomp_b2_tbl[2][2][256] = {
 		},
 
 	},
+#endif
 	{
 		{
 			0,  N_, N_, N_, N_, N_, N_, N_,
@@ -10813,7 +10842,9 @@ static const uchar_t u8_decomp_b2_tbl[2][2][256] = {
 
 };
 
-static const u8_displacement_t u8_decomp_b3_tbl[2][8][256] = {
+static const u8_displacement_t u8_decomp_b3_tbl[U8_UNICODE_LATEST + 1][8][256] =
+{
+#ifdef U8_UNICODE_320
 	{
 		{	/* Third byte table 0. */
 			{ N_, 0 }, { N_, 0 }, { N_, 0 },
@@ -11520,6 +11551,7 @@ static const u8_displacement_t u8_decomp_b3_tbl[2][8][256] = {
 			{ N_, 0 },
 		},
 	},
+#endif
 	{
 		{	/* Third byte table 0. */
 			{ N_, 0 }, { N_, 0 }, { N_, 0 },
@@ -12228,7 +12260,8 @@ static const u8_displacement_t u8_decomp_b3_tbl[2][8][256] = {
 	},
 };
 
-static const uchar_t u8_decomp_b4_tbl[2][118][257] = {
+static const uchar_t u8_decomp_b4_tbl[U8_UNICODE_LATEST + 1][118][257] = {
+#ifdef U8_UNICODE_320
 	{
 		{	/* Fourth byte table 0. */
 			0,   0,   0,   0,   0,   0,   0,   0,
@@ -16361,6 +16394,7 @@ static const uchar_t u8_decomp_b4_tbl[2][118][257] = {
 			0,
 		},
 	},
+#endif
 	{
 		{	/* Fourth byte table 0. */
 			0,   0,   0,   0,   0,   0,   0,   0,
@@ -20495,7 +20529,8 @@ static const uchar_t u8_decomp_b4_tbl[2][118][257] = {
 	},
 };
 
-static const uint16_t u8_decomp_b4_16bit_tbl[2][30][257] = {
+static const uint16_t u8_decomp_b4_16bit_tbl[U8_UNICODE_LATEST + 1][30][257] = {
+#ifdef U8_UNICODE_320
 	{
 		{	/* Fourth byte 16-bit table 0. */
 			0,    0,    0,    0,    0,    0,    0,    0,
@@ -21548,6 +21583,7 @@ static const uint16_t u8_decomp_b4_16bit_tbl[2][30][257] = {
 			0,
 		},
 	},
+#endif
 	{
 		{	/* Fourth byte 16-bit table 0. */
 			0,    0,    0,    0,    0,    0,    0,    0,
@@ -22602,7 +22638,8 @@ static const uint16_t u8_decomp_b4_16bit_tbl[2][30][257] = {
 	},
 };
 
-static const uchar_t u8_decomp_final_tbl[2][19370] = {
+static const uchar_t u8_decomp_final_tbl[U8_UNICODE_LATEST + 1][19370] = {
+#ifdef U8_UNICODE_320
 	{
 		0x20, 0x20, 0xCC, 0x88, 0x61, 0x20, 0xCC, 0x84,
 		0x32, 0x33, 0x20, 0xCC, 0x81, 0xCE, 0xBC, 0x20,
@@ -25027,6 +25064,7 @@ static const uchar_t u8_decomp_final_tbl[2][19370] = {
 		0,    0,    0,    0,    0,    0,    0,    0,
 		0,    0,
 	},
+#endif
 	{
 		0x20, 0x20, 0xCC, 0x88, 0x61, 0x20, 0xCC, 0x84,
 		0x32, 0x33, 0x20, 0xCC, 0x81, 0xCE, 0xBC, 0x20,
@@ -27453,7 +27491,8 @@ static const uchar_t u8_decomp_final_tbl[2][19370] = {
 	},
 };
 
-static const uchar_t u8_case_common_b2_tbl[2][2][256] = {
+static const uchar_t u8_case_common_b2_tbl[U8_UNICODE_LATEST + 1][2][256] = {
+#ifdef U8_UNICODE_320
 	{
 		{
 			0,  N_, N_, N_, N_, N_, N_, N_,
@@ -27525,6 +27564,7 @@ static const uchar_t u8_case_common_b2_tbl[2][2][256] = {
 		},
 
 	},
+#endif
 	{
 		{
 			0,  N_, N_, N_, N_, N_, N_, N_,
@@ -27599,7 +27639,11 @@ static const uchar_t u8_case_common_b2_tbl[2][2][256] = {
 
 };
 
-static const u8_displacement_t u8_tolower_b3_tbl[2][5][256] = {
+#ifdef U8_STRCMP_CI_LOWER
+static const u8_displacement_t u8_tolower_b3_tbl[
+    U8_UNICODE_LATEST + 1][5][256] =
+{
+#ifdef U8_UNICODE_320
 	{
 		{	/* Third byte table 0. */
 			{ N_, 0 }, { N_, 0 }, { N_, 0 }, { N_, 0 },
@@ -27932,6 +27976,7 @@ static const u8_displacement_t u8_tolower_b3_tbl[2][5][256] = {
 			{ N_, 0 }, { N_, 0 }, { N_, 0 }, { N_, 0 },
 		},
 	},
+#endif
 	{
 		{	/* Third byte table 0. */
 			{ N_, 0 }, { N_, 0 }, { N_, 0 }, { N_, 0 },
@@ -28266,7 +28311,8 @@ static const u8_displacement_t u8_tolower_b3_tbl[2][5][256] = {
 	},
 };
 
-static const uchar_t u8_tolower_b4_tbl[2][36][257] = {
+static const uchar_t u8_tolower_b4_tbl[U8_UNICODE_LATEST + 1][36][257] = {
+#ifdef U8_UNICODE_320
 	{
 		{	/* Fourth byte table 0. */
 			0,   0,   0,   0,   0,   0,   0,   0,
@@ -29529,6 +29575,7 @@ static const uchar_t u8_tolower_b4_tbl[2][36][257] = {
 			0,
 		},
 	},
+#endif
 	{
 		{	/* Fourth byte table 0. */
 			0,   0,   0,   0,   0,   0,   0,   0,
@@ -30793,7 +30840,8 @@ static const uchar_t u8_tolower_b4_tbl[2][36][257] = {
 	},
 };
 
-static const uchar_t u8_tolower_final_tbl[2][2299] = {
+static const uchar_t u8_tolower_final_tbl[U8_UNICODE_LATEST + 1][2299] = {
+#ifdef U8_UNICODE_320
 	{
 		0xC3, 0xA0, 0xC3, 0xA1, 0xC3, 0xA2, 0xC3, 0xA3,
 		0xC3, 0xA4, 0xC3, 0xA5, 0xC3, 0xA6, 0xC3, 0xA7,
@@ -31084,6 +31132,7 @@ static const uchar_t u8_tolower_final_tbl[2][2299] = {
 		0,    0,    0,    0,    0,    0,    0,    0,
 		0,    0,    0,
 	},
+#endif
 	{
 		0xC3, 0xA0, 0xC3, 0xA1, 0xC3, 0xA2, 0xC3, 0xA3,
 		0xC3, 0xA4, 0xC3, 0xA5, 0xC3, 0xA6, 0xC3, 0xA7,
@@ -31375,8 +31424,12 @@ static const uchar_t u8_tolower_final_tbl[2][2299] = {
 		0x90, 0x91, 0x8F,
 	},
 };
+#endif
 
-static const u8_displacement_t u8_toupper_b3_tbl[2][5][256] = {
+static const u8_displacement_t u8_toupper_b3_tbl[
+    U8_UNICODE_LATEST + 1][5][256] =
+{
+#ifdef U8_UNICODE_320
 	{
 		{	/* Third byte table 0. */
 			{ N_, 0 }, { N_, 0 }, { N_, 0 }, { N_, 0 },
@@ -31709,6 +31762,7 @@ static const u8_displacement_t u8_toupper_b3_tbl[2][5][256] = {
 			{ N_, 0 }, { N_, 0 }, { N_, 0 }, { N_, 0 },
 		},
 	},
+#endif
 	{
 		{	/* Third byte table 0. */
 			{ N_, 0 }, { N_, 0 }, { N_, 0 }, { N_, 0 },
@@ -32043,7 +32097,8 @@ static const u8_displacement_t u8_toupper_b3_tbl[2][5][256] = {
 	},
 };
 
-static const uchar_t u8_toupper_b4_tbl[2][39][257] = {
+static const uchar_t u8_toupper_b4_tbl[U8_UNICODE_LATEST + 1][39][257] = {
+#ifdef U8_UNICODE_320
 	{
 		{	/* Fourth byte table 0. */
 			0,   0,   0,   0,   0,   0,   0,   0,
@@ -33411,6 +33466,7 @@ static const uchar_t u8_toupper_b4_tbl[2][39][257] = {
 			0,
 		},
 	},
+#endif
 	{
 		{	/* Fourth byte table 0. */
 			0,   0,   0,   0,   0,   0,   0,   0,
@@ -34780,7 +34836,8 @@ static const uchar_t u8_toupper_b4_tbl[2][39][257] = {
 	},
 };
 
-static const uchar_t u8_toupper_final_tbl[2][2318] = {
+static const uchar_t u8_toupper_final_tbl[U8_UNICODE_LATEST + 1][2318] = {
+#ifdef U8_UNICODE_320
 	{
 		0xCE, 0x9C, 0xC3, 0x80, 0xC3, 0x81, 0xC3, 0x82,
 		0xC3, 0x83, 0xC3, 0x84, 0xC3, 0x85, 0xC3, 0x86,
@@ -35073,6 +35130,7 @@ static const uchar_t u8_toupper_final_tbl[2][2318] = {
 		0,    0,    0,    0,    0,    0,    0,    0,
 		0,    0,    0,    0,    0,    0,
 	},
+#endif
 	{
 		0xCE, 0x9C, 0xC3, 0x80, 0xC3, 0x81, 0xC3, 0x82,
 		0xC3, 0x83, 0xC3, 0x84, 0xC3, 0x85, 0xC3, 0x86,

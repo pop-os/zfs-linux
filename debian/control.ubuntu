@@ -81,7 +81,7 @@ Depends: libssl-dev | libssl1.0-dev,
          libuutil3linux (= ${binary:Version}),
          libzfs4linux (= ${binary:Version}),
          libzfsbootenv1linux (= ${binary:Version}),
-         libzpool6linux (= ${binary:Version}),
+         libzpool7linux (= ${binary:Version}),
          ${misc:Depends}
 Provides: libnvpair-dev, libuutil-dev
 Description: OpenZFS filesystem development files for Linux
@@ -89,17 +89,18 @@ Description: OpenZFS filesystem development files for Linux
  libraries of OpenZFS filesystem.
  .
  This package includes the development files of libnvpair3, libuutil3,
- libzpool6 and libzfs6.
+ libzpool7 and libzfs7.
 
-Package: libzfs6linux
+Package: libzfs7linux
 Section: contrib/libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 # The libcurl4 is loaded through dlopen("libcurl.so.4").
 # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=988521
 Recommends: libcurl4
-Breaks: libzfs2, libzfs4, libzfs4linux
-Replaces: libzfs2, libzfs4, libzfs4linux
+# libzfs_core.so.3 is installed by libzfs7linux, so we need breaks/replaces
+Breaks: libzfs2, libzfs4, libzfs4linux, libzfs6linux
+Replaces: libzfs2, libzfs4, libzfs4linux, libzfs6linux
 Description: OpenZFS filesystem library for Linux - general support
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
@@ -120,12 +121,12 @@ Description: OpenZFS filesystem library for Linux - label info support
  .
  The zfsbootenv library provides support for modifying ZFS label information.
 
-Package: libzpool6linux
+Package: libzpool7linux
 Section: contrib/libs
 Architecture: linux-any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Breaks: libzpool2, libzpool5, libzpool5linux
-Replaces: libzpool2, libzpool5, libzpool5linux
+Breaks: libzpool2, libzpool5
+Replaces: libzpool2, libzpool5
 Description: OpenZFS pool library for Linux
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
@@ -158,6 +159,7 @@ Package: pyzfs-doc
 Section: contrib/doc
 Architecture: all
 Depends: ${misc:Depends}, ${sphinxdoc:Depends}
+Static-built-Using: ${sphinxdoc:Built-Using}
 Recommends: python3-pyzfs
 Description: wrapper for libzfs_core C library (documentation)
  libzfs_core is intended to be a stable interface for programmatic
@@ -182,8 +184,7 @@ Depends: dkms (>> 2.1.1.2-5),
          libc6-dev | libc-dev,
          lsb-release,
          libpython3-stdlib,
-         ${misc:Depends},
-         ${perl:Depends}
+         ${misc:Depends}
 Recommends: zfs-zed, zfsutils-linux (>= ${source:Version}), ${linux:Recommends}
 # suggests debhelper because e.g. `dkms mkdeb -m zfs -v 0.8.2` needs dh_testdir (#909183)
 Suggests: debhelper
@@ -233,8 +234,8 @@ Architecture: linux-any
 Pre-Depends: ${misc:Pre-Depends}
 Depends: libnvpair3linux (= ${binary:Version}),
          libuutil3linux (= ${binary:Version}),
-         libzfs6linux (= ${binary:Version}),
-         libzpool6linux (= ${binary:Version}),
+         libzfs7linux (= ${binary:Version}),
+         libzpool7linux (= ${binary:Version}),
          python3,
          ${misc:Depends},
          ${shlibs:Depends}
@@ -247,7 +248,7 @@ Replaces: spl (<< 0.7.9-2), spl-dkms
 Suggests: nfs-kernel-server,
           samba-common-bin (>= 3.0.23),
           zfs-initramfs | zfs-dracut
-Conflicts: zfs, zfs-fuse, nordugrid-arc-client
+Conflicts: zfs, zfs-fuse
 Provides: zfsutils
 Description: command-line tools to manage OpenZFS filesystems
  OpenZFS is a storage platform that encompasses the functionality of

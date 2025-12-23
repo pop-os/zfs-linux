@@ -5,9 +5,7 @@
 1006-zed-service-bindir.patch
 1007-dkms-pkgcfg.patch
 2100-zfs-load-module.patch
-3100-remove-libzfs-module-timeout.patch
 force-verbose-rules.patch
-move-arcstat-1-to-8.patch
 skip-on-PREEMPT_RT.patch
 cross-compile.patch
 #ubuntu/0001-Revert-Revert-systemd-Use-non-absolute-paths-in-Exec.patch
@@ -23,11 +21,3 @@ fix-pyzfs-version.patch
 BUILD_EXCLUSIVE_KERNEL_MIN.patch
 bump-Linux-Minimum.patch
 ubuntu/0003-enable-linux-experimental.patch
-ubuntu/0004-Linux-6.18-replace-nth_page.patch
-ubuntu/0005-Linux-6.18-convert-ida_simple_-calls.patch
-ubuntu/0006-linux-atomic-fill-out-API-for-atomic-pointer-ops.patch
-ubuntu/0007-Linux-6.18-block_device_operations-getgeo-takes-stru.patch
-ubuntu/0008-Linux-6.18-replace-write_cache_pages.patch
-ubuntu/0009-Linux-6.18-namespace-type-moved-to-ns_common.patch
-ubuntu/0010-sha256_generic-make-internal-functions-a-little-more.patch
-ubuntu/0011-Linux-6.18-generic_drop_inode-and-generic_delete_ino.patch

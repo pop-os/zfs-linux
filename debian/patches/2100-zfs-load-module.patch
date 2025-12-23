@@ -47,7 +47,7 @@ Forwarded: not needed
 +WantedBy=zfs.target
 --- a/contrib/dracut/90zfs/module-setup.sh.in
 +++ b/contrib/dracut/90zfs/module-setup.sh.in
-@@ -95,7 +95,8 @@
+@@ -96,7 +96,8 @@
  
  		for _service in \
  			"zfs-import-scan.service" \

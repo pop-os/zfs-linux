@@ -260,8 +260,8 @@ static int brt_zap_prefetch = 1;
 #define	BRT_DEBUG(...)	do { } while (0)
 #endif
 
-static int brt_zap_default_bs = 12;
-static int brt_zap_default_ibs = 12;
+static int brt_zap_default_bs = 13;
+static int brt_zap_default_ibs = 13;
 
 static kstat_t	*brt_ksp;
 
@@ -454,6 +454,7 @@ brt_vdev_create(spa_t *spa, brt_vdev_t *brtvd, dmu_tx_t *tx)
 	VERIFY(mos_entries != 0);
 	VERIFY0(dnode_hold(spa->spa_meta_objset, mos_entries, brtvd,
 	    &brtvd->bv_mos_entries_dnode));
+	dnode_set_storage_type(brtvd->bv_mos_entries_dnode, DMU_OT_DDT_ZAP);
 	rw_enter(&brtvd->bv_mos_entries_lock, RW_WRITER);
 	brtvd->bv_mos_entries = mos_entries;
 	rw_exit(&brtvd->bv_mos_entries_lock);
@@ -478,6 +479,18 @@ brt_vdev_create(spa_t *spa, brt_vdev_t *brtvd, dmu_tx_t *tx)
 	    sizeof (uint64_t), 1, &brtvd->bv_mos_brtvdev, tx));
 	BRT_DEBUG("Pool directory object created, object=%s", name);
 
+	/*
+	 * Activate the endian-fixed feature if this is the first BRT ZAP
+	 * (i.e., BLOCK_CLONING is not yet active) and the feature is enabled.
+	 */
+	if (spa_feature_is_enabled(spa, SPA_FEATURE_BLOCK_CLONING_ENDIAN) &&
+	    !spa_feature_is_active(spa, SPA_FEATURE_BLOCK_CLONING)) {
+		spa_feature_incr(spa, SPA_FEATURE_BLOCK_CLONING_ENDIAN, tx);
+	} else if (spa_feature_is_active(spa,
+	    SPA_FEATURE_BLOCK_CLONING_ENDIAN)) {
+		spa_feature_incr(spa, SPA_FEATURE_BLOCK_CLONING_ENDIAN, tx);
+	}
+
 	spa_feature_incr(spa, SPA_FEATURE_BLOCK_CLONING, tx);
 }
 
@@ -496,8 +509,8 @@ brt_vdev_realloc(spa_t *spa, brt_vdev_t *brtvd)
 	size = (vdev_get_min_asize(vd) - 1) / spa->spa_brt_rangesize + 1;
 	spa_config_exit(spa, SCL_VDEV, FTAG);
 
-	entcount = vmem_zalloc(sizeof (entcount[0]) * size, KM_SLEEP);
 	nblocks = BRT_RANGESIZE_TO_NBLOCKS(size);
+	entcount = vmem_zalloc(nblocks * BRT_BLOCKSIZE, KM_SLEEP);
 	bitmap = kmem_zalloc(BT_SIZEOFMAP(nblocks), KM_SLEEP);
 
 	if (!brtvd->bv_initiated) {
@@ -518,9 +531,8 @@ brt_vdev_realloc(spa_t *spa, brt_vdev_t *brtvd)
 
 		memcpy(entcount, brtvd->bv_entcount,
 		    sizeof (entcount[0]) * MIN(size, brtvd->bv_size));
-		vmem_free(brtvd->bv_entcount,
-		    sizeof (entcount[0]) * brtvd->bv_size);
 		onblocks = BRT_RANGESIZE_TO_NBLOCKS(brtvd->bv_size);
+		vmem_free(brtvd->bv_entcount, onblocks * BRT_BLOCKSIZE);
 		memcpy(bitmap, brtvd->bv_bitmap, MIN(BT_SIZEOFMAP(nblocks),
 		    BT_SIZEOFMAP(onblocks)));
 		kmem_free(brtvd->bv_bitmap, BT_SIZEOFMAP(onblocks));
@@ -569,13 +581,14 @@ brt_vdev_load(spa_t *spa, brt_vdev_t *brtvd)
 	 */
 	error = dmu_read(spa->spa_meta_objset, brtvd->bv_mos_brtvdev, 0,
 	    MIN(brtvd->bv_size, bvphys->bvp_size) * sizeof (uint16_t),
-	    brtvd->bv_entcount, DMU_READ_NO_PREFETCH);
+	    brtvd->bv_entcount, DMU_READ_NO_PREFETCH | DMU_UNCACHEDIO);
 	if (error != 0)
 		return (error);
 
 	ASSERT(bvphys->bvp_mos_entries != 0);
 	VERIFY0(dnode_hold(spa->spa_meta_objset, bvphys->bvp_mos_entries, brtvd,
 	    &brtvd->bv_mos_entries_dnode));
+	dnode_set_storage_type(brtvd->bv_mos_entries_dnode, DMU_OT_DDT_ZAP);
 	rw_enter(&brtvd->bv_mos_entries_lock, RW_WRITER);
 	brtvd->bv_mos_entries = bvphys->bvp_mos_entries;
 	rw_exit(&brtvd->bv_mos_entries_lock);
@@ -601,9 +614,9 @@ brt_vdev_dealloc(brt_vdev_t *brtvd)
 	ASSERT(brtvd->bv_initiated);
 	ASSERT0(avl_numnodes(&brtvd->bv_tree));
 
-	vmem_free(brtvd->bv_entcount, sizeof (uint16_t) * brtvd->bv_size);
-	brtvd->bv_entcount = NULL;
 	uint64_t nblocks = BRT_RANGESIZE_TO_NBLOCKS(brtvd->bv_size);
+	vmem_free(brtvd->bv_entcount, nblocks * BRT_BLOCKSIZE);
+	brtvd->bv_entcount = NULL;
 	kmem_free(brtvd->bv_bitmap, BT_SIZEOFMAP(nblocks));
 	brtvd->bv_bitmap = NULL;
 
@@ -658,6 +671,8 @@ brt_vdev_destroy(spa_t *spa, brt_vdev_t *brtvd, dmu_tx_t *tx)
 	rw_exit(&brtvd->bv_lock);
 
 	spa_feature_decr(spa, SPA_FEATURE_BLOCK_CLONING, tx);
+	if (spa_feature_is_active(spa, SPA_FEATURE_BLOCK_CLONING_ENDIAN))
+		spa_feature_decr(spa, SPA_FEATURE_BLOCK_CLONING_ENDIAN, tx);
 }
 
 static void
@@ -793,10 +808,10 @@ brt_vdev_sync(spa_t *spa, brt_vdev_t *brtvd, dmu_tx_t *tx)
 		/*
 		 * TODO: Walk brtvd->bv_bitmap and write only the dirty blocks.
 		 */
-		dmu_write(spa->spa_meta_objset, brtvd->bv_mos_brtvdev, 0,
-		    brtvd->bv_size * sizeof (brtvd->bv_entcount[0]),
-		    brtvd->bv_entcount, tx);
 		uint64_t nblocks = BRT_RANGESIZE_TO_NBLOCKS(brtvd->bv_size);
+		dmu_write(spa->spa_meta_objset, brtvd->bv_mos_brtvdev, 0,
+		    nblocks * BRT_BLOCKSIZE, brtvd->bv_entcount, tx,
+		    DMU_READ_NO_PREFETCH | DMU_UNCACHEDIO);
 		memset(brtvd->bv_bitmap, 0, BT_SIZEOFMAP(nblocks));
 		brtvd->bv_entcount_dirty = FALSE;
 	}
@@ -855,16 +870,29 @@ brt_entry_fill(const blkptr_t *bp, brt_entry_t *bre, uint64_t *vdevidp)
 	*vdevidp = DVA_GET_VDEV(&bp->blk_dva[0]);
 }
 
+static boolean_t
+brt_has_endian_fixed(spa_t *spa)
+{
+	return (spa_feature_is_active(spa, SPA_FEATURE_BLOCK_CLONING_ENDIAN));
+}
+
 static int
-brt_entry_lookup(brt_vdev_t *brtvd, brt_entry_t *bre)
+brt_entry_lookup(spa_t *spa, brt_vdev_t *brtvd, brt_entry_t *bre)
 {
 	uint64_t off = BRE_OFFSET(bre);
 
 	if (brtvd->bv_mos_entries == 0)
 		return (SET_ERROR(ENOENT));
 
-	return (zap_lookup_uint64_by_dnode(brtvd->bv_mos_entries_dnode,
-	    &off, BRT_KEY_WORDS, 1, sizeof (bre->bre_count), &bre->bre_count));
+	if (brt_has_endian_fixed(spa)) {
+		return (zap_lookup_uint64_by_dnode(brtvd->bv_mos_entries_dnode,
+		    &off, BRT_KEY_WORDS, sizeof (bre->bre_count), 1,
+		    &bre->bre_count));
+	} else {
+		return (zap_lookup_uint64_by_dnode(brtvd->bv_mos_entries_dnode,
+		    &off, BRT_KEY_WORDS, 1, sizeof (bre->bre_count),
+		    &bre->bre_count));
+	}
 }
 
 /*
@@ -1056,7 +1084,7 @@ brt_entry_decref(spa_t *spa, const blkptr_t *bp)
 	}
 	rw_exit(&brtvd->bv_lock);
 
-	error = brt_entry_lookup(brtvd, &bre_search);
+	error = brt_entry_lookup(spa, brtvd, &bre_search);
 	/* bre_search now contains correct bre_count */
 	if (error == ENOENT) {
 		BRTSTAT_BUMP(brt_decref_no_entry);
@@ -1118,7 +1146,7 @@ brt_entry_get_refcount(spa_t *spa, const blkptr_t *bp)
 	bre = avl_find(&brtvd->bv_tree, &bre_search, NULL);
 	if (bre == NULL) {
 		rw_exit(&brtvd->bv_lock);
-		error = brt_entry_lookup(brtvd, &bre_search);
+		error = brt_entry_lookup(spa, brtvd, &bre_search);
 		if (error == ENOENT) {
 			refcnt = 0;
 		} else {
@@ -1270,10 +1298,18 @@ brt_pending_apply_vdev(spa_t *spa, brt_vdev_t *brtvd, uint64_t txg)
 		uint64_t off = BRE_OFFSET(bre);
 		if (brtvd->bv_mos_entries != 0 &&
 		    brt_vdev_lookup(spa, brtvd, off)) {
-			int error = zap_lookup_uint64_by_dnode(
-			    brtvd->bv_mos_entries_dnode, &off,
-			    BRT_KEY_WORDS, 1, sizeof (bre->bre_count),
-			    &bre->bre_count);
+			int error;
+			if (brt_has_endian_fixed(spa)) {
+				error = zap_lookup_uint64_by_dnode(
+				    brtvd->bv_mos_entries_dnode, &off,
+				    BRT_KEY_WORDS, sizeof (bre->bre_count), 1,
+				    &bre->bre_count);
+			} else {
+				error = zap_lookup_uint64_by_dnode(
+				    brtvd->bv_mos_entries_dnode, &off,
+				    BRT_KEY_WORDS, 1, sizeof (bre->bre_count),
+				    &bre->bre_count);
+			}
 			if (error == 0) {
 				BRTSTAT_BUMP(brt_addref_entry_on_disk);
 			} else {
@@ -1326,7 +1362,7 @@ brt_pending_apply(spa_t *spa, uint64_t txg)
 }
 
 static void
-brt_sync_entry(dnode_t *dn, brt_entry_t *bre, dmu_tx_t *tx)
+brt_sync_entry(spa_t *spa, dnode_t *dn, brt_entry_t *bre, dmu_tx_t *tx)
 {
 	uint64_t off = BRE_OFFSET(bre);
 
@@ -1337,9 +1373,15 @@ brt_sync_entry(dnode_t *dn, brt_entry_t *bre, dmu_tx_t *tx)
 		    BRT_KEY_WORDS, tx);
 		VERIFY(error == 0 || error == ENOENT);
 	} else {
-		VERIFY0(zap_update_uint64_by_dnode(dn, &off,
-		    BRT_KEY_WORDS, 1, sizeof (bre->bre_count),
-		    &bre->bre_count, tx));
+		if (brt_has_endian_fixed(spa)) {
+			VERIFY0(zap_update_uint64_by_dnode(dn, &off,
+			    BRT_KEY_WORDS, sizeof (bre->bre_count), 1,
+			    &bre->bre_count, tx));
+		} else {
+			VERIFY0(zap_update_uint64_by_dnode(dn, &off,
+			    BRT_KEY_WORDS, 1, sizeof (bre->bre_count),
+			    &bre->bre_count, tx));
+		}
 	}
 }
 
@@ -1368,7 +1410,8 @@ brt_sync_table(spa_t *spa, dmu_tx_t *tx)
 
 		void *c = NULL;
 		while ((bre = avl_destroy_nodes(&brtvd->bv_tree, &c)) != NULL) {
-			brt_sync_entry(brtvd->bv_mos_entries_dnode, bre, tx);
+			brt_sync_entry(spa, brtvd->bv_mos_entries_dnode, bre,
+			    tx);
 			kmem_cache_free(brt_entry_cache, bre);
 		}
 
@@ -1465,6 +1508,31 @@ brt_load(spa_t *spa)
 		spa->spa_brt_rangesize = BRT_RANGESIZE;
 	brt_unlock(spa);
 	return (error);
+}
+
+void
+brt_prefetch_all(spa_t *spa)
+{
+	/*
+	 * Load all BRT entries for each vdev. This is intended to perform
+	 * a prefetch on all such blocks. For the same reason that brt_prefetch
+	 * (called from brt_pending_add) isn't locked, this is also not locked.
+	 */
+	brt_rlock(spa);
+	for (uint64_t vdevid = 0; vdevid < spa->spa_brt_nvdevs; vdevid++) {
+		brt_vdev_t *brtvd = spa->spa_brt_vdevs[vdevid];
+		brt_unlock(spa);
+
+		rw_enter(&brtvd->bv_mos_entries_lock, RW_READER);
+		if (brtvd->bv_mos_entries != 0) {
+			(void) zap_prefetch_object(spa->spa_meta_objset,
+			    brtvd->bv_mos_entries);
+		}
+		rw_exit(&brtvd->bv_mos_entries_lock);
+
+		brt_rlock(spa);
+	}
+	brt_unlock(spa);
 }
 
 void

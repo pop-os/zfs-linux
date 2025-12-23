@@ -5,9 +5,9 @@ SHRINK_EMPTY was introduced in Linux v4.19
 
 --- a/META
 +++ b/META
-@@ -7,4 +7,4 @@ Release-Tags:  relext
+@@ -7,4 +7,4 @@
  License:       CDDL
  Author:        OpenZFS
- Linux-Maximum: 6.17
+ Linux-Maximum: 6.18
 -Linux-Minimum: 4.18
 +Linux-Minimum: 4.19

@@ -125,7 +125,9 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-copy-from-user-inatomic.m4 \
 	$(top_srcdir)/config/kernel-cpu_has_feature.m4 \
 	$(top_srcdir)/config/kernel-declare-event-class.m4 \
+	$(top_srcdir)/config/kernel-dentry-operations.m4 \
 	$(top_srcdir)/config/kernel-discard-granularity.m4 \
+	$(top_srcdir)/config/kernel-drop-inode.m4 \
 	$(top_srcdir)/config/kernel-file.m4 \
 	$(top_srcdir)/config/kernel-filemap-splice-read.m4 \
 	$(top_srcdir)/config/kernel-flush_dcache_page.m4 \
@@ -150,6 +152,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-inode-times.m4 \
 	$(top_srcdir)/config/kernel-insert-inode-locked.m4 \
 	$(top_srcdir)/config/kernel-is_owner_or_cap.m4 \
+	$(top_srcdir)/config/kernel-kasan-enabled.m4 \
 	$(top_srcdir)/config/kernel-kmap-atomic-args.m4 \
 	$(top_srcdir)/config/kernel-kmap-local-page.m4 \
 	$(top_srcdir)/config/kernel-kmem.m4 \
@@ -162,6 +165,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-mknod.m4 \
 	$(top_srcdir)/config/kernel-mm-page-flags.m4 \
 	$(top_srcdir)/config/kernel-mm-pagemap.m4 \
+	$(top_srcdir)/config/kernel-namespace.m4 \
 	$(top_srcdir)/config/kernel-objtool.m4 \
 	$(top_srcdir)/config/kernel-pagemap-folio_wait_bit.m4 \
 	$(top_srcdir)/config/kernel-pagemap-readahead-page.m4 \
@@ -204,7 +208,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-vfs-readpages.m4 \
 	$(top_srcdir)/config/kernel-vfs-set_page_dirty.m4 \
 	$(top_srcdir)/config/kernel-vfs-writepage.m4 \
-	$(top_srcdir)/config/kernel-writepage_t.m4 \
+	$(top_srcdir)/config/kernel-writeback.m4 \
 	$(top_srcdir)/config/kernel-xattr-handler.m4 \
 	$(top_srcdir)/config/kernel-zero_page.m4 \
 	$(top_srcdir)/config/kernel.m4 $(top_srcdir)/config/lib-ld.m4 \
@@ -340,7 +344,7 @@ am__kernel_spl_sys_HEADERS_DIST = os/linux/spl/sys/acl.h \
 	os/linux/spl/sys/isa_defs.h os/linux/spl/sys/kmem.h \
 	os/linux/spl/sys/kmem_cache.h os/linux/spl/sys/kstat.h \
 	os/linux/spl/sys/list.h os/linux/spl/sys/misc.h \
-	os/linux/spl/sys/mod_os.h os/linux/spl/sys/mutex.h \
+	os/linux/spl/sys/mod.h os/linux/spl/sys/mutex.h \
 	os/linux/spl/sys/param.h os/linux/spl/sys/proc.h \
 	os/linux/spl/sys/processor.h os/linux/spl/sys/procfs_list.h \
 	os/linux/spl/sys/random.h os/linux/spl/sys/rwlock.h \
@@ -377,98 +381,100 @@ am__kernel_sys_HEADERS_DIST = os/linux/zfs/sys/abd_os.h \
 	os/linux/zfs/sys/zfs_vnops_os.h \
 	os/linux/zfs/sys/zfs_znode_impl.h os/linux/zfs/sys/zpl.h
 am__nobase_kernel_HEADERS_DIST = cityhash.h zfeature_common.h \
-	zfs_comutil.h zfs_deleg.h zfs_fletcher.h zfs_namecheck.h \
-	zfs_prop.h zfs_valstr.h sys/abd.h sys/abd_impl.h sys/aggsum.h \
-	sys/arc.h sys/arc_impl.h sys/asm_linkage.h sys/avl.h \
-	sys/avl_impl.h sys/bitmap.h sys/bitops.h sys/blake3.h \
-	sys/blkptr.h sys/bplist.h sys/bpobj.h sys/bptree.h \
-	sys/bqueue.h sys/btree.h sys/brt.h sys/brt_impl.h \
-	sys/dataset_kstats.h sys/dbuf.h sys/ddt.h sys/ddt_impl.h \
-	sys/dmu.h sys/dmu_impl.h sys/dmu_objset.h sys/dmu_recv.h \
-	sys/dmu_redact.h sys/dmu_send.h sys/dmu_traverse.h \
-	sys/dmu_tx.h sys/dmu_zfetch.h sys/dnode.h sys/dsl_bookmark.h \
-	sys/dsl_crypt.h sys/dsl_dataset.h sys/dsl_deadlist.h \
-	sys/dsl_deleg.h sys/dsl_destroy.h sys/dsl_dir.h sys/dsl_pool.h \
-	sys/dsl_prop.h sys/dsl_scan.h sys/dsl_synctask.h \
-	sys/dsl_userhold.h sys/edonr.h sys/efi_partition.h sys/frame.h \
-	sys/hkdf.h sys/metaslab.h sys/metaslab_impl.h sys/mmp.h \
-	sys/mntent.h sys/mod.h sys/multilist.h sys/nvpair.h \
-	sys/nvpair_impl.h sys/objlist.h sys/pathname.h sys/qat.h \
-	sys/range_tree.h sys/rrwlock.h sys/sa.h sys/sa_impl.h \
-	sys/sha2.h sys/skein.h sys/spa.h sys/spa_checkpoint.h \
-	sys/spa_checksum.h sys/spa_impl.h sys/spa_log_spacemap.h \
-	sys/space_map.h sys/space_reftree.h sys/sysevent.h sys/txg.h \
-	sys/txg_impl.h sys/u8_textprep.h sys/u8_textprep_data.h \
-	sys/uberblock.h sys/uberblock_impl.h sys/uio_impl.h \
-	sys/unique.h sys/uuid.h sys/vdev.h sys/vdev_disk.h \
-	sys/vdev_draid.h sys/vdev_file.h sys/vdev_impl.h \
-	sys/vdev_indirect_births.h sys/vdev_indirect_mapping.h \
-	sys/vdev_initialize.h sys/vdev_raidz.h sys/vdev_raidz_impl.h \
-	sys/vdev_rebuild.h sys/vdev_removal.h sys/vdev_trim.h \
-	sys/xvattr.h sys/zap.h sys/zap_impl.h sys/zap_leaf.h sys/zcp.h \
-	sys/zcp_global.h sys/zcp_iter.h sys/zcp_prop.h sys/zcp_set.h \
-	sys/zfeature.h sys/zfs_acl.h sys/zfs_bootenv.h \
-	sys/zfs_chksum.h sys/zfs_context.h sys/zfs_debug.h \
-	sys/zfs_delay.h sys/zfs_file.h sys/zfs_fuid.h sys/zfs_impl.h \
-	sys/zfs_project.h sys/zfs_quota.h sys/zfs_racct.h \
-	sys/zfs_ratelimit.h sys/zfs_refcount.h sys/zfs_rlock.h \
-	sys/zfs_sa.h sys/zfs_stat.h sys/zfs_sysfs.h sys/zfs_vfsops.h \
-	sys/zfs_vnops.h sys/zfs_znode.h sys/zil.h sys/zil_impl.h \
-	sys/zio.h sys/zio_checksum.h sys/zio_compress.h \
-	sys/zio_crypt.h sys/zio_impl.h sys/zrlock.h sys/zthr.h \
-	sys/crypto/api.h sys/crypto/common.h sys/crypto/icp.h \
-	sys/fm/protocol.h sys/fm/util.h sys/fm/fs/zfs.h sys/fs/zfs.h \
-	sys/lua/lauxlib.h sys/lua/lua.h sys/lua/luaconf.h \
-	sys/lua/lualib.h sys/sysevent/dev.h sys/sysevent/eventdefs.h \
-	sys/zstd/zstd.h sys/zfs_ioctl.h sys/zfs_ioctl_impl.h \
-	sys/zfs_onexit.h sys/zvol.h sys/zvol_impl.h
+	zfs_comutil.h zfs_crrd.h zfs_deleg.h zfs_fletcher.h \
+	zfs_namecheck.h zfs_prop.h zfs_valstr.h sys/abd.h \
+	sys/abd_impl.h sys/aggsum.h sys/arc.h sys/arc_impl.h \
+	sys/asm_linkage.h sys/avl.h sys/avl_impl.h sys/bitmap.h \
+	sys/bitops.h sys/blake3.h sys/blkptr.h sys/bplist.h \
+	sys/bpobj.h sys/bptree.h sys/bqueue.h sys/btree.h sys/brt.h \
+	sys/brt_impl.h sys/dataset_kstats.h sys/dbuf.h sys/ddt.h \
+	sys/ddt_impl.h sys/dmu.h sys/dmu_impl.h sys/dmu_objset.h \
+	sys/dmu_recv.h sys/dmu_redact.h sys/dmu_send.h \
+	sys/dmu_traverse.h sys/dmu_tx.h sys/dmu_zfetch.h sys/dnode.h \
+	sys/dsl_bookmark.h sys/dsl_crypt.h sys/dsl_dataset.h \
+	sys/dsl_deadlist.h sys/dsl_deleg.h sys/dsl_destroy.h \
+	sys/dsl_dir.h sys/dsl_pool.h sys/dsl_prop.h sys/dsl_scan.h \
+	sys/dsl_synctask.h sys/dsl_userhold.h sys/edonr.h \
+	sys/efi_partition.h sys/frame.h sys/hkdf.h sys/metaslab.h \
+	sys/metaslab_impl.h sys/mmp.h sys/mntent.h sys/multilist.h \
+	sys/nvpair.h sys/nvpair_impl.h sys/objlist.h sys/pathname.h \
+	sys/qat.h sys/range_tree.h sys/rrwlock.h sys/sa.h \
+	sys/sa_impl.h sys/sha2.h sys/skein.h sys/spa.h \
+	sys/spa_checkpoint.h sys/spa_checksum.h sys/spa_impl.h \
+	sys/spa_log_spacemap.h sys/space_map.h sys/space_reftree.h \
+	sys/sysevent.h sys/txg.h sys/txg_impl.h sys/u8_textprep.h \
+	sys/u8_textprep_data.h sys/uberblock.h sys/uberblock_impl.h \
+	sys/uio_impl.h sys/unique.h sys/uuid.h sys/vdev.h \
+	sys/vdev_disk.h sys/vdev_draid.h sys/vdev_file.h \
+	sys/vdev_impl.h sys/vdev_indirect_births.h \
+	sys/vdev_indirect_mapping.h sys/vdev_initialize.h \
+	sys/vdev_raidz.h sys/vdev_raidz_impl.h sys/vdev_rebuild.h \
+	sys/vdev_removal.h sys/vdev_trim.h sys/xvattr.h sys/zap.h \
+	sys/zap_impl.h sys/zap_leaf.h sys/zcp.h sys/zcp_global.h \
+	sys/zcp_iter.h sys/zcp_prop.h sys/zcp_set.h sys/zfeature.h \
+	sys/zfs_acl.h sys/zfs_bootenv.h sys/zfs_chksum.h \
+	sys/zfs_context.h sys/zfs_debug.h sys/zfs_delay.h \
+	sys/zfs_file.h sys/zfs_fuid.h sys/zfs_impl.h sys/zfs_project.h \
+	sys/zfs_quota.h sys/zfs_racct.h sys/zfs_ratelimit.h \
+	sys/zfs_refcount.h sys/zfs_rlock.h sys/zfs_sa.h sys/zfs_stat.h \
+	sys/zfs_sysfs.h sys/zfs_vfsops.h sys/zfs_vnops.h \
+	sys/zfs_znode.h sys/zil.h sys/zil_impl.h sys/zio.h \
+	sys/zio_checksum.h sys/zio_compress.h sys/zio_crypt.h \
+	sys/zio_impl.h sys/zrlock.h sys/zthr.h sys/crypto/api.h \
+	sys/crypto/common.h sys/crypto/icp.h sys/fm/protocol.h \
+	sys/fm/util.h sys/fm/fs/zfs.h sys/fs/zfs.h sys/lua/lauxlib.h \
+	sys/lua/lua.h sys/lua/luaconf.h sys/lua/lualib.h \
+	sys/sysevent/dev.h sys/sysevent/eventdefs.h sys/zstd/zstd.h \
+	sys/zfs_ioctl.h sys/zfs_ioctl_impl.h sys/zfs_onexit.h \
+	sys/zvol.h sys/zvol_impl.h
 am__nobase_libzfs_HEADERS_DIST = cityhash.h zfeature_common.h \
-	zfs_comutil.h zfs_deleg.h zfs_fletcher.h zfs_namecheck.h \
-	zfs_prop.h zfs_valstr.h sys/abd.h sys/abd_impl.h sys/aggsum.h \
-	sys/arc.h sys/arc_impl.h sys/asm_linkage.h sys/avl.h \
-	sys/avl_impl.h sys/bitmap.h sys/bitops.h sys/blake3.h \
-	sys/blkptr.h sys/bplist.h sys/bpobj.h sys/bptree.h \
-	sys/bqueue.h sys/btree.h sys/brt.h sys/brt_impl.h \
-	sys/dataset_kstats.h sys/dbuf.h sys/ddt.h sys/ddt_impl.h \
-	sys/dmu.h sys/dmu_impl.h sys/dmu_objset.h sys/dmu_recv.h \
-	sys/dmu_redact.h sys/dmu_send.h sys/dmu_traverse.h \
-	sys/dmu_tx.h sys/dmu_zfetch.h sys/dnode.h sys/dsl_bookmark.h \
-	sys/dsl_crypt.h sys/dsl_dataset.h sys/dsl_deadlist.h \
-	sys/dsl_deleg.h sys/dsl_destroy.h sys/dsl_dir.h sys/dsl_pool.h \
-	sys/dsl_prop.h sys/dsl_scan.h sys/dsl_synctask.h \
-	sys/dsl_userhold.h sys/edonr.h sys/efi_partition.h sys/frame.h \
-	sys/hkdf.h sys/metaslab.h sys/metaslab_impl.h sys/mmp.h \
-	sys/mntent.h sys/mod.h sys/multilist.h sys/nvpair.h \
-	sys/nvpair_impl.h sys/objlist.h sys/pathname.h sys/qat.h \
-	sys/range_tree.h sys/rrwlock.h sys/sa.h sys/sa_impl.h \
-	sys/sha2.h sys/skein.h sys/spa.h sys/spa_checkpoint.h \
-	sys/spa_checksum.h sys/spa_impl.h sys/spa_log_spacemap.h \
-	sys/space_map.h sys/space_reftree.h sys/sysevent.h sys/txg.h \
-	sys/txg_impl.h sys/u8_textprep.h sys/u8_textprep_data.h \
-	sys/uberblock.h sys/uberblock_impl.h sys/uio_impl.h \
-	sys/unique.h sys/uuid.h sys/vdev.h sys/vdev_disk.h \
-	sys/vdev_draid.h sys/vdev_file.h sys/vdev_impl.h \
-	sys/vdev_indirect_births.h sys/vdev_indirect_mapping.h \
-	sys/vdev_initialize.h sys/vdev_raidz.h sys/vdev_raidz_impl.h \
-	sys/vdev_rebuild.h sys/vdev_removal.h sys/vdev_trim.h \
-	sys/xvattr.h sys/zap.h sys/zap_impl.h sys/zap_leaf.h sys/zcp.h \
-	sys/zcp_global.h sys/zcp_iter.h sys/zcp_prop.h sys/zcp_set.h \
-	sys/zfeature.h sys/zfs_acl.h sys/zfs_bootenv.h \
-	sys/zfs_chksum.h sys/zfs_context.h sys/zfs_debug.h \
-	sys/zfs_delay.h sys/zfs_file.h sys/zfs_fuid.h sys/zfs_impl.h \
-	sys/zfs_project.h sys/zfs_quota.h sys/zfs_racct.h \
-	sys/zfs_ratelimit.h sys/zfs_refcount.h sys/zfs_rlock.h \
-	sys/zfs_sa.h sys/zfs_stat.h sys/zfs_sysfs.h sys/zfs_vfsops.h \
-	sys/zfs_vnops.h sys/zfs_znode.h sys/zil.h sys/zil_impl.h \
-	sys/zio.h sys/zio_checksum.h sys/zio_compress.h \
-	sys/zio_crypt.h sys/zio_impl.h sys/zrlock.h sys/zthr.h \
-	sys/crypto/api.h sys/crypto/common.h sys/crypto/icp.h \
-	sys/fm/protocol.h sys/fm/util.h sys/fm/fs/zfs.h sys/fs/zfs.h \
-	sys/lua/lauxlib.h sys/lua/lua.h sys/lua/luaconf.h \
-	sys/lua/lualib.h sys/sysevent/dev.h sys/sysevent/eventdefs.h \
-	sys/zstd/zstd.h libnvpair.h libuutil.h libuutil_common.h \
-	libuutil_impl.h libzdb.h libzfs.h libzfs_core.h \
-	libzfsbootenv.h libzutil.h thread_pool.h
+	zfs_comutil.h zfs_crrd.h zfs_deleg.h zfs_fletcher.h \
+	zfs_namecheck.h zfs_prop.h zfs_valstr.h sys/abd.h \
+	sys/abd_impl.h sys/aggsum.h sys/arc.h sys/arc_impl.h \
+	sys/asm_linkage.h sys/avl.h sys/avl_impl.h sys/bitmap.h \
+	sys/bitops.h sys/blake3.h sys/blkptr.h sys/bplist.h \
+	sys/bpobj.h sys/bptree.h sys/bqueue.h sys/btree.h sys/brt.h \
+	sys/brt_impl.h sys/dataset_kstats.h sys/dbuf.h sys/ddt.h \
+	sys/ddt_impl.h sys/dmu.h sys/dmu_impl.h sys/dmu_objset.h \
+	sys/dmu_recv.h sys/dmu_redact.h sys/dmu_send.h \
+	sys/dmu_traverse.h sys/dmu_tx.h sys/dmu_zfetch.h sys/dnode.h \
+	sys/dsl_bookmark.h sys/dsl_crypt.h sys/dsl_dataset.h \
+	sys/dsl_deadlist.h sys/dsl_deleg.h sys/dsl_destroy.h \
+	sys/dsl_dir.h sys/dsl_pool.h sys/dsl_prop.h sys/dsl_scan.h \
+	sys/dsl_synctask.h sys/dsl_userhold.h sys/edonr.h \
+	sys/efi_partition.h sys/frame.h sys/hkdf.h sys/metaslab.h \
+	sys/metaslab_impl.h sys/mmp.h sys/mntent.h sys/multilist.h \
+	sys/nvpair.h sys/nvpair_impl.h sys/objlist.h sys/pathname.h \
+	sys/qat.h sys/range_tree.h sys/rrwlock.h sys/sa.h \
+	sys/sa_impl.h sys/sha2.h sys/skein.h sys/spa.h \
+	sys/spa_checkpoint.h sys/spa_checksum.h sys/spa_impl.h \
+	sys/spa_log_spacemap.h sys/space_map.h sys/space_reftree.h \
+	sys/sysevent.h sys/txg.h sys/txg_impl.h sys/u8_textprep.h \
+	sys/u8_textprep_data.h sys/uberblock.h sys/uberblock_impl.h \
+	sys/uio_impl.h sys/unique.h sys/uuid.h sys/vdev.h \
+	sys/vdev_disk.h sys/vdev_draid.h sys/vdev_file.h \
+	sys/vdev_impl.h sys/vdev_indirect_births.h \
+	sys/vdev_indirect_mapping.h sys/vdev_initialize.h \
+	sys/vdev_raidz.h sys/vdev_raidz_impl.h sys/vdev_rebuild.h \
+	sys/vdev_removal.h sys/vdev_trim.h sys/xvattr.h sys/zap.h \
+	sys/zap_impl.h sys/zap_leaf.h sys/zcp.h sys/zcp_global.h \
+	sys/zcp_iter.h sys/zcp_prop.h sys/zcp_set.h sys/zfeature.h \
+	sys/zfs_acl.h sys/zfs_bootenv.h sys/zfs_chksum.h \
+	sys/zfs_context.h sys/zfs_debug.h sys/zfs_delay.h \
+	sys/zfs_file.h sys/zfs_fuid.h sys/zfs_impl.h sys/zfs_project.h \
+	sys/zfs_quota.h sys/zfs_racct.h sys/zfs_ratelimit.h \
+	sys/zfs_refcount.h sys/zfs_rlock.h sys/zfs_sa.h sys/zfs_stat.h \
+	sys/zfs_sysfs.h sys/zfs_vfsops.h sys/zfs_vnops.h \
+	sys/zfs_znode.h sys/zil.h sys/zil_impl.h sys/zio.h \
+	sys/zio_checksum.h sys/zio_compress.h sys/zio_crypt.h \
+	sys/zio_impl.h sys/zrlock.h sys/zthr.h sys/crypto/api.h \
+	sys/crypto/common.h sys/crypto/icp.h sys/fm/protocol.h \
+	sys/fm/util.h sys/fm/fs/zfs.h sys/fs/zfs.h sys/lua/lauxlib.h \
+	sys/lua/lua.h sys/lua/luaconf.h sys/lua/lualib.h \
+	sys/sysevent/dev.h sys/sysevent/eventdefs.h sys/zstd/zstd.h \
+	libnvpair.h libuutil.h libuutil_common.h libuutil_impl.h \
+	libzdb.h libzfs.h libzfs_core.h libzfsbootenv.h libzutil.h \
+	thread_pool.h
 am__noinst_HEADERS_DIST = os/freebsd/linux/compiler.h \
 	os/freebsd/linux/types.h os/freebsd/spl/acl/acl_common.h \
 	os/freebsd/spl/sys/ia32/asm_linkage.h os/freebsd/spl/sys/acl.h \
@@ -485,7 +491,7 @@ am__noinst_HEADERS_DIST = os/freebsd/linux/compiler.h \
 	os/freebsd/spl/sys/kmem_cache.h os/freebsd/spl/sys/kstat.h \
 	os/freebsd/spl/sys/list.h os/freebsd/spl/sys/list_impl.h \
 	os/freebsd/spl/sys/lock.h os/freebsd/spl/sys/misc.h \
-	os/freebsd/spl/sys/mod_os.h os/freebsd/spl/sys/mode.h \
+	os/freebsd/spl/sys/mod.h os/freebsd/spl/sys/mode.h \
 	os/freebsd/spl/sys/mount.h os/freebsd/spl/sys/mutex.h \
 	os/freebsd/spl/sys/param.h os/freebsd/spl/sys/policy.h \
 	os/freebsd/spl/sys/proc.h os/freebsd/spl/sys/processor.h \
@@ -648,6 +654,7 @@ KERNEL_INFINITE_RECURSION = @KERNEL_INFINITE_RECURSION@
 KERNEL_LD = @KERNEL_LD@
 KERNEL_LLVM = @KERNEL_LLVM@
 KERNEL_MAKE = @KERNEL_MAKE@
+KERNEL_NO_FORMAT_ZERO_LENGTH = @KERNEL_NO_FORMAT_ZERO_LENGTH@
 KERNEL_NO_IPA_SRA = @KERNEL_NO_IPA_SRA@
 LCOV = @LCOV@
 LD = @LD@
@@ -703,6 +710,7 @@ MSGMERGE_FOR_MSGFMT_OPTION = @MSGMERGE_FOR_MSGFMT_OPTION@
 MULTIARCH_LIBDIR = @MULTIARCH_LIBDIR@
 NM = @NM@
 NMEDIT = @NMEDIT@
+NO_ATOMIC_ALIGNMENT = @NO_ATOMIC_ALIGNMENT@
 NO_CLOBBERED = @NO_CLOBBERED@
 NO_FORMAT_TRUNCATION = @NO_FORMAT_TRUNCATION@
 NO_FORMAT_ZERO_LENGTH = @NO_FORMAT_ZERO_LENGTH@
@@ -950,7 +958,7 @@ zfsexecdir = @zfsexecdir@
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/spl/sys/kstat.h \
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/spl/sys/list.h \
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/spl/sys/misc.h \
-@BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/spl/sys/mod_os.h \
+@BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/spl/sys/mod.h \
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/spl/sys/mutex.h \
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/spl/sys/param.h \
 @BUILD_LINUX_TRUE@@CONFIG_KERNEL_TRUE@	os/linux/spl/sys/proc.h \
@@ -1027,7 +1035,7 @@ zfsexecdir = @zfsexecdir@
 @BUILD_FREEBSD_TRUE@	os/freebsd/spl/sys/list_impl.h \
 @BUILD_FREEBSD_TRUE@	os/freebsd/spl/sys/lock.h \
 @BUILD_FREEBSD_TRUE@	os/freebsd/spl/sys/misc.h \
-@BUILD_FREEBSD_TRUE@	os/freebsd/spl/sys/mod_os.h \
+@BUILD_FREEBSD_TRUE@	os/freebsd/spl/sys/mod.h \
 @BUILD_FREEBSD_TRUE@	os/freebsd/spl/sys/mode.h \
 @BUILD_FREEBSD_TRUE@	os/freebsd/spl/sys/mount.h \
 @BUILD_FREEBSD_TRUE@	os/freebsd/spl/sys/mutex.h \
@@ -1091,6 +1099,7 @@ COMMON_H = \
 	cityhash.h \
 	zfeature_common.h \
 	zfs_comutil.h \
+	zfs_crrd.h \
 	zfs_deleg.h \
 	zfs_fletcher.h \
 	zfs_namecheck.h \
@@ -1150,7 +1159,6 @@ COMMON_H = \
 	sys/metaslab_impl.h \
 	sys/mmp.h \
 	sys/mntent.h \
-	sys/mod.h \
 	sys/multilist.h \
 	sys/nvpair.h \
 	sys/nvpair_impl.h \
