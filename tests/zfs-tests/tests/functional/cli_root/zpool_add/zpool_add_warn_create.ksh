@@ -55,13 +55,19 @@ set -A redundancy0_create_args \
 	"$vdev0"
 
 set -A redundancy1_create_args \
-	"mirror $vdev0 $vdev1"
+	"mirror $vdev0 $vdev1" \
+	"raidz1 $vdev0 $vdev1" \
+	"draid1:1s $vdev0 $vdev1 $vdev9"
 
 set -A redundancy2_create_args \
-	"mirror $vdev0 $vdev1 $vdev2"
+	"mirror $vdev0 $vdev1 $vdev2" \
+	"raidz2 $vdev0 $vdev1 $vdev2" \
+	"draid2:1s $vdev0 $vdev1 $vdev2 $vdev9"
 
 set -A redundancy3_create_args \
-	"mirror $vdev0 $vdev1 $vdev2 $vdev3"
+	"mirror $vdev0 $vdev1 $vdev2 $vdev3" \
+	"raidz3 $vdev0 $vdev1 $vdev2 $vdev3" \
+	"draid3:1s $vdev0 $vdev1 $vdev2 $vdev3 $vdev9"
 
 set -A redundancy0_add_args \
 	"$vdev5" \
@@ -70,13 +76,20 @@ set -A redundancy0_add_args \
 set -A redundancy1_add_args \
 	"mirror $vdev5 $vdev6" \
 	"raidz1 $vdev5 $vdev6" \
-	"raidz1 $vdev5 $vdev6 mirror $vdev7 $vdev8"
+	"raidz1 $vdev5 $vdev6 mirror $vdev7 $vdev8" \
+	"mirror $vdev5 $vdev6 raidz1 $vdev7 $vdev8" \
+	"draid1 $vdev5 $vdev6 mirror $vdev7 $vdev8" \
+	"mirror $vdev5 $vdev6 draid1 $vdev7 $vdev8"
 
 set -A redundancy2_add_args \
-	"mirror $vdev5 $vdev6 $vdev7"
+	"mirror $vdev5 $vdev6 $vdev7" \
+	"raidz2 $vdev5 $vdev6 $vdev7" \
+	"draid2 $vdev5 $vdev6 $vdev7"
 
 set -A redundancy3_add_args \
-	"mirror $vdev5 $vdev6 $vdev7 $vdev8"
+	"mirror $vdev5 $vdev6 $vdev7 $vdev8" \
+	"raidz3 $vdev5 $vdev6 $vdev7 $vdev8" \
+	"draid3 $vdev5 $vdev6 $vdev7 $vdev8"
 
 function zpool_create_add
 {

@@ -362,20 +362,26 @@ static const ddt_kstats_t ddt_kstats_template = {
 };
 
 #ifdef _KERNEL
+/*
+ * Hot-path lookup counters use wmsums to avoid cache line bouncing.
+ * DDT_KSTAT_BUMP: Increment a wmsum counter (lookup stats).
+ *
+ * Sync-only counters use direct kstat assignment (no atomics needed).
+ * DDT_KSTAT_SET: Set a value (log entry counts, rates).
+ * DDT_KSTAT_SUB: Subtract from a value (decrement log entry counts).
+ * DDT_KSTAT_ZERO: Zero a value (clear log entry counts).
+ */
 #define	_DDT_KSTAT_STAT(ddt, stat) \
 	&((ddt_kstats_t *)(ddt)->ddt_ksp->ks_data)->stat.value.ui64
 #define	DDT_KSTAT_BUMP(ddt, stat) \
-	do { atomic_inc_64(_DDT_KSTAT_STAT(ddt, stat)); } while (0)
-#define	DDT_KSTAT_ADD(ddt, stat, val) \
-	do { atomic_add_64(_DDT_KSTAT_STAT(ddt, stat), val); } while (0)
+	wmsum_add(&(ddt)->ddt_kstat_##stat, 1)
 #define	DDT_KSTAT_SUB(ddt, stat, val) \
-	do { atomic_sub_64(_DDT_KSTAT_STAT(ddt, stat), val); } while (0)
+	do { *_DDT_KSTAT_STAT(ddt, stat) -= (val); } while (0)
 #define	DDT_KSTAT_SET(ddt, stat, val) \
-	do { atomic_store_64(_DDT_KSTAT_STAT(ddt, stat), val); } while (0)
+	do { *_DDT_KSTAT_STAT(ddt, stat) = (val); } while (0)
 #define	DDT_KSTAT_ZERO(ddt, stat) DDT_KSTAT_SET(ddt, stat, 0)
 #else
 #define	DDT_KSTAT_BUMP(ddt, stat) do {} while (0)
-#define	DDT_KSTAT_ADD(ddt, stat, val) do {} while (0)
 #define	DDT_KSTAT_SUB(ddt, stat, val) do {} while (0)
 #define	DDT_KSTAT_SET(ddt, stat, val) do {} while (0)
 #define	DDT_KSTAT_ZERO(ddt, stat) do {} while (0)
@@ -397,7 +403,7 @@ ddt_object_create(ddt_t *ddt, ddt_type_t type, ddt_class_t class,
 
 	ddt_object_name(ddt, type, class, name);
 
-	ASSERT3U(*objectp, ==, 0);
+	ASSERT0(*objectp);
 	VERIFY0(ddt_ops[type]->ddt_op_create(os, objectp, tx, prehash));
 	ASSERT3U(*objectp, !=, 0);
 
@@ -724,10 +730,13 @@ ddt_phys_extend(ddt_univ_phys_t *ddp, ddt_phys_variant_t v, const blkptr_t *bp)
 		dvas[2] = bp->blk_dva[2];
 
 	if (ddt_phys_birth(ddp, v) == 0) {
-		if (v == DDT_PHYS_FLAT)
-			ddp->ddp_flat.ddp_phys_birth = BP_GET_BIRTH(bp);
-		else
-			ddp->ddp_trad[v].ddp_phys_birth = BP_GET_BIRTH(bp);
+		if (v == DDT_PHYS_FLAT) {
+			ddp->ddp_flat.ddp_phys_birth =
+			    BP_GET_PHYSICAL_BIRTH(bp);
+		} else {
+			ddp->ddp_trad[v].ddp_phys_birth =
+			    BP_GET_PHYSICAL_BIRTH(bp);
+		}
 	}
 }
 
@@ -780,7 +789,7 @@ ddt_class_start(void)
 {
 	uint64_t start = gethrestime_sec();
 
-	if (ddt_prune_artificial_age) {
+	if (unlikely(ddt_prune_artificial_age)) {
 		/*
 		 * debug aide -- simulate a wider distribution
 		 * so we don't have to wait for an aged DDT
@@ -857,6 +866,17 @@ ddt_phys_birth(const ddt_univ_phys_t *ddp, ddt_phys_variant_t v)
 }
 
 int
+ddt_phys_is_gang(const ddt_univ_phys_t *ddp, ddt_phys_variant_t v)
+{
+	ASSERT3U(v, <, DDT_PHYS_NONE);
+
+	const dva_t *dvas = (v == DDT_PHYS_FLAT) ?
+	    ddp->ddp_flat.ddp_dva : ddp->ddp_trad[v].ddp_dva;
+
+	return (DVA_GET_GANG(&dvas[0]));
+}
+
+int
 ddt_phys_dva_count(const ddt_univ_phys_t *ddp, ddt_phys_variant_t v,
     boolean_t encrypted)
 {
@@ -880,14 +900,14 @@ ddt_phys_select(const ddt_t *ddt, const ddt_entry_t *dde, const blkptr_t *bp)
 
 	if (ddt->ddt_flags & DDT_FLAG_FLAT) {
 		if (DVA_EQUAL(BP_IDENTITY(bp), &ddp->ddp_flat.ddp_dva[0]) &&
-		    BP_GET_BIRTH(bp) == ddp->ddp_flat.ddp_phys_birth) {
+		    BP_GET_PHYSICAL_BIRTH(bp) == ddp->ddp_flat.ddp_phys_birth) {
 			return (DDT_PHYS_FLAT);
 		}
 	} else /* traditional phys */ {
 		for (int p = 0; p < DDT_PHYS_MAX; p++) {
 			if (DVA_EQUAL(BP_IDENTITY(bp),
 			    &ddp->ddp_trad[p].ddp_dva[0]) &&
-			    BP_GET_BIRTH(bp) ==
+			    BP_GET_PHYSICAL_BIRTH(bp) ==
 			    ddp->ddp_trad[p].ddp_phys_birth) {
 				return (p);
 			}
@@ -990,6 +1010,7 @@ ddt_alloc_entry_io(ddt_entry_t *dde)
 		return;
 
 	dde->dde_io = kmem_zalloc(sizeof (ddt_entry_io_t), KM_SLEEP);
+	mutex_init(&dde->dde_io->dde_io_lock, NULL, MUTEX_DEFAULT, NULL);
 }
 
 static void
@@ -997,11 +1018,12 @@ ddt_free(const ddt_t *ddt, ddt_entry_t *dde)
 {
 	if (dde->dde_io != NULL) {
 		for (int p = 0; p < DDT_NPHYS(ddt); p++)
-			ASSERT3P(dde->dde_io->dde_lead_zio[p], ==, NULL);
+			ASSERT0P(dde->dde_io->dde_lead_zio[p]);
 
 		if (dde->dde_io->dde_repair_abd != NULL)
 			abd_free(dde->dde_io->dde_repair_abd);
 
+		mutex_destroy(&dde->dde_io->dde_io_lock);
 		kmem_free(dde->dde_io, sizeof (ddt_entry_io_t));
 	}
 
@@ -1026,29 +1048,18 @@ ddt_remove(ddt_t *ddt, ddt_entry_t *dde)
 	ddt_free(ddt, dde);
 }
 
+/*
+ * We're considered over quota when we hit 85% full, or for larger drives,
+ * when there is less than 8GB free.
+ */
 static boolean_t
-ddt_special_over_quota(spa_t *spa, metaslab_class_t *mc)
+ddt_special_over_quota(metaslab_class_t *mc)
 {
-	if (mc != NULL && metaslab_class_get_space(mc) > 0) {
-		/* Over quota if allocating outside of this special class */
-		if (spa_syncing_txg(spa) <= spa->spa_dedup_class_full_txg +
-		    dedup_class_wait_txgs) {
-			/* Waiting for some deferred frees to be processed */
-			return (B_TRUE);
-		}
-
-		/*
-		 * We're considered over quota when we hit 85% full, or for
-		 * larger drives, when there is less than 8GB free.
-		 */
-		uint64_t allocated = metaslab_class_get_alloc(mc);
-		uint64_t capacity = metaslab_class_get_space(mc);
-		uint64_t limit = MAX(capacity * 85 / 100,
-		    (capacity > (1LL<<33)) ? capacity - (1LL<<33) : 0);
-
-		return (allocated >= limit);
-	}
-	return (B_FALSE);
+	uint64_t allocated = metaslab_class_get_alloc(mc);
+	uint64_t capacity = metaslab_class_get_space(mc);
+	uint64_t limit = MAX(capacity * 85 / 100,
+	    (capacity > (1LL<<33)) ? capacity - (1LL<<33) : 0);
+	return (allocated >= limit);
 }
 
 /*
@@ -1071,13 +1082,21 @@ ddt_over_quota(spa_t *spa)
 		return (ddt_get_ddt_dsize(spa) > spa->spa_dedup_table_quota);
 
 	/*
+	 * Over quota if have to allocate outside of the dedup/special class.
+	 */
+	if (spa_syncing_txg(spa) <= spa->spa_dedup_class_full_txg +
+	    dedup_class_wait_txgs) {
+		/* Waiting for some deferred frees to be processed */
+		return (B_TRUE);
+	}
+
+	/*
 	 * For automatic quota, table size is limited by dedup or special class
 	 */
-	if (ddt_special_over_quota(spa, spa_dedup_class(spa)))
-		return (B_TRUE);
-	else if (spa_special_has_ddt(spa) &&
-	    ddt_special_over_quota(spa, spa_special_class(spa)))
-		return (B_TRUE);
+	if (spa_has_dedup(spa))
+		return (ddt_special_over_quota(spa_dedup_class(spa)));
+	else if (spa_special_has_ddt(spa))
+		return (ddt_special_over_quota(spa_special_class(spa)));
 
 	return (B_FALSE);
 }
@@ -1160,7 +1179,7 @@ ddt_lookup(ddt_t *ddt, const blkptr_t *bp, boolean_t verify)
 
 	ASSERT(MUTEX_HELD(&ddt->ddt_lock));
 
-	if (ddt->ddt_version == DDT_VERSION_UNCONFIGURED) {
+	if (unlikely(ddt->ddt_version == DDT_VERSION_UNCONFIGURED)) {
 		/*
 		 * This is the first use of this DDT since the pool was
 		 * created; finish getting it ready for use.
@@ -1410,7 +1429,7 @@ ddt_key_compare(const void *x1, const void *x2)
 static void
 ddt_create_dir(ddt_t *ddt, dmu_tx_t *tx)
 {
-	ASSERT3U(ddt->ddt_dir_object, ==, 0);
+	ASSERT0(ddt->ddt_dir_object);
 	ASSERT3U(ddt->ddt_version, ==, DDT_VERSION_FDT);
 
 	char name[DDT_NAMELEN];
@@ -1583,6 +1602,46 @@ not_found:
 	return (0);
 }
 
+static int
+ddt_kstat_update(kstat_t *ksp, int rw)
+{
+	ddt_t *ddt = ksp->ks_private;
+	ddt_kstats_t *dds = ksp->ks_data;
+
+	if (rw == KSTAT_WRITE)
+		return (SET_ERROR(EACCES));
+
+	/* Aggregate wmsum counters for lookup stats */
+	dds->dds_lookup.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup);
+	dds->dds_lookup_live_hit.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_live_hit);
+	dds->dds_lookup_live_wait.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_live_wait);
+	dds->dds_lookup_live_miss.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_live_miss);
+	dds->dds_lookup_existing.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_existing);
+	dds->dds_lookup_new.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_new);
+	dds->dds_lookup_log_hit.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_log_hit);
+	dds->dds_lookup_log_active_hit.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_log_active_hit);
+	dds->dds_lookup_log_flushing_hit.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_log_flushing_hit);
+	dds->dds_lookup_log_miss.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_log_miss);
+	dds->dds_lookup_stored_hit.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_stored_hit);
+	dds->dds_lookup_stored_miss.value.ui64 =
+	    wmsum_value(&ddt->ddt_kstat_dds_lookup_stored_miss);
+
+	/* Sync-only counters are already set directly in kstats */
+
+	return (0);
+}
+
 static void
 ddt_table_alloc_kstats(ddt_t *ddt)
 {
@@ -1590,12 +1649,28 @@ ddt_table_alloc_kstats(ddt_t *ddt)
 	char *name = kmem_asprintf("ddt_stats_%s",
 	    zio_checksum_table[ddt->ddt_checksum].ci_name);
 
+	/* Initialize wmsums for lookup counters */
+	wmsum_init(&ddt->ddt_kstat_dds_lookup, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_live_hit, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_live_wait, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_live_miss, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_existing, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_new, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_log_hit, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_log_active_hit, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_log_flushing_hit, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_log_miss, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_stored_hit, 0);
+	wmsum_init(&ddt->ddt_kstat_dds_lookup_stored_miss, 0);
+
 	ddt->ddt_ksp = kstat_create(mod, 0, name, "misc", KSTAT_TYPE_NAMED,
 	    sizeof (ddt_kstats_t) / sizeof (kstat_named_t), KSTAT_FLAG_VIRTUAL);
 	if (ddt->ddt_ksp != NULL) {
 		ddt_kstats_t *dds = kmem_alloc(sizeof (ddt_kstats_t), KM_SLEEP);
 		memcpy(dds, &ddt_kstats_template, sizeof (ddt_kstats_t));
 		ddt->ddt_ksp->ks_data = dds;
+		ddt->ddt_ksp->ks_update = ddt_kstat_update;
+		ddt->ddt_ksp->ks_private = ddt;
 		kstat_install(ddt->ddt_ksp);
 	}
 
@@ -1636,6 +1711,20 @@ ddt_table_free(ddt_t *ddt)
 		ddt->ddt_ksp->ks_data = NULL;
 		kstat_delete(ddt->ddt_ksp);
 	}
+
+	/* Cleanup wmsums for lookup counters */
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_live_hit);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_live_wait);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_live_miss);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_existing);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_new);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_log_hit);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_log_active_hit);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_log_flushing_hit);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_log_miss);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_stored_hit);
+	wmsum_fini(&ddt->ddt_kstat_dds_lookup_stored_miss);
 
 	ddt_log_free(ddt);
 	ASSERT0(avl_numnodes(&ddt->ddt_tree));
@@ -1690,9 +1779,11 @@ ddt_load(spa_t *spa)
 			}
 		}
 
-		error = ddt_log_load(ddt);
-		if (error != 0 && error != ENOENT)
-			return (error);
+		if (ddt->ddt_flags & DDT_FLAG_LOG) {
+			error = ddt_log_load(ddt);
+			if (error != 0 && error != ENOENT)
+				return (error);
+		}
 
 		DDT_KSTAT_SET(ddt, dds_log_active_entries,
 		    avl_numnodes(&ddt->ddt_log_active->ddl_tree));
@@ -2384,7 +2475,7 @@ ddt_sync(spa_t *spa, uint64_t txg)
 	 * scan's root zio here so that we can wait for any scan IOs in
 	 * addition to the regular ddt IOs.
 	 */
-	ASSERT3P(scn->scn_zio_root, ==, NULL);
+	ASSERT0P(scn->scn_zio_root);
 	scn->scn_zio_root = rio;
 
 	for (enum zio_checksum c = 0; c < ZIO_CHECKSUM_FUNCTIONS; c++) {

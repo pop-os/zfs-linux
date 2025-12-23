@@ -205,18 +205,6 @@ extern void vpanic(const char *, va_list)
 #define	DTRACE_PROBE4(a, b, c, d, e, f, g, h, i)
 
 /*
- * Tunables.
- */
-typedef struct zfs_kernel_param {
-	const char *name;	/* unused stub */
-} zfs_kernel_param_t;
-
-#define	ZFS_MODULE_PARAM(scope_prefix, name_prefix, name, type, perm, desc)
-#define	ZFS_MODULE_PARAM_ARGS void
-#define	ZFS_MODULE_PARAM_CALL(scope_prefix, name_prefix, name, setfunc, \
-	getfunc, perm, desc)
-
-/*
  * Threads.
  */
 typedef pthread_t	kthread_t;
@@ -521,7 +509,7 @@ extern void	taskq_wait_id(taskq_t *, taskqid_t);
 extern void	taskq_wait_outstanding(taskq_t *, taskqid_t);
 extern int	taskq_member(taskq_t *, kthread_t *);
 extern taskq_t	*taskq_of_curthread(void);
-extern int	taskq_cancel_id(taskq_t *, taskqid_t);
+extern int	taskq_cancel_id(taskq_t *, taskqid_t, boolean_t);
 extern void	system_taskq_init(void);
 extern void	system_taskq_fini(void);
 
@@ -678,7 +666,7 @@ extern void random_fini(void);
 
 struct spa;
 extern void show_pool_stats(struct spa *);
-extern int set_global_var(char const *arg);
+extern int handle_tunable_option(const char *, boolean_t);
 
 typedef struct callb_cpr {
 	kmutex_t	*cc_lockp;
@@ -783,7 +771,6 @@ typedef int fstrans_cookie_t;
 
 extern fstrans_cookie_t spl_fstrans_mark(void);
 extern void spl_fstrans_unmark(fstrans_cookie_t);
-extern int __spl_pf_fstrans_check(void);
 extern int kmem_cache_reap_active(void);
 
 

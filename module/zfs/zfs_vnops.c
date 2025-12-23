@@ -27,6 +27,7 @@
  * Copyright 2017 Nexenta Systems, Inc.
  * Copyright (c) 2021, 2022 by Pawel Jakub Dawidek
  * Copyright (c) 2025, Rob Norris <robn@despairlabs.com>
+ * Copyright (c) 2025, Klara, Inc.
  */
 
 /* Portions Copyright 2007 Jeremy Teo */
@@ -49,6 +50,7 @@
 #include <sys/dmu.h>
 #include <sys/dmu_objset.h>
 #include <sys/dsl_crypt.h>
+#include <sys/dsl_dataset.h>
 #include <sys/spa.h>
 #include <sys/txg.h>
 #include <sys/dbuf.h>
@@ -90,6 +92,12 @@ static int zfs_dio_enabled = 0;
 static int zfs_dio_enabled = 1;
 #endif
 
+/*
+ * Strictly enforce alignment for Direct I/O requests, returning EINVAL
+ * if not page-aligned instead of silently falling back to uncached I/O.
+ */
+static int zfs_dio_strict = 0;
+
 
 /*
  * Maximum bytes to read per chunk in zfs_read().
@@ -109,7 +117,7 @@ zfs_fsync(znode_t *zp, int syncflag, cred_t *cr)
 	if (zfsvfs->z_os->os_sync != ZFS_SYNC_DISABLED) {
 		if ((error = zfs_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
 			return (error);
-		zil_commit(zfsvfs->z_log, zp->z_id);
+		error = zil_commit(zfsvfs->z_log, zp->z_id);
 		zfs_exit(zfsvfs, FTAG);
 	}
 	return (error);
@@ -246,46 +254,54 @@ zfs_setup_direct(struct znode *zp, zfs_uio_t *uio, zfs_uio_rw_t rw,
 	int ioflag = *ioflagp;
 	int error = 0;
 
-	if (!zfs_dio_enabled || os->os_direct == ZFS_DIRECT_DISABLED ||
-	    zn_has_cached_data(zp, zfs_uio_offset(uio),
+	if (os->os_direct == ZFS_DIRECT_ALWAYS) {
+		/* Force either direct or uncached I/O. */
+		ioflag |= O_DIRECT;
+	}
+
+	if ((ioflag & O_DIRECT) == 0)
+		goto out;
+
+	if (!zfs_dio_enabled || os->os_direct == ZFS_DIRECT_DISABLED) {
+		/*
+		 * Direct I/O is disabled.  The I/O request will be directed
+		 * through the ARC as uncached I/O.
+		 */
+		goto out;
+	}
+
+	if (!zfs_uio_page_aligned(uio) ||
+	    !zfs_uio_aligned(uio, PAGE_SIZE)) {
+		/*
+		 * Misaligned requests can be executed through the ARC as
+		 * uncached I/O.  But if O_DIRECT was set by user and we
+		 * were set to be strict, then it is a failure.
+		 */
+		if ((*ioflagp & O_DIRECT) && zfs_dio_strict)
+			error = SET_ERROR(EINVAL);
+		goto out;
+	}
+
+	if (zn_has_cached_data(zp, zfs_uio_offset(uio),
 	    zfs_uio_offset(uio) + zfs_uio_resid(uio) - 1)) {
 		/*
-		 * Direct I/O is disabled or the region is mmap'ed. In either
-		 * case the I/O request will just directed through the ARC.
+		 * The region is mmap'ed.  The I/O request will be directed
+		 * through the ARC as uncached I/O.
 		 */
-		ioflag &= ~O_DIRECT;
 		goto out;
-	} else if (os->os_direct == ZFS_DIRECT_ALWAYS &&
-	    zfs_uio_page_aligned(uio) &&
-	    zfs_uio_aligned(uio, PAGE_SIZE)) {
-		if ((rw == UIO_WRITE && zfs_uio_resid(uio) >= zp->z_blksz) ||
-		    (rw == UIO_READ)) {
-			ioflag |= O_DIRECT;
-		}
-	} else if (os->os_direct == ZFS_DIRECT_ALWAYS && (ioflag & O_DIRECT)) {
-		/*
-		 * Direct I/O was requested through the direct=always, but it
-		 * is not properly PAGE_SIZE aligned. The request will be
-		 * directed through the ARC.
-		 */
-		ioflag &= ~O_DIRECT;
 	}
 
-	if (ioflag & O_DIRECT) {
-		if (!zfs_uio_page_aligned(uio) ||
-		    !zfs_uio_aligned(uio, PAGE_SIZE)) {
-			error = SET_ERROR(EINVAL);
-			goto out;
-		}
+	/*
+	 * For short writes the page mapping of Direct I/O makes no sense.
+	 * Direct them through the ARC as uncached I/O.
+	 */
+	if (rw == UIO_WRITE && zfs_uio_resid(uio) < zp->z_blksz)
+		goto out;
 
-		error = zfs_uio_get_dio_pages_alloc(uio, rw);
-		if (error) {
-			goto out;
-		}
-	}
-
-	IMPLY(ioflag & O_DIRECT, uio->uio_extflg & UIO_DIRECT);
-	ASSERT0(error);
+	error = zfs_uio_get_dio_pages_alloc(uio, rw);
+	if (error)
+		goto out;
+	ASSERT(uio->uio_extflg & UIO_DIRECT);
 
 out:
 	*ioflagp = ioflag;
@@ -360,8 +376,13 @@ zfs_read(struct znode *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
 	frsync = !!(ioflag & FRSYNC);
 #endif
 	if (zfsvfs->z_log &&
-	    (frsync || zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS))
-		zil_commit(zfsvfs->z_log, zp->z_id);
+	    (frsync || zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)) {
+		error = zil_commit(zfsvfs->z_log, zp->z_id);
+		if (error != 0) {
+			zfs_exit(zfsvfs, FTAG);
+			return (error);
+		}
+	}
 
 	/*
 	 * Lock the range against changes.
@@ -396,6 +417,9 @@ zfs_read(struct znode *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
 	ssize_t start_resid = n;
 	ssize_t dio_remaining_resid = 0;
 
+	dmu_flags_t dflags = DMU_READ_PREFETCH;
+	if (ioflag & O_DIRECT)
+		dflags |= DMU_UNCACHEDIO;
 	if (uio->uio_extflg & UIO_DIRECT) {
 		/*
 		 * All pages for an O_DIRECT request ahve already been mapped
@@ -418,6 +442,7 @@ zfs_read(struct znode *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
 		dio_remaining_resid = n - P2ALIGN_TYPED(n, PAGE_SIZE, ssize_t);
 		if (dio_remaining_resid != 0)
 			n -= dio_remaining_resid;
+		dflags |= DMU_DIRECTIO;
 	} else {
 		chunk_size = MIN(MAX(zfs_vnops_read_chunk_size, blksz),
 		    DMU_MAX_ACCESS / 2);
@@ -436,7 +461,7 @@ zfs_read(struct znode *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
 			error = mappedread(zp, nbytes, uio);
 		} else {
 			error = dmu_read_uio_dbuf(sa_get_db(zp->z_sa_hdl),
-			    uio, nbytes);
+			    uio, nbytes, dflags);
 		}
 
 		if (error) {
@@ -486,15 +511,17 @@ zfs_read(struct znode *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
 		 * remainder of the file can be read using the ARC.
 		 */
 		uio->uio_extflg &= ~UIO_DIRECT;
+		dflags &= ~DMU_DIRECTIO;
 
 		if (zn_has_cached_data(zp, zfs_uio_offset(uio),
 		    zfs_uio_offset(uio) + dio_remaining_resid - 1)) {
 			error = mappedread(zp, dio_remaining_resid, uio);
 		} else {
 			error = dmu_read_uio_dbuf(sa_get_db(zp->z_sa_hdl), uio,
-			    dio_remaining_resid);
+			    dio_remaining_resid, dflags);
 		}
 		uio->uio_extflg |= UIO_DIRECT;
+		dflags |= DMU_DIRECTIO;
 
 		if (error != 0)
 			n += dio_remaining_resid;
@@ -866,12 +893,18 @@ zfs_write(znode_t *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
 			zfs_rangelock_reduce(lr, woff, n);
 		}
 
+		dmu_flags_t dflags = DMU_READ_PREFETCH;
+		if (ioflag & O_DIRECT)
+			dflags |= DMU_UNCACHEDIO;
+		if (uio->uio_extflg & UIO_DIRECT)
+			dflags |= DMU_DIRECTIO;
+
 		ssize_t tx_bytes;
 		if (abuf == NULL) {
 			tx_bytes = zfs_uio_resid(uio);
 			zfs_uio_fault_disable(uio, B_TRUE);
 			error = dmu_write_uio_dbuf(sa_get_db(zp->z_sa_hdl),
-			    uio, nbytes, tx);
+			    uio, nbytes, tx, dflags);
 			zfs_uio_fault_disable(uio, B_FALSE);
 #ifdef __linux__
 			if (error == EFAULT) {
@@ -910,7 +943,7 @@ zfs_write(znode_t *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
 			 * arc buffer to a dbuf.
 			 */
 			error = dmu_assign_arcbuf_by_dbuf(
-			    sa_get_db(zp->z_sa_hdl), woff, abuf, tx);
+			    sa_get_db(zp->z_sa_hdl), woff, abuf, tx, dflags);
 			if (error != 0) {
 				/*
 				 * XXX This might not be necessary if
@@ -1047,8 +1080,13 @@ zfs_write(znode_t *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
 		return (error);
 	}
 
-	if (commit)
-		zil_commit(zilog, zp->z_id);
+	if (commit) {
+		error = zil_commit(zilog, zp->z_id);
+		if (error != 0) {
+			zfs_exit(zfsvfs, FTAG);
+			return (error);
+		}
+	}
 
 	int64_t nwritten = start_resid - zfs_uio_resid(uio);
 	dataset_kstats_update_write_kstats(&zfsvfs->z_kstat, nwritten);
@@ -1075,12 +1113,20 @@ zfs_rewrite(znode_t *zp, uint64_t off, uint64_t len, uint64_t flags,
 {
 	int error;
 
-	if (flags != 0 || arg != 0)
+	if ((flags & ~ZFS_REWRITE_PHYSICAL) != 0 || arg != 0)
 		return (SET_ERROR(EINVAL));
 
 	zfsvfs_t *zfsvfs = ZTOZSB(zp);
 	if ((error = zfs_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
 		return (error);
+
+	/* Check if physical rewrite is allowed */
+	spa_t *spa = zfsvfs->z_os->os_spa;
+	if ((flags & ZFS_REWRITE_PHYSICAL) &&
+	    !spa_feature_is_enabled(spa, SPA_FEATURE_PHYSICAL_REWRITE)) {
+		zfs_exit(zfsvfs, FTAG);
+		return (SET_ERROR(ENOTSUP));
+	}
 
 	if (zfs_is_readonly(zfsvfs)) {
 		zfs_exit(zfsvfs, FTAG);
@@ -1159,7 +1205,7 @@ zfs_rewrite(znode_t *zp, uint64_t off, uint64_t len, uint64_t flags,
 		dmu_buf_t **dbp;
 		int numbufs;
 		error = dmu_buf_hold_array_by_dnode(dn, off, n, TRUE, FTAG,
-		    &numbufs, &dbp, DMU_READ_PREFETCH);
+		    &numbufs, &dbp, DMU_READ_PREFETCH | DMU_UNCACHEDIO);
 		if (error) {
 			dmu_tx_commit(tx);
 			break;
@@ -1169,7 +1215,10 @@ zfs_rewrite(znode_t *zp, uint64_t off, uint64_t len, uint64_t flags,
 			if (dmu_buf_is_dirty(dbp[i], tx))
 				continue;
 			nw += dbp[i]->db_size;
-			dmu_buf_will_dirty(dbp[i], tx);
+			if (flags & ZFS_REWRITE_PHYSICAL)
+				dmu_buf_will_rewrite(dbp[i], tx);
+			else
+				dmu_buf_will_dirty(dbp[i], tx);
 		}
 		dmu_buf_rele_array(dbp, numbufs, FTAG);
 
@@ -1222,8 +1271,8 @@ zfs_setsecattr(znode_t *zp, vsecattr_t *vsecp, int flag, cred_t *cr)
 	zilog = zfsvfs->z_log;
 	error = zfs_setacl(zp, vsecp, skipaclchk, cr);
 
-	if (zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
-		zil_commit(zilog, 0);
+	if (error == 0 && zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
+		error = zil_commit(zilog, 0);
 
 	zfs_exit(zfsvfs, FTAG);
 	return (error);
@@ -1336,7 +1385,7 @@ zfs_get_data(void *arg, uint64_t gen, lr_write_t *lr, char *buf,
 			error = SET_ERROR(ENOENT);
 		} else {
 			error = dmu_read(os, object, offset, size, buf,
-			    DMU_READ_NO_PREFETCH);
+			    DMU_READ_NO_PREFETCH | DMU_KEEP_CACHING);
 		}
 		ASSERT(error == 0 || error == ENOENT);
 	} else { /* indirect write */
@@ -1786,9 +1835,17 @@ zfs_clone_range(znode_t *inzp, uint64_t *inoffp, znode_t *outzp,
 			 * fallback, or wait for the next TXG and check again.
 			 */
 			if (error == EAGAIN && zfs_bclone_wait_dirty) {
-				txg_wait_synced(dmu_objset_pool(inos),
-				    last_synced_txg + 1);
-				continue;
+				txg_wait_flag_t wait_flags =
+				    spa_get_failmode(dmu_objset_spa(inos)) ==
+				    ZIO_FAILURE_MODE_CONTINUE ?
+				    TXG_WAIT_SUSPEND : 0;
+				error = txg_wait_synced_flags(
+				    dmu_objset_pool(inos), last_synced_txg + 1,
+				    wait_flags);
+				if (error == 0)
+					continue;
+				ASSERT3U(error, ==, ESHUTDOWN);
+				error = SET_ERROR(EIO);
 			}
 
 			break;
@@ -1900,7 +1957,7 @@ unlock:
 		ZFS_ACCESSTIME_STAMP(inzfsvfs, inzp);
 
 		if (outos->os_sync == ZFS_SYNC_ALWAYS) {
-			zil_commit(zilog, outzp->z_id);
+			error = zil_commit(zilog, outzp->z_id);
 		}
 
 		*inoffp += done;
@@ -2027,3 +2084,6 @@ ZFS_MODULE_PARAM(zfs, zfs_, bclone_wait_dirty, INT, ZMOD_RW,
 
 ZFS_MODULE_PARAM(zfs, zfs_, dio_enabled, INT, ZMOD_RW,
 	"Enable Direct I/O");
+
+ZFS_MODULE_PARAM(zfs, zfs_, dio_strict, INT, ZMOD_RW,
+	"Return errors on misaligned Direct I/O");

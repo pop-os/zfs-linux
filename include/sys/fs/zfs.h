@@ -197,6 +197,12 @@ typedef enum {
 	ZFS_PROP_VOLTHREADING,
 	ZFS_PROP_DIRECT,
 	ZFS_PROP_LONGNAME,
+	ZFS_PROP_DEFAULTUSERQUOTA,
+	ZFS_PROP_DEFAULTGROUPQUOTA,
+	ZFS_PROP_DEFAULTPROJECTQUOTA,
+	ZFS_PROP_DEFAULTUSEROBJQUOTA,
+	ZFS_PROP_DEFAULTGROUPOBJQUOTA,
+	ZFS_PROP_DEFAULTPROJECTOBJQUOTA,
 	ZFS_NUM_PROPS
 } zfs_prop_t;
 
@@ -379,6 +385,9 @@ typedef enum {
 	VDEV_PROP_TRIM_SUPPORT,
 	VDEV_PROP_TRIM_ERRORS,
 	VDEV_PROP_SLOW_IOS,
+	VDEV_PROP_SIT_OUT,
+	VDEV_PROP_AUTOSIT,
+	VDEV_PROP_SLOW_IO_EVENTS,
 	VDEV_NUM_PROPS
 } vdev_prop_t;
 
@@ -1623,6 +1632,9 @@ typedef struct zfs_rewrite_args {
 	uint64_t	arg;
 } zfs_rewrite_args_t;
 
+/* zfs_rewrite_args flags */
+#define	ZFS_REWRITE_PHYSICAL	0x1	/* Preserve logical birth time. */
+
 #define	ZFS_IOC_REWRITE		_IOW(0x83, 3, zfs_rewrite_args_t)
 
 /*
@@ -1666,6 +1678,7 @@ typedef enum {
 	ZFS_ERR_RAIDZ_EXPAND_IN_PROGRESS,
 	ZFS_ERR_ASHIFT_MISMATCH,
 	ZFS_ERR_STREAM_LARGE_MICROZAP,
+	ZFS_ERR_TOO_MANY_SITOUTS,
 } zfs_errno_t;
 
 /*
@@ -1701,7 +1714,8 @@ typedef enum {
 
 typedef enum {
 	ZPOOL_PREFETCH_NONE = 0,
-	ZPOOL_PREFETCH_DDT
+	ZPOOL_PREFETCH_DDT,
+	ZPOOL_PREFETCH_BRT
 } zpool_prefetch_type_t;
 
 typedef enum {
