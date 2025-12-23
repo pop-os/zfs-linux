@@ -1,3 +1,18 @@
+zfs-linux (2.4.0-1~exp1) experimental; urgency=medium
+
+  * New upstream version 2.4.0.
+    - d/patches: remove applied patches in upstream.
+  * Bump SONAME to libzfs7 and libzpool7.
+    - Update symbol control file for shared libraries.
+  * d/libzfs7linux: update usr-merge-related maintainer scripts after trixie
+    release (see: #1092598).
+  * Rename arcstat and arc_summary to zarcstat and zarcsummary.
+    - no longer conflicts with nordugrid-arc-client (closes: #1063457).
+    - d/copyright: fix patterns according to filename changes.
+  * d/control: update usage of auto-generated fields.
+
+ -- Shengqi Chen <harry@debian.org>  Tue, 23 Dec 2025 18:40:06 +0800
+
 zfs-linux (2.3.5-2) unstable; urgency=medium
 
   [ Shengqi Chen ]
