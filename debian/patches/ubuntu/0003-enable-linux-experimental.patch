@@ -12,11 +12,9 @@ Signed-off-by: John Cabaj <john.cabaj@canonical.com>
  scripts/dkms.mkconf | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/scripts/dkms.mkconf b/scripts/dkms.mkconf
-index 046ce9edc..ec6373739 100755
 --- a/scripts/dkms.mkconf
 +++ b/scripts/dkms.mkconf
-@@ -60,6 +60,7 @@ PRE_BUILD="configure
+@@ -73,6 +73,7 @@
        fi
      }
    )
@@ -24,6 +22,3 @@ index 046ce9edc..ec6373739 100755
  "
  POST_BUILD="scripts/dkms.postbuild
    -n \${PACKAGE_NAME}
--- 
-2.43.0
-

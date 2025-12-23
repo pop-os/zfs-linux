@@ -13,13 +13,11 @@ Closes #17580
  include/os/linux/spl/sys/atomic.h | 32 +++++++++++++++++++++++++++++++
  1 file changed, 32 insertions(+)
 
-diff --git a/include/os/linux/spl/sys/atomic.h b/include/os/linux/spl/sys/atomic.h
-index b2a39d7d6..f4bcd58bd 100644
 --- a/include/os/linux/spl/sys/atomic.h
 +++ b/include/os/linux/spl/sys/atomic.h
-@@ -71,6 +71,22 @@ atomic_cas_ptr(volatile void *target,  void *cmp, void *newval)
- 	return ((void *)atomic_cas_64((volatile uint64_t *)target,
- 	    (uint64_t)cmp, (uint64_t)newval));
+@@ -87,6 +87,22 @@
+ {
+ 	atomic_store_64((volatile uint64_t *)target, (uint64_t)newval);
  }
 +static __inline__ void *
 +atomic_swap_ptr(volatile void *target, void *newval)
@@ -40,12 +38,10 @@ index b2a39d7d6..f4bcd58bd 100644
  #else /* _LP64 */
  static __inline__ void *
  atomic_cas_ptr(volatile void *target,  void *cmp, void *newval)
-@@ -78,6 +94,22 @@ atomic_cas_ptr(volatile void *target,  void *cmp, void *newval)
- 	return ((void *)atomic_cas_32((volatile uint32_t *)target,
- 	    (uint32_t)cmp, (uint32_t)newval));
+@@ -96,6 +112,22 @@
  }
-+static __inline__ void *
-+atomic_swap_ptr(volatile void *target, void *newval)
+ static __inline__ void *
+ atomic_swap_ptr(volatile void *target, void *newval)
 +{
 +	return ((void *)atomic_swap_32((volatile uint32_t *)target,
 +	    (uint32_t)newval));
@@ -60,9 +56,8 @@ index b2a39d7d6..f4bcd58bd 100644
 +{
 +	atomic_store_32((volatile uint32_t *)target, (uint32_t)newval);
 +}
- #endif /* _LP64 */
- 
- #endif  /* _SPL_ATOMIC_H */
--- 
-2.43.0
-
++static __inline__ void *
++atomic_swap_ptr(volatile void *target, void *newval)
+ {
+ 	return ((void *)atomic_swap_32((volatile uint32_t *)target,
+ 	    (uint32_t)newval));
