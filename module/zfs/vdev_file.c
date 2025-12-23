@@ -228,7 +228,8 @@ vdev_file_io_strategy(void *arg)
 		abd_return_buf_copy(zio->io_abd, buf, size);
 	} else {
 		buf = abd_borrow_buf_copy(zio->io_abd, zio->io_size);
-		err = zfs_file_pwrite(vf->vf_file, buf, size, off, &resid);
+		err = zfs_file_pwrite(vf->vf_file, buf, size, off,
+		    vd->vdev_ashift, &resid);
 		abd_return_buf(zio->io_abd, buf, size);
 	}
 	zio->io_error = err;
@@ -313,7 +314,8 @@ vdev_ops_t vdev_file_ops = {
 	.vdev_op_fini = NULL,
 	.vdev_op_open = vdev_file_open,
 	.vdev_op_close = vdev_file_close,
-	.vdev_op_asize = vdev_default_asize,
+	.vdev_op_psize_to_asize = vdev_default_asize,
+	.vdev_op_asize_to_psize = vdev_default_psize,
 	.vdev_op_min_asize = vdev_default_min_asize,
 	.vdev_op_min_alloc = NULL,
 	.vdev_op_io_start = vdev_file_io_start,
@@ -343,7 +345,7 @@ vdev_ops_t vdev_disk_ops = {
 	.vdev_op_fini = NULL,
 	.vdev_op_open = vdev_file_open,
 	.vdev_op_close = vdev_file_close,
-	.vdev_op_asize = vdev_default_asize,
+	.vdev_op_psize_to_asize = vdev_default_asize,
 	.vdev_op_min_asize = vdev_default_min_asize,
 	.vdev_op_min_alloc = NULL,
 	.vdev_op_io_start = vdev_file_io_start,
