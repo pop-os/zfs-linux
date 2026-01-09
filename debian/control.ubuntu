@@ -5,7 +5,8 @@ Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 XSBC-Original-Maintainer: Debian ZFS on Linux maintainers <pkg-zfsonlinux-devel@alioth-lists.debian.net>
 Uploaders: Aron Xu <aron@debian.org>,
            Carlos Alberto Lopez Perez <clopez@igalia.com>,
-           Mo Zhou <lumin@debian.org>
+           Mo Zhou <lumin@debian.org>,
+           Shengqi Chen <harry@debian.org>
 Build-Depends: abigail-tools (>= 2.0),
                debhelper-compat (= 13),
                dh-python,
@@ -26,7 +27,7 @@ Build-Depends: abigail-tools (>= 2.0),
                python3-sphinx,
                uuid-dev,
                zlib1g-dev
-Standards-Version: 4.7.2
+Standards-Version: 4.7.3
 Homepage: https://zfsonlinux.org/
 Vcs-Git: https://salsa.debian.org/zfsonlinux-team/zfs.git
 Vcs-Browser: https://salsa.debian.org/zfsonlinux-team/zfs
