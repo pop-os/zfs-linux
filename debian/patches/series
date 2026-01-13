@@ -21,3 +21,4 @@ fix-pyzfs-version.patch
 BUILD_EXCLUSIVE_KERNEL_MIN.patch
 bump-Linux-Minimum.patch
 ubuntu/0003-enable-linux-experimental.patch
+0001-Linux-6.19-replace-i_state-access-with-inode_state_r.patch
