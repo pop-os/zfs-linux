@@ -176,6 +176,8 @@ nodist_libzpool_la_SOURCES = \
 	module/zfs/zfeature.c \
 	module/zfs/zfs_byteswap.c \
 	module/zfs/zfs_chksum.c \
+	module/zfs/zfs_debug_common.c \
+	module/zfs/zfs_crrd.c \
 	module/zfs/zfs_fm.c \
 	module/zfs/zfs_fuid.c \
 	module/zfs/zfs_ratelimit.c \
@@ -198,7 +200,7 @@ libzpool_la_LIBADD = \
 	libzstd.la \
 	libzutil.la
 
-libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -ldl -lm
+libzpool_la_LIBADD += $(LIBCLOCK_GETTIME) $(ZLIB_LIBS) -lm
 
 libzpool_la_LDFLAGS = -pthread
 
@@ -210,7 +212,7 @@ if BUILD_FREEBSD
 libzpool_la_LIBADD += -lgeom
 endif
 
-libzpool_la_LDFLAGS += -version-info 6:0:0
+libzpool_la_LDFLAGS += -version-info 7:0:0
 
 if TARGET_CPU_POWERPC
 module/zfs/libzpool_la-vdev_raidz_math_powerpc_altivec.$(OBJEXT) : CFLAGS += -maltivec

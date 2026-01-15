@@ -193,6 +193,7 @@ libnvpair.so.3 libnvpair3linux #MINVER#
  nvlist_remove_all@Base 0.8.2
  nvlist_remove_nvpair@Base 0.8.2
  nvlist_size@Base 0.8.2
+ nvlist_snprintf@Base 2.4.0
  nvlist_unpack@Base 0.8.2
  nvlist_xalloc@Base 0.8.2
  nvlist_xdup@Base 0.8.2

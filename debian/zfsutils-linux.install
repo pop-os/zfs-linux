@@ -38,12 +38,12 @@ usr/lib/modules-load.d/
 usr/lib/zfs-linux/zfs_prepare_disk
 usr/lib/zfs-linux/zpool.d/
 usr/lib/zfs-linux/zpool_influxdb
-usr/bin/arc_summary
-usr/bin/arcstat usr/sbin
-usr/bin/dbufstat usr/sbin
+usr/bin/zarcsummary
+usr/bin/zarcstat
+usr/bin/dbufstat
 usr/share/zfs/compatibility.d/
 usr/share/bash-completion/completions
-usr/share/man/man8/arcstat.8
+usr/share/man/man1/zarcstat.1
 usr/share/man/man1/zhack.1
 usr/share/man/man1/zvol_wait.1
 usr/share/man/man5/

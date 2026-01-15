@@ -2,9 +2,9 @@
 # first.  This ensures its module initialization function is run before
 # any of the other module initialization functions which depend on it.
 
-ZFS_MODULE_CFLAGS += -std=gnu99 -Wno-declaration-after-statement
+ZFS_MODULE_CFLAGS += -std=gnu11 -Wno-declaration-after-statement
 ZFS_MODULE_CFLAGS += -Wmissing-prototypes
-ZFS_MODULE_CFLAGS += @KERNEL_DEBUG_CFLAGS@  @NO_FORMAT_ZERO_LENGTH@
+ZFS_MODULE_CFLAGS += @KERNEL_DEBUG_CFLAGS@ @KERNEL_NO_FORMAT_ZERO_LENGTH@
 
 ifneq ($(KBUILD_EXTMOD),)
 zfs_include = @abs_top_srcdir@/include
@@ -135,6 +135,7 @@ ICP_OBJS_X86_64 := \
 	asm-x86_64/sha2/sha256-x86_64.o \
 	asm-x86_64/sha2/sha512-x86_64.o \
 	asm-x86_64/modes/aesni-gcm-x86_64.o \
+	asm-x86_64/modes/aesni-gcm-avx2-vaes.o \
 	asm-x86_64/modes/gcm_pclmulqdq.o \
 	asm-x86_64/modes/ghash-x86_64.o
 
@@ -216,8 +217,7 @@ zfs-objs += $(addprefix nvpair/,$(NVPAIR_OBJS))
 
 
 UNICODE_OBJS := \
-	u8_textprep.o \
-	uconv.o
+	u8_textprep.o
 
 zfs-objs += $(addprefix unicode/,$(UNICODE_OBJS))
 
@@ -405,6 +405,8 @@ ZFS_OBJS := \
 	zfeature.o \
 	zfs_byteswap.o \
 	zfs_chksum.o \
+	zfs_debug_common.o \
+	zfs_crrd.o \
 	zfs_fm.o \
 	zfs_fuid.o \
 	zfs_impl.o \
@@ -431,6 +433,7 @@ ZFS_OBJS := \
 ZFS_OBJS_OS := \
 	abd_os.o \
 	arc_os.o \
+	kasan_compat.o \
 	mmp_os.o \
 	policy.o \
 	qat.o \

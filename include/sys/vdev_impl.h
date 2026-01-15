@@ -60,10 +60,6 @@ extern "C" {
 typedef struct vdev_queue vdev_queue_t;
 struct abd;
 
-extern uint_t zfs_vdev_queue_depth_pct;
-extern uint_t zfs_vdev_def_queue_depth;
-extern uint_t zfs_vdev_async_write_max_active;
-
 /*
  * Virtual device operations
  */
@@ -107,7 +103,8 @@ typedef const struct vdev_ops {
 	vdev_fini_func_t		*vdev_op_fini;
 	vdev_open_func_t		*vdev_op_open;
 	vdev_close_func_t		*vdev_op_close;
-	vdev_asize_func_t		*vdev_op_asize;
+	vdev_asize_func_t		*vdev_op_psize_to_asize;
+	vdev_asize_func_t		*vdev_op_asize_to_psize;
 	vdev_min_asize_func_t		*vdev_op_min_asize;
 	vdev_min_alloc_func_t		*vdev_op_min_alloc;
 	vdev_io_start_func_t		*vdev_op_io_start;
@@ -282,10 +279,12 @@ struct vdev {
 	uint64_t	vdev_noalloc;	/* device is passivated?	*/
 	uint64_t	vdev_removing;	/* device is being removed?	*/
 	uint64_t	vdev_failfast;	/* device failfast setting	*/
+	boolean_t	vdev_autosit;	/* automatic sitout management	*/
 	boolean_t	vdev_rz_expanding; /* raidz is being expanded?	*/
 	boolean_t	vdev_ishole;	/* is a hole in the namespace	*/
 	uint64_t	vdev_top_zap;
 	vdev_alloc_bias_t vdev_alloc_bias; /* metaslab allocation bias	*/
+	uint64_t	vdev_last_latency_check;
 
 	/* pool checkpoint related */
 	space_map_t	*vdev_checkpoint_sm;	/* contains reserved blocks */
@@ -434,6 +433,10 @@ struct vdev {
 	hrtime_t	vdev_mmp_pending; /* 0 if write finished	*/
 	uint64_t	vdev_mmp_kstat_id;	/* to find kstat entry */
 	uint64_t	vdev_expansion_time;	/* vdev's last expansion time */
+	/* used to calculate average read latency */
+	uint64_t	*vdev_prev_histo;
+	int64_t		vdev_outlier_count;	/* read outlier amongst peers */
+	hrtime_t	vdev_read_sit_out_expire; /* end of sit out period    */
 	list_node_t	vdev_leaf_node;		/* leaf vdev list */
 
 	/*
@@ -467,6 +470,7 @@ struct vdev {
 	uint64_t	vdev_checksum_t;
 	uint64_t	vdev_io_n;
 	uint64_t	vdev_io_t;
+	boolean_t	vdev_slow_io_events;
 	uint64_t	vdev_slow_io_n;
 	uint64_t	vdev_slow_io_t;
 };
@@ -619,11 +623,11 @@ extern vdev_ops_t vdev_indirect_ops;
  */
 extern void vdev_default_xlate(vdev_t *vd, const zfs_range_seg64_t *logical_rs,
     zfs_range_seg64_t *physical_rs, zfs_range_seg64_t *remain_rs);
+extern uint64_t vdev_default_psize(vdev_t *vd, uint64_t asize, uint64_t txg);
 extern uint64_t vdev_default_asize(vdev_t *vd, uint64_t psize, uint64_t txg);
 extern uint64_t vdev_default_min_asize(vdev_t *vd);
 extern uint64_t vdev_get_min_asize(vdev_t *vd);
 extern void vdev_set_min_asize(vdev_t *vd);
-extern uint64_t vdev_get_min_alloc(vdev_t *vd);
 extern uint64_t vdev_get_nparity(vdev_t *vd);
 extern uint64_t vdev_get_ndisks(vdev_t *vd);
 
@@ -647,7 +651,7 @@ extern int vdev_obsolete_counts_are_precise(vdev_t *vd, boolean_t *are_precise);
 int vdev_checkpoint_sm_object(vdev_t *vd, uint64_t *sm_obj);
 void vdev_metaslab_group_create(vdev_t *vd);
 uint64_t vdev_best_ashift(uint64_t logical, uint64_t a, uint64_t b);
-#if defined(__linux__)
+#if defined(__linux__) && defined(_KERNEL)
 int param_get_raidz_impl(char *buf, zfs_kernel_param_t *kp);
 #endif
 int param_set_raidz_impl(ZFS_MODULE_PARAM_ARGS);
