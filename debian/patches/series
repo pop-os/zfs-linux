@@ -12,12 +12,13 @@ cross-compile.patch
 #ubuntu/0002-Revert-etc-systemd-zfs-mount-generator-rewrite-in-C.patch
 #ubuntu/4000-zsys-support.patch
 #ubuntu/4001-dracut-Open-and-mount-luks-keystore.patch
+vdev-id-use-gawk.patch
 ubuntu/4100-disable-bpool-upgrade.patch
 ubuntu/zfs-mount-container-start.patch
 #ubuntu/4510-silently-ignore-modprobe-failure.patch
 #ubuntu/4751-suppress-types.patch
 #ubuntu/fixup-abi.patch
+ubuntu/0003-enable-linux-experimental.patch
 fix-pyzfs-version.patch
 BUILD_EXCLUSIVE_KERNEL_MIN.patch
-bump-Linux-Minimum.patch
-ubuntu/0003-enable-linux-experimental.patch
+#bump-Linux-Minimum.patch

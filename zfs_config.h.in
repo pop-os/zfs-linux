@@ -357,6 +357,9 @@
 /* inode_set_mtime_to_ts() exists in linux/fs.h */
 #undef HAVE_INODE_SET_MTIME_TO_TS
 
+/* inode_state_read_once() exists */
+#undef HAVE_INODE_STATE_READ_ONCE
+
 /* timestamp_truncate() exists */
 #undef HAVE_INODE_TIMESTAMP_TRUNCATE
 
@@ -491,6 +494,9 @@
 
 /* Define to 1 if you have the 'mlockall' function. */
 #undef HAVE_MLOCKALL
+
+/* 'flags' in 'struct page' is a struct */
+#undef HAVE_MM_PAGE_FLAGS_STRUCT
 
 /* PG_error flag is available */
 #undef HAVE_MM_PAGE_FLAG_ERROR
