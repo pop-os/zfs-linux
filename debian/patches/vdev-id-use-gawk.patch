@@ -1,0 +1,18 @@
+Description: Use gawk in vdev_id script
+Author: Shengqi Chen <harry@debian.org>
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1126316
+Forwarded: https://github.com/zfsonlinux/pkg-zfs/issues/239
+Last-Update: 2026-03-06 
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/udev/vdev_id
++++ b/udev/vdev_id
+@@ -333,7 +333,7 @@
+ 		# whenever possible. Use awk to isolate lowest instance of
+ 		# sd device member in dm device group regardless of string
+ 		# length.
+-		DEV=$(ls "/sys/block/$DMDEV/slaves" | awk '
++		DEV=$(ls "/sys/block/$DMDEV/slaves" | gawk '
+ 			{ len=sprintf ("%20s",length($0)); gsub(/ /,0,str); a[NR]=len "_" $0; }
+ 			END {
+ 				asort(a)
