@@ -238,6 +238,7 @@ Depends: libnvpair3linux (= ${binary:Version}),
          libzfs7linux (= ${binary:Version}),
          libzpool7linux (= ${binary:Version}),
          python3,
+         gawk,
          ${misc:Depends},
          ${shlibs:Depends}
 Recommends: zfs-zed
