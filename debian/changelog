@@ -1,3 +1,14 @@
+zfs-linux (2.4.1-1) unstable; urgency=medium
+
+  [ Shengqi Chen ]
+  * New upstream version 2.4.1. (closes: #1125351)
+  * d/patches: remove applied patches, disable bump-Linux-Minimum.patch.
+  * d/control: zfsutils-linux now depends on gawk. (closes: #1126316)
+  * d/patches: patch vdev_id to explicitly use gawk.
+  * d/symbols: update symbols for libzpool7linux.
+
+ -- Shengqi Chen <harry@debian.org>  Fri, 06 Mar 2026 15:16:40 +0800
+
 zfs-linux (2.4.0-1) unstable; urgency=medium
 
   * Upload to unstable.
