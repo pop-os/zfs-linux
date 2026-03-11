@@ -1,0 +1,26 @@
+Description: SMB service file is smbd.service in Ubuntu
+    Renam;e smbs.service to smbd.service
+Author: John Cabaj <john.cabaj@canonical.com>
+Origin: vendor
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/2009294
+Forwarded: no
+Last-Update: 2026-02-25
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/etc/systemd/system/zfs-share.service.in
++++ b/etc/systemd/system/zfs-share.service.in
+@@ -2,12 +2,12 @@
+ Description=ZFS file system shares
+ Documentation=man:zfs(8)
+ Before=nfs-server.service nfs-kernel-server.service
+-After=smb.service
++After=smbd.service
+ Before=rpc-statd-notify.service
+ Wants=zfs-mount.service
+ After=zfs-mount.service
+ PartOf=nfs-server.service nfs-kernel-server.service
+-PartOf=smb.service
++PartOf=smbd.service
+ ConditionPathIsDirectory=/sys/module/zfs
+ 
+ [Service]

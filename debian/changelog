@@ -1,3 +1,42 @@
+zfs-linux (2.4.1-1ubuntu1) resolute; urgency=medium
+
+  * Merge from Debian
+    - debian/control:
+      - drop dependencies on "zfs-modules | zfs-dkms" such that all
+        packages can be installed in containers, on hosts that have zfs module
+        loaded
+      - adding systemd-cryptsetup as zfs-dracut dependency
+    - debian/patches:
+      - adding
+        - ubuntu/0001-Revert-Revert-systemd-Use-non-absolute-paths-in-Exec.patch
+        - ubuntu/0002-Revert-etc-systemd-zfs-mount-generator-rewrite-in-C.patch
+        - ubuntu/4000-zsys-support.patch
+        - ubuntu/4001-dracut-Open-and-mount-luks-keystore.patch
+        - ubuntu/4100-disable-bpool-upgrade.patch
+        - ubuntu/zfs-mount-container-start.patch
+        - ubuntu/4510-silently-ignore-modprobe-failure.patch
+        - ubuntu/4751-suppress-types.patch
+        - ubuntu/fixup-abi.patch
+        - 0001-Linux-7.0-explicitly-set-setlease-handler-to-kernel-.patch
+        - 0002-Linux-7.0-blk_queue_nonrot-renamed-to-blk_queue_rot.patch
+        - 0003-Linux-7.0-posix_acl_to_xattr-now-allocates-memory.patch
+        - 0004-Linux-7.0-add-shims-for-the-fs_context-based-mount-A.patch
+        - ubuntu/0004-rename-sms-service.patch
+    - debian/rules:
+      - enforce abi check on Ubuntu amd64
+      - allow kernel version not matching META
+    - debian/tests/:
+      - reduce testing to smoketest only
+      - Ubuntu Kernel regression testing covers zfs testsuite
+      - Drop depends on linux-headers-*.
+      - draid tests fail upstream, so marking failures as expected
+        to fail
+    - debian/libuutil3linux.symbols and debian/libzfs7linux.symbols
+      - removing  __start_zfs_tunables and __stop_zfs_tunables as the extern
+        variables are not defined anywhere else
+
+ -- John Cabaj <john.cabaj@canonical.com>  Wed, 11 Mar 2026 16:56:20 -0500
+
 zfs-linux (2.4.1-1) unstable; urgency=medium
 
   [ Shengqi Chen ]

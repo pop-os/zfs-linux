@@ -1,7 +1,5 @@
 libzfs.so.7 libzfs7linux #MINVER#
 * Build-Depends-Package: libzfslinux-dev
- (optional)__start_zfs_tunables@Base 2.4.0
- (optional)__stop_zfs_tunables@Base 2.4.0
  _sol_getmntent@Base 2.2
  atomic_add_16@Base 2.2
  atomic_add_16_nv@Base 2.2
@@ -631,8 +629,6 @@ libzfs.so.7 libzfs7linux #MINVER#
  zvol_volsize_to_reservation@Base 0.8.2
 libzfs_core.so.3 libzfs7linux #MINVER#
 * Build-Depends-Package: libzfslinux-dev
- __start_zfs_tunables@Base 2.4.0
- __stop_zfs_tunables@Base 2.4.0
  _sol_getmntent@Base 2.0
  atomic_add_16@Base 2.0
  atomic_add_16_nv@Base 2.0
