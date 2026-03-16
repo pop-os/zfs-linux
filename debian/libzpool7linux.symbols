@@ -148,8 +148,6 @@ libzpool.so.7 libzpool7linux #MINVER#
  aes_encrypt_block@Base 0.8.2
  aes_encrypt_contiguous_blocks@Base 0.8.2
  (arch=amd64)aes_encrypt_intel@Base 0.8.2
- (arch=amd64)aes_gcm_dec_update_vaes_avx2@Base 2.4.0
- (arch=amd64)aes_gcm_enc_update_vaes_avx2@Base 2.4.0
  aes_generic_impl@Base 0.8.2
  aes_impl_get_ops@Base 0.8.2
  aes_impl_init@Base 0.8.2
@@ -1294,16 +1292,13 @@ libzpool.so.7 libzpool7linux #MINVER#
  gcm_encrypt_final@Base 0.8.2
  gcm_generic_impl@Base 0.8.2
  (arch=amd64)gcm_ghash_avx@Base 0.8.4
- (arch=amd64)gcm_ghash_vpclmulqdq_avx2@Base 2.4.0
  (arch=amd64)gcm_gmult_avx@Base 0.8.4
  (arch=amd64)gcm_gmult_clmul@Base 0.8.4
- (arch=amd64)gcm_gmult_vpclmulqdq_avx2@Base 2.4.0
  gcm_impl_get_ops@Base 0.8.2
  gcm_impl_init@Base 0.8.2
  gcm_impl_set@Base 0.8.2
  gcm_init_ctx@Base 0.8.2
  (arch=amd64)gcm_init_htab_avx@Base 0.8.4
- (arch=amd64)gcm_init_vpclmulqdq_avx2@Base 2.4.0
  gcm_mode_decrypt_contiguous_blocks@Base 0.8.2
  gcm_mode_encrypt_contiguous_blocks@Base 0.8.2
  (arch=amd64)gcm_mul_pclmulqdq@Base 0.8.2
@@ -1326,7 +1321,12 @@ libzpool.so.7 libzpool7linux #MINVER#
  hostid@Base 2.2.0
  hw_utsname@Base 0.8.2
  i_fm_payload_set@Base 0.8.2
+ (arch=amd64)icp_aes_gcm_dec_update_vaes_avx2@Base 2.4.1
+ (arch=amd64)icp_aes_gcm_enc_update_vaes_avx2@Base 2.4.1
  icp_fini@Base 0.8.2
+ (arch=amd64)icp_gcm_ghash_vpclmulqdq_avx2@Base 2.4.1
+ (arch=amd64)icp_gcm_gmult_vpclmulqdq_avx2@Base 2.4.1
+ (arch=amd64)icp_gcm_init_vpclmulqdq_avx2@Base 2.4.1
  icp_init@Base 0.8.2
  impl_ops@Base 2.2.0
  is_mpath_whole_disk@Base 2.2.0
@@ -1579,6 +1579,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  metaslab_class_expandable_space@Base 0.8.2
  metaslab_class_fragmentation@Base 0.8.2
  metaslab_class_get_alloc@Base 0.8.2
+ metaslab_class_get_dalloc@Base 2.4.1
  metaslab_class_get_deferred@Base 0.8.2
  metaslab_class_get_dspace@Base 0.8.2
  metaslab_class_get_name@Base 2.4.0
@@ -1638,6 +1639,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  metaslab_unflushed_txg@Base 2.0
  metaslab_unload@Base 0.8.2
  mkdirp@Base 2.2.0
+ mmp_claim_uberblock@Base 2.4.1
  mmp_fini@Base 0.8.2
  mmp_init@Base 0.8.2
  mmp_signal_all_threads@Base 0.8.2
@@ -2007,6 +2009,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  spa_load_failed@Base 0.8.2
  spa_load_guid@Base 0.8.2
  spa_load_l2cache@Base 0.8.2
+ spa_load_name@Base 2.4.1
  spa_load_note@Base 0.8.2
  spa_load_spares@Base 0.8.2
  spa_load_state@Base 0.8.2
@@ -2517,6 +2520,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  vdev_trim_stop@Base 0.8.2
  vdev_trim_stop_all@Base 0.8.2
  vdev_trim_stop_wait@Base 0.8.2
+ vdev_uberblock_compare@Base 2.4.1
  vdev_uberblock_load@Base 0.8.2
  vdev_uberblock_sync_list@Base 2.3
  vdev_uninitialize@Base 2.1.12
@@ -2542,6 +2546,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  zap_byteswap@Base 0.8.2
  zap_contains@Base 0.8.2
  zap_count@Base 0.8.2
+ zap_count_by_dnode@Base 2.4.1
  zap_create@Base 0.8.2
  zap_create_claim@Base 0.8.2
  zap_create_claim_dnsize@Base 0.8.2
@@ -2589,11 +2594,13 @@ libzpool.so.7 libzpool7linux #MINVER#
  zap_leaf_stats@Base 0.8.2
  zap_length@Base 0.8.2
  zap_length_uint64@Base 0.8.2
+ zap_length_uint64_by_dnode@Base 2.4.1
  zap_lockdir@Base 0.8.2
  zap_lookup@Base 0.8.2
  zap_lookup_by_dnode@Base 0.8.2
  zap_lookup_int@Base 0.8.2
  zap_lookup_int_key@Base 0.8.2
+ zap_lookup_length_uint64_by_dnode@Base 2.4.1
  zap_lookup_norm@Base 0.8.2
  zap_lookup_norm_by_dnode@Base 0.8.2
  zap_lookup_uint64@Base 0.8.2
