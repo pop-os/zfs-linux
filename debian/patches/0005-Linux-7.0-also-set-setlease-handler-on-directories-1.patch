@@ -1,0 +1,35 @@
+Description: Linux 7.0: also set setlease handler on directories (#18331)
+    It turns out the kernel can also take directory leases, most notably in
+    the NFS server. Without a setlease handler on the directory file ops,
+    attempts to open a directory over NFS can fail with EINVAL.
+
+    Adding a directory setlease handler was missed in 168023b603. This fixes
+    that, allowing directories to be properly accessed over NFS.
+
+    Sponsored-by: TrueNAS
+    Reported-by: Satadru Pramanik <satadru@gmail.com>
+
+    Signed-off-by: Rob Norris <rob.norris@truenas.com>
+    Reviewed-by: Alexander Motin <alexander.motin@TrueNAS.com>
+    Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Author: Rob Norris <rob.norris@truenas.com>
+Origin: upstream, https://github.com/openzfs/zfs/commit/d8c08a1cea6428fa37b3a6585150b10dedfd79b8
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/2144567
+Last-Update: 2026-03-18
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+diff --git a/module/os/linux/zfs/zpl_file.c b/module/os/linux/zfs/zpl_file.c
+index 30f3e3855..efcb400f1 100644
+--- a/module/os/linux/zfs/zpl_file.c
++++ b/module/os/linux/zfs/zpl_file.c
+@@ -1268,6 +1268,7 @@ const struct file_operations zpl_dir_file_operations = {
+ 	.read		= generic_read_dir,
+ 	.iterate_shared	= zpl_iterate,
+ 	.fsync		= zpl_fsync,
++	.setlease	= generic_setlease,
+ 	.unlocked_ioctl = zpl_ioctl,
+ #ifdef CONFIG_COMPAT
+ 	.compat_ioctl   = zpl_compat_ioctl,
+-- 
+2.43.0
+

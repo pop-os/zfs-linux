@@ -27,3 +27,4 @@ BUILD_EXCLUSIVE_KERNEL_MIN.patch
 0003-Linux-7.0-posix_acl_to_xattr-now-allocates-memory.patch
 0004-Linux-7.0-add-shims-for-the-fs_context-based-mount-A.patch
 ubuntu/0004-rename-sms-service.patch
+0005-Linux-7.0-also-set-setlease-handler-on-directories-1.patch
