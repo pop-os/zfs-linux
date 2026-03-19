@@ -1,3 +1,9 @@
+zfs-linux (2.4.1-1ubuntu3) resolute; urgency=medium
+
+  * Providing fix for PowerPC build, with unavailable symbol
+
+ -- John Cabaj <john.cabaj@canonical.com>  Thu, 19 Mar 2026 15:37:00 -0500
+
 zfs-linux (2.4.1-1ubuntu2) resolute; urgency=medium
 
   [ John Cabaj ]

@@ -1,0 +1,64 @@
+Description: Linux 7.0: autoconf: Remove copy-from-user-inatomic API checks (#18348)
+    This function was removed in c6442bd3b643: "Removing old code outside
+    of 4.18 kernsls", but fails at present on PowerPC builds due to the
+    recent inclusion of 6bc9c0a90522: "powerpc: fix KUAP warning in VMX
+    usercopy path" in the upstream kernel, which introduces a use of
+    cpu_feature_keys[], which is a GPL-only symbol. Removing the API
+    check as it doesn't appear necessary.
+Author: John Cabaj <john.cabaj@canonical.com>
+Origin: vendor
+Bug: https://github.com/openzfs/zfs/issues/18348
+Forwarded: https://github.com/openzfs/zfs/pull/18354
+Last-Update: 2026-03-19
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/config/kernel-copy-from-user-inatomic.m4
++++ /dev/null
+@@ -1,29 +0,0 @@
+-dnl #
+-dnl # On certain architectures `__copy_from_user_inatomic`
+-dnl # is a GPL exported variable and cannot be used by OpenZFS.
+-dnl #
+-
+-dnl #
+-dnl # Checking if `__copy_from_user_inatomic` is available.
+-dnl #
+-AC_DEFUN([ZFS_AC_KERNEL_SRC___COPY_FROM_USER_INATOMIC], [
+-	ZFS_LINUX_TEST_SRC([__copy_from_user_inatomic], [
+-		#include <linux/uaccess.h>
+-	], [
+-		int result __attribute__ ((unused)) = __copy_from_user_inatomic(NULL, NULL, 0);
+-	], [], [ZFS_META_LICENSE])
+-])
+-
+-AC_DEFUN([ZFS_AC_KERNEL___COPY_FROM_USER_INATOMIC], [
+-	AC_MSG_CHECKING([whether __copy_from_user_inatomic is available])
+-	ZFS_LINUX_TEST_RESULT([__copy_from_user_inatomic_license], [
+-		AC_MSG_RESULT(yes)
+-	], [
+-		AC_MSG_RESULT(no)
+-		AC_MSG_ERROR([
+-	*** The `__copy_from_user_inatomic()` Linux kernel function is
+-	*** incompatible with the CDDL license and will prevent the module
+-	*** linking stage from succeeding.  OpenZFS cannot be compiled.
+-		])
+-	])
+-])
+--- a/config/kernel.m4
++++ b/config/kernel.m4
+@@ -118,7 +118,6 @@
+ 	ZFS_AC_KERNEL_SRC_ADD_DISK
+ 	ZFS_AC_KERNEL_SRC_KTHREAD
+ 	ZFS_AC_KERNEL_SRC_ZERO_PAGE
+-	ZFS_AC_KERNEL_SRC___COPY_FROM_USER_INATOMIC
+ 	ZFS_AC_KERNEL_SRC_IDMAP_MNT_API
+ 	ZFS_AC_KERNEL_SRC_IDMAP_NO_USERNS
+ 	ZFS_AC_KERNEL_SRC_IATTR_VFSID
+@@ -242,7 +241,6 @@
+ 	ZFS_AC_KERNEL_ADD_DISK
+ 	ZFS_AC_KERNEL_KTHREAD
+ 	ZFS_AC_KERNEL_ZERO_PAGE
+-	ZFS_AC_KERNEL___COPY_FROM_USER_INATOMIC
+ 	ZFS_AC_KERNEL_IDMAP_MNT_API
+ 	ZFS_AC_KERNEL_IDMAP_NO_USERNS
+ 	ZFS_AC_KERNEL_IATTR_VFSID
