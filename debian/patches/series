@@ -29,3 +29,4 @@ BUILD_EXCLUSIVE_KERNEL_MIN.patch
 ubuntu/0004-rename-sms-service.patch
 0005-Linux-7.0-also-set-setlease-handler-on-directories-1.patch
 0006-Linux-7.0-autoconf-Remove-copy-from-user-inatomic-AP.patch
+0007-Linux-7.0-ensure-LSMs-get-to-process-mount-options.patch

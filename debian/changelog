@@ -1,3 +1,10 @@
+zfs-linux (2.4.1-1ubuntu4) resolute; urgency=medium
+
+  * Further fixes for 7.0 kernel, ensuring LSMs can process mount options
+    (LP: #2146866)
+
+ -- John Cabaj <john.cabaj@canonical.com>  Mon, 30 Mar 2026 21:21:10 -0500
+
 zfs-linux (2.4.1-1ubuntu3) resolute; urgency=medium
 
   * Providing fix for PowerPC build, with unavailable symbol
