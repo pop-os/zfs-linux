@@ -1,3 +1,10 @@
+zfs-linux (2.4.1-1ubuntu5) resolute; urgency=medium
+
+  * ubuntu/4001-dracut-Open-and-mount-luks-keystore.patch: Let zfs Dracut module
+    depend on systemd-cryptsetup (LP: #2148282)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 14 Apr 2026 16:18:01 +0200
+
 zfs-linux (2.4.1-1ubuntu4) resolute; urgency=medium
 
   * Further fixes for 7.0 kernel, ensuring LSMs can process mount options
