@@ -14,7 +14,7 @@ Signed-off-by: John Cabaj <john.cabaj@canonical.com>
 
 --- a/scripts/dkms.mkconf
 +++ b/scripts/dkms.mkconf
-@@ -73,6 +73,7 @@
+@@ -69,6 +69,7 @@
        fi
      }
    )

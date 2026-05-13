@@ -59,7 +59,7 @@ Forwarded: not needed
  
 --- a/etc/Makefile.am
 +++ b/etc/Makefile.am
-@@ -52,6 +52,7 @@
+@@ -53,6 +53,7 @@
  	%D%/systemd/system/50-zfs.preset
  
  systemdunit_DATA = \
