@@ -131,20 +131,21 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-config-defined.m4 \
-	$(top_srcdir)/config/kernel-copy-from-user-inatomic.m4 \
 	$(top_srcdir)/config/kernel-cpu_has_feature.m4 \
 	$(top_srcdir)/config/kernel-declare-event-class.m4 \
+	$(top_srcdir)/config/kernel-dentry-alias.m4 \
 	$(top_srcdir)/config/kernel-dentry-operations.m4 \
 	$(top_srcdir)/config/kernel-discard-granularity.m4 \
 	$(top_srcdir)/config/kernel-drop-inode.m4 \
 	$(top_srcdir)/config/kernel-file.m4 \
+	$(top_srcdir)/config/kernel-filelock.m4 \
 	$(top_srcdir)/config/kernel-filemap-splice-read.m4 \
 	$(top_srcdir)/config/kernel-flush_dcache_page.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
 	$(top_srcdir)/config/kernel-follow-down-one.m4 \
 	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-free-inode.m4 \
-	$(top_srcdir)/config/kernel-fst-mount.m4 \
+	$(top_srcdir)/config/kernel-fs-context.m4 \
 	$(top_srcdir)/config/kernel-fsync-bdev.m4 \
 	$(top_srcdir)/config/kernel-generic_fadvise.m4 \
 	$(top_srcdir)/config/kernel-generic_fillattr.m4 \
@@ -232,6 +233,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/mount-helper.m4 \
 	$(top_srcdir)/config/nls.m4 $(top_srcdir)/config/pkg.m4 \
 	$(top_srcdir)/config/po.m4 $(top_srcdir)/config/progtest.m4 \
+	$(top_srcdir)/config/toolchain-cfi.m4 \
 	$(top_srcdir)/config/toolchain-simd.m4 \
 	$(top_srcdir)/config/user-aio.h.m4 \
 	$(top_srcdir)/config/user-backtrace.m4 \
@@ -249,6 +251,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/user-libunwind.m4 \
 	$(top_srcdir)/config/user-libuuid.m4 \
 	$(top_srcdir)/config/user-makedev.m4 \
+	$(top_srcdir)/config/user-mount-setattr.m4 \
 	$(top_srcdir)/config/user-pam.m4 \
 	$(top_srcdir)/config/user-runstatedir.m4 \
 	$(top_srcdir)/config/user-statx.m4 \
@@ -368,6 +371,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/block_cloning/block_cloning_rlimit_fsize.ksh \
 	functional/block_cloning/block_cloning_large_offset.ksh \
 	functional/block_cloning/block_cloning_after_device_removal.ksh \
+	functional/block_cloning/block_cloning_after_trunc.ksh \
 	functional/bootfs/bootfs_001_pos.ksh \
 	functional/bootfs/bootfs_002_neg.ksh \
 	functional/bootfs/bootfs_003_pos.ksh \
@@ -638,6 +642,9 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/cli_root/zfs_jail/cleanup.ksh \
 	functional/cli_root/zfs_jail/setup.ksh \
 	functional/cli_root/zfs_jail/zfs_jail_001_pos.ksh \
+	functional/cli_root/zfs_list/cleanup.ksh \
+	functional/cli_root/zfs_list/setup.ksh \
+	functional/cli_root/zfs_list/zfs_list_009_pos.ksh \
 	functional/cli_root/zfs_load-key/cleanup.ksh \
 	functional/cli_root/zfs_load-key/setup.ksh \
 	functional/cli_root/zfs_load-key/zfs_load-key_all.ksh \
@@ -1424,6 +1431,7 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/exec/cleanup.ksh functional/exec/exec_001_pos.ksh \
 	functional/exec/exec_002_neg.ksh functional/exec/setup.ksh \
 	functional/fadvise/cleanup.ksh \
+	functional/fadvise/fadvise_dontneed.ksh \
 	functional/fadvise/fadvise_willneed.ksh \
 	functional/fadvise/setup.ksh functional/failmode/cleanup.ksh \
 	functional/failmode/failmode_dmu_tx_wait.ksh \
@@ -1511,6 +1519,8 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/io/libaio.ksh functional/io/mmap.ksh \
 	functional/io/posixaio.ksh functional/io/psync.ksh \
 	functional/io/setup.ksh functional/io/sync.ksh \
+	functional/lease/cleanup.ksh \
+	functional/lease/lease_setlease.ksh functional/lease/setup.ksh \
 	functional/l2arc/cleanup.ksh \
 	functional/l2arc/l2arc_arcstats_pos.ksh \
 	functional/l2arc/l2arc_l2miss_pos.ksh \
@@ -1727,6 +1737,8 @@ am__nobase_dist_datadir_zfs_tests_tests_SCRIPTS_DIST =  \
 	functional/redundancy/redundancy_draid3.ksh \
 	functional/redundancy/redundancy_draid_damaged1.ksh \
 	functional/redundancy/redundancy_draid_damaged2.ksh \
+	functional/redundancy/redundancy_draid_degraded1.ksh \
+	functional/redundancy/redundancy_draid_degraded2.ksh \
 	functional/redundancy/redundancy_draid.ksh \
 	functional/redundancy/redundancy_draid_spare1.ksh \
 	functional/redundancy/redundancy_draid_spare2.ksh \
@@ -2512,8 +2524,12 @@ top_srcdir = @top_srcdir@
 udevdir = @udevdir@
 udevruledir = @udevruledir@
 zfsexecdir = @zfsexecdir@
+
+# SPDX-License-Identifier: CDDL-1.0
 CLEANFILES = $(SUBSTFILES)
 dist_noinst_DATA = $(SUBSTFILES:=.in)
+
+# SPDX-License-Identifier: CDDL-1.0
 subst_sed_cmd = \
 	-e 's|@abs_top_srcdir[@]|$(abs_top_srcdir)|g' \
 	-e 's|@bindir[@]|$(bindir)|g' \
@@ -2949,6 +2965,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/block_cloning/block_cloning_rlimit_fsize.ksh \
 	functional/block_cloning/block_cloning_large_offset.ksh \
 	functional/block_cloning/block_cloning_after_device_removal.ksh \
+	functional/block_cloning/block_cloning_after_trunc.ksh \
 	functional/bootfs/bootfs_001_pos.ksh \
 	functional/bootfs/bootfs_002_neg.ksh \
 	functional/bootfs/bootfs_003_pos.ksh \
@@ -3219,6 +3236,9 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/cli_root/zfs_jail/cleanup.ksh \
 	functional/cli_root/zfs_jail/setup.ksh \
 	functional/cli_root/zfs_jail/zfs_jail_001_pos.ksh \
+	functional/cli_root/zfs_list/cleanup.ksh \
+	functional/cli_root/zfs_list/setup.ksh \
+	functional/cli_root/zfs_list/zfs_list_009_pos.ksh \
 	functional/cli_root/zfs_load-key/cleanup.ksh \
 	functional/cli_root/zfs_load-key/setup.ksh \
 	functional/cli_root/zfs_load-key/zfs_load-key_all.ksh \
@@ -4005,6 +4025,7 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/exec/cleanup.ksh functional/exec/exec_001_pos.ksh \
 	functional/exec/exec_002_neg.ksh functional/exec/setup.ksh \
 	functional/fadvise/cleanup.ksh \
+	functional/fadvise/fadvise_dontneed.ksh \
 	functional/fadvise/fadvise_willneed.ksh \
 	functional/fadvise/setup.ksh functional/failmode/cleanup.ksh \
 	functional/failmode/failmode_dmu_tx_wait.ksh \
@@ -4092,6 +4113,8 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/io/libaio.ksh functional/io/mmap.ksh \
 	functional/io/posixaio.ksh functional/io/psync.ksh \
 	functional/io/setup.ksh functional/io/sync.ksh \
+	functional/lease/cleanup.ksh \
+	functional/lease/lease_setlease.ksh functional/lease/setup.ksh \
 	functional/l2arc/cleanup.ksh \
 	functional/l2arc/l2arc_arcstats_pos.ksh \
 	functional/l2arc/l2arc_l2miss_pos.ksh \
@@ -4308,6 +4331,8 @@ nobase_dist_datadir_zfs_tests_tests_SCRIPTS =  \
 	functional/redundancy/redundancy_draid3.ksh \
 	functional/redundancy/redundancy_draid_damaged1.ksh \
 	functional/redundancy/redundancy_draid_damaged2.ksh \
+	functional/redundancy/redundancy_draid_degraded1.ksh \
+	functional/redundancy/redundancy_draid_degraded2.ksh \
 	functional/redundancy/redundancy_draid.ksh \
 	functional/redundancy/redundancy_draid_spare1.ksh \
 	functional/redundancy/redundancy_draid_spare2.ksh \
