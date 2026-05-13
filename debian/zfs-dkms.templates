@@ -38,3 +38,18 @@ _Description: Licenses of OpenZFS and Linux are incompatible
  be built into one monolithic binary. Please be aware that distributing both of
  the binaries in the same media (disk images, virtual appliances, etc) may
  lead to infringing.
+
+Template: zfs-dkms/experimental-on-rt-kernel
+Type: note
+_Description: OpenZFS on RT kernels is currently experimental
+ You are attempting to build OpenZFS against a real-time (PREEMPT_RT) kernel.
+ .
+ OpenZFS has not yet officially supported PREEMPT_RT kernels. Since Linux 6.12,
+ PREEMPT_RT has been merged into the mainline kernel, making such configurations
+ more accessible; however, this does not imply that OpenZFS has been validated
+ against them. The build may fail, and even if it succeeds, compatibility issues
+ and instability, including possible data corruption, may occur.
+ .
+ Proceed with caution and ensure you have adequate backups before using OpenZFS
+ on a real-time kernel in any environment where data integrity matters.
+

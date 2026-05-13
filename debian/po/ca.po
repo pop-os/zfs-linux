@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2021-03-30 14:43+0800\n"
+"POT-Creation-Date: 2026-05-13 14:29+0800\n"
 "PO-Revision-Date: 2024-12-10 23:40+0100\n"
 "Last-Translator: \n"
 "Language-Team: Catalan <debian-l10n-catalan@lists.debian.org>\n"
@@ -104,3 +104,40 @@ msgstr ""
 "compilarà un binari monolític. Tingueu en compte que la distribució d'ambdós "
 "binaris en un mateix mitjà (imatges de disc, aplicatius virtuals, etc.) pot "
 "constituir una infracció."
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+msgid "OpenZFS on RT kernels is currently experimental"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+#, fuzzy
+#| msgid "You are attempting to build OpenZFS against a 32-bit running kernel."
+msgid ""
+"You are attempting to build OpenZFS against a real-time (PREEMPT_RT) kernel."
+msgstr ""
+"S'està intentant compilar l'OpenZFS en un nucli de 32 bits en execució."
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+msgid ""
+"OpenZFS has not yet officially supported PREEMPT_RT kernels. Since Linux "
+"6.12, PREEMPT_RT has been merged into the mainline kernel, making such "
+"configurations more accessible; however, this does not imply that OpenZFS "
+"has been validated against them. The build may fail, and even if it "
+"succeeds, compatibility issues and instability, including possible data "
+"corruption, may occur."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+msgid ""
+"Proceed with caution and ensure you have adequate backups before using "
+"OpenZFS on a real-time kernel in any environment where data integrity "
+"matters."
+msgstr ""
