@@ -1,14 +1,15 @@
-zfs-linux (2.4.2-1) UNRELEASED; urgency=medium
+zfs-linux (2.4.2-1) unstable; urgency=medium
 
-  * New upstream version 2.4.2
-  * d/patches: refresh existing patches
-  * d/patches: remove patch that prevents building on PREEMPT_RT kernels
-  * zfs-dkms: add debconf notice for support on RT kernels
-  * d/patches: refresh patches after removal
-  * d/patches: add patch to fix wrong Linux-Maximum field in META
-  * d/control: bump std-ver to 4.7.4 (no changes needed)
+  * New upstream version 2.4.2.
+  * d/patches:
+    + refresh existing patches.
+    + remove patch that prevents building on PREEMPT_RT kernels.
+    + add patch to fix wrong Linux-Maximum field in META.
+  * zfs-dkms: add debconf notice for support on RT kernels.
+  * d/control: bump std-ver to 4.7.4 (no changes needed).
+  * d/symbols: update symbols for libzpool7linux.
 
- -- Shengqi Chen <harry@debian.org>  Wed, 13 May 2026 14:41:22 +0800
+ -- Shengqi Chen <harry@debian.org>  Wed, 13 May 2026 14:49:33 +0800
 
 zfs-linux (2.4.1-1) unstable; urgency=medium
 
