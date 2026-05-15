@@ -1,3 +1,17 @@
+zfs-linux (2.4.2-2) unstable; urgency=medium
+
+  [ Shengqi Chen ]
+  * Previous upload 2.4.2-1 fixed support for RT kernels, compatibility
+    with Linux 7.0, and draid tests on s390x (closes: #981212, #1135579,
+    #1072774).
+  * zfs-dkms: only show the PREEMPT_RT kernel warning when an RT kernel is
+    installed (closes: #1136688).
+
+  [ Carles Pina i Estany ]
+  * d/po: update Catalan debconf translation (closes: #1136717).
+
+ -- Shengqi Chen <harry@debian.org>  Fri, 15 May 2026 22:04:27 +0800
+
 zfs-linux (2.4.2-1) unstable; urgency=medium
 
   * New upstream version 2.4.2.
