@@ -1,3 +1,9 @@
+zfs-linux (2.4.1-1ubuntu5pop0) jammy; urgency=medium
+
+  * Pop!_OS backport
+
+ -- Jeremy Soller <jeremy@system76.com>  Tue, 26 May 2026 17:01:36 -0600
+
 zfs-linux (2.4.1-1ubuntu5) resolute; urgency=medium
 
   * ubuntu/4001-dracut-Open-and-mount-luks-keystore.patch: Let zfs Dracut module
