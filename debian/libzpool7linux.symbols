@@ -501,6 +501,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  dbuf_dirty_kmem_cache@Base 2.3
  dbuf_dirty_lightweight@Base 2.1
  dbuf_dnode_findbp@Base 2.0
+ dbuf_evict_range@Base 2.4.2
  dbuf_find@Base 0.8.2
  dbuf_fini@Base 0.8.2
  dbuf_free_range@Base 0.8.2
@@ -656,6 +657,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  dmu_ddt_copies@Base 2.3
  dmu_diff@Base 0.8.2
  dmu_dir_list_next@Base 0.8.2
+ dmu_evict_range@Base 2.4.2
  dmu_fini@Base 0.8.2
  dmu_free_long_object@Base 0.8.2
  dmu_free_long_range@Base 0.8.2
@@ -2056,6 +2058,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  spa_open@Base 0.8.2
  spa_open_ref@Base 0.8.2
  spa_open_rewind@Base 0.8.2
+ spa_open_txg@Base 2.4.2
  spa_preferred_class@Base 0.8.2
  spa_prev_software_version@Base 0.8.2
  spa_prop_clear_bootfs@Base 0.8.2
@@ -2489,6 +2492,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  vdev_rebuild_restart@Base 2.0
  vdev_rebuild_stop_all@Base 2.0
  vdev_rebuild_stop_wait@Base 2.0
+ vdev_rebuild_txgs@Base 2.4.2
  vdev_rele@Base 0.8.2
  vdev_removal_max_span@Base 0.8.2
  vdev_remove_child@Base 0.8.2

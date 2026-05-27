@@ -6,7 +6,6 @@
 1007-dkms-pkgcfg.patch
 2100-zfs-load-module.patch
 force-verbose-rules.patch
-skip-on-PREEMPT_RT.patch
 cross-compile.patch
 #ubuntu/0001-Revert-Revert-systemd-Use-non-absolute-paths-in-Exec.patch
 #ubuntu/0002-Revert-etc-systemd-zfs-mount-generator-rewrite-in-C.patch
@@ -22,3 +21,4 @@ ubuntu/0003-enable-linux-experimental.patch
 fix-pyzfs-version.patch
 BUILD_EXCLUSIVE_KERNEL_MIN.patch
 #bump-Linux-Minimum.patch
+fix-Linux-Maximum.patch

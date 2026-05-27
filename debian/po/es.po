@@ -31,7 +31,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2021-03-30 14:43+0800\n"
+"POT-Creation-Date: 2026-05-13 14:29+0800\n"
 "PO-Revision-Date: 2021-04-10 10:32+0200\n"
 "Last-Translator: Camaleón <noelamac@gmail.com>\n"
 "Language-Team: Debian Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -83,9 +83,9 @@ msgid ""
 "be identified as 32-bit or 64-bit. If you are not completely sure that the "
 "running kernel is a 64-bit one, you should probably stop the build."
 msgstr ""
-"Va a compilar OpenZFS en un núcleo que no se puede identificar como de"
-"32 bits ni 64 bits. Si no está seguro de que el núcleo sea de 64 bits, "
-"debería detener la compilación."
+"Va a compilar OpenZFS en un núcleo que no se puede identificar como de32 "
+"bits ni 64 bits. Si no está seguro de que el núcleo sea de 64 bits, debería "
+"detener la compilación."
 
 #. Type: note
 #. Description
@@ -104,12 +104,13 @@ msgid ""
 "prevents using pieces of code exclusively available under one license with "
 "pieces of code exclusively available under the other in the same binary."
 msgstr ""
-"OpenZFS se encuentra bajo la Licencia Común de Desarrollo y Distribución (CDDL) "
-"y el núcleo de Linux bajo la Licencia Pública General de GNU Versión 2 (GPL-2). "
-"Aunque las dos licencias son de código abierto, ambas son licencias restrictivas. "
-"Combinarlas genera problemas porque impide utilizar en un mismo archivo binario, "
-"partes de código disponibles exclusivamente bajo una de las licencias con partes "
-"de código disponibles exclusivamente bajo la otra licencia."
+"OpenZFS se encuentra bajo la Licencia Común de Desarrollo y Distribución "
+"(CDDL) y el núcleo de Linux bajo la Licencia Pública General de GNU Versión "
+"2 (GPL-2). Aunque las dos licencias son de código abierto, ambas son "
+"licencias restrictivas. Combinarlas genera problemas porque impide utilizar "
+"en un mismo archivo binario, partes de código disponibles exclusivamente "
+"bajo una de las licencias con partes de código disponibles exclusivamente "
+"bajo la otra licencia."
 
 #. Type: note
 #. Description
@@ -120,7 +121,43 @@ msgid ""
 "distributing both of the binaries in the same media (disk images, virtual "
 "appliances, etc) may lead to infringing."
 msgstr ""
-"Va a compilar OpenZFS utilizando DKMS de manera que no se van a compilar "
-"en un único binario monolítico. Por favor, recuerde que si distribuye los dos "
-"binarios en el mismo medio (imágenes de disco, máquinas virtuales, etc.) podría "
-"infringir los términos de sus respectivas licencias."
+"Va a compilar OpenZFS utilizando DKMS de manera que no se van a compilar en "
+"un único binario monolítico. Por favor, recuerde que si distribuye los dos "
+"binarios en el mismo medio (imágenes de disco, máquinas virtuales, etc.) "
+"podría infringir los términos de sus respectivas licencias."
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+msgid "OpenZFS on RT kernels is currently experimental"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+#, fuzzy
+#| msgid "You are attempting to build OpenZFS against a 32-bit running kernel."
+msgid ""
+"You are attempting to build OpenZFS against a real-time (PREEMPT_RT) kernel."
+msgstr "Va a compilar OpenZFS en un núcleo de 32 bits."
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+msgid ""
+"OpenZFS has not yet officially supported PREEMPT_RT kernels. Since Linux "
+"6.12, PREEMPT_RT has been merged into the mainline kernel, making such "
+"configurations more accessible; however, this does not imply that OpenZFS "
+"has been validated against them. The build may fail, and even if it "
+"succeeds, compatibility issues and instability, including possible data "
+"corruption, may occur."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+msgid ""
+"Proceed with caution and ensure you have adequate backups before using "
+"OpenZFS on a real-time kernel in any environment where data integrity "
+"matters."
+msgstr ""

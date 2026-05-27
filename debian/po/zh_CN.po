@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
-"POT-Creation-Date: 2021-03-30 14:43+0800\n"
+"POT-Creation-Date: 2026-05-13 14:29+0800\n"
 "PO-Revision-Date: 2015-11-01 14:25+0800\n"
 "Last-Translator: Aron <aron@debian.org>\n"
 "Language-Team: Chinese (Simplified) <debian-l10n-chinese@lists.debian.org>\n"
@@ -93,6 +93,48 @@ msgstr ""
 "您将以DKMS方式编译OpenZFS，以使其不与Linux内核被编译成为一个单独的二进制文"
 "件。在单一介质(如磁盘镜像、虚拟机模板等)上同时发OpenZFS和Linux内核的二进制文"
 "件将造成侵权。"
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+msgid "OpenZFS on RT kernels is currently experimental"
+msgstr "OpenZFS 对 RT 内核的支持仍处于实验阶段"
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+#, fuzzy
+#| msgid "You are attempting to build OpenZFS against a 32-bit running kernel."
+msgid ""
+"You are attempting to build OpenZFS against a real-time (PREEMPT_RT) kernel."
+msgstr "您正试图在32位内核上编译OpenZFS支持。"
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+msgid ""
+"OpenZFS has not yet officially supported PREEMPT_RT kernels. Since Linux "
+"6.12, PREEMPT_RT has been merged into the mainline kernel, making such "
+"configurations more accessible; however, this does not imply that OpenZFS "
+"has been validated against them. The build may fail, and even if it "
+"succeeds, compatibility issues and instability, including possible data "
+"corruption, may occur."
+msgstr ""
+"OpenZFS 尚未正式支持 PREEMPT_RT 内核。自 Linux 6.12 起，PREEMPT_RT 已合并"
+"入主线内核，使此类配置更易于尝试；但这并不意味着 OpenZFS 已经过相应验证。"
+"构建过程本身可能失败，即便构建成功，也可能出现兼容性问题和系统不稳定，包括"
+"潜在的数据损坏。"
+
+#. Type: note
+#. Description
+#: ../zfs-dkms.templates:4001
+msgid ""
+"Proceed with caution and ensure you have adequate backups before using "
+"OpenZFS on a real-time kernel in any environment where data integrity "
+"matters."
+msgstr ""
+"请谨慎操作，在任何对数据完整性有要求的环境中于实时内核上使用 OpenZFS 之前，"
+"务必确保已做好充分备份。"
 
 #~ msgid "Scrub OpenZFS pools periodically?"
 #~ msgstr "是否定期执行OpenZFS存储池检查？"

@@ -1,0 +1,15 @@
+Description: Fix Linux-Maximum in META
+Author: Shengqi Chen <harry@debian.org>
+Bug: https://github.com/openzfs/zfs/issues/18526
+Last-Update: 2026-05-13
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/META
++++ b/META
+@@ -6,5 +6,5 @@
+ Release-Tags:  relext
+ License:       CDDL
+ Author:        OpenZFS
+-Linux-Maximum: 99.99
++Linux-Maximum: 7.0
+ Linux-Minimum: 4.18

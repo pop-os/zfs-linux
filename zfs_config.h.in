@@ -22,6 +22,9 @@
 /* Define if you have [rt] */
 #undef HAVE_AIO_H
 
+/* Define if your assembler supports .cfi_negate_ra_state. */
+#undef HAVE_AS_CFI_PSEUDO_OP
+
 /* Define if host toolchain supports AVX */
 #undef HAVE_AVX
 
@@ -187,6 +190,9 @@
 /* backing_dev_info is available through queue gendisk */
 #undef HAVE_BLK_QUEUE_DISK_BDI
 
+/* blk_queue_rot() is available */
+#undef HAVE_BLK_QUEUE_ROT
+
 /* blk_queue_secure_erase() is available */
 #undef HAVE_BLK_QUEUE_SECURE_ERASE
 
@@ -222,6 +228,9 @@
 /* DECLARE_EVENT_CLASS() is available */
 #undef HAVE_DECLARE_EVENT_CLASS
 
+/* dentry aliases are in d_u member */
+#undef HAVE_DENTRY_D_U_ALIASES
+
 /* 3-arg dequeue_signal() takes a type argument */
 #undef HAVE_DEQUEUE_SIGNAL_3ARG_TYPE
 
@@ -255,6 +264,9 @@
 /* fault_in_iov_iter_readable() is available */
 #undef HAVE_FAULT_IN_IOV_ITER_READABLE
 
+/* linux/filelock.h exists */
+#undef HAVE_FILELOCK_HEADER
+
 /* file->f_version exists */
 #undef HAVE_FILE_F_VERSION
 
@@ -266,6 +278,9 @@
 
 /* fsync_bdev() is declared in include/blkdev.h */
 #undef HAVE_FSYNC_BDEV
+
+/* fs_context exists */
+#undef HAVE_FS_CONTEXT
 
 /* yes */
 #undef HAVE_GENERIC_FADVISE
@@ -507,6 +522,9 @@
 /* page_size() is available */
 #undef HAVE_MM_PAGE_SIZE
 
+/* mount_setattr() and struct mount_attr are available */
+#undef HAVE_MOUNT_SETATTR
+
 /* Define if host toolchain supports MOVBE */
 #undef HAVE_MOVBE
 
@@ -530,6 +548,9 @@
 
 /* pin_user_pages_unlocked() is available */
 #undef HAVE_PIN_USER_PAGES_UNLOCKED
+
+/* posix_acl_to_xattr() allocates its result */
+#undef HAVE_POSIX_ACL_TO_XATTR_ALLOC
 
 /* proc_handler ctl_table arg is const */
 #undef HAVE_PROC_HANDLER_CTL_TABLE_CONST

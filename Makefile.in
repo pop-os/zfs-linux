@@ -14,15 +14,18 @@
 
 @SET_MAKE@
 
+# SPDX-License-Identifier: CDDL-1.0
 #
 # Default build rules for all user space components, every Makefile.am
 # should include these rules and override or extend them as needed.
 #
 
+# SPDX-License-Identifier: CDDL-1.0
 #
 # cppcheck for userspace – nodist_*_SOURCES are kernel code and cppcheck goes crazy on them.
 #
 
+# SPDX-License-Identifier: CDDL-1.0
 # Global ShellCheck exclusions:
 #
 # ShellCheck can't follow non-constant source. Use a directive to specify location. [SC1090]
@@ -33,6 +36,7 @@
 # In POSIX sh, 'local' is undefined. [SC2039] # older ShellCheck versions
 # In POSIX sh, 'local' is undefined. [SC3043] # newer ShellCheck versions
 
+# SPDX-License-Identifier: CDDL-1.0
 #
 # Shown below is a simplified dependency graph of the OpenZFS provided
 # libraries.  Administrative commands (`zfs`, `zpool`, etc) interface with
@@ -86,6 +90,7 @@
 # a mechanism for suppressing harmless warnings.
 #
 
+# SPDX-License-Identifier: CDDL-1.0
 ###############################################################################
 # Copyright (C) 2007-2013 Lawrence Livermore National Security, LLC.
 # Copyright (C) 2007 The Regents of the University of California.
@@ -185,6 +190,8 @@ target_triplet = @target@
 @BUILD_FREEBSD_TRUE@	-Wl,--fatal-warnings \
 @BUILD_FREEBSD_TRUE@	-Wl,--warn-shared-textrel -lm
 @CONFIG_USER_FALSE@am__append_5 = $(scripts_scripts)
+
+# SPDX-License-Identifier: CDDL-1.0
 @BUILD_LINUX_TRUE@am__append_6 = \
 @BUILD_LINUX_TRUE@	rpm/generic/zfs-dkms.spec.in \
 @BUILD_LINUX_TRUE@	rpm/generic/zfs-kmod.spec.in \
@@ -242,6 +249,12 @@ target_triplet = @target@
 @CONFIG_USER_TRUE@	contrib/pyzfs/setup.py
 @CONFIG_USER_TRUE@am__append_30 = contrib/bash_completion.d/zpool
 @CONFIG_USER_TRUE@am__append_31 = $(COMPLETION_FILES)
+
+# SPDX-License-Identifier: CDDL-1.0
+
+# SPDX-License-Identifier: CDDL-1.0
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@am__append_32 = contrib/debian/changelog.in \
 @CONFIG_USER_TRUE@	contrib/debian/clean contrib/debian/control \
 @CONFIG_USER_TRUE@	contrib/debian/control.modules.in \
@@ -293,6 +306,8 @@ target_triplet = @target@
 @CONFIG_USER_TRUE@	contrib/pyzfs/docs contrib/zcp/autosnap.lua
 @CONFIG_USER_TRUE@@PYZFS_ENABLED_TRUE@am__append_33 = pyzfs-all-local
 @CONFIG_USER_TRUE@@PYZFS_ENABLED_TRUE@am__append_34 = pyzfs-clean-local
+
+# SPDX-License-Identifier: CDDL-1.0
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_35 = contrib/bpftrace/taskqlatency.bt \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	contrib/bpftrace/zfs-trace.sh \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	contrib/dracut/README.md \
@@ -476,6 +491,8 @@ target_triplet = @target@
 # but leaving it blank makes things a lot easier on
 # FreeBSD when OpenZFS is vendored in the base system.
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@am__append_87 = man-install-data-hook
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@am__append_88 = tests/zfs-tests/tests
 @CONFIG_USER_TRUE@scripts_zfs_tests_bin_PROGRAMS =  \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/chg_usr_exec$(EXEEXT) \
@@ -494,6 +511,7 @@ target_triplet = @target@
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/badsend$(EXEEXT) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/btree_test$(EXEEXT) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/crypto_test$(EXEEXT) \
+@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/clone_after_trunc$(EXEEXT) \
 @CONFIG_USER_TRUE@	$(am__EXEEXT_3) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/draid$(EXEEXT) \
 @CONFIG_USER_TRUE@	tests/zfs-tests/cmd/file_append$(EXEEXT) \
@@ -537,6 +555,7 @@ target_triplet = @target@
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/xattrtest \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/zed_fd_spill-zedlet \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/idmap_util \
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/setlease \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/read_dos_attributes \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/write_dos_attributes \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/randfree_file
@@ -590,20 +609,21 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-block-device-operations.m4 \
 	$(top_srcdir)/config/kernel-commit-metadata.m4 \
 	$(top_srcdir)/config/kernel-config-defined.m4 \
-	$(top_srcdir)/config/kernel-copy-from-user-inatomic.m4 \
 	$(top_srcdir)/config/kernel-cpu_has_feature.m4 \
 	$(top_srcdir)/config/kernel-declare-event-class.m4 \
+	$(top_srcdir)/config/kernel-dentry-alias.m4 \
 	$(top_srcdir)/config/kernel-dentry-operations.m4 \
 	$(top_srcdir)/config/kernel-discard-granularity.m4 \
 	$(top_srcdir)/config/kernel-drop-inode.m4 \
 	$(top_srcdir)/config/kernel-file.m4 \
+	$(top_srcdir)/config/kernel-filelock.m4 \
 	$(top_srcdir)/config/kernel-filemap-splice-read.m4 \
 	$(top_srcdir)/config/kernel-flush_dcache_page.m4 \
 	$(top_srcdir)/config/kernel-fmode-t.m4 \
 	$(top_srcdir)/config/kernel-follow-down-one.m4 \
 	$(top_srcdir)/config/kernel-fpu.m4 \
 	$(top_srcdir)/config/kernel-free-inode.m4 \
-	$(top_srcdir)/config/kernel-fst-mount.m4 \
+	$(top_srcdir)/config/kernel-fs-context.m4 \
 	$(top_srcdir)/config/kernel-fsync-bdev.m4 \
 	$(top_srcdir)/config/kernel-generic_fadvise.m4 \
 	$(top_srcdir)/config/kernel-generic_fillattr.m4 \
@@ -691,6 +711,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/mount-helper.m4 \
 	$(top_srcdir)/config/nls.m4 $(top_srcdir)/config/pkg.m4 \
 	$(top_srcdir)/config/po.m4 $(top_srcdir)/config/progtest.m4 \
+	$(top_srcdir)/config/toolchain-cfi.m4 \
 	$(top_srcdir)/config/toolchain-simd.m4 \
 	$(top_srcdir)/config/user-aio.h.m4 \
 	$(top_srcdir)/config/user-backtrace.m4 \
@@ -708,6 +729,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/user-libunwind.m4 \
 	$(top_srcdir)/config/user-libuuid.m4 \
 	$(top_srcdir)/config/user-makedev.m4 \
+	$(top_srcdir)/config/user-mount-setattr.m4 \
 	$(top_srcdir)/config/user-pam.m4 \
 	$(top_srcdir)/config/user-runstatedir.m4 \
 	$(top_srcdir)/config/user-statx.m4 \
@@ -808,6 +830,7 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(mounthelperdir)" \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/xattrtest$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/zed_fd_spill-zedlet$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/idmap_util$(EXEEXT) \
+@BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/setlease$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/read_dos_attributes$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/write_dos_attributes$(EXEEXT) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	tests/zfs-tests/cmd/randfree_file$(EXEEXT)
@@ -1482,6 +1505,11 @@ tests_zfs_tests_cmd_chg_usr_exec_SOURCES =  \
 tests_zfs_tests_cmd_chg_usr_exec_OBJECTS =  \
 	tests/zfs-tests/cmd/chg_usr_exec.$(OBJEXT)
 tests_zfs_tests_cmd_chg_usr_exec_LDADD = $(LDADD)
+tests_zfs_tests_cmd_clone_after_trunc_SOURCES =  \
+	tests/zfs-tests/cmd/clone_after_trunc.c
+tests_zfs_tests_cmd_clone_after_trunc_OBJECTS =  \
+	tests/zfs-tests/cmd/clone_after_trunc.$(OBJEXT)
+tests_zfs_tests_cmd_clone_after_trunc_DEPENDENCIES =
 tests_zfs_tests_cmd_clone_mmap_cached_SOURCES =  \
 	tests/zfs-tests/cmd/clone_mmap_cached.c
 tests_zfs_tests_cmd_clone_mmap_cached_OBJECTS =  \
@@ -1719,6 +1747,10 @@ tests_zfs_tests_cmd_send_doall_OBJECTS =  \
 	tests/zfs-tests/cmd/send_doall.$(OBJEXT)
 @CONFIG_USER_TRUE@tests_zfs_tests_cmd_send_doall_DEPENDENCIES =  \
 @CONFIG_USER_TRUE@	libzfs_core.la libzfs.la libnvpair.la
+tests_zfs_tests_cmd_setlease_SOURCES = tests/zfs-tests/cmd/setlease.c
+tests_zfs_tests_cmd_setlease_OBJECTS =  \
+	tests/zfs-tests/cmd/setlease.$(OBJEXT)
+tests_zfs_tests_cmd_setlease_LDADD = $(LDADD)
 am__tests_zfs_tests_cmd_sha2_test_SOURCES_DIST =  \
 	tests/zfs-tests/cmd/checksum/sha2_test.c
 @CONFIG_USER_TRUE@am_tests_zfs_tests_cmd_sha2_test_OBJECTS = tests/zfs-tests/cmd/checksum/sha2_test.$(OBJEXT)
@@ -2433,6 +2465,7 @@ am__depfiles_remade = cmd/$(DEPDIR)/mount_zfs.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/badsend.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/btree_test-btree_test.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/chg_usr_exec.Po \
+	tests/zfs-tests/cmd/$(DEPDIR)/clone_after_trunc.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_cached.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po \
@@ -2466,6 +2499,7 @@ am__depfiles_remade = cmd/$(DEPDIR)/mount_zfs.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/renameat2.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/rm_lnkcnt_zero_file.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/send_doall.Po \
+	tests/zfs-tests/cmd/$(DEPDIR)/setlease.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/statx.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/stride_dd.Po \
 	tests/zfs-tests/cmd/$(DEPDIR)/suid_write_to_file.Po \
@@ -2546,6 +2580,7 @@ SOURCES = $(contrib_pam_zfs_key_pam_zfs_key_la_SOURCES) \
 	$(tests_zfs_tests_cmd_blake3_test_SOURCES) \
 	tests/zfs-tests/cmd/btree_test.c \
 	tests/zfs-tests/cmd/chg_usr_exec.c \
+	tests/zfs-tests/cmd/clone_after_trunc.c \
 	tests/zfs-tests/cmd/clone_mmap_cached.c \
 	tests/zfs-tests/cmd/clone_mmap_write.c \
 	tests/zfs-tests/cmd/clonefile.c tests/zfs-tests/cmd/cp_files.c \
@@ -2586,6 +2621,7 @@ SOURCES = $(contrib_pam_zfs_key_pam_zfs_key_la_SOURCES) \
 	tests/zfs-tests/cmd/renameat2.c \
 	tests/zfs-tests/cmd/rm_lnkcnt_zero_file.c \
 	tests/zfs-tests/cmd/send_doall.c \
+	tests/zfs-tests/cmd/setlease.c \
 	$(tests_zfs_tests_cmd_sha2_test_SOURCES) \
 	$(tests_zfs_tests_cmd_skein_test_SOURCES) \
 	tests/zfs-tests/cmd/statx.c tests/zfs-tests/cmd/stride_dd.c \
@@ -2628,6 +2664,7 @@ DIST_SOURCES = $(am__contrib_pam_zfs_key_pam_zfs_key_la_SOURCES_DIST) \
 	$(am__tests_zfs_tests_cmd_blake3_test_SOURCES_DIST) \
 	tests/zfs-tests/cmd/btree_test.c \
 	tests/zfs-tests/cmd/chg_usr_exec.c \
+	tests/zfs-tests/cmd/clone_after_trunc.c \
 	tests/zfs-tests/cmd/clone_mmap_cached.c \
 	tests/zfs-tests/cmd/clone_mmap_write.c \
 	tests/zfs-tests/cmd/clonefile.c tests/zfs-tests/cmd/cp_files.c \
@@ -2668,6 +2705,7 @@ DIST_SOURCES = $(am__contrib_pam_zfs_key_pam_zfs_key_la_SOURCES_DIST) \
 	tests/zfs-tests/cmd/renameat2.c \
 	tests/zfs-tests/cmd/rm_lnkcnt_zero_file.c \
 	tests/zfs-tests/cmd/send_doall.c \
+	tests/zfs-tests/cmd/setlease.c \
 	$(am__tests_zfs_tests_cmd_sha2_test_SOURCES_DIST) \
 	$(am__tests_zfs_tests_cmd_skein_test_SOURCES_DIST) \
 	tests/zfs-tests/cmd/statx.c tests/zfs-tests/cmd/stride_dd.c \
@@ -3495,6 +3533,8 @@ top_srcdir = @top_srcdir@
 udevdir = @udevdir@
 udevruledir = @udevruledir@
 zfsexecdir = @zfsexecdir@
+
+# SPDX-License-Identifier: CDDL-1.0
 CLEANFILES = $(SUBSTFILES) scripts/common.sh $(am__append_8) \
 	$(am__append_26) $(am__append_30) $(GITREV)
 
@@ -3528,6 +3568,10 @@ ALL_LOCAL = scripts-all-local $(am__append_33)
 CLEAN_LOCAL = scripts-clean-local $(am__append_34)
 CHECKS = shellcheck checkbashisms $(am__append_86) spdxcheck cstyle \
 	testscheck vcscheck zstdcheck flake8
+
+# SPDX-License-Identifier: CDDL-1.0
+
+# SPDX-License-Identifier: CDDL-1.0
 PHONY = cppcheck shellcheck checkbashisms $(am__append_28) \
 	$(am__append_96) gitrev install-data-hook \
 	$(INSTALL_DATA_HOOKS) install-exec-hook $(INSTALL_EXEC_HOOKS) \
@@ -3597,6 +3641,8 @@ checkbashisms_verbose_0 = @echo CHECKBASHISMS $(_BTGT);
 
 # command -v *is* specified by POSIX and every shell in existence supports it
 _BTGT = $(subst ^,/,$(subst checkbashisms-here-,,$@))
+
+# SPDX-License-Identifier: CDDL-1.0
 subst_sed_cmd = \
 	-e 's|@abs_top_srcdir[@]|$(abs_top_srcdir)|g' \
 	-e 's|@bindir[@]|$(bindir)|g' \
@@ -3628,6 +3674,8 @@ subst_sed_cmd = \
 SUBSTFILES = $(am__append_22) $(am__append_29) $(am__append_37) \
 	$(am__append_39) $(am__append_41) $(am__append_44) \
 	$(am__append_46) $(am__append_85) $(am__append_95)
+
+# SPDX-License-Identifier: CDDL-1.0
 scriptsdir = $(datadir)/$(PACKAGE)
 dist_noinst_SCRIPTS = scripts/commitcheck.sh scripts/common.sh.in \
 	scripts/dkms.mkconf scripts/dkms.postbuild scripts/kmodtool \
@@ -3647,6 +3695,8 @@ scripts_scripts = \
 
 ACLOCAL_AMFLAGS = -I config
 SUBDIRS = include $(am__append_88) $(am__append_97)
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@bin_SCRIPTS = $(am__append_25)
 @CONFIG_USER_TRUE@sbin_SCRIPTS = fsck.zfs
 @CONFIG_USER_TRUE@dist_bin_SCRIPTS = $(am__append_20)
@@ -3673,6 +3723,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@ztest_LDADD = libzpool.la libzfs_core.la \
 @CONFIG_USER_TRUE@	libnvpair.la -lm
 @CONFIG_USER_TRUE@ztest_LDFLAGS = -pthread
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@raidz_test_CFLAGS = $(AM_CFLAGS)   $(KERNEL_CFLAGS)
 @CONFIG_USER_TRUE@raidz_test_CPPFLAGS = $(AM_CPPFLAGS) $(LIBZPOOL_CPPFLAGS)
 @CONFIG_USER_TRUE@raidz_test_SOURCES = \
@@ -3681,6 +3733,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@	cmd/raidz_test/raidz_test.h
 
 @CONFIG_USER_TRUE@raidz_test_LDADD = libzpool.la libzfs_core.la -lm
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@zdb_CPPFLAGS = $(AM_CPPFLAGS) $(LIBZPOOL_CPPFLAGS)
 @CONFIG_USER_TRUE@zdb_CFLAGS = $(AM_CFLAGS) $(LIBCRYPTO_CFLAGS)
 @CONFIG_USER_TRUE@zdb_SOURCES = \
@@ -3710,6 +3764,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@	libzfs_core.la \
 @CONFIG_USER_TRUE@	libnvpair.la
 
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@zpool_CFLAGS = $(AM_CFLAGS) $(LIBBLKID_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBUUID_CFLAGS)
 @CONFIG_USER_TRUE@zpool_CPPFLAGS = $(AM_CPPFLAGS) \
@@ -3885,6 +3941,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@	libnvpair.la \
 @CONFIG_USER_TRUE@	libzfs.la
 
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@zstream_CPPFLAGS = $(AM_CPPFLAGS) $(LIBZPOOL_CPPFLAGS)
 @CONFIG_USER_TRUE@zstream_SOURCES = \
 @CONFIG_USER_TRUE@	cmd/zstream/zstream.c \
@@ -3910,6 +3968,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@zgenhostid_SOURCES = \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	cmd/zgenhostid.c
 
+
+# SPDX-License-Identifier: CDDL-1.0
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@zedconfdir = $(sysconfdir)/zfs/zed.d
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@dist_zedconf_DATA = \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	cmd/zed/zed.d/zed-functions.sh \
@@ -3951,6 +4011,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	vdev_attach-sync-led.sh \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	vdev_clear-sync-led.sh
 
+
+# SPDX-License-Identifier: CDDL-1.0
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@zed_CFLAGS = $(AM_CFLAGS) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	$(LIBUDEV_CFLAGS) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	$(LIBUUID_CFLAGS)
@@ -3989,9 +4051,13 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	$(LIBUDEV_LIBS) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	$(LIBUUID_LIBS)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@zed_LDFLAGS = -pthread
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@nodist_bashcompletion_DATA = contrib/bash_completion.d/zfs contrib/bash_completion.d/zpool
 @CONFIG_USER_TRUE@COMPLETION_FILES = contrib/bash_completion.d/zfs
 @CONFIG_USER_TRUE@@PYZFS_ENABLED_TRUE@pyzfs_V_1 = -v
+
+# SPDX-License-Identifier: CDDL-1.0
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@pkgdracut_02dir = $(dracutdir)/modules.d/02zfsexpandknowledge
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@pkgdracut_02_SCRIPTS = \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	contrib/dracut/02zfsexpandknowledge/module-setup.sh
@@ -4014,6 +4080,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	contrib/dracut/90zfs/zfs-rollback-bootfs.service \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	contrib/dracut/90zfs/zfs-snapshot-bootfs.service
 
+
+# SPDX-License-Identifier: CDDL-1.0
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@i_tdir = /usr/share/initramfs-tools
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@dist_i_t_SCRIPTS = \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	contrib/initramfs/zfsunlock
@@ -4040,6 +4108,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	contrib/initramfs/scripts/local-top/zfs
 
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@i_t_check_scripts = $(dist_i_t_SCRIPTS) $(i_t_hooks_SCRIPTS) $(dist_i_t_scripts_SCRIPTS) $(dist_i_t_scripts_localtop_SCRIPTS)
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@@PAM_ZFS_ENABLED_TRUE@contrib_pam_zfs_key_pam_zfs_key_la_CFLAGS =  \
 @CONFIG_USER_TRUE@@PAM_ZFS_ENABLED_TRUE@	$(AM_CFLAGS) \
 @CONFIG_USER_TRUE@@PAM_ZFS_ENABLED_TRUE@	$(LIBCRYPTO_CFLAGS)
@@ -4052,6 +4122,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@@PAM_ZFS_ENABLED_TRUE@	$(LIBCRYPTO_LIBS)
 @CONFIG_USER_TRUE@@PAM_ZFS_ENABLED_TRUE@contrib_pam_zfs_key_pam_zfs_key_la_LDFLAGS = -version-info 1:0:0 -avoid-version -module -shared
 @CONFIG_USER_TRUE@@PAM_ZFS_ENABLED_TRUE@dist_pamconfigs_DATA = contrib/pam_zfs_key/zfs_key
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@sudoersddir = $(sysconfdir)/sudoers.d
 @CONFIG_USER_TRUE@sudoersd_DATA = \
 @CONFIG_USER_TRUE@	etc/sudoers.d/zfs
@@ -4118,11 +4190,15 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@pkgconfig_DATA = lib/libzfs_core/libzfs_core.pc \
 @CONFIG_USER_TRUE@	lib/libzfs/libzfs.pc \
 @CONFIG_USER_TRUE@	lib/libzfsbootenv/libzfsbootenv.pc
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@libavl_la_CFLAGS = $(AM_CFLAGS) $(KERNEL_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) -fvisibility=hidden
 @CONFIG_USER_TRUE@nodist_libavl_la_SOURCES = \
 @CONFIG_USER_TRUE@	module/avl/avl.c
 
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@libicp_la_CCASFLAGS = $(AM_CCASFLAGS)
 @CONFIG_USER_TRUE@libicp_la_CFLAGS = $(AM_CFLAGS) $(KERNEL_CFLAGS) $(LIBRARY_CFLAGS)
 @CONFIG_USER_TRUE@nodist_libicp_la_SOURCES = module/icp/spi/kcf_spi.c \
@@ -4159,6 +4235,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@	module/zfs/zfs_impl.c $(am__append_49) \
 @CONFIG_USER_TRUE@	$(am__append_50) $(am__append_51) \
 @CONFIG_USER_TRUE@	$(am__append_52)
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@libnvpair_la_CFLAGS = $(AM_CFLAGS) $(KERNEL_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) $(LIBTIRPC_CFLAGS) \
 @CONFIG_USER_TRUE@	-fvisibility=hidden
@@ -4184,6 +4262,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@	lib/libshare/libshare.c lib/libshare/nfs.c \
 @CONFIG_USER_TRUE@	lib/libshare/nfs.h lib/libshare/smb.h \
 @CONFIG_USER_TRUE@	$(am__append_56) $(am__append_57)
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@libspldir = $(includedir)/libspl
 @CONFIG_USER_TRUE@libspl_HEADERS = lib/libspl/include/assert.h \
 @CONFIG_USER_TRUE@	lib/libspl/include/atomic.h \
@@ -4255,6 +4335,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@libspl_sys_dktp_HEADERS = \
 @CONFIG_USER_TRUE@	lib/libspl/include/sys/dktp/fdisk.h
 
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@libspl_assert_la_CFLAGS = $(AM_CFLAGS) $(LIBRARY_CFLAGS) $(LIBUNWIND_CFLAGS)
 @CONFIG_USER_TRUE@libspl_la_CFLAGS = $(libspl_assert_la_CFLAGS) \
 @CONFIG_USER_TRUE@	$(am__append_61)
@@ -4299,11 +4381,15 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@	$(LTLIBINTL)
 @CONFIG_USER_TRUE@libuutil_la_LDFLAGS = -pthread $(am__append_65) \
 @CONFIG_USER_TRUE@	-version-info 3:0:0
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@libzdb_la_CFLAGS = $(AM_CFLAGS) $(LIBRARY_CFLAGS) \
 @CONFIG_USER_TRUE@	-fvisibility=hidden
 @CONFIG_USER_TRUE@libzdb_la_SOURCES = \
 @CONFIG_USER_TRUE@	lib/libzdb/libzdb.c
 
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@libzfs_core_la_CFLAGS = $(AM_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) -fvisibility=hidden
 @CONFIG_USER_TRUE@libzfs_core_la_CPPFLAGS = $(AM_CPPFLAGS) \
@@ -4319,6 +4405,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@	$(LTLIBINTL) $(am__append_70)
 @CONFIG_USER_TRUE@libzfs_core_la_LDFLAGS = -pthread $(am__append_69) \
 @CONFIG_USER_TRUE@	-version-info 3:0:0
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@libzfs_la_CFLAGS = $(AM_CFLAGS) $(LIBRARY_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBCRYPTO_CFLAGS) $(ZLIB_CFLAGS) \
 @CONFIG_USER_TRUE@	-fvisibility=hidden
@@ -4361,6 +4449,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@	$(am__append_74)
 @CONFIG_USER_TRUE@libzfs_la_LDFLAGS = -pthread $(am__append_73) \
 @CONFIG_USER_TRUE@	-version-info 7:0:0
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@libzfsbootenv_la_CFLAGS = $(AM_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) -fvisibility=hidden
 @CONFIG_USER_TRUE@libzfsbootenv_la_CPPFLAGS = $(AM_CPPFLAGS) \
@@ -4376,6 +4466,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 
 @CONFIG_USER_TRUE@libzfsbootenv_la_LDFLAGS = $(am__append_75) \
 @CONFIG_USER_TRUE@	-version-info 1:0:0
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@libzpool_la_CFLAGS = $(AM_CFLAGS) $(KERNEL_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) $(ZLIB_CFLAGS)
 @CONFIG_USER_TRUE@libzpool_la_CPPFLAGS = $(AM_CPPFLAGS) \
@@ -4574,6 +4666,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@libzpool_la_LDFLAGS = -pthread $(am__append_76) \
 @CONFIG_USER_TRUE@	-version-info 7:0:0
 
+# SPDX-License-Identifier: CDDL-1.0
+
 # -fno-tree-vectorize is set for gcc in zstd/common/compiler.h
 # Set it for other compilers, too.
 @CONFIG_USER_TRUE@libzstd_la_CFLAGS = $(AM_CFLAGS) $(LIBRARY_CFLAGS) \
@@ -4605,6 +4699,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@	module/zstd/lib/decompress/zstd_decompress_block.c \
 @CONFIG_USER_TRUE@	module/zstd/zfs_zstd.c
 
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@libzutil_la_CFLAGS = $(AM_CFLAGS) $(LIBRARY_CFLAGS) \
 @CONFIG_USER_TRUE@	$(LIBBLKID_CFLAGS) $(LIBUDEV_CFLAGS) \
 @CONFIG_USER_TRUE@	-fvisibility=hidden
@@ -4620,6 +4716,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@libzutil_la_LIBADD = libavl.la libtpool.la \
 @CONFIG_USER_TRUE@	libnvpair.la libspl.la $(am__append_80) -lm \
 @CONFIG_USER_TRUE@	$(LIBBLKID_LIBS) $(LIBUDEV_LIBS)
+
+# SPDX-License-Identifier: CDDL-1.0
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@libefi_la_CFLAGS = $(AM_CFLAGS) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	$(LIBRARY_CFLAGS) \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	$(LIBUUID_CFLAGS) \
@@ -4629,6 +4727,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	lib/libefi/rdwr_efi.c
 
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@libefi_la_LIBADD = $(LIBUUID_LIBS) $(ZLIB_LIBS)
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@dist_noinst_man_MANS = \
 @CONFIG_USER_TRUE@	man/man1/cstyle.1
 
@@ -4711,6 +4811,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@mancheck_verbose_ = $(mancheck_verbose_@AM_DEFAULT_V@)
 @CONFIG_USER_TRUE@mancheck_verbose_0 = @echo MANCHECK $(_MTGT);
 @CONFIG_USER_TRUE@_MTGT = $(subst ^,/,$(subst mancheck-,,$@))
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@scripts_zfs_tests_bindir = $(datadir)/$(PACKAGE)/zfs-tests/bin
 @CONFIG_USER_TRUE@tests_zfs_tests_cmd_badsend_LDADD = \
 @CONFIG_USER_TRUE@	libzfs_core.la \
@@ -4724,6 +4826,7 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 
 @CONFIG_USER_TRUE@tests_zfs_tests_cmd_crypto_test_SOURCES = tests/zfs-tests/cmd/crypto_test.c
 @CONFIG_USER_TRUE@tests_zfs_tests_cmd_crypto_test_LDADD = libzpool.la
+@CONFIG_USER_TRUE@tests_zfs_tests_cmd_clone_after_trunc_LDADD = -lpthread
 @CONFIG_USER_TRUE@@WANT_DEVNAME2DEVID_TRUE@tests_zfs_tests_cmd_devname2devid_CFLAGS = $(AM_CFLAGS) $(LIBUDEV_CFLAGS)
 @CONFIG_USER_TRUE@@WANT_DEVNAME2DEVID_TRUE@tests_zfs_tests_cmd_devname2devid_LDADD = $(LIBUDEV_LIBS)
 @CONFIG_USER_TRUE@tests_zfs_tests_cmd_draid_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS)
@@ -4810,6 +4913,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@nodist_scripts_zfs_tests_include_DATA = \
 @CONFIG_USER_TRUE@	tests/zfs-tests/include/default.cfg
 
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@scripts_test_runner_bindir = $(datadir)/$(PACKAGE)/test-runner/bin
 @CONFIG_USER_TRUE@scripts_test_runner_bin_SCRIPTS = \
 @CONFIG_USER_TRUE@	tests/test-runner/bin/test-runner.py \
@@ -4830,6 +4935,8 @@ SUBDIRS = include $(am__append_88) $(am__append_97)
 @CONFIG_USER_TRUE@	tests/runfiles/sanity.run \
 @CONFIG_USER_TRUE@	tests/runfiles/sunos.run
 
+
+# SPDX-License-Identifier: CDDL-1.0
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@udevrule_DATA = \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	udev/rules.d/69-vdev.rules \
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@	udev/rules.d/60-zvol.rules \
@@ -6853,6 +6960,13 @@ tests/zfs-tests/cmd/chg_usr_exec.$(OBJEXT):  \
 tests/zfs-tests/cmd/chg_usr_exec$(EXEEXT): $(tests_zfs_tests_cmd_chg_usr_exec_OBJECTS) $(tests_zfs_tests_cmd_chg_usr_exec_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_chg_usr_exec_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
 	@rm -f tests/zfs-tests/cmd/chg_usr_exec$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_chg_usr_exec_OBJECTS) $(tests_zfs_tests_cmd_chg_usr_exec_LDADD) $(LIBS)
+tests/zfs-tests/cmd/clone_after_trunc.$(OBJEXT):  \
+	tests/zfs-tests/cmd/$(am__dirstamp) \
+	tests/zfs-tests/cmd/$(DEPDIR)/$(am__dirstamp)
+
+tests/zfs-tests/cmd/clone_after_trunc$(EXEEXT): $(tests_zfs_tests_cmd_clone_after_trunc_OBJECTS) $(tests_zfs_tests_cmd_clone_after_trunc_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_clone_after_trunc_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
+	@rm -f tests/zfs-tests/cmd/clone_after_trunc$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_clone_after_trunc_OBJECTS) $(tests_zfs_tests_cmd_clone_after_trunc_LDADD) $(LIBS)
 tests/zfs-tests/cmd/clone_mmap_cached.$(OBJEXT):  \
 	tests/zfs-tests/cmd/$(am__dirstamp) \
 	tests/zfs-tests/cmd/$(DEPDIR)/$(am__dirstamp)
@@ -7166,6 +7280,13 @@ tests/zfs-tests/cmd/send_doall.$(OBJEXT):  \
 tests/zfs-tests/cmd/send_doall$(EXEEXT): $(tests_zfs_tests_cmd_send_doall_OBJECTS) $(tests_zfs_tests_cmd_send_doall_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_send_doall_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
 	@rm -f tests/zfs-tests/cmd/send_doall$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_send_doall_OBJECTS) $(tests_zfs_tests_cmd_send_doall_LDADD) $(LIBS)
+tests/zfs-tests/cmd/setlease.$(OBJEXT):  \
+	tests/zfs-tests/cmd/$(am__dirstamp) \
+	tests/zfs-tests/cmd/$(DEPDIR)/$(am__dirstamp)
+
+tests/zfs-tests/cmd/setlease$(EXEEXT): $(tests_zfs_tests_cmd_setlease_OBJECTS) $(tests_zfs_tests_cmd_setlease_DEPENDENCIES) $(EXTRA_tests_zfs_tests_cmd_setlease_DEPENDENCIES) tests/zfs-tests/cmd/$(am__dirstamp)
+	@rm -f tests/zfs-tests/cmd/setlease$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tests_zfs_tests_cmd_setlease_OBJECTS) $(tests_zfs_tests_cmd_setlease_LDADD) $(LIBS)
 tests/zfs-tests/cmd/checksum/sha2_test.$(OBJEXT):  \
 	tests/zfs-tests/cmd/checksum/$(am__dirstamp) \
 	tests/zfs-tests/cmd/checksum/$(DEPDIR)/$(am__dirstamp)
@@ -8712,6 +8833,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/badsend.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/btree_test-btree_test.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/chg_usr_exec.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/clone_after_trunc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_cached.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po@am__quote@ # am--include-marker
@@ -8745,6 +8867,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/renameat2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/rm_lnkcnt_zero_file.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/send_doall.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/setlease.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/statx.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/stride_dd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/zfs-tests/cmd/$(DEPDIR)/suid_write_to_file.Po@am__quote@ # am--include-marker
@@ -13579,6 +13702,7 @@ distclean: distclean-recursive
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/badsend.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/btree_test-btree_test.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/chg_usr_exec.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_after_trunc.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_cached.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po
@@ -13612,6 +13736,7 @@ distclean: distclean-recursive
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/renameat2.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/rm_lnkcnt_zero_file.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/send_doall.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/setlease.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/statx.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/stride_dd.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/suid_write_to_file.Po
@@ -14127,6 +14252,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/badsend.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/btree_test-btree_test.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/chg_usr_exec.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_after_trunc.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_cached.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clone_mmap_write.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/clonefile.Po
@@ -14160,6 +14286,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/renameat2.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/rm_lnkcnt_zero_file.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/send_doall.Po
+	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/setlease.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/statx.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/stride_dd.Po
 	-rm -f tests/zfs-tests/cmd/$(DEPDIR)/suid_write_to_file.Po
@@ -14524,6 +14651,8 @@ scripts-install-data-hook: scripts/common.sh.in Makefile
 # Provided by /bin/sleep, and, again, every implementation of that supports this
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@$(call SHELLCHECK_OPTS,$(pkgdracut_90_SCRIPTS)): CHECKBASHISMS_IGNORE = -e 'sleep only takes one integer' -e 'sleep 0.'
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@$(call SHELLCHECK_OPTS,$(i_t_check_scripts)): SHELLCHECK_SHELL = sh
+
+# SPDX-License-Identifier: CDDL-1.0
 @CONFIG_USER_TRUE@$(call SHELLCHECK_OPTS,$(sysconf_zfs_DATA)): SHELLCHECK_SHELL = sh
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@$(call SHELLCHECK_OPTS,$(initconf_DATA)): SHELLCHECK_SHELL = sh
 @BUILD_LINUX_TRUE@@CONFIG_USER_TRUE@@INIT_SYSV_TRUE@$(call SHELLCHECK_OPTS,$(init_SCRIPTS)): SHELLCHECK_SHELL = sh
@@ -14867,18 +14996,18 @@ debian:
 	cp -r contrib/debian debian; chmod +x debian/rules;
 
 native-deb-utils: native-deb-local debian
-	while [ -f debian/deb-build.lock ]; do sleep 1; done; \
-	echo "native-deb-utils" > debian/deb-build.lock; \
-	cp contrib/debian/control debian/control; \
-	$(DPKGBUILD) -b -rfakeroot -us -uc; \
-	$(RM) -f debian/deb-build.lock
+	while [ -f debian/deb-build.lock ]; do sleep 1; done && \
+	echo "native-deb-utils" > debian/deb-build.lock && \
+	trap '$(RM) -f debian/deb-build.lock' EXIT && \
+	cp contrib/debian/control debian/control && \
+	$(DPKGBUILD) -b -rfakeroot -us -uc
 
 native-deb-kmod: native-deb-local debian
-	while [ -f debian/deb-build.lock ]; do sleep 1; done; \
-	echo "native-deb-kmod" > debian/deb-build.lock; \
-	sh scripts/make_gitrev.sh; \
-	fakeroot debian/rules override_dh_binary-modules; \
-	$(RM) -f debian/deb-build.lock
+	while [ -f debian/deb-build.lock ]; do sleep 1; done && \
+	echo "native-deb-kmod" > debian/deb-build.lock && \
+	trap '$(RM) -f debian/deb-build.lock' EXIT && \
+	sh scripts/make_gitrev.sh && \
+	fakeroot debian/rules override_dh_binary-modules
 
 native-deb: native-deb-utils native-deb-kmod
 

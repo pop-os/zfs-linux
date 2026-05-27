@@ -9,7 +9,7 @@ Last-Update: 2020-04-14
 ===================================================================
 --- a/cmd/zpool/zpool_main.c
 +++ b/cmd/zpool/zpool_main.c
-@@ -11434,6 +11434,16 @@
+@@ -11486,6 +11486,16 @@
  {
  	int i, ret, count;
  	boolean_t firstff = B_TRUE;
