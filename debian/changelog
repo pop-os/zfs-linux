@@ -1,3 +1,9 @@
+zfs-linux (2.4.2-1~bpo13+1) trixie-backports; urgency=medium
+
+  * Rebuild for trixie-backports.
+
+ -- Shengqi Chen <harry@debian.org>  Wed, 27 May 2026 21:18:52 +0800
+
 zfs-linux (2.4.2-1) unstable; urgency=medium
 
   * New upstream version 2.4.2.
