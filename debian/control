@@ -108,14 +108,22 @@ Depends: ${misc:Depends}, ${shlibs:Depends}
 # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=988521
 Recommends: libcurl4
 # libzfs_core.so.3 is installed by libzfs7linux, so we need breaks/replaces
-Breaks: libzfs2, libzfs4, libzfs4linux, libzfs6linux
-Replaces: libzfs2, libzfs4, libzfs4linux, libzfs6linux
+Breaks: libzfs2, libzfs4, libzfs4linux, libzfs6linux (<< 2.4.1)
+Replaces: libzfs2, libzfs4, libzfs4linux, libzfs6linux (<< 2.4.1)
 Description: OpenZFS filesystem library for Linux - general support
  OpenZFS is a storage platform that encompasses the functionality of
  traditional filesystems and volume managers. It supports data checksums,
  compression, encryption, snapshots, and more.
  .
  The OpenZFS library provides support for managing OpenZFS filesystems.
+
+Package: libzfs6linux
+Section: contrib/libs
+Architecture: linux-any
+Depends: libzfs7linux
+Description: Transitional package for libzfs7linux
+ This is a transitional package for libzfs7linux, and can be
+ safely removed after the installation is complete.
 
 Package: libzfsbootenv1linux
 Section: contrib/libs
