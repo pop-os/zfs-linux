@@ -4,6 +4,7 @@
 1005-enable-zed.patch
 1006-zed-service-bindir.patch
 1007-dkms-pkgcfg.patch
+1008-debian-periodic-scrub-trim-doc.patch
 2100-zfs-load-module.patch
 force-verbose-rules.patch
 cross-compile.patch
