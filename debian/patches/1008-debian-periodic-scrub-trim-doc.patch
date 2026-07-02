@@ -1,0 +1,62 @@
+Description: document the Debian periodic scrub/trim mechanism
+ Upstream ships per-pool zfs-scrub@/zfs-trim@ systemd timers, documented in
+ the PERIODIC SCRUB / PERIODIC TRIM sections. Debian additionally runs a
+ periodic scrub/trim across all online pools, gated by the
+ org.debian:periodic-{scrub,trim} user property. Note this alongside the
+ upstream timer documentation so users understand the default behaviour.
+Author: Aron Xu <aron@debian.org>
+Forwarded: not-needed
+Last-Update: 2026-05-30
+---
+Index: b/man/man8/zpool-scrub.8
+===================================================================
+--- a/man/man8/zpool-scrub.8
++++ b/man/man8/zpool-scrub.8
+@@ -202,6 +202,20 @@ timer units are provided.
+ .Cm zfs-scrub-\fImonthly\fB@\fIotherpool\fB.timer
+ .Cm --now
+ .El
++.Pp
++On Debian systems, a periodic scrub is additionally run for all online pools
++on the second Sunday of each month, without enabling any per-pool timer.
++Whether a given pool is scrubbed is controlled by the
++.Sy org.debian:periodic-scrub
++user property on the pool's root dataset, which accepts
++.Sy auto
++.Pq the default, same as unset ,
++.Sy enable ,
++or
++.Sy disable .
++See
++.Pa /usr/share/doc/zfsutils-linux/README.Debian
++for details.
+ .
+ .Sh SEE ALSO
+ .Xr systemd.timer 5 ,
+Index: b/man/man8/zpool-trim.8
+===================================================================
+--- a/man/man8/zpool-trim.8
++++ b/man/man8/zpool-trim.8
+@@ -110,6 +110,22 @@ timer units are provided.
+ .Cm zfs-trim-\fImonthly\fB@\fIotherpool\fB.timer
+ .Cm --now
+ .El
++.Pp
++On Debian systems, a periodic TRIM is additionally run for all online pools
++on the first Sunday of each month, without enabling any per-pool timer.
++Whether a given pool is trimmed is controlled by the
++.Sy org.debian:periodic-trim
++user property on the pool's root dataset, which accepts
++.Sy auto
++.Pq the default, same as unset ,
++.Sy enable ,
++or
++.Sy disable .
++In
++.Sy auto
++mode only devices whose TRIM support is known to be safe are trimmed; see
++.Pa /usr/share/doc/zfsutils-linux/README.Debian
++for the device classification rules and other details.
+ .
+ .Sh SEE ALSO
+ .Xr systemd.timer 5 ,

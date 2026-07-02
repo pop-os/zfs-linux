@@ -4,6 +4,7 @@
 1005-enable-zed.patch
 1006-zed-service-bindir.patch
 1007-dkms-pkgcfg.patch
+1008-debian-periodic-scrub-trim-doc.patch
 2100-zfs-load-module.patch
 force-verbose-rules.patch
 cross-compile.patch
@@ -21,4 +22,3 @@ ubuntu/0003-enable-linux-experimental.patch
 fix-pyzfs-version.patch
 BUILD_EXCLUSIVE_KERNEL_MIN.patch
 #bump-Linux-Minimum.patch
-fix-Linux-Maximum.patch

@@ -212,6 +212,14 @@
 /* Define if revalidate_disk() in block_device_operations */
 #undef HAVE_BLOCK_DEVICE_OPERATIONS_REVALIDATE_DISK
 
+/* Define to 1 if you have the Mac OS X function
+   CFLocaleCopyPreferredLanguages in the CoreFoundation framework. */
+#undef HAVE_CFLOCALECOPYPREFERREDLANGUAGES
+
+/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
+   the CoreFoundation framework. */
+#undef HAVE_CFPREFERENCESCOPYAPPVALUE
+
 /* check_disk_change() exists */
 #undef HAVE_CHECK_DISK_CHANGE
 
@@ -281,6 +289,9 @@
 
 /* fs_context exists */
 #undef HAVE_FS_CONTEXT
+
+/* fs_parse() takes fs_parameter_spec directly */
+#undef HAVE_FS_PARSE_TAKES_SPEC
 
 /* yes */
 #undef HAVE_GENERIC_FADVISE
@@ -935,3 +946,11 @@
 #undef PACKAGE_VERSION
 #undef STDC_HEADERS
 #undef VERSION
+
+
+#ifdef CONFIG_ZFS
+#undef ZFS_DEBUG
+#ifdef CONFIG_ZFS_DEBUG
+#define ZFS_DEBUG 1
+#endif
+#endif

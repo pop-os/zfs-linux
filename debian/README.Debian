@@ -55,13 +55,37 @@ please use zfs-initramfs with caution.
  [ Periodic Trimming ]
 
  Some SSD devices require proper scheduling of TRIM commands to maintain best
- performance. Currently the auto-trim will only trim if the zpool consists of
- /only/ NVMe drives, since some SATA 2 and SATA 3.0 SSDs will hang or crash
- during large TRIMs (See #983086). If your zpools with SATA SSDs had no
- problems trimming before, you will need to run the following command to
- restore the previous behaviour (always trim a pool):
+ performance. In auto mode (the default), periodic-trim classifies each data
+ leaf device in a pool and trims only those that are safe:
 
-  # zfs set org.debian:periodic-trim=enable sata-pool
+  - NVMe SSDs are always considered safe (TRIM is inherently queued).
+  - SATA SSDs are safe if the kernel reports queued TRIM support via the
+    sysfs ata_device/trim attribute (requires SATA >= 3.1 and no kernel
+    quirk disabling NCQ TRIM). Older SATA SSDs with non-queued (blocking)
+    TRIM are skipped to avoid I/O stalls (See #983086).
+  - Regular HDDs and SMR HDDs with TRIM are skipped.
+  - SATA devices behind SAS HBAs are skipped because the HBA firmware
+    handles the SCSI UNMAP to ATA TRIM translation internally, and
+    the host cannot determine whether it issues queued (NCQ) or
+    non-queued TRIM to the underlying drive.
+  - SATA SSDs behind port multipliers (PMP) are supported; the
+    individual device's trim capability is identified via the SCSI
+    address to ATA device mapping.
+  - Non-rotational devices without a recognizable ATA trim attribute
+    (e.g. virtio, iSCSI, NBD, loop, PMEM) are skipped because the
+    safety of TRIM cannot be verified.
+  - Log, special, and dedup vdevs are classified like data vdevs.
+    Cache and spare vdevs are excluded (not targets of zpool trim).
+
+ Mixed pools are supported: only the safe devices are trimmed, while
+ the rest are left alone. If no device in a pool qualifies, no trim
+ is performed.
+
+ If auto mode skips a device that you know is safe (e.g. behind a
+ SAS HBA, a virtio disk backed by a capable SSD, or an iSCSI LUN),
+ you can force trimming of the entire pool:
+
+  # zfs set org.debian:periodic-trim=enable mypool
 
  TRIM jobs are scheduled on every first Sunday of month by default.
 

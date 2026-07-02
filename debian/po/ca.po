@@ -1,21 +1,21 @@
 # Catalan translation of zfs-linux's debconf messages
-# Copyright © 2024 Free Software Foundation, Inc.
+# Copyright © 2024,2026 poc senderi <pocsenderi@protonmail.com>
 # This file is distributed under the same license as the zfs-linux package.
-# poc senderi <pocsenderi@protonmail.com>, 2024.
+# poc senderi <pocsenderi@protonmail.com>, 2024,2026.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
 "POT-Creation-Date: 2026-05-13 14:29+0800\n"
-"PO-Revision-Date: 2024-12-10 23:40+0100\n"
-"Last-Translator: \n"
+"PO-Revision-Date: 2026-05-14 22:40+0100\n"
+"Last-Translator: poc senderi <pocsenderi@protonmail.com>\n"
 "Language-Team: Catalan <debian-l10n-catalan@lists.debian.org>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.4.2\n"
+"X-Generator: Poedit 3.6\n"
 
 #. Type: boolean
 #. Description
@@ -109,17 +109,15 @@ msgstr ""
 #. Description
 #: ../zfs-dkms.templates:4001
 msgid "OpenZFS on RT kernels is currently experimental"
-msgstr ""
+msgstr "L'OpenZFS és experimental en nuclis RT"
 
 #. Type: note
 #. Description
 #: ../zfs-dkms.templates:4001
-#, fuzzy
-#| msgid "You are attempting to build OpenZFS against a 32-bit running kernel."
 msgid ""
 "You are attempting to build OpenZFS against a real-time (PREEMPT_RT) kernel."
 msgstr ""
-"S'està intentant compilar l'OpenZFS en un nucli de 32 bits en execució."
+"S'està intentant compilar l'OpenZFS en un nucli de temps real (PREEMPT_RT)."
 
 #. Type: note
 #. Description
@@ -132,6 +130,12 @@ msgid ""
 "succeeds, compatibility issues and instability, including possible data "
 "corruption, may occur."
 msgstr ""
+"L'OpenZFS encara no és oficialment compatible amb nuclis amb PREEMPT_RT. Des "
+"del Linux 6.12, el PREEMPT_RT ha estat inclòs dins el nucli, fent "
+"configuracions com aquesta més accessibles. Tanmateix, això no implica que "
+"l'OpenZFS hagi estat validat conjuntament. La compilació pot fallar però, si "
+"malgrat això acabés bé, poden aparèixer incidències de compatibilitat i "
+"inestabilitat, incloent possibles corrupcions de dades."
 
 #. Type: note
 #. Description
@@ -141,3 +145,6 @@ msgid ""
 "OpenZFS on a real-time kernel in any environment where data integrity "
 "matters."
 msgstr ""
+"Procediu amb cura i assegureu-vos de que disposeu de còpies de seguretat "
+"adequades abans d'usar l'OpenZFS amb un nucli de temps real en qualsevol "
+"circumstància on la integritat de les dades sigui rellevant."

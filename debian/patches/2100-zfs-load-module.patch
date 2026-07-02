@@ -1,9 +1,11 @@
 Description: explicitly load the ZFS module via systemd service
 Author: Ubuntu developers
 Forwarded: not needed
---- a/etc/systemd/system/zfs-import-cache.service.in
-+++ b/etc/systemd/system/zfs-import-cache.service.in
-@@ -3,7 +3,9 @@
+Index: zfs/etc/systemd/system/zfs-import-cache.service.in
+===================================================================
+--- zfs.orig/etc/systemd/system/zfs-import-cache.service.in
++++ zfs/etc/systemd/system/zfs-import-cache.service.in
+@@ -3,7 +3,9 @@ Description=Import ZFS pools by cache fi
  Documentation=man:zpool(8)
  DefaultDependencies=no
  Requires=systemd-udev-settle.service
@@ -13,9 +15,11 @@ Forwarded: not needed
  After=cryptsetup.target
  After=multipathd.service
  After=systemd-remount-fs.service
---- a/etc/systemd/system/zfs-import-scan.service.in
-+++ b/etc/systemd/system/zfs-import-scan.service.in
-@@ -3,7 +3,9 @@
+Index: zfs/etc/systemd/system/zfs-import-scan.service.in
+===================================================================
+--- zfs.orig/etc/systemd/system/zfs-import-scan.service.in
++++ zfs/etc/systemd/system/zfs-import-scan.service.in
+@@ -3,7 +3,9 @@ Description=Import ZFS pools by device s
  Documentation=man:zpool(8)
  DefaultDependencies=no
  Requires=systemd-udev-settle.service
@@ -25,8 +29,10 @@ Forwarded: not needed
  After=cryptsetup.target
  After=multipathd.service
  Before=zfs-import.target
+Index: zfs/etc/systemd/system/zfs-load-module.service.in
+===================================================================
 --- /dev/null
-+++ b/etc/systemd/system/zfs-load-module.service.in
++++ zfs/etc/systemd/system/zfs-load-module.service.in
 @@ -0,0 +1,17 @@
 +[Unit]
 +Description=Install ZFS kernel module
@@ -45,9 +51,11 @@ Forwarded: not needed
 +[Install]
 +WantedBy=zfs-mount.service
 +WantedBy=zfs.target
---- a/contrib/dracut/90zfs/module-setup.sh.in
-+++ b/contrib/dracut/90zfs/module-setup.sh.in
-@@ -96,7 +96,8 @@
+Index: zfs/contrib/dracut/90zfs/module-setup.sh.in
+===================================================================
+--- zfs.orig/contrib/dracut/90zfs/module-setup.sh.in
++++ zfs/contrib/dracut/90zfs/module-setup.sh.in
+@@ -96,7 +96,8 @@ install() {
  
  		for _service in \
  			"zfs-import-scan.service" \
@@ -57,9 +65,11 @@ Forwarded: not needed
  			inst_simple "${systemdsystemunitdir}/${_service}"
  			systemctl -q --root "${initdir}" add-wants zfs-import.target "${_service}"
  
---- a/etc/Makefile.am
-+++ b/etc/Makefile.am
-@@ -53,6 +53,7 @@
+Index: zfs/etc/Makefile.am
+===================================================================
+--- zfs.orig/etc/Makefile.am
++++ zfs/etc/Makefile.am
+@@ -47,6 +47,7 @@ dist_systemdpreset_DATA = \
  	%D%/systemd/system/50-zfs.preset
  
  systemdunit_DATA = \
@@ -67,9 +77,11 @@ Forwarded: not needed
  	%D%/systemd/system/zfs-import-cache.service \
  	%D%/systemd/system/zfs-import-scan.service \
  	%D%/systemd/system/zfs-import.target \
---- a/etc/systemd/system/50-zfs.preset
-+++ b/etc/systemd/system/50-zfs.preset
-@@ -7,3 +7,4 @@
+Index: zfs/etc/systemd/system/50-zfs.preset
+===================================================================
+--- zfs.orig/etc/systemd/system/50-zfs.preset
++++ zfs/etc/systemd/system/50-zfs.preset
+@@ -7,3 +7,4 @@ enable zfs-share.service
  enable zfs-zed.service
  enable zfs-volume-wait.service
  enable zfs.target

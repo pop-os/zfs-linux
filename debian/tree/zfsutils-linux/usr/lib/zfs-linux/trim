@@ -1,7 +1,7 @@
-#!/bin/sh -u
+#!/bin/bash -u
 
 # directly exit successfully when zfs module is not loaded
-if ! [ -d /sys/module/zfs ]; then
+if ! [[ -d /sys/module/zfs ]]; then
 	exit 0
 fi
 
@@ -13,41 +13,133 @@ get_property () {
 	# We are abusing user-defined properties on the root dataset,
 	# since they're not available on pools https://github.com/openzfs/zfs/pull/11680
 	# TODO: use zpool user-defined property when such feature is available.
-	pool="$1"
+	local pool="$1"
 	zfs get -H -o value "${PROPERTY_NAME}" "${pool}" 2>/dev/null
 }
 
 trim_if_not_already_trimming () {
-	pool="$1"
+	local pool="$1"
+	shift
 	if ! zpool status "${pool}" | grep -q "trimming"; then
-		# This will error on HDD-only pools: doesn't matter
-		zpool trim "${pool}"
+		zpool trim "${pool}" "$@"
 	fi
 }
 
-# Walk up the kernel parent names:
-# this will catch devices from LVM &a.
-get_transp () {
-	dev="$1"
+# Walk up the kernel parent names to find the root block device.
+# This will catch devices from LVM &a.
+get_root_dev () {
+	local dev="$1" pd
 	while pd="$(lsblk -dnr -o PKNAME "$dev")"; do
-		if [ -z "$pd" ]; then
+		if [[ -z "$pd" ]]; then
 			break
 		else
 			dev="/dev/$pd"
 		fi
 	done
-	lsblk -dnr -o TRAN "$dev"
+	echo "$dev"
 }
 
-pool_is_nvme_only () {
-	pool="$1"
-	# get a list of devices attached to the specified pool
+# The libata sysfs hierarchy is always:
+#   ataN/hostH/targetH:B:T/H:B:T:L  ← /sys/block/sdX/device
+# so device/../../.. reaches the ata port, and ata_port/ underneath
+# it confirms this is an ATA device (absent for SAS/SCSI).
+#
+# Without PMP, SCSI bus is 0 and SCSI target is the ATA device
+# number (0 for SATA, 0 or 1 for PATA master/slave).
+# With PMP, SCSI bus is the PMP link number and SCSI target is 0.
+#
+# Returns the trim mode string, or empty if not an ATA device.
+get_ata_trim_mode () {
+	local ata_dir scsi_addr ata_ports ata_id scsi_bus scsi_target
+	local ata_device trim
+
+	ata_dir=$(readlink -f "/sys/block/$1/device/../../.." 2>/dev/null) || return
+	scsi_addr=$(readlink -f "/sys/block/$1/device" 2>/dev/null) || return
+	scsi_addr=${scsi_addr##*/}
+	[[ -d "$ata_dir/ata_port" ]] || return
+
+	local -a ata_ports=("$ata_dir"/ata_port/ata*)
+	[[ -d "${ata_ports[0]}" ]] || return
+	[[ ${#ata_ports[@]} -eq 1 ]] || return
+	ata_id=${ata_ports[0]##*/ata}
+
+	IFS=: read -r _ scsi_bus scsi_target _ <<< "$scsi_addr"
+
+	local nr_pmp="$ata_dir/ata_port/ata$ata_id/nr_pmp_links"
+	[[ -f "$nr_pmp" ]] || return
+	if [[ "$(< "$nr_pmp")" == "0" ]]; then
+		ata_device="dev$ata_id.$scsi_target"
+	else
+		ata_device="dev$ata_id.$scsi_bus.$scsi_target"
+	fi
+
+	trim="/sys/class/ata_device/$ata_device/trim"
+	[[ -f "$trim" ]] && cat "$trim"
+}
+
+# Classify a device for auto-trim purposes.
+# Returns 0 = safe to trim, 1 = skip.
+#
+# Safe:  NVMe (always queued), non-rotational SATA with queued TRIM.
+# Skip:  all rotational devices, non-queued TRIM (blocking I/O),
+#        unknown devices behind SAS HBAs (conservative).
+classify_dev_trim () {
+	local root_dev devname tran rotational trim_mode
+	root_dev="$(get_root_dev "$1")"
+	devname=$(lsblk -dnr -o KNAME "$root_dev")
+	[[ -n "$devname" ]] || return 1
+	tran=$(lsblk -dnr -o TRAN "$root_dev")
+	case "$tran" in
+		nvme)
+			return 0 ;;
+		*)
+			rotational=$(cat "/sys/block/$devname/queue/rotational" 2>/dev/null)
+			[[ "$rotational" == "1" ]] && return 1
+			trim_mode=$(get_ata_trim_mode "$devname")
+			[[ "$trim_mode" == "queued" ]] && return 0
+			return 1 ;;
+	esac
+}
+
+# Collect pool data leaf devices, one per line, excluding aux vdevs
+# (cache, spare). Section headers from zpool list -vHP use spaces
+# (not tabs) between fields, so the first non-empty tab-field
+# contains the whole line including space-padded stats.
+get_pool_data_leaves () {
+	local pool="$1" in_aux=false name
 	zpool list -vHP "${pool}" | \
-		awk -F'\t' '$2 ~ "^/dev/" {print $2}' | \
-	while read -r dev
+		awk -F'\t' '{
+			for (i = 1; i <= NF; i++) {
+				if ($i != "") { print $i; break }
+			}
+		}' | \
+	while IFS= read -r name
 	do
-		[ "$(get_transp "$dev")" = "nvme" ] || return
+		case "$name" in
+			cache|cache\ *|spare|spare\ *)
+				in_aux=true ;;
+			/dev/*)
+				$in_aux || echo "$name" ;;
+		esac
 	done
+}
+
+auto_trim_pool () {
+	local pool="$1" dev
+	local -a safe_devs=()
+
+	if zpool status "${pool}" | grep -q "trimming"; then
+		return
+	fi
+
+	while IFS= read -r dev; do
+		if classify_dev_trim "$dev"; then
+			safe_devs+=("$dev")
+		fi
+	done < <(get_pool_data_leaves "${pool}")
+
+	[[ ${#safe_devs[@]} -gt 0 ]] || return 0
+	zpool trim "${pool}" "${safe_devs[@]}"
 }
 
 # TRIM all healthy pools that are not already trimming as per their configs.
@@ -60,7 +152,7 @@ do
 	case "${ret}" in
 		disable);;
 		enable)	trim_if_not_already_trimming "${pool}" ;;
-		-|auto)	if pool_is_nvme_only "${pool}"; then trim_if_not_already_trimming "${pool}"; fi ;;
+		-|auto)	auto_trim_pool "${pool}" ;;
 		*)	cat > /dev/stderr <<EOF
 $0: [WARNING] illegal value "${ret}" for property "${PROPERTY_NAME}" of ZFS dataset "${pool}".
 $0: Acceptable choices for this property are: auto, enable, disable. The default is auto.
