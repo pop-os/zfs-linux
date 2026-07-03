@@ -1,24 +1,25 @@
 # Portuguese translation for zfs-linux's debconf messages
-# Copyright (C) 2013 THE PACKAGE'S COPYRIGHT HOLDER
+# Copyright (C) 2013 THE zfs-linux'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the zfs-linux package.
+#
 # Miguel FIgueiredo <elmig@debianpt.org>, 2013.
 # Rui Branco <ruipb@debianpt.org>, 2017.
 # Miguel Figueiredo <elmig@debianpt.org>, 2021.
-#
+# SPDX-FileCopyrightText: 2026 Américo Monteiro <a_monteiro@gmx.com>
 msgid ""
 msgstr ""
 "Project-Id-Version: zfs-linux\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
 "POT-Creation-Date: 2026-05-13 14:29+0800\n"
-"PO-Revision-Date: 2021-03-07 12:49+0000\n"
-"Last-Translator: Rui Branco <ruipb@debianpt.org>\n"
-"Language-Team: Portuguese <traduz@debianpt.org>\n"
+"PO-Revision-Date: 2026-05-31 08:10+0100\n"
+"Last-Translator: Américo Monteiro <a_monteiro@gmx.com>\n"
+"Language-Team: Portuguese <>\n"
 "Language: Portuguese\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Gtranslator 2.91.7\n"
+"X-Generator: Lokalize 25.04.0\n"
 
 #. Type: boolean
 #. Description
@@ -102,24 +103,24 @@ msgid ""
 "appliances, etc) may lead to infringing."
 msgstr ""
 "Irá compilar o OpenZFS usando DKMS de um modo tal que não será compilado num "
-"único binário monolítico. tenha atenção que distribuir ambos os binários no "
+"único binário monolítico. Tenha atenção que distribuir ambos os binários no "
 "mesmo suporte de media (imagens de disco, aplicações virtuais, etc) pode "
-"levar a violação da licença. "
+"levar a infração."
 
 #. Type: note
 #. Description
 #: ../zfs-dkms.templates:4001
 msgid "OpenZFS on RT kernels is currently experimental"
-msgstr ""
+msgstr "OpenZFS em kernels RT é atualmente experimental"
 
 #. Type: note
 #. Description
 #: ../zfs-dkms.templates:4001
-#, fuzzy
 #| msgid "You are attempting to build OpenZFS against a 32-bit running kernel."
 msgid ""
 "You are attempting to build OpenZFS against a real-time (PREEMPT_RT) kernel."
-msgstr "Está a tentar compilar OpenZFS contra um kernel 32-bit em execução."
+msgstr ""
+"Está a tentar compilar OpenZFS contra um kernel de tempo real (PREEMPT_RT)."
 
 #. Type: note
 #. Description
@@ -132,6 +133,12 @@ msgid ""
 "succeeds, compatibility issues and instability, including possible data "
 "corruption, may occur."
 msgstr ""
+"OpenZFS ainda não é suportado oficialmente em kernels PREEMPT_RT. Desde o "
+"Linux 6.12, PREEMPT_RT foi fundido no kernel principal, tornando tais "
+"configurações mais acessíveis; no entanto, isto não implica que o OpenZFS "
+"esteja validado contra isso. A compilação pode falhar, e mesmo que tenha "
+"sucesso, pode ocorrer problemas com compatibilidade e estabilidade, "
+"incluindo possível corrupção de dados."
 
 #. Type: note
 #. Description
@@ -141,6 +148,9 @@ msgid ""
 "OpenZFS on a real-time kernel in any environment where data integrity "
 "matters."
 msgstr ""
+"Prossiga com cuidado e certifique que tem salvaguardas adequadas antes "
+"de usar OpenZFS num kernel de tempo real em qualquer ambiente onde a "
+"integridade dos dados tem importância."
 
 #~ msgid "Scrub OpenZFS pools periodically?"
 #~ msgstr "Fazer Scrub periodicamente aos pools OpenZFS?"
