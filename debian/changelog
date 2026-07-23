@@ -1,3 +1,12 @@
+zfs-linux (2.4.3-2) unstable; urgency=medium
+
+  * d/watch: fix version 5 format (separate header/source paragraphs)
+  * d/po: update debconf translations (de, es, nl, pt)
+    (Closes: #1137194, #1137220, #1137538, #1138510)
+  * d/patches: bump META to 7.1 (Closes: #1141831)
+
+ -- Aron Xu <aron@debian.org>  Fri, 24 Jul 2026 05:09:29 +0800
+
 zfs-linux (2.4.3-1) unstable; urgency=medium
 
   * New upstream version 2.4.3.
