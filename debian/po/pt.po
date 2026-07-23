@@ -116,7 +116,6 @@ msgstr "OpenZFS em kernels RT é atualmente experimental"
 #. Type: note
 #. Description
 #: ../zfs-dkms.templates:4001
-#| msgid "You are attempting to build OpenZFS against a 32-bit running kernel."
 msgid ""
 "You are attempting to build OpenZFS against a real-time (PREEMPT_RT) kernel."
 msgstr ""
@@ -148,8 +147,8 @@ msgid ""
 "OpenZFS on a real-time kernel in any environment where data integrity "
 "matters."
 msgstr ""
-"Prossiga com cuidado e certifique que tem salvaguardas adequadas antes "
-"de usar OpenZFS num kernel de tempo real em qualquer ambiente onde a "
+"Prossiga com cuidado e certifique que tem salvaguardas adequadas antes de "
+"usar OpenZFS num kernel de tempo real em qualquer ambiente onde a "
 "integridade dos dados tem importância."
 
 #~ msgid "Scrub OpenZFS pools periodically?"
