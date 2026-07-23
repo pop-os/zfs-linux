@@ -1,0 +1,20 @@
+Author: Aron Xu <aron@debian.org>
+Description: bump Linux-Maximum to declare Linux 7.1 support
+ The Linux 7.1 dentry d_alias compatibility code (config/kernel-dentry-alias.m4
+ and the HAVE_DENTRY_D_U_ALIASES wiring) is already present in the 2.4.3 release
+ tarball, but META still declares Linux-Maximum: 7.0, so the autoconf
+ kernel-version check refuses to build against Linux 7.1. Bump the field to 7.1
+ to permit it.
+Origin: upstream, https://github.com/openzfs/zfs/commit/a35e8d892628d01e50af23aee5ba501be426baf6
+Forwarded: not-needed
+Index: zfs/META
+===================================================================
+--- zfs.orig/META
++++ zfs/META
+@@ -6,5 +6,5 @@ Release:       1
+ Release-Tags:  relext
+ License:       CDDL
+ Author:        OpenZFS
+-Linux-Maximum: 7.0
++Linux-Maximum: 7.1
+ Linux-Minimum: 4.18
