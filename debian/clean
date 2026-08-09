@@ -4,12 +4,12 @@ contrib/pyzfs/build/
 contrib/pyzfs/libzfs_core/__pycache__/
 contrib/pyzfs/libzfs_core/bindings/__pycache__/
 contrib/pyzfs/pyzfs.egg-info/
-debian/libnvpair3linux-udeb.install
+debian/libnvpair3-udeb.install
 debian/libnvpair3linux.install
-debian/libuutil3linux-udeb.install
+debian/libuutil3-udeb.install
 debian/libuutil3linux.install
-debian/libzfs7linux-udeb.install
+debian/libzfs7-udeb.install
 debian/libzfs7linux.install
 debian/libzfslinux-dev.install
-debian/libzpool7linux-udeb.install
+debian/libzpool7-udeb.install
 debian/libzpool7linux.install
