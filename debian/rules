@@ -244,6 +244,7 @@ override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configur
 
 	dh_installdirs -p${pmodules}-di
 	dh_install -p${pmodules}-di
+	strip --strip-debug debian/${pmodules}-di/lib/modules/$(KVERS)/extra/*/*.ko
 	dh_gencontrol -p${pmodules}-di
 
 	dh_builddeb -p${pmodules}-di
