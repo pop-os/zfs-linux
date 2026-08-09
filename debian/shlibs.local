@@ -1,0 +1,5 @@
+# libtirpc's shlibs file has no udeb line, so libnvpair3-udeb would
+# depend on the regular libtirpc3t64 deb, which the debian-installer
+# cannot install. Map only the udeb case; deb builds keep using the
+# symbols file of libtirpc as before.
+udeb: libtirpc 3 libtirpc3-udeb (>= 1.3.6+ds)
