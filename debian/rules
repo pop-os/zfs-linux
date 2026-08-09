@@ -41,7 +41,8 @@ override_dh_autoreconf:
 
 override_dh_auto_configure:
 ifeq ($(BUILD_UDEB), true)
-	cat debian/control.udeb.in >> debian/control
+	grep -q '^Package: zfsutils-udeb' debian/control || \
+	    { echo >> debian/control; cat debian/control.udeb.in >> debian/control; }
 endif
 
 	@# Build the userland, but don't build the kernel modules.
@@ -176,7 +177,8 @@ override_dh_auto_clean:
 	debconf-updatepo
 	@if test -e META.orig; then mv META.orig META; fi
 ifeq ($(BUILD_UDEB), true)
-	cat debian/control.udeb.in >> debian/control
+	grep -q '^Package: zfsutils-udeb' debian/control || \
+	    { echo >> debian/control; cat debian/control.udeb.in >> debian/control; }
 endif
 
 override_dh_install:
