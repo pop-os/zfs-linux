@@ -1,3 +1,18 @@
+zfs-linux (2.4.3-3) unstable; urgency=medium
+
+  [ Igor Krpanic ]
+  * d/rules: fix outdated udeb package names (Closes: #1144055)
+  * d/: rename udeb install files to match udeb package names
+  * d/rules: fix appending of control.udeb.in
+  * d/rules: strip modules in the -di udeb
+  * d/shlibs.local: map libtirpc to libtirpc3-udeb for udebs
+  * d/rules: copy DKMS files instead of moving them
+
+  [ Benjamin Drung ]
+  * Drop depending on busybox-initramfs (Closes: #1142294, LP: #2157328)
+
+ -- Shengqi Chen <harry@debian.org>  Tue, 11 Aug 2026 00:06:49 +0800
+
 zfs-linux (2.4.3-2) unstable; urgency=medium
 
   * d/watch: fix version 5 format (separate header/source paragraphs)
