@@ -1,3 +1,9 @@
+zfs-linux (2.4.3-3ubuntu5pop0) noble; urgency=medium
+
+  * Package 2.4.3-3 for Pop!_OS
+
+ -- Jonah Grasso <jonah@system76.com>  Thu, 13 Aug 2026 13:33:30 -0600
+
 zfs-linux (2.4.3-3) unstable; urgency=medium
 
   [ Igor Krpanic ]
