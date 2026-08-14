@@ -64,6 +64,8 @@ libzpool.so.7 libzpool7linux #MINVER#
  (arch=amd64)_key_expansion_192b@Base 0.8.2
  (arch=amd64)_key_expansion_256a@Base 0.8.2
  (arch=amd64)_key_expansion_256b@Base 0.8.2
+ (optional)__start_zfs_tunables@Base 2.4.0
+ (optional)__stop_zfs_tunables@Base 2.4.0
  _sol_getmntent@Base 2.2.0
  abd_alloc@Base 0.8.2
  abd_alloc_chunks@Base 2.0
