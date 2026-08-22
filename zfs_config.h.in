@@ -266,7 +266,7 @@
 /* Define if d_set_d_op() is available */
 #undef HAVE_D_SET_D_OP
 
-/* Define to 1 if you have the 'execvpe' function. */
+/* Define to 1 if you have the `execvpe' function. */
 #undef HAVE_EXECVPE
 
 /* fault_in_iov_iter_readable() is available */
@@ -280,6 +280,15 @@
 
 /* flush_dcache_page() is GPL-only */
 #undef HAVE_FLUSH_DCACHE_PAGE_GPL_ONLY
+
+/* use __flush_workqueue() to flush delay workqueue */
+#undef HAVE_FLUSH_DELAY_WORKQUEUE_INTERNAL
+
+/* use system_delay_wq for delay workqueue */
+#undef HAVE_FLUSH_DELAY_WORKQUEUE_PERCPU
+
+/* follow_down() takes a flags parameter */
+#undef HAVE_FOLLOW_DOWN_FLAGS
 
 /* Define if compiler supports -Wformat-overflow */
 #undef HAVE_FORMAT_OVERFLOW
@@ -317,7 +326,7 @@
 /* Define if the GNU gettext() function is already present or preinstalled. */
 #undef HAVE_GETTEXT
 
-/* Define to 1 if you have the 'gettid' function. */
+/* Define to 1 if you have the `gettid' function. */
 #undef HAVE_GETTID
 
 /* iops->get_acl() exists */
@@ -341,11 +350,17 @@
 /* iops->setattr() takes struct mnt_idmap* */
 #undef HAVE_IDMAP_IOPS_SETATTR
 
+/* id mapping mechanism is mnt_idmap */
+#undef HAVE_IDMAP_MNTIDMAP
+
 /* APIs for idmapped mount are present */
 #undef HAVE_IDMAP_MNT_API
 
 /* mnt_idmap does not have user_namespace */
 #undef HAVE_IDMAP_NO_USERNS
+
+/* id mapping mechanism is user_namespace */
+#undef HAVE_IDMAP_USERNS
 
 /* Define if compiler supports -Wimplicit-fallthrough */
 #undef HAVE_IMPLICIT_FALLTHROUGH
@@ -437,7 +452,7 @@
 /* iov_iter_type() is available */
 #undef HAVE_IOV_ITER_TYPE
 
-/* Define to 1 if you have the 'issetugid' function. */
+/* Define to 1 if you have the `issetugid' function. */
 #undef HAVE_ISSETUGID
 
 /* iter_iov() is available */
@@ -518,7 +533,10 @@
 /* Noting that make_request_fn() returns blk_qc_t */
 #undef HAVE_MAKE_REQUEST_FN_RET_QC
 
-/* Define to 1 if you have the 'mlockall' function. */
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `mlockall' function. */
 #undef HAVE_MLOCKALL
 
 /* 'flags' in 'struct page' is a struct */
@@ -586,9 +604,6 @@
 
 /* register_sysctl_table exists */
 #undef HAVE_REGISTER_SYSCTL_TABLE
-
-/* iops->rename() wants flags */
-#undef HAVE_RENAME_WANTS_FLAGS
 
 /* revalidate_disk() is available */
 #undef HAVE_REVALIDATE_DISK
@@ -665,9 +680,6 @@
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
-/* Define to 1 if you have the <stdio.h> header file. */
-#undef HAVE_STDIO_H
-
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
@@ -677,10 +689,10 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if you have the 'strlcat' function. */
+/* Define to 1 if you have the `strlcat' function. */
 #undef HAVE_STRLCAT
 
-/* Define to 1 if you have the 'strlcpy' function. */
+/* Define to 1 if you have the `strlcpy' function. */
 #undef HAVE_STRLCPY
 
 /* submit_bio is member of struct block_device_operations */
@@ -725,7 +737,7 @@
 /* kernel has totalram_pages() */
 #undef HAVE_TOTALRAM_PAGES_FUNC
 
-/* Define to 1 if you have the 'udev_device_get_is_initialized' function. */
+/* Define to 1 if you have the `udev_device_get_is_initialized' function. */
 #undef HAVE_UDEV_DEVICE_GET_IS_INITIALIZED
 
 /* kernel has __kernel_fpu_* functions */
@@ -760,6 +772,12 @@
 
 /* migrate_folio exists */
 #undef HAVE_VFS_MIGRATE_FOLIO
+
+/* vfs_parse_fs_string() takes 3 args */
+#undef HAVE_VFS_PARSE_FS_STRING_3ARGS
+
+/* vfs_path_lookup() is exported */
+#undef HAVE_VFS_PATH_LOOKUP_EXPORTED
 
 /* address_space_operations->readpages exists */
 #undef HAVE_VFS_READPAGES
@@ -878,9 +896,7 @@
 /* pde_data() is PDE_DATA() */
 #undef SPL_PDE_DATA
 
-/* Define to 1 if all of the C89 standard headers exist (not just the ones
-   required in a freestanding environment). This macro is provided for
-   backward compatibility; new code need not use it. */
+/* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
 /* True if ZFS is to be compiled for a FreeBSD system */
