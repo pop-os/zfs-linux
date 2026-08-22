@@ -1,10 +1,9 @@
-# lib-ld.m4
-# serial 13
-dnl Copyright (C) 1996-2003, 2009-2024 Free Software Foundation, Inc.
+# SPDX-License-Identifier: FSFULLR
+# lib-ld.m4 serial 9
+dnl Copyright (C) 1996-2003, 2009-2019 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
-dnl This file is offered as-is, without any warranty.
 
 dnl Subroutines of libtool.m4,
 dnl with replacements s/_*LT_PATH/AC_LIB_PROG/ and s/lt_/acl_/ to avoid
@@ -31,7 +30,7 @@ AC_DEFUN([AC_LIB_PROG_LD],
 AC_REQUIRE([AC_CANONICAL_HOST])dnl
 
 AC_ARG_WITH([gnu-ld],
-    [AS_HELP_STRING([[--with-gnu-ld]],
+    [AS_HELP_STRING([--with-gnu-ld],
         [assume the C compiler uses GNU ld [default=no]])],
     [test "$withval" = no || with_gnu_ld=yes],
     [with_gnu_ld=no])dnl
@@ -69,7 +68,7 @@ else
     if test "$GCC" = yes; then
       # Check if gcc -print-prog-name=ld gives a path.
       case $host in
-        *-*-mingw* | windows*)
+        *-*-mingw*)
           # gcc leaves a trailing carriage return which upsets mingw
           acl_output=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
         *)
@@ -99,9 +98,9 @@ else
     fi
     if test -n "$ac_prog"; then
       # Search for $ac_prog in $PATH.
-      acl_saved_IFS="$IFS"; IFS=$PATH_SEPARATOR
+      acl_save_ifs="$IFS"; IFS=$PATH_SEPARATOR
       for ac_dir in $PATH; do
-        IFS="$acl_saved_IFS"
+        IFS="$acl_save_ifs"
         test -z "$ac_dir" && ac_dir=.
         if test -f "$ac_dir/$ac_prog" || test -f "$ac_dir/$ac_prog$ac_exeext"; then
           acl_cv_path_LD="$ac_dir/$ac_prog"
@@ -118,13 +117,13 @@ else
           esac
         fi
       done
-      IFS="$acl_saved_IFS"
+      IFS="$acl_save_ifs"
     fi
     case $host in
       *-*-aix*)
         AC_COMPILE_IFELSE(
           [AC_LANG_SOURCE(
-             [[#if defined __powerpc64__ || defined __LP64__
+             [[#if defined __powerpc64__ || defined _ARCH_PPC64
                 int ok;
                #else
                 error fail
