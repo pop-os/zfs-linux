@@ -1,3 +1,14 @@
+zfs-linux (2.4.4-1) unstable; urgency=high
+
+  * New upstream version 2.4.4.
+  * d/patches: refresh for OpenZFS 2.4.4.
+  * d/patches: make systemd-udev-settle optional in the Debian-specific
+    zfs-load-module.service, matching upstream PR #18832.
+  * d/symbols: add new symbols in libzpool7linux.
+  * d/modules: drop obsolete udeb settings.
+
+ -- Shengqi Chen <harry@debian.org>  Sat, 22 Aug 2026 14:43:08 +0800
+
 zfs-linux (2.4.3-3) unstable; urgency=medium
 
   [ Igor Krpanic ]
