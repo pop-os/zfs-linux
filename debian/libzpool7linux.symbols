@@ -490,6 +490,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  dataset_namecheck@Base 0.8.2
  dataset_nestcheck@Base 0.8.2
  dbrrd_add@Base 2.4.0
+ dbrrd_latest_time@Base 2.4.4
  dbrrd_query@Base 2.4.0
  dbuf_add_ref@Base 0.8.2
  dbuf_assign_arcbuf@Base 0.8.2
@@ -835,6 +836,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  dnode_add_ref@Base 0.8.2
  dnode_allocate@Base 0.8.2
  dnode_block_freed@Base 0.8.2
+ dnode_block_freed_after@Base 2.4.4
  dnode_buf_byteswap@Base 0.8.2
  dnode_byteswap@Base 0.8.2
  dnode_diduse_space@Base 0.8.2
@@ -1641,6 +1643,7 @@ libzpool.so.7 libzpool7linux #MINVER#
  metaslab_unflushed_txg@Base 2.0
  metaslab_unload@Base 0.8.2
  mkdirp@Base 2.2.0
+ mmp_claim_relaxed@Base 2.4.4
  mmp_claim_uberblock@Base 2.4.1
  mmp_fini@Base 0.8.2
  mmp_init@Base 0.8.2
