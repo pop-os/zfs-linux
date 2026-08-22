@@ -221,7 +221,6 @@ override_dh_prep-deb-files:
 override_dh_configure_modules_udeb: override_dh_configure_modules_udeb_stamp
 override_dh_configure_modules_udeb_stamp: override_dh_autoreconf
 	./configure \
-		--without-selinux \
 		--with-config=kernel \
 		--with-linux=$(KSRC) \
 		--with-linux-obj=$(KOBJ)
