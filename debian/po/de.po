@@ -1,13 +1,13 @@
 # Translation of zfs-linux debconf templates to German
-# Copyright (C) Helge Kreutzmann <debian@helgefjell.de>, 2013, 2017, 2021.
+# Copyright (C) Helge Kreutzmann <debian@helgefjell.de>, 2013, 2017, 2021, 2026.
 # This file is distributed under the same license as the zfs-linux package.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: zfs-linux 2.0.3-2\n"
+"Project-Id-Version: zfs-linux 2.4.2-1\n"
 "Report-Msgid-Bugs-To: zfs-linux@packages.debian.org\n"
 "POT-Creation-Date: 2026-05-13 14:29+0800\n"
-"PO-Revision-Date: 2021-03-07 20:51+0100\n"
+"PO-Revision-Date: 2026-05-16 07:37+0200\n"
 "Last-Translator: Helge Kreutzmann <debian@helgefjell.de>\n"
 "Language-Team: de <debian-l10n-german@lists.debian.org>\n"
 "Language: de\n"
@@ -59,9 +59,9 @@ msgid ""
 "be identified as 32-bit or 64-bit. If you are not completely sure that the "
 "running kernel is a 64-bit one, you should probably stop the build."
 msgstr ""
-"Sie versuchen, OpenZFS mit einem Kernel zu bauen, der weder als 32-Bit noch "
+"Sie versuchen, OpenZFS mit einem laufenden Kernel zu bauen, der weder als 32-Bit noch "
 "als 64-Bit identifiziert werden konnte. Falls Sie sich nicht absolut sicher "
-"sind, dass es sich beim laufende Kernel um einen 64-Bit-Kernel handelt, "
+"sind, dass es sich beim laufenden Kernel um einen 64-Bit-Kernel handelt, "
 "sollten Sie eventuell den Bau abbrechen."
 
 #. Type: note
@@ -107,16 +107,14 @@ msgstr ""
 #. Description
 #: ../zfs-dkms.templates:4001
 msgid "OpenZFS on RT kernels is currently experimental"
-msgstr ""
+msgstr "OpenZFS mit RT-Kerneln ist derzeit experimentell"
 
 #. Type: note
 #. Description
 #: ../zfs-dkms.templates:4001
-#, fuzzy
-#| msgid "You are attempting to build OpenZFS against a 32-bit running kernel."
 msgid ""
 "You are attempting to build OpenZFS against a real-time (PREEMPT_RT) kernel."
-msgstr "Sie versuchen, OpenZFS mit einem laufenden 32-Bit-Kernel zu bauen."
+msgstr "Sie versuchen, OpenZFS mit einem Echtzeit-Kernel (PREEMPT_RT) zu bauen."
 
 #. Type: note
 #. Description
@@ -129,6 +127,12 @@ msgid ""
 "succeeds, compatibility issues and instability, including possible data "
 "corruption, may occur."
 msgstr ""
+"OpenZFS hat bisher offiziell PREEMPT_RT-Kernel noch nicht unterstützt. "
+"Seitdem PREEMPT_RT in Linux 6.12 in den Hauptkernel aufgenommen wurde, sind "
+"solche Konfigurationen leichter erreichbar. Allerdings impliziert dies "
+"nicht, dass OpenZFS dafür validiert wurde. Dieser Bau kann fehlschlagen und "
+"selbst wenn er erfolgreich ist, können Kompatibilitätsprobleme und "
+"Instabilitäten, einschließlich möglicher Datenkorruption, auftreten."
 
 #. Type: note
 #. Description
@@ -138,6 +142,9 @@ msgid ""
 "OpenZFS on a real-time kernel in any environment where data integrity "
 "matters."
 msgstr ""
+"Fahren Sie vorsichtig fort und stellen Sie sicher, dass Sie über angemessene "
+"Sicherungskopien verfügen, bevor Sie OpenZFS mit Echtzeit-Kerneln in "
+"irgendeiner Umgebung verwenden, bei der Datenintegrität wichtig ist."
 
 #~ msgid "Scrub OpenZFS pools periodically?"
 #~ msgstr "Periodisch „scrub“ bei OpenZFS-Pools durchführen?"

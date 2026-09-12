@@ -41,7 +41,8 @@ override_dh_autoreconf:
 
 override_dh_auto_configure:
 ifeq ($(BUILD_UDEB), true)
-	cat debian/control.udeb.in >> debian/control
+	grep -q '^Package: zfsutils-udeb' debian/control || \
+	    { echo >> debian/control; cat debian/control.udeb.in >> debian/control; }
 endif
 
 	@# Build the userland, but don't build the kernel modules.
@@ -97,7 +98,7 @@ override_dh_auto_install:
 		'$(CURDIR)/scripts/dkms.postbuild'
 	install -D -t '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/scripts' \
 		'$(CURDIR)/scripts/objtool-wrapper.in'
-	$(foreach file,$(DKMSFILES),mv '$(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/$(file)' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)' || exit 1;)
+	$(foreach file,$(DKMSFILES),cp -a '$(CURDIR)/$(NAME)-$(DEB_VERSION_UPSTREAM)/$(file)' '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)' || exit 1;)
 
 	@# Do not include FreeBSD kernel sources in the Linux DKMS package
 	$(foreach file,$(DKMSFILESEXCLUDE),rm -r '$(CURDIR)/debian/tmp/usr/src/$(NAME)-$(DEB_VERSION_UPSTREAM)/$(file)' || exit 1;)
@@ -155,10 +156,8 @@ override_dh_makeshlibs:
 ifeq ($(BUILD_UDEB), true)
 	dh_makeshlibs -V -plibnvpair3linux --add-udeb=libnvpair3-udeb
 	dh_makeshlibs -V -plibuutil3linux --add-udeb=libuutil3-udeb
-	dh_makeshlibs -V -plibzfs5linux --add-udeb=libzfs5-udeb
-	dh_makeshlibs -V -plibzfsbootenv1linux --add-udeb=libzfsbootenv1-udeb
-	dh_makeshlibs -V -plibzpool6linux --add-udeb=libzpool6-udeb
-	dh_makeshlibs -V -pzfsutils-linux --add-udeb=zfsutils-udeb
+	dh_makeshlibs -V -plibzfs7linux --add-udeb=libzfs7-udeb
+	dh_makeshlibs -V -plibzpool7linux --add-udeb=libzpool7-udeb
 endif
 
 override_dh_strip:
@@ -166,9 +165,8 @@ override_dh_strip:
 ifeq ($(BUILD_UDEB), true)
 	dh_strip -plibnvpair3-udeb
 	dh_strip -plibuutil3-udeb
-	dh_strip -plibzfs5-udeb
-	dh_strip -plibzfsbootenv1-udeb
-	dh_strip -plibzpool6-udeb
+	dh_strip -plibzfs7-udeb
+	dh_strip -plibzpool7-udeb
 	dh_strip -pzfsutils-udeb
 endif
 
@@ -179,7 +177,8 @@ override_dh_auto_clean:
 	debconf-updatepo
 	@if test -e META.orig; then mv META.orig META; fi
 ifeq ($(BUILD_UDEB), true)
-	cat debian/control.udeb.in >> debian/control
+	grep -q '^Package: zfsutils-udeb' debian/control || \
+	    { echo >> debian/control; cat debian/control.udeb.in >> debian/control; }
 endif
 
 override_dh_install:
@@ -222,7 +221,6 @@ override_dh_prep-deb-files:
 override_dh_configure_modules_udeb: override_dh_configure_modules_udeb_stamp
 override_dh_configure_modules_udeb_stamp: override_dh_autoreconf
 	./configure \
-		--without-selinux \
 		--with-config=kernel \
 		--with-linux=$(KSRC) \
 		--with-linux-obj=$(KOBJ)
@@ -245,6 +243,7 @@ override_dh_binary-modules-udeb: override_dh_prep-deb-files override_dh_configur
 
 	dh_installdirs -p${pmodules}-di
 	dh_install -p${pmodules}-di
+	strip --strip-debug debian/${pmodules}-di/lib/modules/$(KVERS)/extra/*/*.ko
 	dh_gencontrol -p${pmodules}-di
 
 	dh_builddeb -p${pmodules}-di

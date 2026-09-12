@@ -35,7 +35,7 @@ Package: zfs-modules-_KVERS_-di
 Package-Type: udeb
 Section: contrib/debian-installer
 Architecture: _ARCH_
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: ${misc:Depends}
 Provides: zfs-modules, zfs-modules-_KVERS_-udeb
 Description: OpenZFS filesystem kernel modules for Linux (debian-installar version for kernel _KVERS_)
  An advanced integrated volume manager and filesystem that is designed for
